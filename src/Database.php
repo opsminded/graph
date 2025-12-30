@@ -18,12 +18,7 @@ class Database
     {
         $this->db_file = $db_file;
 
-        $isNew = false;
-        if ($db_file === ':memory:' || str_starts_with($db_file, 'memory:')) {
-            $isNew = true;
-        } else {
-            $isNew = !file_exists($db_file) || filesize($db_file) === 0;
-        }
+        $isNew = !file_exists($db_file) || filesize($db_file) === 0;
 
         if ($isNew) {
             $this->initSchema();
@@ -45,12 +40,11 @@ class Database
 
         $db->exec("
             CREATE TABLE IF NOT EXISTS edges (
-                id TEXT PRIMARY KEY,
                 source TEXT NOT NULL,
                 target TEXT NOT NULL,
-                data TEXT NOT NULL,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (source, target),
                 FOREIGN KEY (source) REFERENCES nodes(id) ON DELETE CASCADE,
                 FOREIGN KEY (target) REFERENCES nodes(id) ON DELETE CASCADE
             )
@@ -108,7 +102,19 @@ class Database
         return $this->db;
     }
 
-    // Node operations
+    public function nodes(): array
+    {
+        try {
+            $db   = $this->getDb();
+            $stmt = $db->query("SELECT id, data FROM nodes ORDER BY created_at");
+            return $stmt->fetchAll();
+            // @codeCoverageIgnoreStart
+        } catch (PDOException $e) {
+            error_log("GraphDatabase fetch all nodes failed: " . $e->getMessage());
+            return [];
+        }
+        // @codeCoverageIgnoreEnd
+    }
 
     public function nodeExists(string $id): bool
     {
@@ -121,6 +127,22 @@ class Database
         } catch (PDOException $e) {
             error_log("GraphDatabase node exists check failed: " . $e->getMessage());
             return false;
+        }
+        // @codeCoverageIgnoreEnd
+    }
+
+    public function getNode(string $id): ?array
+    {
+        try {
+            $db   = $this->getDb();
+            $stmt = $db->prepare("SELECT data FROM nodes WHERE id = :id");
+            $stmt->execute([':id' => $id]);
+            $row = $stmt->fetch();
+            return $row ? json_decode($row['data'], true) : null;
+            // @codeCoverageIgnoreStart
+        } catch (PDOException $e) {
+            error_log("GraphDatabase fetch node failed: " . $e->getMessage());
+            return null;
         }
         // @codeCoverageIgnoreEnd
     }
@@ -138,10 +160,12 @@ class Database
                 ':data' => json_encode($data, JSON_UNESCAPED_UNICODE)
             ]);
             return true;
+            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase insert node failed: " . $e->getMessage());
             return false;
         }
+        // @codeCoverageIgnoreEnd
     }
 
     public function updateNode(string $id, array $data): int
@@ -162,21 +186,7 @@ class Database
         // @codeCoverageIgnoreEnd
     }
 
-    public function fetchNode(string $id): ?array
-    {
-        try {
-            $db   = $this->getDb();
-            $stmt = $db->prepare("SELECT data FROM nodes WHERE id = :id");
-            $stmt->execute([':id' => $id]);
-            $row = $stmt->fetch();
-            return $row ? json_decode($row['data'], true) : null;
-            // @codeCoverageIgnoreStart
-        } catch (PDOException $e) {
-            error_log("GraphDatabase fetch node failed: " . $e->getMessage());
-            return null;
-        }
-        // @codeCoverageIgnoreEnd
-    }
+    
 
     public function deleteNode(string $id): array
     {
@@ -200,33 +210,16 @@ class Database
         // @codeCoverageIgnoreEnd
     }
 
-    public function fetchAllNodes(): array
+    public function edges(): array
     {
         try {
             $db   = $this->getDb();
-            $stmt = $db->query("SELECT id, data FROM nodes ORDER BY created_at");
+            $stmt = $db->query("SELECT source, target FROM edges ORDER BY created_at");
             return $stmt->fetchAll();
             // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
-            error_log("GraphDatabase fetch all nodes failed: " . $e->getMessage());
+            error_log("GraphDatabase fetch all edges failed: " . $e->getMessage());
             return [];
-        }
-        // @codeCoverageIgnoreEnd
-    }
-
-    // Edge operations
-
-    public function edgeExistsById(string $id): bool
-    {
-        try {
-            $db   = $this->getDb();
-            $stmt = $db->prepare("SELECT COUNT(*) FROM edges WHERE id = :id");
-            $stmt->execute([':id' => $id]);
-            return $stmt->fetchColumn() > 0;
-            // @codeCoverageIgnoreStart
-        } catch (PDOException $e) {
-            error_log("GraphDatabase edge exists by id check failed: " . $e->getMessage());
-            return false;
         }
         // @codeCoverageIgnoreEnd
     }
@@ -253,18 +246,15 @@ class Database
         // @codeCoverageIgnoreEnd
     }
 
-    public function insertEdge(string $id, string $source, string $target, array $data): bool
+    public function insertEdge(string $source, string $target): bool
     {
         try {
             $db  = $this->getDb();
-            $sql = "INSERT OR IGNORE INTO edges (id, source, target, data)"
-                . " VALUES (:id, :source, :target, :data)";
+            $sql = "INSERT OR IGNORE INTO edges (source, target) VALUES (:source, :target)";
             $stmt = $db->prepare($sql);
             $stmt->execute([
-                ':id'     => $id,
                 ':source' => $source,
                 ':target' => $target,
-                ':data'   => json_encode($data, JSON_UNESCAPED_UNICODE)
             ]);
             return true;
             // @codeCoverageIgnoreStart
@@ -275,18 +265,18 @@ class Database
         // @codeCoverageIgnoreEnd
     }
 
-    public function deleteEdge(string $id): array
+    public function deleteEdge(string $source, string $target): array
     {
         try {
             $db = $this->getDb();
 
-            $stmt = $db->prepare("SELECT data FROM edges WHERE id = :id");
-            $stmt->execute([':id' => $id]);
+            $stmt = $db->prepare("SELECT source, target FROM edges WHERE source = :source AND target = :target");
+            $stmt->execute([':source' => $source, ':target' => $target]);
             $old_row  = $stmt->fetch();
-            $old_data = $old_row ? json_decode($old_row['data'], true) : null;
+            $old_data = null;
 
-            $stmt = $db->prepare("DELETE FROM edges WHERE id = :id");
-            $stmt->execute([':id' => $id]);
+            $stmt = $db->prepare("DELETE FROM edges WHERE source = :source AND target = :target");
+            $stmt->execute([':source' => $source, ':target' => $target]);
 
             return [$stmt->rowCount(), $old_data];
             // @codeCoverageIgnoreStart
@@ -303,7 +293,7 @@ class Database
             $db = $this->getDb();
 
             // Fetch edges before deleting
-            $stmt = $db->prepare("SELECT id, data FROM edges WHERE source = :source");
+            $stmt = $db->prepare("SELECT source, target FROM edges WHERE source = :source");
             $stmt->execute([':source' => $source]);
             $edges = $stmt->fetchAll();
 
@@ -311,22 +301,20 @@ class Database
             $stmt = $db->prepare("DELETE FROM edges WHERE source = :source");
             $stmt->execute([':source' => $source]);
 
-            // Return edges with decoded data
+            // Return edges
             $result = [];
             foreach ($edges as $edge) {
                 $result[] = [
-                    'id'   => $edge['id'],
-                    'data' => json_decode($edge['data'], true)
+                    'source' => $edge['source'],
+                    'target' => $edge['target']
                 ];
             }
 
             return $result;
-            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase delete edges from failed: " . $e->getMessage());
             return [];
         }
-        // @codeCoverageIgnoreEnd
     }
 
     public function deleteEdgesByNode(string $nodeId): array
@@ -335,7 +323,7 @@ class Database
             $db = $this->getDb();
 
             // Fetch edges before deleting
-            $stmt = $db->prepare("SELECT id, data FROM edges WHERE source = :id OR target = :id");
+            $stmt = $db->prepare("SELECT source, target FROM edges WHERE source = :id OR target = :id");
             $stmt->execute([':id' => $nodeId]);
             $edges = $stmt->fetchAll();
 
@@ -343,37 +331,24 @@ class Database
             $stmt = $db->prepare("DELETE FROM edges WHERE source = :id OR target = :id");
             $stmt->execute([':id' => $nodeId]);
 
-            // Return edges with decoded data
+            // Return edges
             $result = [];
             foreach ($edges as $edge) {
                 $result[] = [
-                    'id'   => $edge['id'],
-                    'data' => json_decode($edge['data'], true)
+                    'source' => $edge['source'],
+                    'target' => $edge['target'],
+                    
                 ];
             }
 
             return $result;
-            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase delete edges by node failed: " . $e->getMessage());
             return [];
         }
-        // @codeCoverageIgnoreEnd
     }
 
-    public function fetchAllEdges(): array
-    {
-        try {
-            $db   = $this->getDb();
-            $stmt = $db->query("SELECT id, source, target, data FROM edges ORDER BY created_at");
-            return $stmt->fetchAll();
-            // @codeCoverageIgnoreStart
-        } catch (PDOException $e) {
-            error_log("GraphDatabase fetch all edges failed: " . $e->getMessage());
-            return [];
-        }
-        // @codeCoverageIgnoreEnd
-    }
+    
 
     // Audit operations
 
@@ -641,20 +616,5 @@ class Database
             return false;
         }
         // @codeCoverageIgnoreEnd
-    }
-
-    // Restore support methods
-    
-
-    // Backup support
-
-    public function closeConnection(): void
-    {
-        $this->db = null;
-    }
-
-    public function getDbFilePath(): string
-    {
-        return $this->db_file;
     }
 }

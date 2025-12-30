@@ -18,8 +18,8 @@ class Graph
 
     public function get(): array
     {
-        $nodesData = $this->database->fetchAllNodes();
-        $edgesData = $this->database->fetchAllEdges();
+        $nodesData = $this->database->nodes();
+        $edgesData = $this->database->edges();
 
         $nodes = [];
         foreach ($nodesData as $row) {
@@ -31,7 +31,8 @@ class Graph
         $edges = [];
         foreach ($edgesData as $row) {
             $edges[] = [
-                'data' => json_decode($row['data'], true)
+                'source' => $row['source'],
+                'target' => $row['target']
             ];
         }
 
@@ -64,7 +65,7 @@ class Graph
 
     public function updateNode(string $id, array $data): bool
     {
-        $old_data = $this->database->fetchNode($id);
+        $old_data = $this->database->getNode($id);
 
         $data['id'] = $id;
         $rowCount   = $this->database->updateNode($id, $data);
@@ -83,18 +84,10 @@ class Graph
             $this->database->beginTransaction();
 
             // Fetch node data before deleting
-            $old_data = $this->database->fetchNode($id);
+            $old_data = $this->database->getNode($id);
             if (!$old_data) {
                 $this->database->rollBack();
                 return false;
-            }
-
-            // Delete edges and get deleted edge data for audit log
-            $deletedEdges = $this->database->deleteEdgesByNode($id);
-
-            // Log each deleted edge
-            foreach ($deletedEdges as $edge) {
-                $this->auditLog('edge', $edge['id'], 'delete', $edge['data'], null);
             }
 
             // Delete the node
@@ -115,57 +108,32 @@ class Graph
         // @codeCoverageIgnoreEnd
     }
 
-    public function edgeExistsById(string $id): bool
-    {
-        return $this->database->edgeExistsById($id);
-    }
-
     public function edgeExists(string $source, string $target): bool
     {
         return $this->database->edgeExists($source, $target);
     }
 
-    public function addEdge(string $id, string $source, string $target, array $data): bool
+    public function addEdge(string $source, string $target): bool
     {
-        if ($this->database->edgeExistsById($id)) {
-            return false;
-        }
-
-        $data['id']     = $id;
-        $data['source'] = $source;
-        $data['target'] = $target;
-
-        $result = $this->database->insertEdge($id, $source, $target, $data);
+        $result = $this->database->insertEdge($source, $target);
 
         if ($result) {
-            $this->auditLog('edge', $id, 'create', null, $data);
+            $this->auditLog('edge', $source . '->' . $target, 'create', null, null);
         }
 
         return $result;
     }
 
-    public function removeEdge(string $id): bool
+    public function removeEdge(string $source, string $target): bool
     {
-        [$rowCount, $old_data] = $this->database->deleteEdge($id);
+        [$rowCount, $old_data] = $this->database->deleteEdge($source, $target);
 
         if ($rowCount > 0) {
-            $this->auditLog('edge', $id, 'delete', $old_data, null);
+            $this->auditLog('edge', $source . '->' . $target, 'delete', null, null);
             return true;
         }
 
         return false;
-    }
-
-    public function removeEdgesFrom(string $source): bool
-    {
-        $edges = $this->database->deleteEdgesFrom($source);
-
-        // Log each deleted edge
-        foreach ($edges as $edge) {
-            $this->auditLog('edge', $edge['id'], 'delete', $edge['data'], null);
-        }
-
-        return true;
     }
 
     public function auditLog(
@@ -245,5 +213,16 @@ class Graph
         }
 
         return $statuses;
+    }
+
+    public function removeEdgesFrom(string $source): bool
+    {
+        $deleted = $this->database->deleteEdgesFrom($source);
+
+        foreach ($deleted as $edge) {
+            $this->auditLog('edge', $edge['source'] . '->' . $edge['target'], 'delete', null, null);
+        }
+
+        return count($deleted) > 0;
     }
 }

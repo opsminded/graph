@@ -37,8 +37,8 @@ class GraphTest extends TestCase
         $this->assertTrue($this->graph->nodeExists('n1'));
 
         $this->assertTrue($this->graph->addNode('n2', ['name' => 'N2']));
-        $this->assertTrue($this->graph->addEdge('e1', 'n1', 'n2', ['label' => 'link']));
-        $this->assertTrue($this->graph->edgeExistsById('e1'));
+        $this->assertTrue($this->graph->addEdge('n1', 'n2'));
+        $this->assertTrue($this->graph->edgeExists('n1', 'n2'));
 
         $this->assertTrue($this->graph->setNodeStatus('n1', 'healthy'));
         $ns = $this->graph->getNodeStatus('n1');
@@ -64,7 +64,7 @@ class GraphTest extends TestCase
 
         // add edge then remove_edges_from
         $this->assertTrue($this->graph->addNode('n3', ['name' => 'n3']));
-        $this->assertTrue($this->graph->addEdge('ezz', 'nn', 'n3', ['label' => 'l']));
+        $this->assertTrue($this->graph->addEdge('nn', 'n3'));
         $this->assertTrue($this->graph->removeEdgesFrom('nn'));
     }
 }

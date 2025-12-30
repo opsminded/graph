@@ -40,11 +40,11 @@ class DatabaseTest extends TestCase
         $this->assertTrue($this->db->insertNode($id, $data));
         $this->assertTrue($this->db->nodeExists($id));
 
-        $f = $this->db->fetchNode($id);
+        $f = $this->db->getNode($id);
         $this->assertSame('node1', $f['name']);
 
         $this->assertEquals(1, $this->db->updateNode($id, ['name' => 'node1b']));
-        $this->assertSame('node1b', $this->db->fetchNode($id)['name']);
+        $this->assertSame('node1b', $this->db->getNode($id)['name']);
 
         [$count, $old] = $this->db->deleteNode($id);
         $this->assertEquals(1, $count);
@@ -57,19 +57,18 @@ class DatabaseTest extends TestCase
         $this->db->insertNode($a, ['id' => $a]);
         $this->db->insertNode($b, ['id' => $b]);
 
-        $eid = 'e1';
-        $this->assertFalse($this->db->edgeExistsById($eid));
+        $this->assertFalse($this->db->edgeExists($a, $b));
 
-        $this->assertTrue($this->db->insertEdge($eid, $a, $b, ['label' => 'x', 'source' => $a, 'target' => $b]));
+        $this->assertTrue($this->db->insertEdge($a, $b));
         $this->assertTrue($this->db->edgeExists($a, $b));
         $this->assertTrue($this->db->edgeExists($b, $a));
 
         // Library no longer provides updateEdge; simulate update by deleting and inserting
-        [$cntBefore,] = $this->db->deleteEdge($eid);
+        [$cntBefore,] = $this->db->deleteEdge($a, $b);
         $this->assertEquals(1, $cntBefore);
-        $this->assertTrue($this->db->insertEdge($eid, $a, $b, ['label' => 'y', 'source' => $a, 'target' => $b]));
+        $this->assertTrue($this->db->insertEdge($a, $b));
 
-        [$cnt, $old] = $this->db->deleteEdge($eid);
+        [$cnt, $old] = $this->db->deleteEdge($a, $b);
         $this->assertEquals(1, $cnt);
     }
 
@@ -100,14 +99,14 @@ class DatabaseTest extends TestCase
         $this->db->insertNode('nx', ['id' => 'nx', 'v' => 1]);
         $this->db->insertNode('nx', ['id' => 'nx', 'v' => 2]);
 
-        $nodes = $this->db->fetchAllNodes();
+        $nodes = $this->db->nodes();
         $this->assertNotEmpty($nodes);
 
         // `insertEdge` is idempotent (INSERT OR IGNORE); calling twice is safe
-        $this->db->insertEdge('ex', 'nx', 'nx', ['id' => 'ex', 'source' => 'nx', 'target' => 'nx']);
-        $this->db->insertEdge('ex', 'nx', 'nx', ['id' => 'ex', 'source' => 'nx', 'target' => 'nx']);
+        $this->db->insertEdge('nx', 'nx');
+        $this->db->insertEdge('nx', 'nx');
 
-        $edges = $this->db->fetchAllEdges();
+        $edges = $this->db->edges();
         $this->assertNotEmpty($edges);
     }
 
@@ -115,14 +114,14 @@ class DatabaseTest extends TestCase
     {
         $this->db->insertNode('a1', ['id' => 'a1']);
         $this->db->insertNode('b1', ['id' => 'b1']);
-        $this->db->insertEdge('e1', 'a1', 'b1', ['id' => 'e1', 'source' => 'a1', 'target' => 'b1']);
-        $this->db->insertEdge('e2', 'a1', 'b1', ['id' => 'e2', 'source' => 'a1', 'target' => 'b1']);
+        $this->db->insertEdge('a1', 'b1');
+        $this->db->insertEdge('a1', 'b1');
 
         $deleted = $this->db->deleteEdgesFrom('a1');
-        $this->assertCount(2, $deleted);
+        $this->assertCount(1, $deleted);
 
         // Insert again and delete by node
-        $this->db->insertEdge('e3', 'a1', 'b1', ['id' => 'e3', 'source' => 'a1', 'target' => 'b1']);
+        $this->db->insertEdge('a1', 'b1');
         $deleted2 = $this->db->deleteEdgesByNode('a1');
         $this->assertNotEmpty($deleted2);
     }
@@ -146,25 +145,16 @@ class DatabaseTest extends TestCase
     {
         $this->db->insertNode('nA', ['id' => 'nA']);
         $this->db->insertNode('nB', ['id' => 'nB']);
-        $this->db->insertEdge('ed1', 'nA', 'nB', ['id' => 'ed1', 'source' => 'nA', 'target' => 'nB']);
+        $this->db->insertEdge('nA', 'nB');
 
         // No updateEdge method — replace by delete + insert to simulate update
-        [$cntDel,] = $this->db->deleteEdge('ed1');
+        [$cntDel,] = $this->db->deleteEdge('nA', 'nB');
         $this->assertEquals(1, $cntDel);
-        $this->assertTrue($this->db->insertEdge('ed1', 'nA', 'nB', ['id' => 'ed1', 'source' => 'nA', 'target' => 'nB', 'label' => 'ok']));
+        $this->assertTrue($this->db->insertEdge('nA', 'nB'));
 
         $this->assertTrue($this->db->beginTransaction());
         $this->assertTrue($this->db->commit());
         $this->assertTrue($this->db->beginTransaction());
         $this->assertTrue($this->db->rollBack());
-    }
-
-    public function testGetDbFilePathAndCreateBackupDuplicate()
-    {
-        // getDbFilePath
-        $path = $this->db->getDbFilePath();
-        $this->assertSame($this->dbFile, $path);
-
-        // Backup functionality was removed from the simplified library.
     }
 }
