@@ -152,8 +152,8 @@ class Database
         // Use INSERT OR IGNORE so calling insertNode on an existing id
         // will not error and will simply do nothing — return true.
         try {
-            $db  = $this->getDb();
-            $sql = "INSERT OR IGNORE INTO nodes (id, data) VALUES (:id, :data)";
+            $db   = $this->getDb();
+            $sql  = "INSERT OR IGNORE INTO nodes (id, data) VALUES (:id, :data)";
             $stmt = $db->prepare($sql);
             $stmt->execute([
                 ':id'   => $id,
@@ -186,7 +186,7 @@ class Database
         // @codeCoverageIgnoreEnd
     }
 
-    
+
 
     public function deleteNode(string $id): array
     {
@@ -249,8 +249,8 @@ class Database
     public function insertEdge(string $source, string $target): bool
     {
         try {
-            $db  = $this->getDb();
-            $sql = "INSERT OR IGNORE INTO edges (source, target) VALUES (:source, :target)";
+            $db   = $this->getDb();
+            $sql  = "INSERT OR IGNORE INTO edges (source, target) VALUES (:source, :target)";
             $stmt = $db->prepare($sql);
             $stmt->execute([
                 ':source' => $source,
@@ -337,7 +337,7 @@ class Database
                 $result[] = [
                     'source' => $edge['source'],
                     'target' => $edge['target'],
-                    
+
                 ];
             }
 
@@ -348,7 +348,7 @@ class Database
         }
     }
 
-    
+
 
     // Audit operations
 
