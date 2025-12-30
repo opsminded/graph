@@ -5,3 +5,4 @@ composer.phar
 .vscode
 /.DS_Store
 coverage
+.php-cs-fixer.cache

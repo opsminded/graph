@@ -262,7 +262,7 @@ class Graph
     {
         try {
             // Create backup before restoring
-            $timestamp = date('Y-m-d_H-i-s');
+            $timestamp   = date('Y-m-d_H-i-s');
             $backup_name = 'pre_restore_entity_' . $entity_type . '_' . $entity_id . '_' .
                 $timestamp . '_' . rand(1000, 9999);
             $backup_result = $this->database->createBackup($backup_name);

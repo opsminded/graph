@@ -17,7 +17,17 @@ class Database
     public function __construct(string $db_file)
     {
         $this->db_file = $db_file;
-        $this->initSchema();
+
+        $isNew = false;
+        if ($db_file === ':memory:' || str_starts_with($db_file, 'memory:')) {
+            $isNew = true;
+        } else {
+            $isNew = !file_exists($db_file) || filesize($db_file) === 0;
+        }
+
+        if ($isNew) {
+            $this->initSchema();
+        }
     }
 
     private function initSchema(): void
@@ -437,7 +447,7 @@ class Database
     public function fetchAuditLogById(int $id, string $entity_type, string $entity_id): ?array
     {
         try {
-            $db   = $this->getDb();
+            $db  = $this->getDb();
             $sql = "SELECT * FROM audit_log"
                 . " WHERE id = :id"
                 . " AND entity_type = :entity_type"
@@ -669,7 +679,7 @@ class Database
     public function insertEdgeOrIgnore(string $id, string $source, string $target, array $data): bool
     {
         try {
-            $db   = $this->getDb();
+            $db  = $this->getDb();
             $sql = "INSERT OR IGNORE INTO edges (id, source, target, data)"
                 . " VALUES (:id, :source, :target, :data)";
             $stmt = $db->prepare($sql);
@@ -691,7 +701,7 @@ class Database
     public function updateEdge(string $id, string $source, string $target, array $data): int
     {
         try {
-            $db   = $this->getDb();
+            $db  = $this->getDb();
             $sql = "UPDATE edges SET source = :source, target = :target, data = :data,"
                 . " updated_at = CURRENT_TIMESTAMP WHERE id = :id";
             $stmt = $db->prepare($sql);
