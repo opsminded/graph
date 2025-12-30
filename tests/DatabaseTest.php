@@ -77,20 +77,20 @@ class DatabaseTest extends TestCase
         $this->db->insertNode('nX', ['id' => 'nX']);
         $this->assertTrue($this->db->insertAuditLog('node', 'nX', 'create', null, ['id' => 'nX'], 'u1', '1.1.1.1'));
 
-        $logs = $this->db->fetchAuditHistory('node', 'nX');
+        $logs = $this->db->getAuditHistory('node', 'nX');
         $this->assertNotEmpty($logs);
 
         $first = $logs[0];
         $this->assertSame('node', $first['entity_type']);
 
         $this->assertTrue($this->db->insertNodeStatus('nX', 'ok'));
-        $latest = $this->db->fetchLatestNodeStatus('nX');
+        $latest = $this->db->getLatestNodeStatus('nX');
         $this->assertSame('ok', $latest['status']);
 
-        $history = $this->db->fetchNodeStatusHistory('nX');
+        $history = $this->db->getNodeStatusHistory('nX');
         $this->assertNotEmpty($history);
 
-        $allLatest = $this->db->fetchAllLatestStatuses();
+        $allLatest = $this->db->getAllLatestStatuses();
         $this->assertIsArray($allLatest);
     }
 
@@ -110,34 +110,15 @@ class DatabaseTest extends TestCase
         $this->assertNotEmpty($edges);
     }
 
-    public function testDeleteEdgesFromAndByNode()
-    {
-        $this->db->insertNode('a1', ['id' => 'a1']);
-        $this->db->insertNode('b1', ['id' => 'b1']);
-        $this->db->insertEdge('a1', 'b1');
-        $this->db->insertEdge('a1', 'b1');
-
-        $deleted = $this->db->deleteEdgesFrom('a1');
-        $this->assertCount(1, $deleted);
-
-        // Insert again and delete by node
-        $this->db->insertEdge('a1', 'b1');
-        $deleted2 = $this->db->deleteEdgesByNode('a1');
-        $this->assertNotEmpty($deleted2);
-    }
-
     public function testFetchAuditByIdAndAfterTimestamp()
     {
         $this->db->insertNode('z1', ['id' => 'z1']);
         $this->db->insertAuditLog('node', 'z1', 'create', null, ['id' => 'z1'], 'u', '1.1.1.1');
 
-        $logs = $this->db->fetchAuditHistory('node', 'z1');
+        $logs = $this->db->getAuditHistory('node', 'z1');
         $this->assertNotEmpty($logs);
 
-        $log = $this->db->fetchAuditLogById((int)$logs[0]['id'], 'node', 'z1');
-        $this->assertNotNull($log);
-
-        $after = $this->db->fetchAuditLogsAfterTimestamp('2000-01-01 00:00:00');
+        $after = $this->db->getAuditLogsAfterTimestamp('2000-01-01 00:00:00');
         $this->assertNotEmpty($after);
     }
 

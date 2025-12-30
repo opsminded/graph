@@ -287,71 +287,6 @@ class Database
         // @codeCoverageIgnoreEnd
     }
 
-    public function deleteEdgesFrom(string $source): array
-    {
-        try {
-            $db = $this->getDb();
-
-            // Fetch edges before deleting
-            $stmt = $db->prepare("SELECT source, target FROM edges WHERE source = :source");
-            $stmt->execute([':source' => $source]);
-            $edges = $stmt->fetchAll();
-
-            // Delete edges
-            $stmt = $db->prepare("DELETE FROM edges WHERE source = :source");
-            $stmt->execute([':source' => $source]);
-
-            // Return edges
-            $result = [];
-            foreach ($edges as $edge) {
-                $result[] = [
-                    'source' => $edge['source'],
-                    'target' => $edge['target']
-                ];
-            }
-
-            return $result;
-        } catch (PDOException $e) {
-            error_log("GraphDatabase delete edges from failed: " . $e->getMessage());
-            return [];
-        }
-    }
-
-    public function deleteEdgesByNode(string $nodeId): array
-    {
-        try {
-            $db = $this->getDb();
-
-            // Fetch edges before deleting
-            $stmt = $db->prepare("SELECT source, target FROM edges WHERE source = :id OR target = :id");
-            $stmt->execute([':id' => $nodeId]);
-            $edges = $stmt->fetchAll();
-
-            // Delete edges
-            $stmt = $db->prepare("DELETE FROM edges WHERE source = :id OR target = :id");
-            $stmt->execute([':id' => $nodeId]);
-
-            // Return edges
-            $result = [];
-            foreach ($edges as $edge) {
-                $result[] = [
-                    'source' => $edge['source'],
-                    'target' => $edge['target'],
-
-                ];
-            }
-
-            return $result;
-        } catch (PDOException $e) {
-            error_log("GraphDatabase delete edges by node failed: " . $e->getMessage());
-            return [];
-        }
-    }
-
-
-
-    // Audit operations
-
     public function insertAuditLog(
         string $entity_type,
         string $entity_id,
@@ -385,7 +320,7 @@ class Database
         // @codeCoverageIgnoreEnd
     }
 
-    public function fetchAuditHistory(?string $entity_type = null, ?string $entity_id = null): array
+    public function getAuditHistory(?string $entity_type = null, ?string $entity_id = null): array
     {
         try {
             $db = $this->getDb();
@@ -424,39 +359,7 @@ class Database
         // @codeCoverageIgnoreEnd
     }
 
-    public function fetchAuditLogById(int $id, string $entity_type, string $entity_id): ?array
-    {
-        try {
-            $db  = $this->getDb();
-            $sql = "SELECT * FROM audit_log"
-                . " WHERE id = :id"
-                . " AND entity_type = :entity_type"
-                . " AND entity_id = :entity_id";
-            $stmt = $db->prepare($sql);
-            $stmt->execute([
-                ':id'          => $id,
-                ':entity_type' => $entity_type,
-                ':entity_id'   => $entity_id
-            ]);
-            $log = $stmt->fetch();
-
-            if (!$log) {
-                return null;
-            }
-
-            $log['old_data'] = $log['old_data'] !== null ? json_decode($log['old_data'], true) : null;
-            $log['new_data'] = $log['new_data'] !== null ? json_decode($log['new_data'], true) : null;
-
-            return $log;
-            // @codeCoverageIgnoreStart
-        } catch (PDOException $e) {
-            error_log("GraphDatabase fetch audit log by id failed: " . $e->getMessage());
-            return null;
-        }
-        // @codeCoverageIgnoreEnd
-    }
-
-    public function fetchAuditLogsAfterTimestamp(string $timestamp): array
+    public function getAuditLogsAfterTimestamp(string $timestamp): array
     {
         try {
             $db   = $this->getDb();
@@ -506,7 +409,7 @@ class Database
         // @codeCoverageIgnoreEnd
     }
 
-    public function fetchLatestNodeStatus(string $nodeId): ?array
+    public function getLatestNodeStatus(string $nodeId): ?array
     {
         try {
             $db   = $this->getDb();
@@ -533,7 +436,7 @@ class Database
         // @codeCoverageIgnoreEnd
     }
 
-    public function fetchNodeStatusHistory(string $nodeId): array
+    public function getNodeStatusHistory(string $nodeId): array
     {
         try {
             $db   = $this->getDb();
@@ -553,7 +456,7 @@ class Database
         // @codeCoverageIgnoreEnd
     }
 
-    public function fetchAllLatestStatuses(): array
+    public function getAllLatestStatuses(): array
     {
         try {
             $db   = $this->getDb();

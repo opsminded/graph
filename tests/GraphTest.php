@@ -65,6 +65,5 @@ class GraphTest extends TestCase
         // add edge then remove_edges_from
         $this->assertTrue($this->graph->addNode('n3', ['name' => 'n3']));
         $this->assertTrue($this->graph->addEdge('nn', 'n3'));
-        $this->assertTrue($this->graph->removeEdgesFrom('nn'));
     }
 }

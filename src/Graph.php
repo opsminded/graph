@@ -50,7 +50,7 @@ class Graph
     public function addNode(string $id, array $data): bool
     {
         if ($this->database->nodeExists($id)) {
-            return false;
+            return true;
         }
 
         $data['id'] = $id;
@@ -166,7 +166,7 @@ class Graph
 
     public function getAuditHistory(?string $entity_type = null, ?string $entity_id = null): array
     {
-        return $this->database->fetchAuditHistory($entity_type, $entity_id);
+        return $this->database->getAuditHistory($entity_type, $entity_id);
     }
 
     public function setNodeStatus(string $node_id, string $status): bool
@@ -182,7 +182,7 @@ class Graph
 
     public function getNodeStatus(string $node_id): ?NodeStatus
     {
-        $row = $this->database->fetchLatestNodeStatus($node_id);
+        $row = $this->database->getLatestNodeStatus($node_id);
 
         if (!$row) {
             return null;
@@ -193,7 +193,7 @@ class Graph
 
     public function getNodeStatusHistory(string $node_id): array
     {
-        $rows = $this->database->fetchNodeStatusHistory($node_id);
+        $rows = $this->database->getNodeStatusHistory($node_id);
 
         $statuses = [];
         foreach ($rows as $row) {
@@ -205,7 +205,7 @@ class Graph
 
     public function status(): array
     {
-        $rows = $this->database->fetchAllLatestStatuses();
+        $rows = $this->database->getAllLatestStatuses();
 
         $statuses = [];
         foreach ($rows as $row) {
@@ -213,16 +213,5 @@ class Graph
         }
 
         return $statuses;
-    }
-
-    public function removeEdgesFrom(string $source): bool
-    {
-        $deleted = $this->database->deleteEdgesFrom($source);
-
-        foreach ($deleted as $edge) {
-            $this->auditLog('edge', $edge['source'] . '->' . $edge['target'], 'delete', null, null);
-        }
-
-        return count($deleted) > 0;
     }
 }
