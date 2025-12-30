@@ -1,0 +1,15 @@
+{
+  "name": "opsminded/graph",
+  "description": "A simple PHP graph library",
+  "type": "library",
+  "license": "MIT",
+  "autoload": {
+    "psr-4": {"Opsminded\\Graph\\": "src/"}
+  },
+  "require": {
+    "php": ">=8.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^9.0"
+  }
+}
