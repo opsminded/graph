@@ -11,6 +11,9 @@ class Graph
 {
     private Database $database;
 
+    private const ALLOWED_CATEGORIES = ['business', 'application', 'infrastructure'];
+    private const ALLOWED_TYPES = ['server', 'database', 'application', 'network'];
+
     public function __construct(string $db_file)
     {
         $this->database = new Database($db_file);
@@ -47,11 +50,58 @@ class Graph
         return $this->database->nodeExists($id);
     }
 
+    /**
+     * Validate node data to ensure category and type are present and valid
+     *
+     * @throws RuntimeException if validation fails
+     */
+    private function validateNodeData(array $data, bool $requireAll = true): void
+    {
+        // Check category
+        if ($requireAll && !isset($data['category'])) {
+            throw new RuntimeException('Node category is required');
+        }
+        if (isset($data['category']) && !in_array($data['category'], self::ALLOWED_CATEGORIES, true)) {
+            throw new RuntimeException(
+                'Invalid category. Allowed values: ' . implode(', ', self::ALLOWED_CATEGORIES)
+            );
+        }
+
+        // Check type
+        if ($requireAll && !isset($data['type'])) {
+            throw new RuntimeException('Node type is required');
+        }
+        if (isset($data['type']) && !in_array($data['type'], self::ALLOWED_TYPES, true)) {
+            throw new RuntimeException(
+                'Invalid type. Allowed values: ' . implode(', ', self::ALLOWED_TYPES)
+            );
+        }
+    }
+
+    /**
+     * Get allowed categories
+     */
+    public static function getAllowedCategories(): array
+    {
+        return self::ALLOWED_CATEGORIES;
+    }
+
+    /**
+     * Get allowed types
+     */
+    public static function getAllowedTypes(): array
+    {
+        return self::ALLOWED_TYPES;
+    }
+
     public function addNode(string $id, array $data): bool
     {
         if ($this->database->nodeExists($id)) {
             return true;
         }
+
+        // Validate that category and type are present and valid
+        $this->validateNodeData($data, true);
 
         $data['id'] = $id;
         $result     = $this->database->insertNode($id, $data);
@@ -66,6 +116,9 @@ class Graph
     public function updateNode(string $id, array $data): bool
     {
         $old_data = $this->database->getNode($id);
+
+        // Validate category and type if they're being updated (not required for updates)
+        $this->validateNodeData($data, false);
 
         $data['id'] = $id;
         $rowCount   = $this->database->updateNode($id, $data);

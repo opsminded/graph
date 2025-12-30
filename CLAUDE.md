@@ -6,6 +6,7 @@
 
 **Key Features:**
 - Graph data structure management (nodes and edges)
+- **Required node attributes validation** (category and type)
 - SQLite-based persistence layer
 - Comprehensive audit logging for all operations
 - Node status tracking with history
@@ -82,16 +83,28 @@
 
 ### 1. Graph.php (src/Graph.php:1)
 
-**Purpose:** High-level abstraction for graph operations.
+**Purpose:** High-level abstraction for graph operations with enforced validation.
+
+**Node Validation Rules:**
+
+All nodes **MUST** have two required attributes:
+- **`category`**: Must be one of: `business`, `application`, `infrastructure`
+- **`type`**: Must be one of: `server`, `database`, `application`, `network`
+
+These are enforced at creation time and validated during updates.
 
 **Key Methods:**
 
 ```php
 // Node Operations
-addNode(string $id, array $data = []): bool
-updateNode(string $id, array $data): bool
+addNode(string $id, array $data = []): bool  // Requires 'category' and 'type' in $data
+updateNode(string $id, array $data): bool    // Validates 'category' and 'type' if provided
 removeNode(string $id): bool
 nodeExists(string $id): bool
+
+// Validation Helpers
+static getAllowedCategories(): array  // Returns ['business', 'application', 'infrastructure']
+static getAllowedTypes(): array       // Returns ['server', 'database', 'application', 'network']
 
 // Edge Operations
 addEdge(string $source, string $target): bool
@@ -120,14 +133,28 @@ use Opsminded\Graph\Graph;
 
 $graph = new Graph('/path/to/graph.db');
 
-// Add nodes
-$graph->addNode('user1', ['name' => 'John Doe', 'email' => 'john@example.com']);
-$graph->addNode('user2', ['name' => 'Jane Smith']);
+// Get allowed values
+$allowedCategories = Graph::getAllowedCategories(); // ['business', 'application', 'infrastructure']
+$allowedTypes = Graph::getAllowedTypes();           // ['server', 'database', 'application', 'network']
+
+// Add nodes (category and type are REQUIRED)
+$graph->addNode('user1', [
+    'category' => 'application',
+    'type' => 'server',
+    'name' => 'John Doe',
+    'email' => 'john@example.com'
+]);
+
+$graph->addNode('user2', [
+    'category' => 'business',
+    'type' => 'application',
+    'name' => 'Jane Smith'
+]);
 
 // Add edges
 $graph->addEdge('user1', 'user2');
 
-// Update node
+// Update node (category and type are validated if provided)
 $graph->updateNode('user1', ['active' => true]);
 
 // Track status
@@ -414,10 +441,25 @@ AuditContext::set('admin_user', '10.0.0.1');
 // Create graph instance
 $graph = new Graph('/var/data/my-graph.db');
 
-// Build a social network
-$graph->addNode('alice', ['name' => 'Alice', 'age' => 30]);
-$graph->addNode('bob', ['name' => 'Bob', 'age' => 25]);
-$graph->addNode('charlie', ['name' => 'Charlie', 'age' => 35]);
+// Build a social network (category and type are required)
+$graph->addNode('alice', [
+    'category' => 'business',
+    'type' => 'application',
+    'name' => 'Alice',
+    'age' => 30
+]);
+$graph->addNode('bob', [
+    'category' => 'business',
+    'type' => 'application',
+    'name' => 'Bob',
+    'age' => 25
+]);
+$graph->addNode('charlie', [
+    'category' => 'business',
+    'type' => 'application',
+    'name' => 'Charlie',
+    'age' => 35
+]);
 
 $graph->addEdge('alice', 'bob');      // Alice knows Bob
 $graph->addEdge('bob', 'charlie');    // Bob knows Charlie
@@ -442,14 +484,14 @@ print_r($history);
 ```bash
 #!/bin/bash
 
-# Create nodes
+# Create nodes (category and type are required)
 curl -X POST http://localhost/index.php/node \
   -H "Content-Type: application/json" \
-  -d '{"id": "product1", "name": "Laptop", "price": 999}'
+  -d '{"id": "product1", "category": "application", "type": "server", "name": "Laptop", "price": 999}'
 
 curl -X POST http://localhost/index.php/node \
   -H "Content-Type: application/json" \
-  -d '{"id": "category1", "name": "Electronics"}'
+  -d '{"id": "category1", "category": "business", "type": "application", "name": "Electronics"}'
 
 # Create relationship
 curl -X POST http://localhost/index.php/edge \
@@ -470,8 +512,16 @@ $db = new Database('/path/to/db');
 try {
     $db->beginTransaction();
 
-    $db->insertNode('node1', ['data' => 'value1']);
-    $db->insertNode('node2', ['data' => 'value2']);
+    $db->insertNode('node1', [
+        'category' => 'infrastructure',
+        'type' => 'server',
+        'data' => 'value1'
+    ]);
+    $db->insertNode('node2', [
+        'category' => 'application',
+        'type' => 'database',
+        'data' => 'value2'
+    ]);
     $db->insertEdge('node1', 'node2');
 
     $db->commit();
@@ -487,10 +537,17 @@ try {
 
 ### Node Data Format
 
-Nodes store arbitrary data as JSON in the `data` column:
+Nodes store data as JSON in the `data` column. **All nodes must include `category` and `type` attributes:**
 
+**Required Attributes:**
+- `category`: Must be one of: `business`, `application`, `infrastructure`
+- `type`: Must be one of: `server`, `database`, `application`, `network`
+
+**Example:**
 ```php
 $graph->addNode('user1', [
+    'category' => 'business',        // REQUIRED
+    'type' => 'application',         // REQUIRED
     'name' => 'John Doe',
     'email' => 'john@example.com',
     'metadata' => [
@@ -498,6 +555,15 @@ $graph->addNode('user1', [
         'tags' => ['customer', 'premium']
     ]
 ]);
+```
+
+**Validation Errors:**
+```php
+// This will throw RuntimeException: "Node category is required"
+$graph->addNode('user1', ['name' => 'John Doe']);
+
+// This will throw RuntimeException: "Invalid category. Allowed values: business, application, infrastructure"
+$graph->addNode('user1', ['category' => 'invalid', 'type' => 'server']);
 ```
 
 ### Audit Log Format
@@ -523,21 +589,23 @@ Status changes are tracked with:
 
 ## Key Design Decisions
 
-1. **SQLite Choice**: Lightweight, file-based database suitable for small to medium graphs. No separate database server required.
+1. **Required Node Attributes**: All nodes must have `category` and `type` attributes with predefined allowed values. This enforces a consistent classification scheme across the graph.
 
-2. **JSON Storage**: Node data stored as JSON for flexible, schema-less data structures.
+2. **SQLite Choice**: Lightweight, file-based database suitable for small to medium graphs. No separate database server required.
 
-3. **Audit Trail**: All modifications automatically logged for compliance and debugging.
+3. **JSON Storage**: Node data stored as JSON for flexible, schema-less data structures (beyond the required category/type).
 
-4. **Foreign Keys**: Cascading deletes ensure referential integrity (deleting a node removes its edges).
+4. **Audit Trail**: All modifications automatically logged for compliance and debugging.
 
-5. **Global Context**: AuditContext allows implicit tracking without passing user/IP to every method.
+5. **Foreign Keys**: Cascading deletes ensure referential integrity (deleting a node removes its edges).
 
-6. **Idempotent Operations**: Using `INSERT OR IGNORE` prevents duplicate errors on retry.
+6. **Global Context**: AuditContext allows implicit tracking without passing user/IP to every method.
 
-7. **Strict Typing**: PHP 8 strict types catch errors early and improve IDE support.
+7. **Idempotent Operations**: Using `INSERT OR IGNORE` prevents duplicate errors on retry.
 
-8. **Transaction Support**: Enables atomic multi-operation updates.
+8. **Strict Typing**: PHP 8 strict types catch errors early and improve IDE support.
+
+9. **Transaction Support**: Enables atomic multi-operation updates.
 
 ---
 
@@ -579,14 +647,22 @@ All errors are logged via PHP's `error_log()`:
 - Query execution errors
 - Transaction rollbacks
 - Invalid operations
+- **Validation errors** (missing or invalid category/type)
 
 Example error patterns:
 ```php
 try {
     $graph->addNode('node1', $data);
+} catch (RuntimeException $e) {
+    // Validation errors (missing category/type or invalid values)
+    echo "Validation failed: " . $e->getMessage();
+    // Examples:
+    // - "Node category is required"
+    // - "Node type is required"
+    // - "Invalid category. Allowed values: business, application, infrastructure"
+    // - "Invalid type. Allowed values: server, database, application, network"
 } catch (Exception $e) {
-    // Error is logged automatically
-    // Handle gracefully
+    // Other errors (database, etc.) are logged automatically
     echo "Failed to add node: " . $e->getMessage();
 }
 ```

@@ -33,10 +33,18 @@ class GraphTest extends TestCase
 
     public function testAddNodeAndEdgeAndStatus()
     {
-        $this->assertTrue($this->graph->addNode('n1', ['name' => 'N1']));
+        $this->assertTrue($this->graph->addNode('n1', [
+            'category' => 'business',
+            'type' => 'application',
+            'name' => 'N1'
+        ]));
         $this->assertTrue($this->graph->nodeExists('n1'));
 
-        $this->assertTrue($this->graph->addNode('n2', ['name' => 'N2']));
+        $this->assertTrue($this->graph->addNode('n2', [
+            'category' => 'infrastructure',
+            'type' => 'server',
+            'name' => 'N2'
+        ]));
         $this->assertTrue($this->graph->addEdge('n1', 'n2'));
         $this->assertTrue($this->graph->edgeExists('n1', 'n2'));
 
@@ -59,11 +67,75 @@ class GraphTest extends TestCase
         $this->assertFalse($this->graph->removeNode('noexist'));
 
         // create node and update
-        $this->assertTrue($this->graph->addNode('nn', ['name' => 'nn']));
+        $this->assertTrue($this->graph->addNode('nn', [
+            'category' => 'application',
+            'type' => 'database',
+            'name' => 'nn'
+        ]));
         $this->assertTrue($this->graph->updateNode('nn', ['name' => 'nn2']));
 
         // add edge then remove_edges_from
-        $this->assertTrue($this->graph->addNode('n3', ['name' => 'n3']));
+        $this->assertTrue($this->graph->addNode('n3', [
+            'category' => 'business',
+            'type' => 'network',
+            'name' => 'n3'
+        ]));
         $this->assertTrue($this->graph->addEdge('nn', 'n3'));
+    }
+
+    public function testValidationRequiresCategoryAndType()
+    {
+        // Missing category
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Node category is required');
+        $this->graph->addNode('node1', ['type' => 'server', 'name' => 'Test']);
+    }
+
+    public function testValidationRequiresType()
+    {
+        // Missing type
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Node type is required');
+        $this->graph->addNode('node1', ['category' => 'business', 'name' => 'Test']);
+    }
+
+    public function testValidationRejectsInvalidCategory()
+    {
+        // Invalid category
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Invalid category. Allowed values: business, application, infrastructure');
+        $this->graph->addNode('node1', ['category' => 'invalid', 'type' => 'server']);
+    }
+
+    public function testValidationRejectsInvalidType()
+    {
+        // Invalid type
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Invalid type. Allowed values: server, database, application, network');
+        $this->graph->addNode('node1', ['category' => 'business', 'type' => 'invalid']);
+    }
+
+    public function testValidationOnUpdateRejectsInvalidValues()
+    {
+        // Create valid node
+        $this->graph->addNode('node1', [
+            'category' => 'business',
+            'type' => 'application',
+            'name' => 'Test'
+        ]);
+
+        // Try to update with invalid category
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Invalid category');
+        $this->graph->updateNode('node1', ['category' => 'invalid']);
+    }
+
+    public function testGetAllowedValues()
+    {
+        $categories = Graph::getAllowedCategories();
+        $this->assertSame(['business', 'application', 'infrastructure'], $categories);
+
+        $types = Graph::getAllowedTypes();
+        $this->assertSame(['server', 'database', 'application', 'network'], $types);
     }
 }
