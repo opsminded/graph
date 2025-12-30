@@ -129,8 +129,19 @@ class Database
     {
         // Use INSERT OR IGNORE so calling insertNode on an existing id
         // will not error and will simply do nothing — return true.
-        $sql = "INSERT OR IGNORE INTO nodes (id, data) VALUES (:id, :data)";
-        return $this->insertNodeRaw($sql, $id, $data);
+        try {
+            $db  = $this->getDb();
+            $sql = "INSERT OR IGNORE INTO nodes (id, data) VALUES (:id, :data)";
+            $stmt = $db->prepare($sql);
+            $stmt->execute([
+                ':id'   => $id,
+                ':data' => json_encode($data, JSON_UNESCAPED_UNICODE)
+            ]);
+            return true;
+        } catch (PDOException $e) {
+            error_log("GraphDatabase insert node failed: " . $e->getMessage());
+            return false;
+        }
     }
 
     public function updateNode(string $id, array $data): int
@@ -633,29 +644,7 @@ class Database
     }
 
     // Restore support methods
-
-    public function insertNodeWithData(string $id, array $data): bool
-    {
-        $sql = "INSERT INTO nodes (id, data) VALUES (:id, :data)";
-        return $this->insertNodeRaw($sql, $id, $data);
-    }
-
-
-    private function insertNodeRaw(string $sql, string $id, array $data): bool
-    {
-        try {
-            $db   = $this->getDb();
-            $stmt = $db->prepare($sql);
-            $stmt->execute([
-                ':id'   => $id,
-                ':data' => json_encode($data, JSON_UNESCAPED_UNICODE)
-            ]);
-            return true;
-        } catch (PDOException $e) {
-            error_log("GraphDatabase insert node failed: " . $e->getMessage());
-            return false;
-        }
-    }
+    
 
     // Backup support
 
