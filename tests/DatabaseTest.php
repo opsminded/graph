@@ -64,7 +64,10 @@ class DatabaseTest extends TestCase
         $this->assertTrue($this->db->edgeExists($a, $b));
         $this->assertTrue($this->db->edgeExists($b, $a));
 
-        $this->assertEquals(1, $this->db->updateEdge($eid, $a, $b, ['label' => 'y', 'source' => $a, 'target' => $b]));
+        // Library no longer provides updateEdge; simulate update by deleting and inserting
+        [$cntBefore,] = $this->db->deleteEdge($eid);
+        $this->assertEquals(1, $cntBefore);
+        $this->assertTrue($this->db->insertEdge($eid, $a, $b, ['label' => 'y', 'source' => $a, 'target' => $b]));
 
         [$cnt, $old] = $this->db->deleteEdge($eid);
         $this->assertEquals(1, $cnt);
@@ -94,14 +97,15 @@ class DatabaseTest extends TestCase
 
     public function testInsertOrIgnoreAndFetchAll()
     {
-        $this->db->insertNodeOrIgnore('nx', ['id' => 'nx', 'v' => 1]);
-        $this->db->insertNodeOrIgnore('nx', ['id' => 'nx', 'v' => 2]);
+        $this->db->insertNode('nx', ['id' => 'nx', 'v' => 1]);
+        $this->db->insertNode('nx', ['id' => 'nx', 'v' => 2]);
 
         $nodes = $this->db->fetchAllNodes();
         $this->assertNotEmpty($nodes);
 
-        $this->db->insertEdgeOrIgnore('ex', 'nx', 'nx', ['id' => 'ex', 'source' => 'nx', 'target' => 'nx']);
-        $this->db->insertEdgeOrIgnore('ex', 'nx', 'nx', ['id' => 'ex', 'source' => 'nx', 'target' => 'nx']);
+        // `insertEdge` is idempotent (INSERT OR IGNORE); calling twice is safe
+        $this->db->insertEdge('ex', 'nx', 'nx', ['id' => 'ex', 'source' => 'nx', 'target' => 'nx']);
+        $this->db->insertEdge('ex', 'nx', 'nx', ['id' => 'ex', 'source' => 'nx', 'target' => 'nx']);
 
         $edges = $this->db->fetchAllEdges();
         $this->assertNotEmpty($edges);
@@ -144,7 +148,10 @@ class DatabaseTest extends TestCase
         $this->db->insertNode('nB', ['id' => 'nB']);
         $this->db->insertEdge('ed1', 'nA', 'nB', ['id' => 'ed1', 'source' => 'nA', 'target' => 'nB']);
 
-        $this->assertEquals(1, $this->db->updateEdge('ed1', 'nA', 'nB', ['id' => 'ed1', 'source' => 'nA', 'target' => 'nB', 'label' => 'ok']));
+        // No updateEdge method — replace by delete + insert to simulate update
+        [$cntDel,] = $this->db->deleteEdge('ed1');
+        $this->assertEquals(1, $cntDel);
+        $this->assertTrue($this->db->insertEdge('ed1', 'nA', 'nB', ['id' => 'ed1', 'source' => 'nA', 'target' => 'nB', 'label' => 'ok']));
 
         $this->assertTrue($this->db->beginTransaction());
         $this->assertTrue($this->db->commit());
@@ -158,24 +165,6 @@ class DatabaseTest extends TestCase
         $path = $this->db->getDbFilePath();
         $this->assertSame($this->dbFile, $path);
 
-        // create a named backup
-        $res1 = $this->db->createBackup('dupbackup');
-        $this->assertArrayHasKey('success', $res1);
-        $this->assertTrue($res1['success']);
-        $this->assertFileExists($res1['file']);
-
-        // attempt to create the same backup again should return error
-        $res2 = $this->db->createBackup('dupbackup');
-        $this->assertArrayHasKey('success', $res2);
-        $this->assertFalse($res2['success']);
-        $this->assertStringContainsString('already exists', $res2['error']);
-    }
-
-    public function testBackupCreatesFile()
-    {
-        $res = $this->db->createBackup('testbackup');
-        $this->assertArrayHasKey('success', $res);
-        $this->assertTrue($res['success']);
-        $this->assertFileExists($res['file']);
+        // Backup functionality was removed from the simplified library.
     }
 }

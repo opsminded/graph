@@ -23,22 +23,6 @@ class AuditContext
     }
 
     /**
-     * Set only the user ID
-     */
-    public static function setUser(?string $user_id): void
-    {
-        self::$user_id = $user_id;
-    }
-
-    /**
-     * Set only the IP address
-     */
-    public static function setIp(?string $ip_address): void
-    {
-        self::$ip_address = $ip_address;
-    }
-
-    /**
      * Get the current user ID
      */
     public static function getUser(): ?string

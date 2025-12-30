@@ -16,34 +16,6 @@ class Graph
         $this->database = new Database($db_file);
     }
 
-    public function auditLog(
-        string $entity_type,
-        string $entity_id,
-        string $action,
-        ?array $old_data = null,
-        ?array $new_data = null,
-        ?string $user_id = null,
-        ?string $ip_address = null
-    ): bool {
-        // Use global audit context if user_id/ip_address not provided
-        if ($user_id === null) {
-            $user_id = AuditContext::getUser();
-        }
-        if ($ip_address === null) {
-            $ip_address = AuditContext::getIp();
-        }
-
-        return $this->database->insertAuditLog(
-            $entity_type,
-            $entity_id,
-            $action,
-            $old_data,
-            $new_data,
-            $user_id,
-            $ip_address
-        );
-    }
-
     public function get(): array
     {
         $nodesData = $this->database->fetchAllNodes();
@@ -196,143 +168,37 @@ class Graph
         return true;
     }
 
-    public function createBackup(?string $backup_name = null): array
-    {
-        $result = $this->database->createBackup($backup_name);
-
-        // Log the backup if successful
-        if ($result['success']) {
-            $this->auditLog('system', 'graph', 'backup', null, [
-                'backup_file' => $result['file'],
-                'backup_name' => $result['backup_name'],
-                'file_size'   => $result['file_size']
-            ]);
+    public function auditLog(
+        string $entity_type,
+        string $entity_id,
+        string $action,
+        ?array $old_data = null,
+        ?array $new_data = null,
+        ?string $user_id = null,
+        ?string $ip_address = null
+    ): bool {
+        // Use global audit context if user_id/ip_address not provided
+        if ($user_id === null) {
+            $user_id = AuditContext::getUser();
+        }
+        if ($ip_address === null) {
+            $ip_address = AuditContext::getIp();
         }
 
-        return $result;
-    }
-
-    public function restoreToTimestamp(string $timestamp): bool
-    {
-        try {
-            // Create backup before restoring
-            $backup_name   = 'pre_restore_timestamp_' . str_replace([' ', ':'], ['_', '-'], $timestamp);
-            $backup_result = $this->database->createBackup($backup_name);
-            if (!$backup_result['success']) {
-                // @codeCoverageIgnoreStart
-                error_log("Failed to create backup before restore: " . ($backup_result['error'] ?? 'Unknown error'));
-                return false;
-                // @codeCoverageIgnoreEnd
-            }
-
-            // Log the backup
-            $this->auditLog('system', 'graph', 'backup', null, [
-                'backup_file' => $backup_result['file'],
-                'backup_name' => $backup_result['backup_name'],
-                'file_size'   => $backup_result['file_size']
-            ]);
-
-            // Perform the restore
-            $result = $this->database->restoreToTimestamp($timestamp);
-
-            // Log the restore operation if successful
-            if ($result) {
-                $logs = $this->database->fetchAuditLogsAfterTimestamp($timestamp);
-                $this->auditLog('system', 'graph', 'restore_to_timestamp', null, [
-                    'timestamp'           => $timestamp,
-                    'operations_reversed' => count($logs)
-                ]);
-            }
-
-            return $result;
-            // @codeCoverageIgnoreStart
-        } catch (Exception $e) {
-            error_log("Graph restore to timestamp failed: " . $e->getMessage());
-            return false;
-        }
-        // @codeCoverageIgnoreEnd
+        return $this->database->insertAuditLog(
+            $entity_type,
+            $entity_id,
+            $action,
+            $old_data,
+            $new_data,
+            $user_id,
+            $ip_address
+        );
     }
 
     public function getAuditHistory(?string $entity_type = null, ?string $entity_id = null): array
     {
         return $this->database->fetchAuditHistory($entity_type, $entity_id);
-    }
-
-    public function restoreEntity(string $entity_type, string $entity_id, int $audit_log_id): bool
-    {
-        try {
-            // Create backup before restoring
-            $timestamp   = date('Y-m-d_H-i-s');
-            $backup_name = 'pre_restore_entity_' . $entity_type . '_' . $entity_id . '_' .
-                $timestamp . '_' . rand(1000, 9999);
-            $backup_result = $this->database->createBackup($backup_name);
-            if (!$backup_result['success']) {
-                // @codeCoverageIgnoreStart
-                error_log("Failed to create backup before restore: " . ($backup_result['error'] ?? 'Unknown error'));
-                return false;
-                // @codeCoverageIgnoreEnd
-            }
-
-            // Log the backup
-            $this->auditLog('system', 'graph', 'backup', null, [
-                'backup_file' => $backup_result['file'],
-                'backup_name' => $backup_result['backup_name'],
-                'file_size'   => $backup_result['file_size']
-            ]);
-
-            $this->database->beginTransaction();
-
-            // Get the audit log entry
-            $log = $this->database->fetchAuditLogById($audit_log_id, $entity_type, $entity_id);
-
-            if (!$log) {
-                $this->database->rollBack();
-                return false;
-            }
-
-            $old_data = $log['old_data'];
-            $action   = $log['action'];
-
-            // Reverse the operation
-            if ($entity_type === 'node') {
-                if ($action === 'delete' && $old_data !== null) {
-                    // Restore deleted node
-                    $this->database->insertNodeWithData($entity_id, $old_data);
-                    $this->auditLog('node', $entity_id, 'restore', null, $old_data);
-                } elseif ($action === 'create') {
-                    // Remove created node
-                    $this->database->deleteNode($entity_id);
-                    $this->auditLog('node', $entity_id, 'restore_delete', $old_data, null);
-                } elseif ($action === 'update' && $old_data !== null) {
-                    // Restore to old data
-                    $this->database->updateNode($entity_id, $old_data);
-                    $this->auditLog('node', $entity_id, 'restore', null, $old_data);
-                }
-            } elseif ($entity_type === 'edge') {
-                if ($action === 'delete' && $old_data !== null) {
-                    // Restore deleted edge
-                    $this->database->insertEdge($entity_id, $old_data['source'], $old_data['target'], $old_data);
-                    $this->auditLog('edge', $entity_id, 'restore', null, $old_data);
-                } elseif ($action === 'create') {
-                    // Remove created edge
-                    $this->database->deleteEdge($entity_id);
-                    $this->auditLog('edge', $entity_id, 'restore_delete', $old_data, null);
-                } elseif ($action === 'update' && $old_data !== null) {
-                    // Restore to old data
-                    $this->database->updateEdge($entity_id, $old_data['source'], $old_data['target'], $old_data);
-                    $this->auditLog('edge', $entity_id, 'restore', null, $old_data);
-                }
-            }
-
-            $this->database->commit();
-            return true;
-            // @codeCoverageIgnoreStart
-        } catch (Exception $e) {
-            $this->database->rollBack();
-            error_log("Graph restore entity failed: " . $e->getMessage());
-            return false;
-        }
-        // @codeCoverageIgnoreEnd
     }
 
     public function setNodeStatus(string $node_id, string $status): bool

@@ -97,6 +97,8 @@ class Database
             $this->db = new PDO('sqlite:' . $this->db_file);
             $this->db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $this->db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+            // Ensure SQLite enforces foreign key constraints (ON DELETE CASCADE)
+            $this->db->exec('PRAGMA foreign_keys = ON');
             // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             throw new RuntimeException("Database connection failed: " . $e->getMessage());
@@ -125,20 +127,10 @@ class Database
 
     public function insertNode(string $id, array $data): bool
     {
-        try {
-            $db   = $this->getDb();
-            $stmt = $db->prepare("INSERT INTO nodes (id, data) VALUES (:id, :data)");
-            $stmt->execute([
-                ':id'   => $id,
-                ':data' => json_encode($data, JSON_UNESCAPED_UNICODE)
-            ]);
-            return true;
-            // @codeCoverageIgnoreStart
-        } catch (PDOException $e) {
-            error_log("GraphDatabase insert node failed: " . $e->getMessage());
-            return false;
-        }
-        // @codeCoverageIgnoreEnd
+        // Use INSERT OR IGNORE so calling insertNode on an existing id
+        // will not error and will simply do nothing — return true.
+        $sql = "INSERT OR IGNORE INTO nodes (id, data) VALUES (:id, :data)";
+        return $this->insertNodeRaw($sql, $id, $data);
     }
 
     public function updateNode(string $id, array $data): int
@@ -253,8 +245,10 @@ class Database
     public function insertEdge(string $id, string $source, string $target, array $data): bool
     {
         try {
-            $db   = $this->getDb();
-            $stmt = $db->prepare("INSERT INTO edges (id, source, target, data) VALUES (:id, :source, :target, :data)");
+            $db  = $this->getDb();
+            $sql = "INSERT OR IGNORE INTO edges (id, source, target, data)"
+                . " VALUES (:id, :source, :target, :data)";
+            $stmt = $db->prepare($sql);
             $stmt->execute([
                 ':id'     => $id,
                 ':source' => $source,
@@ -264,7 +258,7 @@ class Database
             return true;
             // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
-            error_log("GraphDatabase insert edge failed: " . $e->getMessage());
+            error_log("GraphDatabase insert edge or ignore failed: " . $e->getMessage());
             return false;
         }
         // @codeCoverageIgnoreEnd
@@ -642,82 +636,25 @@ class Database
 
     public function insertNodeWithData(string $id, array $data): bool
     {
+        $sql = "INSERT INTO nodes (id, data) VALUES (:id, :data)";
+        return $this->insertNodeRaw($sql, $id, $data);
+    }
+
+
+    private function insertNodeRaw(string $sql, string $id, array $data): bool
+    {
         try {
             $db   = $this->getDb();
-            $stmt = $db->prepare("INSERT INTO nodes (id, data) VALUES (:id, :data)");
+            $stmt = $db->prepare($sql);
             $stmt->execute([
                 ':id'   => $id,
                 ':data' => json_encode($data, JSON_UNESCAPED_UNICODE)
             ]);
             return true;
-            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
-            error_log("GraphDatabase insert node with data failed: " . $e->getMessage());
+            error_log("GraphDatabase insert node failed: " . $e->getMessage());
             return false;
         }
-        // @codeCoverageIgnoreEnd
-    }
-
-    public function insertNodeOrIgnore(string $id, array $data): bool
-    {
-        try {
-            $db   = $this->getDb();
-            $stmt = $db->prepare("INSERT OR IGNORE INTO nodes (id, data) VALUES (:id, :data)");
-            $stmt->execute([
-                ':id'   => $id,
-                ':data' => json_encode($data, JSON_UNESCAPED_UNICODE)
-            ]);
-            return true;
-            // @codeCoverageIgnoreStart
-        } catch (PDOException $e) {
-            error_log("GraphDatabase insert node or ignore failed: " . $e->getMessage());
-            return false;
-        }
-        // @codeCoverageIgnoreEnd
-    }
-
-    public function insertEdgeOrIgnore(string $id, string $source, string $target, array $data): bool
-    {
-        try {
-            $db  = $this->getDb();
-            $sql = "INSERT OR IGNORE INTO edges (id, source, target, data)"
-                . " VALUES (:id, :source, :target, :data)";
-            $stmt = $db->prepare($sql);
-            $stmt->execute([
-                ':id'     => $id,
-                ':source' => $source,
-                ':target' => $target,
-                ':data'   => json_encode($data, JSON_UNESCAPED_UNICODE)
-            ]);
-            return true;
-            // @codeCoverageIgnoreStart
-        } catch (PDOException $e) {
-            error_log("GraphDatabase insert edge or ignore failed: " . $e->getMessage());
-            return false;
-        }
-        // @codeCoverageIgnoreEnd
-    }
-
-    public function updateEdge(string $id, string $source, string $target, array $data): int
-    {
-        try {
-            $db  = $this->getDb();
-            $sql = "UPDATE edges SET source = :source, target = :target, data = :data,"
-                . " updated_at = CURRENT_TIMESTAMP WHERE id = :id";
-            $stmt = $db->prepare($sql);
-            $stmt->execute([
-                ':id'     => $id,
-                ':source' => $source,
-                ':target' => $target,
-                ':data'   => json_encode($data, JSON_UNESCAPED_UNICODE)
-            ]);
-            return $stmt->rowCount();
-            // @codeCoverageIgnoreStart
-        } catch (PDOException $e) {
-            error_log("GraphDatabase update edge failed: " . $e->getMessage());
-            return 0;
-        }
-        // @codeCoverageIgnoreEnd
     }
 
     // Backup support
@@ -730,123 +667,5 @@ class Database
     public function getDbFilePath(): string
     {
         return $this->db_file;
-    }
-
-    public function createBackup(?string $backup_name = null): array
-    {
-        $this->closeConnection(); // Close existing connection before backup
-
-        try {
-            // Generate backup filename
-            if ($backup_name === null) {
-                $backup_name = 'backup_' . date('Y-m-d_H-i-s') . '_' . rand(1000, 9999);
-            }
-
-            $backup_dir = dirname($this->db_file) . '/backups';
-            if (!is_dir($backup_dir)) {
-                // @codeCoverageIgnoreStart
-                if (!mkdir($backup_dir, 0755, true)) {
-                    throw new RuntimeException("Failed to create backup directory");
-                }
-                // @codeCoverageIgnoreEnd
-            }
-
-            $backup_file = $backup_dir . '/' . $backup_name . '.db';
-
-            // Check if backup already exists
-            if (file_exists($backup_file)) {
-                return [
-                    'success' => false,
-                    'error'   => 'Backup file already exists',
-                    'file'    => $backup_file
-                ];
-            }
-
-            // Simple file copy
-            // @codeCoverageIgnoreStart
-            if (!copy($this->db_file, $backup_file)) {
-                throw new RuntimeException("Failed to copy database file");
-            }
-            // @codeCoverageIgnoreEnd
-
-            $file_size = filesize($backup_file);
-
-            return [
-                'success'     => true,
-                'file'        => $backup_file,
-                'backup_name' => $backup_name,
-                'file_size'   => $file_size
-            ];
-            // @codeCoverageIgnoreStart
-        } catch (Exception $e) {
-            error_log("GraphDatabase create backup failed: " . $e->getMessage());
-            return [
-                'success' => false,
-                'error'   => $e->getMessage()
-            ];
-        }
-        // @codeCoverageIgnoreEnd
-    }
-
-    public function restoreToTimestamp(string $timestamp): bool
-    {
-        try {
-            $this->beginTransaction();
-
-            // Get all audit logs after the specified timestamp in reverse order
-            $logs = $this->fetchAuditLogsAfterTimestamp($timestamp);
-
-            // Reverse each operation
-            foreach ($logs as $log) {
-                $entity_type = $log['entity_type'];
-                $entity_id   = $log['entity_id'];
-                $action      = $log['action'];
-                $old_data    = $log['old_data'];
-
-                // Skip restore actions to avoid infinite loops
-                if ($action === 'restore' || $action === 'restore_delete') {
-                    continue;
-                }
-
-                if ($entity_type === 'node') {
-                    if ($action === 'delete' && $old_data !== null) {
-                        // Restore deleted node
-                        $this->insertNodeOrIgnore($entity_id, $old_data);
-                    } elseif ($action === 'create') {
-                        // Remove created node (and its edges)
-                        $this->deleteEdgesByNode($entity_id);
-                        $this->deleteNode($entity_id);
-                    } elseif ($action === 'update' && $old_data !== null) {
-                        // Restore to old data
-                        $this->updateNode($entity_id, $old_data);
-                    }
-                } elseif ($entity_type === 'edge') {
-                    if ($action === 'delete' && $old_data !== null) {
-                        // Restore deleted edge (only if both nodes exist)
-                        $source_exists = $this->nodeExists($old_data['source']);
-                        $target_exists = $this->nodeExists($old_data['target']);
-
-                        if ($source_exists && $target_exists) {
-                            $this->insertEdgeOrIgnore($entity_id, $old_data['source'], $old_data['target'], $old_data);
-                        }
-                    } elseif ($action === 'create') {
-                        // Remove created edge
-                        $this->deleteEdge($entity_id);
-                    } elseif ($action === 'update' && $old_data !== null) {
-                        // Restore to old data
-                        $this->updateEdge($entity_id, $old_data['source'], $old_data['target'], $old_data);
-                    }
-                }
-            }
-
-            $this->commit();
-            return true;
-            // @codeCoverageIgnoreStart
-        } catch (Exception $e) {
-            $this->rollBack();
-            error_log("GraphDatabase restore to timestamp failed: " . $e->getMessage());
-            return false;
-        }
-        // @codeCoverageIgnoreEnd
     }
 }
