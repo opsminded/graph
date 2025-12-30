@@ -1,18 +1,22 @@
-<?php declare (strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Opsminded\Graph;
 
 use RuntimeException;
 use Exception;
 
-class Graph {
-    private GraphDatabase $database;
+class Graph
+{
+    private Database $database;
 
-    public function __construct(string $db_file) {
-        $this->database = new GraphDatabase($db_file);
+    public function __construct(string $db_file)
+    {
+        $this->database = new Database($db_file);
     }
 
-    public function audit_log(
+    public function auditLog(
         string $entity_type,
         string $entity_id,
         string $action,
@@ -23,10 +27,10 @@ class Graph {
     ): bool {
         // Use global audit context if user_id/ip_address not provided
         if ($user_id === null) {
-            $user_id = AuditContext::get_user();
+            $user_id = AuditContext::getUser();
         }
         if ($ip_address === null) {
-            $ip_address = AuditContext::get_ip();
+            $ip_address = AuditContext::getIp();
         }
 
         return $this->database->insertAuditLog(
@@ -40,7 +44,8 @@ class Graph {
         );
     }
 
-    public function get(): array {
+    public function get(): array
+    {
         $nodesData = $this->database->fetchAllNodes();
         $edgesData = $this->database->fetchAllEdges();
 
@@ -64,40 +69,44 @@ class Graph {
         ];
     }
 
-    public function node_exists(string $id): bool {
+    public function nodeExists(string $id): bool
+    {
         return $this->database->nodeExists($id);
     }
 
-    public function add_node(string $id, array $data): bool {
+    public function addNode(string $id, array $data): bool
+    {
         if ($this->database->nodeExists($id)) {
             return false;
         }
 
         $data['id'] = $id;
-        $result = $this->database->insertNode($id, $data);
+        $result     = $this->database->insertNode($id, $data);
 
         if ($result) {
-            $this->audit_log('node', $id, 'create', null, $data);
+            $this->auditLog('node', $id, 'create', null, $data);
         }
 
         return $result;
     }
 
-    public function update_node(string $id, array $data): bool {
+    public function updateNode(string $id, array $data): bool
+    {
         $old_data = $this->database->fetchNode($id);
 
         $data['id'] = $id;
-        $rowCount = $this->database->updateNode($id, $data);
+        $rowCount   = $this->database->updateNode($id, $data);
 
         if ($rowCount > 0) {
-            $this->audit_log('node', $id, 'update', $old_data, $data);
+            $this->auditLog('node', $id, 'update', $old_data, $data);
             return true;
         }
 
         return false;
     }
 
-    public function remove_node(string $id): bool {
+    public function removeNode(string $id): bool
+    {
         try {
             $this->database->beginTransaction();
 
@@ -113,19 +122,19 @@ class Graph {
 
             // Log each deleted edge
             foreach ($deletedEdges as $edge) {
-                $this->audit_log('edge', $edge['id'], 'delete', $edge['data'], null);
+                $this->auditLog('edge', $edge['id'], 'delete', $edge['data'], null);
             }
 
             // Delete the node
             [$rowCount, $_] = $this->database->deleteNode($id);
 
             if ($rowCount > 0) {
-                $this->audit_log('node', $id, 'delete', $old_data, null);
+                $this->auditLog('node', $id, 'delete', $old_data, null);
             }
 
             $this->database->commit();
             return $rowCount > 0;
-        // @codeCoverageIgnoreStart
+            // @codeCoverageIgnoreStart
         } catch (Exception $e) {
             $this->database->rollBack();
             error_log("Graph remove node failed: " . $e->getMessage());
@@ -134,73 +143,80 @@ class Graph {
         // @codeCoverageIgnoreEnd
     }
 
-    public function edge_exists_by_id(string $id): bool {
+    public function edgeExistsById(string $id): bool
+    {
         return $this->database->edgeExistsById($id);
     }
 
-    public function edge_exists(string $source, string $target): bool {
+    public function edgeExists(string $source, string $target): bool
+    {
         return $this->database->edgeExists($source, $target);
     }
 
-    public function add_edge(string $id, string $source, string $target, array $data): bool {
+    public function addEdge(string $id, string $source, string $target, array $data): bool
+    {
         if ($this->database->edgeExistsById($id)) {
             return false;
         }
 
-        $data['id'] = $id;
+        $data['id']     = $id;
         $data['source'] = $source;
         $data['target'] = $target;
 
         $result = $this->database->insertEdge($id, $source, $target, $data);
 
         if ($result) {
-            $this->audit_log('edge', $id, 'create', null, $data);
+            $this->auditLog('edge', $id, 'create', null, $data);
         }
 
         return $result;
     }
 
-    public function remove_edge(string $id): bool {
+    public function removeEdge(string $id): bool
+    {
         [$rowCount, $old_data] = $this->database->deleteEdge($id);
 
         if ($rowCount > 0) {
-            $this->audit_log('edge', $id, 'delete', $old_data, null);
+            $this->auditLog('edge', $id, 'delete', $old_data, null);
             return true;
         }
 
         return false;
     }
 
-    public function remove_edges_from(string $source): bool {
+    public function removeEdgesFrom(string $source): bool
+    {
         $edges = $this->database->deleteEdgesFrom($source);
 
         // Log each deleted edge
         foreach ($edges as $edge) {
-            $this->audit_log('edge', $edge['id'], 'delete', $edge['data'], null);
+            $this->auditLog('edge', $edge['id'], 'delete', $edge['data'], null);
         }
 
         return true;
     }
 
-    public function create_backup(?string $backup_name = null): array {
+    public function createBackup(?string $backup_name = null): array
+    {
         $result = $this->database->createBackup($backup_name);
 
         // Log the backup if successful
         if ($result['success']) {
-            $this->audit_log('system', 'graph', 'backup', null, [
+            $this->auditLog('system', 'graph', 'backup', null, [
                 'backup_file' => $result['file'],
                 'backup_name' => $result['backup_name'],
-                'file_size' => $result['file_size']
+                'file_size'   => $result['file_size']
             ]);
         }
 
         return $result;
     }
 
-    public function restore_to_timestamp(string $timestamp): bool {
+    public function restoreToTimestamp(string $timestamp): bool
+    {
         try {
             // Create backup before restoring
-            $backup_name = 'pre_restore_timestamp_' . str_replace([' ', ':'], ['_', '-'], $timestamp);
+            $backup_name   = 'pre_restore_timestamp_' . str_replace([' ', ':'], ['_', '-'], $timestamp);
             $backup_result = $this->database->createBackup($backup_name);
             if (!$backup_result['success']) {
                 // @codeCoverageIgnoreStart
@@ -210,10 +226,10 @@ class Graph {
             }
 
             // Log the backup
-            $this->audit_log('system', 'graph', 'backup', null, [
+            $this->auditLog('system', 'graph', 'backup', null, [
                 'backup_file' => $backup_result['file'],
                 'backup_name' => $backup_result['backup_name'],
-                'file_size' => $backup_result['file_size']
+                'file_size'   => $backup_result['file_size']
             ]);
 
             // Perform the restore
@@ -222,14 +238,14 @@ class Graph {
             // Log the restore operation if successful
             if ($result) {
                 $logs = $this->database->fetchAuditLogsAfterTimestamp($timestamp);
-                $this->audit_log('system', 'graph', 'restore_to_timestamp', null, [
-                    'timestamp' => $timestamp,
+                $this->auditLog('system', 'graph', 'restore_to_timestamp', null, [
+                    'timestamp'           => $timestamp,
                     'operations_reversed' => count($logs)
                 ]);
             }
 
             return $result;
-        // @codeCoverageIgnoreStart
+            // @codeCoverageIgnoreStart
         } catch (Exception $e) {
             error_log("Graph restore to timestamp failed: " . $e->getMessage());
             return false;
@@ -237,14 +253,18 @@ class Graph {
         // @codeCoverageIgnoreEnd
     }
 
-    public function get_audit_history(?string $entity_type = null, ?string $entity_id = null): array {
+    public function getAuditHistory(?string $entity_type = null, ?string $entity_id = null): array
+    {
         return $this->database->fetchAuditHistory($entity_type, $entity_id);
     }
 
-    public function restore_entity(string $entity_type, string $entity_id, int $audit_log_id): bool {
+    public function restoreEntity(string $entity_type, string $entity_id, int $audit_log_id): bool
+    {
         try {
             // Create backup before restoring
-            $backup_name = 'pre_restore_entity_' . $entity_type . '_' . $entity_id . '_' . date('Y-m-d_H-i-s') . '_' . rand(1000, 9999);
+            $timestamp = date('Y-m-d_H-i-s');
+            $backup_name = 'pre_restore_entity_' . $entity_type . '_' . $entity_id . '_' .
+                $timestamp . '_' . rand(1000, 9999);
             $backup_result = $this->database->createBackup($backup_name);
             if (!$backup_result['success']) {
                 // @codeCoverageIgnoreStart
@@ -254,10 +274,10 @@ class Graph {
             }
 
             // Log the backup
-            $this->audit_log('system', 'graph', 'backup', null, [
+            $this->auditLog('system', 'graph', 'backup', null, [
                 'backup_file' => $backup_result['file'],
                 'backup_name' => $backup_result['backup_name'],
-                'file_size' => $backup_result['file_size']
+                'file_size'   => $backup_result['file_size']
             ]);
 
             $this->database->beginTransaction();
@@ -271,42 +291,42 @@ class Graph {
             }
 
             $old_data = $log['old_data'];
-            $action = $log['action'];
+            $action   = $log['action'];
 
             // Reverse the operation
             if ($entity_type === 'node') {
                 if ($action === 'delete' && $old_data !== null) {
                     // Restore deleted node
                     $this->database->insertNodeWithData($entity_id, $old_data);
-                    $this->audit_log('node', $entity_id, 'restore', null, $old_data);
+                    $this->auditLog('node', $entity_id, 'restore', null, $old_data);
                 } elseif ($action === 'create') {
                     // Remove created node
                     $this->database->deleteNode($entity_id);
-                    $this->audit_log('node', $entity_id, 'restore_delete', $old_data, null);
+                    $this->auditLog('node', $entity_id, 'restore_delete', $old_data, null);
                 } elseif ($action === 'update' && $old_data !== null) {
                     // Restore to old data
                     $this->database->updateNode($entity_id, $old_data);
-                    $this->audit_log('node', $entity_id, 'restore', null, $old_data);
+                    $this->auditLog('node', $entity_id, 'restore', null, $old_data);
                 }
             } elseif ($entity_type === 'edge') {
                 if ($action === 'delete' && $old_data !== null) {
                     // Restore deleted edge
                     $this->database->insertEdge($entity_id, $old_data['source'], $old_data['target'], $old_data);
-                    $this->audit_log('edge', $entity_id, 'restore', null, $old_data);
+                    $this->auditLog('edge', $entity_id, 'restore', null, $old_data);
                 } elseif ($action === 'create') {
                     // Remove created edge
                     $this->database->deleteEdge($entity_id);
-                    $this->audit_log('edge', $entity_id, 'restore_delete', $old_data, null);
+                    $this->auditLog('edge', $entity_id, 'restore_delete', $old_data, null);
                 } elseif ($action === 'update' && $old_data !== null) {
                     // Restore to old data
                     $this->database->updateEdge($entity_id, $old_data['source'], $old_data['target'], $old_data);
-                    $this->audit_log('edge', $entity_id, 'restore', null, $old_data);
+                    $this->auditLog('edge', $entity_id, 'restore', null, $old_data);
                 }
             }
 
             $this->database->commit();
             return true;
-        // @codeCoverageIgnoreStart
+            // @codeCoverageIgnoreStart
         } catch (Exception $e) {
             $this->database->rollBack();
             error_log("Graph restore entity failed: " . $e->getMessage());
@@ -315,7 +335,8 @@ class Graph {
         // @codeCoverageIgnoreEnd
     }
 
-    public function set_node_status(string $node_id, string $status): bool {
+    public function setNodeStatus(string $node_id, string $status): bool
+    {
         if (!$this->database->nodeExists($node_id)) {
             return false;
         }
@@ -325,7 +346,8 @@ class Graph {
         return $result;
     }
 
-    public function get_node_status(string $node_id): ?NodeStatus {
+    public function getNodeStatus(string $node_id): ?NodeStatus
+    {
         $row = $this->database->fetchLatestNodeStatus($node_id);
 
         if (!$row) {
@@ -335,7 +357,8 @@ class Graph {
         return new NodeStatus($row['node_id'], $row['status'], $row['created_at']);
     }
 
-    public function get_node_status_history(string $node_id): array {
+    public function getNodeStatusHistory(string $node_id): array
+    {
         $rows = $this->database->fetchNodeStatusHistory($node_id);
 
         $statuses = [];
@@ -346,7 +369,8 @@ class Graph {
         return $statuses;
     }
 
-    public function status(): array {
+    public function status(): array
+    {
         $rows = $this->database->fetchAllLatestStatuses();
 
         $statuses = [];

@@ -1,4 +1,6 @@
-<?php declare (strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Opsminded\Graph;
 
@@ -7,16 +9,19 @@ use PDOException;
 use RuntimeException;
 use Exception;
 
-class Database {
+class Database
+{
     private string $db_file;
     private ?PDO $db = null;
 
-    public function __construct(string $db_file) {
+    public function __construct(string $db_file)
+    {
         $this->db_file = $db_file;
         $this->initSchema();
     }
 
-    private function initSchema(): void {
+    private function initSchema(): void
+    {
         $db = $this->getDb();
 
         $db->exec("
@@ -72,8 +77,9 @@ class Database {
         $db->exec("CREATE INDEX IF NOT EXISTS idx_node_status_created ON node_status(created_at)");
     }
 
-    private function getDb(): PDO {
-        if($this->db !== null) {
+    private function getDb(): PDO
+    {
+        if ($this->db !== null) {
             return $this->db;
         }
 
@@ -81,7 +87,7 @@ class Database {
             $this->db = new PDO('sqlite:' . $this->db_file);
             $this->db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $this->db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-        // @codeCoverageIgnoreStart
+            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             throw new RuntimeException("Database connection failed: " . $e->getMessage());
         }
@@ -92,13 +98,14 @@ class Database {
 
     // Node operations
 
-    public function nodeExists(string $id): bool {
+    public function nodeExists(string $id): bool
+    {
         try {
-            $db = $this->getDb();
+            $db   = $this->getDb();
             $stmt = $db->prepare("SELECT COUNT(*) FROM nodes WHERE id = :id");
             $stmt->execute([':id' => $id]);
             return $stmt->fetchColumn() > 0;
-        // @codeCoverageIgnoreStart
+            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase node exists check failed: " . $e->getMessage());
             return false;
@@ -106,16 +113,17 @@ class Database {
         // @codeCoverageIgnoreEnd
     }
 
-    public function insertNode(string $id, array $data): bool {
+    public function insertNode(string $id, array $data): bool
+    {
         try {
-            $db = $this->getDb();
+            $db   = $this->getDb();
             $stmt = $db->prepare("INSERT INTO nodes (id, data) VALUES (:id, :data)");
             $stmt->execute([
-                ':id' => $id,
+                ':id'   => $id,
                 ':data' => json_encode($data, JSON_UNESCAPED_UNICODE)
             ]);
             return true;
-        // @codeCoverageIgnoreStart
+            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase insert node failed: " . $e->getMessage());
             return false;
@@ -123,16 +131,17 @@ class Database {
         // @codeCoverageIgnoreEnd
     }
 
-    public function updateNode(string $id, array $data): int {
+    public function updateNode(string $id, array $data): int
+    {
         try {
-            $db = $this->getDb();
+            $db   = $this->getDb();
             $stmt = $db->prepare("UPDATE nodes SET data = :data, updated_at = CURRENT_TIMESTAMP WHERE id = :id");
             $stmt->execute([
-                ':id' => $id,
+                ':id'   => $id,
                 ':data' => json_encode($data, JSON_UNESCAPED_UNICODE)
             ]);
             return $stmt->rowCount();
-        // @codeCoverageIgnoreStart
+            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase update node failed: " . $e->getMessage());
             return 0;
@@ -140,14 +149,15 @@ class Database {
         // @codeCoverageIgnoreEnd
     }
 
-    public function fetchNode(string $id): ?array {
+    public function fetchNode(string $id): ?array
+    {
         try {
-            $db = $this->getDb();
+            $db   = $this->getDb();
             $stmt = $db->prepare("SELECT data FROM nodes WHERE id = :id");
             $stmt->execute([':id' => $id]);
             $row = $stmt->fetch();
             return $row ? json_decode($row['data'], true) : null;
-        // @codeCoverageIgnoreStart
+            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase fetch node failed: " . $e->getMessage());
             return null;
@@ -155,20 +165,21 @@ class Database {
         // @codeCoverageIgnoreEnd
     }
 
-    public function deleteNode(string $id): array {
+    public function deleteNode(string $id): array
+    {
         try {
             $db = $this->getDb();
 
             $stmt = $db->prepare("SELECT data FROM nodes WHERE id = :id");
             $stmt->execute([':id' => $id]);
-            $old_row = $stmt->fetch();
+            $old_row  = $stmt->fetch();
             $old_data = $old_row ? json_decode($old_row['data'], true) : null;
 
             $stmt = $db->prepare("DELETE FROM nodes WHERE id = :id");
             $stmt->execute([':id' => $id]);
 
             return [$stmt->rowCount(), $old_data];
-        // @codeCoverageIgnoreStart
+            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase delete node failed: " . $e->getMessage());
             return [0, null];
@@ -176,12 +187,13 @@ class Database {
         // @codeCoverageIgnoreEnd
     }
 
-    public function fetchAllNodes(): array {
+    public function fetchAllNodes(): array
+    {
         try {
-            $db = $this->getDb();
+            $db   = $this->getDb();
             $stmt = $db->query("SELECT id, data FROM nodes ORDER BY created_at");
             return $stmt->fetchAll();
-        // @codeCoverageIgnoreStart
+            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase fetch all nodes failed: " . $e->getMessage());
             return [];
@@ -191,13 +203,14 @@ class Database {
 
     // Edge operations
 
-    public function edgeExistsById(string $id): bool {
+    public function edgeExistsById(string $id): bool
+    {
         try {
-            $db = $this->getDb();
+            $db   = $this->getDb();
             $stmt = $db->prepare("SELECT COUNT(*) FROM edges WHERE id = :id");
             $stmt->execute([':id' => $id]);
             return $stmt->fetchColumn() > 0;
-        // @codeCoverageIgnoreStart
+            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase edge exists by id check failed: " . $e->getMessage());
             return false;
@@ -205,9 +218,10 @@ class Database {
         // @codeCoverageIgnoreEnd
     }
 
-    public function edgeExists(string $source, string $target): bool {
+    public function edgeExists(string $source, string $target): bool
+    {
         try {
-            $db = $this->getDb();
+            $db   = $this->getDb();
             $stmt = $db->prepare("
                 SELECT COUNT(*) FROM edges
                 WHERE (source = :source AND target = :target)
@@ -218,7 +232,7 @@ class Database {
                 ':target' => $target
             ]);
             return $stmt->fetchColumn() > 0;
-        // @codeCoverageIgnoreStart
+            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase edge exists check failed: " . $e->getMessage());
             return false;
@@ -226,18 +240,19 @@ class Database {
         // @codeCoverageIgnoreEnd
     }
 
-    public function insertEdge(string $id, string $source, string $target, array $data): bool {
+    public function insertEdge(string $id, string $source, string $target, array $data): bool
+    {
         try {
-            $db = $this->getDb();
+            $db   = $this->getDb();
             $stmt = $db->prepare("INSERT INTO edges (id, source, target, data) VALUES (:id, :source, :target, :data)");
             $stmt->execute([
-                ':id' => $id,
+                ':id'     => $id,
                 ':source' => $source,
                 ':target' => $target,
-                ':data' => json_encode($data, JSON_UNESCAPED_UNICODE)
+                ':data'   => json_encode($data, JSON_UNESCAPED_UNICODE)
             ]);
             return true;
-        // @codeCoverageIgnoreStart
+            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase insert edge failed: " . $e->getMessage());
             return false;
@@ -245,20 +260,21 @@ class Database {
         // @codeCoverageIgnoreEnd
     }
 
-    public function deleteEdge(string $id): array {
+    public function deleteEdge(string $id): array
+    {
         try {
             $db = $this->getDb();
 
             $stmt = $db->prepare("SELECT data FROM edges WHERE id = :id");
             $stmt->execute([':id' => $id]);
-            $old_row = $stmt->fetch();
+            $old_row  = $stmt->fetch();
             $old_data = $old_row ? json_decode($old_row['data'], true) : null;
 
             $stmt = $db->prepare("DELETE FROM edges WHERE id = :id");
             $stmt->execute([':id' => $id]);
 
             return [$stmt->rowCount(), $old_data];
-        // @codeCoverageIgnoreStart
+            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase delete edge failed: " . $e->getMessage());
             return [0, null];
@@ -266,7 +282,8 @@ class Database {
         // @codeCoverageIgnoreEnd
     }
 
-    public function deleteEdgesFrom(string $source): array {
+    public function deleteEdgesFrom(string $source): array
+    {
         try {
             $db = $this->getDb();
 
@@ -283,13 +300,13 @@ class Database {
             $result = [];
             foreach ($edges as $edge) {
                 $result[] = [
-                    'id' => $edge['id'],
+                    'id'   => $edge['id'],
                     'data' => json_decode($edge['data'], true)
                 ];
             }
 
             return $result;
-        // @codeCoverageIgnoreStart
+            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase delete edges from failed: " . $e->getMessage());
             return [];
@@ -297,7 +314,8 @@ class Database {
         // @codeCoverageIgnoreEnd
     }
 
-    public function deleteEdgesByNode(string $nodeId): array {
+    public function deleteEdgesByNode(string $nodeId): array
+    {
         try {
             $db = $this->getDb();
 
@@ -314,13 +332,13 @@ class Database {
             $result = [];
             foreach ($edges as $edge) {
                 $result[] = [
-                    'id' => $edge['id'],
+                    'id'   => $edge['id'],
                     'data' => json_decode($edge['data'], true)
                 ];
             }
 
             return $result;
-        // @codeCoverageIgnoreStart
+            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase delete edges by node failed: " . $e->getMessage());
             return [];
@@ -328,12 +346,13 @@ class Database {
         // @codeCoverageIgnoreEnd
     }
 
-    public function fetchAllEdges(): array {
+    public function fetchAllEdges(): array
+    {
         try {
-            $db = $this->getDb();
+            $db   = $this->getDb();
             $stmt = $db->query("SELECT id, source, target, data FROM edges ORDER BY created_at");
             return $stmt->fetchAll();
-        // @codeCoverageIgnoreStart
+            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase fetch all edges failed: " . $e->getMessage());
             return [];
@@ -353,22 +372,22 @@ class Database {
         ?string $ip_address = null
     ): bool {
         try {
-            $db = $this->getDb();
+            $db   = $this->getDb();
             $stmt = $db->prepare("
                 INSERT INTO audit_log (entity_type, entity_id, action, old_data, new_data, user_id, ip_address)
                 VALUES (:entity_type, :entity_id, :action, :old_data, :new_data, :user_id, :ip_address)
             ");
             $stmt->execute([
                 ':entity_type' => $entity_type,
-                ':entity_id' => $entity_id,
-                ':action' => $action,
-                ':old_data' => $old_data !== null ? json_encode($old_data, JSON_UNESCAPED_UNICODE) : null,
-                ':new_data' => $new_data !== null ? json_encode($new_data, JSON_UNESCAPED_UNICODE) : null,
-                ':user_id' => $user_id,
-                ':ip_address' => $ip_address
+                ':entity_id'   => $entity_id,
+                ':action'      => $action,
+                ':old_data'    => $old_data !== null ? json_encode($old_data, JSON_UNESCAPED_UNICODE) : null,
+                ':new_data'    => $new_data !== null ? json_encode($new_data, JSON_UNESCAPED_UNICODE) : null,
+                ':user_id'     => $user_id,
+                ':ip_address'  => $ip_address
             ]);
             return true;
-        // @codeCoverageIgnoreStart
+            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase audit log insert failed: " . $e->getMessage());
             return false;
@@ -376,11 +395,12 @@ class Database {
         // @codeCoverageIgnoreEnd
     }
 
-    public function fetchAuditHistory(?string $entity_type = null, ?string $entity_id = null): array {
+    public function fetchAuditHistory(?string $entity_type = null, ?string $entity_id = null): array
+    {
         try {
             $db = $this->getDb();
 
-            $sql = "SELECT * FROM audit_log WHERE 1=1";
+            $sql    = "SELECT * FROM audit_log WHERE 1=1";
             $params = [];
 
             if ($entity_type !== null) {
@@ -406,7 +426,7 @@ class Database {
             }
 
             return $logs;
-        // @codeCoverageIgnoreStart
+            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase fetch audit history failed: " . $e->getMessage());
             return [];
@@ -414,14 +434,19 @@ class Database {
         // @codeCoverageIgnoreEnd
     }
 
-    public function fetchAuditLogById(int $id, string $entity_type, string $entity_id): ?array {
+    public function fetchAuditLogById(int $id, string $entity_type, string $entity_id): ?array
+    {
         try {
-            $db = $this->getDb();
-            $stmt = $db->prepare("SELECT * FROM audit_log WHERE id = :id AND entity_type = :entity_type AND entity_id = :entity_id");
+            $db   = $this->getDb();
+            $sql = "SELECT * FROM audit_log"
+                . " WHERE id = :id"
+                . " AND entity_type = :entity_type"
+                . " AND entity_id = :entity_id";
+            $stmt = $db->prepare($sql);
             $stmt->execute([
-                ':id' => $id,
+                ':id'          => $id,
                 ':entity_type' => $entity_type,
-                ':entity_id' => $entity_id
+                ':entity_id'   => $entity_id
             ]);
             $log = $stmt->fetch();
 
@@ -433,7 +458,7 @@ class Database {
             $log['new_data'] = $log['new_data'] !== null ? json_decode($log['new_data'], true) : null;
 
             return $log;
-        // @codeCoverageIgnoreStart
+            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase fetch audit log by id failed: " . $e->getMessage());
             return null;
@@ -441,9 +466,10 @@ class Database {
         // @codeCoverageIgnoreEnd
     }
 
-    public function fetchAuditLogsAfterTimestamp(string $timestamp): array {
+    public function fetchAuditLogsAfterTimestamp(string $timestamp): array
+    {
         try {
-            $db = $this->getDb();
+            $db   = $this->getDb();
             $stmt = $db->prepare("
                 SELECT * FROM audit_log
                 WHERE created_at > :timestamp
@@ -459,7 +485,7 @@ class Database {
             }
 
             return $logs;
-        // @codeCoverageIgnoreStart
+            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase fetch audit logs after timestamp failed: " . $e->getMessage());
             return [];
@@ -469,19 +495,20 @@ class Database {
 
     // Status operations
 
-    public function insertNodeStatus(string $nodeId, string $status): bool {
+    public function insertNodeStatus(string $nodeId, string $status): bool
+    {
         try {
-            $db = $this->getDb();
+            $db   = $this->getDb();
             $stmt = $db->prepare("
                 INSERT INTO node_status (node_id, status)
                 VALUES (:node_id, :status)
             ");
             $stmt->execute([
                 ':node_id' => $nodeId,
-                ':status' => $status
+                ':status'  => $status
             ]);
             return true;
-        // @codeCoverageIgnoreStart
+            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase insert node status failed: " . $e->getMessage());
             return false;
@@ -489,9 +516,10 @@ class Database {
         // @codeCoverageIgnoreEnd
     }
 
-    public function fetchLatestNodeStatus(string $nodeId): ?array {
+    public function fetchLatestNodeStatus(string $nodeId): ?array
+    {
         try {
-            $db = $this->getDb();
+            $db   = $this->getDb();
             $stmt = $db->prepare("
                 SELECT node_id, status, created_at
                 FROM node_status
@@ -507,7 +535,7 @@ class Database {
             $row = $stmt->fetch();
 
             return $row ?: null;
-        // @codeCoverageIgnoreStart
+            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase fetch latest node status failed: " . $e->getMessage());
             return null;
@@ -515,9 +543,10 @@ class Database {
         // @codeCoverageIgnoreEnd
     }
 
-    public function fetchNodeStatusHistory(string $nodeId): array {
+    public function fetchNodeStatusHistory(string $nodeId): array
+    {
         try {
-            $db = $this->getDb();
+            $db   = $this->getDb();
             $stmt = $db->prepare("
                 SELECT node_id, status, created_at
                 FROM node_status
@@ -526,7 +555,7 @@ class Database {
             ");
             $stmt->execute([':node_id' => $nodeId]);
             return $stmt->fetchAll();
-        // @codeCoverageIgnoreStart
+            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase fetch node status history failed: " . $e->getMessage());
             return [];
@@ -534,9 +563,10 @@ class Database {
         // @codeCoverageIgnoreEnd
     }
 
-    public function fetchAllLatestStatuses(): array {
+    public function fetchAllLatestStatuses(): array
+    {
         try {
-            $db = $this->getDb();
+            $db   = $this->getDb();
             $stmt = $db->query("
                 SELECT ns.node_id, ns.status, ns.created_at
                 FROM node_status ns
@@ -549,7 +579,7 @@ class Database {
                 ORDER BY ns.node_id
             ");
             return $stmt->fetchAll();
-        // @codeCoverageIgnoreStart
+            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase fetch all latest statuses failed: " . $e->getMessage());
             return [];
@@ -559,11 +589,12 @@ class Database {
 
     // Transaction support
 
-    public function beginTransaction(): bool {
+    public function beginTransaction(): bool
+    {
         try {
             $db = $this->getDb();
             return $db->beginTransaction();
-        // @codeCoverageIgnoreStart
+            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase begin transaction failed: " . $e->getMessage());
             return false;
@@ -571,11 +602,12 @@ class Database {
         // @codeCoverageIgnoreEnd
     }
 
-    public function commit(): bool {
+    public function commit(): bool
+    {
         try {
             $db = $this->getDb();
             return $db->commit();
-        // @codeCoverageIgnoreStart
+            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase commit failed: " . $e->getMessage());
             return false;
@@ -583,11 +615,12 @@ class Database {
         // @codeCoverageIgnoreEnd
     }
 
-    public function rollBack(): bool {
+    public function rollBack(): bool
+    {
         try {
             $db = $this->getDb();
             return $db->rollBack();
-        // @codeCoverageIgnoreStart
+            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase rollback failed: " . $e->getMessage());
             return false;
@@ -597,16 +630,17 @@ class Database {
 
     // Restore support methods
 
-    public function insertNodeWithData(string $id, array $data): bool {
+    public function insertNodeWithData(string $id, array $data): bool
+    {
         try {
-            $db = $this->getDb();
+            $db   = $this->getDb();
             $stmt = $db->prepare("INSERT INTO nodes (id, data) VALUES (:id, :data)");
             $stmt->execute([
-                ':id' => $id,
+                ':id'   => $id,
                 ':data' => json_encode($data, JSON_UNESCAPED_UNICODE)
             ]);
             return true;
-        // @codeCoverageIgnoreStart
+            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase insert node with data failed: " . $e->getMessage());
             return false;
@@ -614,16 +648,17 @@ class Database {
         // @codeCoverageIgnoreEnd
     }
 
-    public function insertNodeOrIgnore(string $id, array $data): bool {
+    public function insertNodeOrIgnore(string $id, array $data): bool
+    {
         try {
-            $db = $this->getDb();
+            $db   = $this->getDb();
             $stmt = $db->prepare("INSERT OR IGNORE INTO nodes (id, data) VALUES (:id, :data)");
             $stmt->execute([
-                ':id' => $id,
+                ':id'   => $id,
                 ':data' => json_encode($data, JSON_UNESCAPED_UNICODE)
             ]);
             return true;
-        // @codeCoverageIgnoreStart
+            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase insert node or ignore failed: " . $e->getMessage());
             return false;
@@ -631,18 +666,21 @@ class Database {
         // @codeCoverageIgnoreEnd
     }
 
-    public function insertEdgeOrIgnore(string $id, string $source, string $target, array $data): bool {
+    public function insertEdgeOrIgnore(string $id, string $source, string $target, array $data): bool
+    {
         try {
-            $db = $this->getDb();
-            $stmt = $db->prepare("INSERT OR IGNORE INTO edges (id, source, target, data) VALUES (:id, :source, :target, :data)");
+            $db   = $this->getDb();
+            $sql = "INSERT OR IGNORE INTO edges (id, source, target, data)"
+                . " VALUES (:id, :source, :target, :data)";
+            $stmt = $db->prepare($sql);
             $stmt->execute([
-                ':id' => $id,
+                ':id'     => $id,
                 ':source' => $source,
                 ':target' => $target,
-                ':data' => json_encode($data, JSON_UNESCAPED_UNICODE)
+                ':data'   => json_encode($data, JSON_UNESCAPED_UNICODE)
             ]);
             return true;
-        // @codeCoverageIgnoreStart
+            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase insert edge or ignore failed: " . $e->getMessage());
             return false;
@@ -650,18 +688,21 @@ class Database {
         // @codeCoverageIgnoreEnd
     }
 
-    public function updateEdge(string $id, string $source, string $target, array $data): int {
+    public function updateEdge(string $id, string $source, string $target, array $data): int
+    {
         try {
-            $db = $this->getDb();
-            $stmt = $db->prepare("UPDATE edges SET source = :source, target = :target, data = :data, updated_at = CURRENT_TIMESTAMP WHERE id = :id");
+            $db   = $this->getDb();
+            $sql = "UPDATE edges SET source = :source, target = :target, data = :data,"
+                . " updated_at = CURRENT_TIMESTAMP WHERE id = :id";
+            $stmt = $db->prepare($sql);
             $stmt->execute([
-                ':id' => $id,
+                ':id'     => $id,
                 ':source' => $source,
                 ':target' => $target,
-                ':data' => json_encode($data, JSON_UNESCAPED_UNICODE)
+                ':data'   => json_encode($data, JSON_UNESCAPED_UNICODE)
             ]);
             return $stmt->rowCount();
-        // @codeCoverageIgnoreStart
+            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase update edge failed: " . $e->getMessage());
             return 0;
@@ -671,15 +712,18 @@ class Database {
 
     // Backup support
 
-    public function closeConnection(): void {
+    public function closeConnection(): void
+    {
         $this->db = null;
     }
 
-    public function getDbFilePath(): string {
+    public function getDbFilePath(): string
+    {
         return $this->db_file;
     }
 
-    public function createBackup(?string $backup_name = null): array {
+    public function createBackup(?string $backup_name = null): array
+    {
         $this->closeConnection(); // Close existing connection before backup
 
         try {
@@ -703,8 +747,8 @@ class Database {
             if (file_exists($backup_file)) {
                 return [
                     'success' => false,
-                    'error' => 'Backup file already exists',
-                    'file' => $backup_file
+                    'error'   => 'Backup file already exists',
+                    'file'    => $backup_file
                 ];
             }
 
@@ -718,23 +762,24 @@ class Database {
             $file_size = filesize($backup_file);
 
             return [
-                'success' => true,
-                'file' => $backup_file,
+                'success'     => true,
+                'file'        => $backup_file,
                 'backup_name' => $backup_name,
-                'file_size' => $file_size
+                'file_size'   => $file_size
             ];
-        // @codeCoverageIgnoreStart
+            // @codeCoverageIgnoreStart
         } catch (Exception $e) {
             error_log("GraphDatabase create backup failed: " . $e->getMessage());
             return [
                 'success' => false,
-                'error' => $e->getMessage()
+                'error'   => $e->getMessage()
             ];
         }
         // @codeCoverageIgnoreEnd
     }
 
-    public function restoreToTimestamp(string $timestamp): bool {
+    public function restoreToTimestamp(string $timestamp): bool
+    {
         try {
             $this->beginTransaction();
 
@@ -744,9 +789,9 @@ class Database {
             // Reverse each operation
             foreach ($logs as $log) {
                 $entity_type = $log['entity_type'];
-                $entity_id = $log['entity_id'];
-                $action = $log['action'];
-                $old_data = $log['old_data'];
+                $entity_id   = $log['entity_id'];
+                $action      = $log['action'];
+                $old_data    = $log['old_data'];
 
                 // Skip restore actions to avoid infinite loops
                 if ($action === 'restore' || $action === 'restore_delete') {
@@ -786,7 +831,7 @@ class Database {
 
             $this->commit();
             return true;
-        // @codeCoverageIgnoreStart
+            // @codeCoverageIgnoreStart
         } catch (Exception $e) {
             $this->rollBack();
             error_log("GraphDatabase restore to timestamp failed: " . $e->getMessage());
