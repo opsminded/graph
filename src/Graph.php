@@ -12,8 +12,8 @@ class Graph
     private Database $database;
 
     private const ALLOWED_CATEGORIES = ['business', 'application', 'infrastructure'];
-    private const ALLOWED_TYPES = ['server', 'database', 'application', 'network'];
-    private const ALLOWED_STATUSES = ['unknown', 'healthy', 'unhealthy', 'maintenance'];
+    private const ALLOWED_TYPES      = ['server', 'database', 'application', 'network'];
+    private const ALLOWED_STATUSES   = ['unknown', 'healthy', 'unhealthy', 'maintenance'];
 
     public function __construct(string $db_file)
     {

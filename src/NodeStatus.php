@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Opsminded\Graph;
 
-class NodeStatus
+final class NodeStatus
 {
     private string $node_id;
     private string $status;

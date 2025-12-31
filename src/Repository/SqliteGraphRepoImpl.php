@@ -1,0 +1,280 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Opsminded\Graph\Repository;
+
+use PDO;
+use PDOException;
+use RuntimeException;
+
+final class SqliteGraphRepoImpl implements GraphRepoInterface
+{
+    private PDO $pdo;
+    
+    public function __construct(PDO $pdo)
+    {
+        $this->pdo = $pdo;
+        $this->initSchema();
+    }
+
+
+
+    public function getNode(string $id): ?array
+    {
+        try {
+            $stmt = $this->pdo->prepare("SELECT data FROM nodes WHERE id = :id");
+            $stmt->execute([':id' => $id]);
+            $row = $stmt->fetch();
+
+            if ($row === false) {
+                return null;
+            }
+
+            return ['data' => json_decode($row['data'], true)];
+
+            // @codeCoverageIgnoreStart
+        } catch (PDOException $e) {
+            error_log("GraphDatabase fetch node failed: " . $e->getMessage());
+            throw new RuntimeException("Failed to fetch node: " . $e->getMessage());
+        }
+        // @codeCoverageIgnoreEnd
+    }
+
+    public function getNodes(): array
+    {
+        try {
+            $stmt = $this->pdo->query("SELECT id, data FROM nodes");
+            $rows = $stmt->fetchAll();
+
+            $nodes = [];
+            foreach ($rows as $row) {
+                $nodes[] = ['data' => json_decode($row['data'], true)];
+            }
+            return $nodes;
+            // @codeCoverageIgnoreStart
+        } catch (PDOException $e) {
+            error_log("GraphDatabase fetch all nodes failed: " . $e->getMessage());
+            return [];
+        }
+        // @codeCoverageIgnoreEnd
+    }
+
+    public function getNodeExists(string $id): bool
+    {
+        try {
+            $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM nodes WHERE id = :id");
+            $stmt->execute([':id' => $id]);
+            return $stmt->fetchColumn() > 0;
+            // @codeCoverageIgnoreStart
+        } catch (PDOException $e) {
+            error_log("GraphDatabase node exists check failed: " . $e->getMessage());
+            return false;
+        }
+        // @codeCoverageIgnoreEnd
+    }
+
+
+
+    public function insertNode(string $id, array $data): bool
+    {
+        try {
+            $sql        = "INSERT OR IGNORE INTO nodes (id, data) VALUES (:id, :data)";
+            $stmt       = $this->pdo->prepare($sql);
+            $data['id'] = $id;
+            $stmt->execute([
+                ':id'   => $id,
+                ':data' => json_encode($data, JSON_UNESCAPED_UNICODE)
+            ]);
+            return true;
+            // @codeCoverageIgnoreStart
+        } catch (PDOException $e) {
+            error_log("GraphDatabase insert node failed: " . $e->getMessage());
+            return false;
+        }
+        // @codeCoverageIgnoreEnd
+    }
+
+    public function updateNode(string $id, array $data): bool
+    {
+        try {
+            $stmt = $this->pdo->prepare("UPDATE nodes SET data = :data WHERE id = :id");
+            $data['id'] = $id;
+            $stmt->execute([
+                ':id'   => $id,
+                ':data' => json_encode($data, JSON_UNESCAPED_UNICODE)
+            ]);
+            return $stmt->rowCount() > 0;
+            // @codeCoverageIgnoreStart
+        } catch (PDOException $e) {
+            error_log("GraphDatabase update node failed: " . $e->getMessage());
+            throw new RuntimeException("Failed to update node: " . $e->getMessage());
+        }
+        // @codeCoverageIgnoreEnd
+    }
+
+
+
+    public function deleteNode(string $id): bool
+    {
+        try {
+            $stmt = $this->pdo->prepare("DELETE FROM nodes WHERE id = :id");
+            $stmt->execute([':id' => $id]);
+            return true;
+            // @codeCoverageIgnoreStart
+        } catch (PDOException $e) {
+            error_log("GraphDatabase delete node failed: " . $e->getMessage());
+            return false;
+        }
+        // @codeCoverageIgnoreEnd
+    }
+
+    public function getEdge(string $source, string $target): ?array
+    {
+        try {
+            $stmt = $this->pdo->prepare("SELECT source, target, data FROM edges WHERE source = :source AND target = :target");
+            $stmt->execute([':source' => $source, ':target' => $target]);
+            $row = $stmt->fetch();
+            if ($row === false) {
+                return null;
+            }
+            $edge = ['data' => json_decode($row['data'], true)];
+            return $edge;
+            // @codeCoverageIgnoreStart
+        } catch (PDOException $e) {
+            error_log("GraphDatabase fetch edge failed: " . $e->getMessage());
+            throw new RuntimeException("Failed to fetch edge: " . $e->getMessage());
+        }
+        // @codeCoverageIgnoreEnd
+    }
+
+    public function getEdges(): array
+    {
+        try {
+            $stmt  = $this->pdo->query("SELECT source, target, data FROM edges");
+            $rows  = $stmt->fetchAll();
+            $edges = [];
+            foreach ($rows as $row) {
+                $edges[] = ['data' => json_decode($row['data'], true)];
+            }
+            return $edges;
+            // @codeCoverageIgnoreStart
+        } catch (PDOException $e) {
+            error_log("GraphDatabase fetch all edges failed: " . $e->getMessage());
+            return [];
+        }
+        // @codeCoverageIgnoreEnd
+    }
+
+    public function getEdgeExists(string $source, string $target): bool
+    {
+        try {
+            $stmt = $this->pdo->prepare("
+                SELECT COUNT(*) FROM edges
+                WHERE (source = :source AND target = :target)
+                   OR (source = :target AND target = :source)
+            ");
+            $stmt->execute([
+                ':source' => $source,
+                ':target' => $target
+            ]);
+            return $stmt->fetchColumn() > 0;
+            // @codeCoverageIgnoreStart
+        } catch (PDOException $e) {
+            error_log("GraphDatabase edge exists check failed: " . $e->getMessage());
+            return false;
+        }
+        // @codeCoverageIgnoreEnd
+    }
+
+    public function insertEdge(string $source, string $target, array $data = []): bool
+    {
+        try {
+            $sql            = "INSERT OR IGNORE INTO edges (source, target, data) VALUES (:source, :target, :data)";
+            $stmt           = $this->pdo->prepare($sql);
+            $data['id']     = "{$source}-{$target}";
+            $data['source'] = $source;
+            $data['target'] = $target;
+            $stmt->execute([
+                ':source' => $source,
+                ':target' => $target,
+                ':data'   => json_encode($data, JSON_UNESCAPED_UNICODE)
+            ]);
+            return true;
+            // @codeCoverageIgnoreStart
+        } catch (PDOException $e) {
+            error_log("GraphDatabase insert edge or ignore failed: " . $e->getMessage());
+            return false;
+        }
+        // @codeCoverageIgnoreEnd
+    }
+
+    public function updateEdge(string $source, string $target, array $data = []): bool
+    {
+        try {
+            $data['id']     = "{$source}-{$target}";
+            $data['source'] = $source;
+            $data['target'] = $target;
+
+            $stmt = $this->pdo->prepare("
+                UPDATE edges
+                SET data = :data
+                WHERE source = :source AND target = :target");
+            $stmt->execute([
+                ':source' => $source,
+                ':target' => $target,
+                ':data'   => json_encode($data, JSON_UNESCAPED_UNICODE)
+            ]);
+            return true;
+            // @codeCoverageIgnoreStart
+        } catch (PDOException $e) {
+            error_log("GraphDatabase update node failed: " . $e->getMessage());
+            throw new RuntimeException("Failed to update node: " . $e->getMessage());
+        }
+        // @codeCoverageIgnoreEnd
+    }
+
+    public function deleteEdge(string $source, string $target): bool
+    {
+        try {
+            $stmt = $this->pdo->prepare("DELETE FROM edges WHERE source = :source AND target = :target");
+            $stmt->execute([':source' => $source, ':target' => $target]);
+            return true;
+            // @codeCoverageIgnoreStart
+        } catch (PDOException $e) {
+            error_log("GraphDatabase delete edge failed: " . $e->getMessage());
+            return false;
+        }
+        // @codeCoverageIgnoreEnd
+    }
+
+    private function initSchema(): void
+    {
+        $this->pdo->exec("
+            CREATE TABLE IF NOT EXISTS nodes (
+                id TEXT PRIMARY KEY,
+                data TEXT NOT NULL
+            )
+        ");
+
+        $this->pdo->exec("
+            CREATE TABLE IF NOT EXISTS edges (
+                source TEXT NOT NULL,
+                target TEXT NOT NULL,
+                data TEXT,
+                PRIMARY KEY (source, target),
+                FOREIGN KEY (source) REFERENCES nodes(id) ON DELETE CASCADE,
+                FOREIGN KEY (target) REFERENCES nodes(id) ON DELETE CASCADE
+            )
+        ");
+    }
+
+        public static function createConnection(string $dbFile): PDO
+    {
+        $pdo = new PDO('sqlite:' . $dbFile);
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+        $pdo->exec('PRAGMA foreign_keys = ON');
+        return $pdo;
+    }
+}
