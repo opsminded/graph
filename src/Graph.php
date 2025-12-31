@@ -13,6 +13,7 @@ class Graph
 
     private const ALLOWED_CATEGORIES = ['business', 'application', 'infrastructure'];
     private const ALLOWED_TYPES = ['server', 'database', 'application', 'network'];
+    private const ALLOWED_STATUSES = ['unknown', 'healthy', 'unhealthy', 'maintenance'];
 
     public function __construct(string $db_file)
     {
@@ -76,22 +77,6 @@ class Graph
                 'Invalid type. Allowed values: ' . implode(', ', self::ALLOWED_TYPES)
             );
         }
-    }
-
-    /**
-     * Get allowed categories
-     */
-    public static function getAllowedCategories(): array
-    {
-        return self::ALLOWED_CATEGORIES;
-    }
-
-    /**
-     * Get allowed types
-     */
-    public static function getAllowedTypes(): array
-    {
-        return self::ALLOWED_TYPES;
     }
 
     public function addNode(string $id, array $data): bool
@@ -226,6 +211,13 @@ class Graph
     {
         if (!$this->database->nodeExists($node_id)) {
             return false;
+        }
+
+        // Validate status value
+        if (!in_array($status, self::ALLOWED_STATUSES, true)) {
+            throw new RuntimeException(
+                'Invalid status. Allowed values: ' . implode(', ', self::ALLOWED_STATUSES)
+            );
         }
 
         $result = $this->database->insertNodeStatus($node_id, $status);

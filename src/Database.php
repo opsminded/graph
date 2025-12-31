@@ -461,15 +461,21 @@ class Database
         try {
             $db   = $this->getDb();
             $stmt = $db->query("
-                SELECT ns.node_id, ns.status, ns.created_at
-                FROM node_status ns
-                INNER JOIN (
-                    SELECT node_id, MAX(created_at) as max_created_at
-                    FROM node_status
-                    GROUP BY node_id
-                ) latest ON ns.node_id = latest.node_id AND ns.created_at = latest.max_created_at
-                INNER JOIN nodes n ON ns.node_id = n.id
-                ORDER BY ns.node_id
+                SELECT
+                    n.id as node_id,
+                    COALESCE(ns.status, 'unknown') as status,
+                    COALESCE(ns.created_at, n.created_at) as created_at
+                FROM nodes n
+                LEFT JOIN (
+                    SELECT ns1.node_id, ns1.status, ns1.created_at
+                    FROM node_status ns1
+                    INNER JOIN (
+                        SELECT node_id, MAX(created_at) as max_created_at
+                        FROM node_status
+                        GROUP BY node_id
+                    ) latest ON ns1.node_id = latest.node_id AND ns1.created_at = latest.max_created_at
+                ) ns ON n.id = ns.node_id
+                ORDER BY n.id
             ");
             return $stmt->fetchAll();
             // @codeCoverageIgnoreStart

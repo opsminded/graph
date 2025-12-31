@@ -9,7 +9,7 @@
 - **Required node attributes validation** (category and type)
 - SQLite-based persistence layer
 - Comprehensive audit logging for all operations
-- Node status tracking with history
+- Node status tracking with history (automatic "unknown" default for nodes without status)
 - RESTful HTTP API
 - Transaction support
 - PSR-12 compliant code
@@ -93,6 +93,16 @@ All nodes **MUST** have two required attributes:
 
 These are enforced at creation time and validated during updates.
 
+**Node Status Values:**
+
+Node statuses are **validated** and must be one of:
+- **`unknown`** (default for nodes without explicit status)
+- **`healthy`**
+- **`unhealthy`**
+- **`maintenance`**
+
+These values are enforced by `setNodeStatus()` and invalid values will throw a `RuntimeException`.
+
 **Key Methods:**
 
 ```php
@@ -102,17 +112,13 @@ updateNode(string $id, array $data): bool    // Validates 'category' and 'type' 
 removeNode(string $id): bool
 nodeExists(string $id): bool
 
-// Validation Helpers
-static getAllowedCategories(): array  // Returns ['business', 'application', 'infrastructure']
-static getAllowedTypes(): array       // Returns ['server', 'database', 'application', 'network']
-
 // Edge Operations
 addEdge(string $source, string $target): bool
 removeEdge(string $source, string $target): bool
 edgeExists(string $source, string $target): bool
 
 // Status Management
-setNodeStatus(string $nodeId, string $status): bool
+setNodeStatus(string $nodeId, string $status): bool  // Validates status value against allowed list
 getNodeStatus(string $nodeId): ?NodeStatus
 getNodeStatusHistory(string $nodeId): array
 
@@ -124,7 +130,7 @@ getAuditHistory(?string $entityType = null, ?string $entityId = null,
 
 // Retrieval
 get(): array  // Returns {nodes: [...], edges: [...]}
-status(): array  // Returns latest status for all nodes
+status(): array  // Returns latest status for ALL nodes (uses 'unknown' for nodes without status)
 ```
 
 **Usage Example:**
@@ -132,10 +138,6 @@ status(): array  // Returns latest status for all nodes
 use Opsminded\Graph\Graph;
 
 $graph = new Graph('/path/to/graph.db');
-
-// Get allowed values
-$allowedCategories = Graph::getAllowedCategories(); // ['business', 'application', 'infrastructure']
-$allowedTypes = Graph::getAllowedTypes();           // ['server', 'database', 'application', 'network']
 
 // Add nodes (category and type are REQUIRED)
 $graph->addNode('user1', [
@@ -157,8 +159,20 @@ $graph->addEdge('user1', 'user2');
 // Update node (category and type are validated if provided)
 $graph->updateNode('user1', ['active' => true]);
 
-// Track status
-$graph->setNodeStatus('user1', 'active');
+// Track status for user1 (only valid statuses are allowed)
+$graph->setNodeStatus('user1', 'healthy');  // Valid - works fine
+
+// Trying to set an invalid status will throw RuntimeException
+// $graph->setNodeStatus('user1', 'active');  // Throws: Invalid status. Allowed values: unknown, healthy, unhealthy, maintenance
+
+// Get all statuses - user1 will be 'healthy', user2 will be 'unknown' (default)
+$allStatuses = $graph->status();
+foreach ($allStatuses as $status) {
+    echo $status->getNodeId() . ': ' . $status->getStatus() . "\n";
+}
+// Output:
+// user1: healthy
+// user2: unknown
 
 // Retrieve graph
 $graphData = $graph->get();
@@ -582,8 +596,10 @@ Every mutation is logged with:
 
 Status changes are tracked with:
 - `node_id`: Node identifier
-- `status`: Status string (e.g., "active", "inactive", "pending")
+- `status`: Status string (allowed values: `unknown`, `healthy`, `unhealthy`, `maintenance`)
 - `created_at`: Timestamp
+
+**Important:** The `status()` method returns status for **ALL nodes** in the graph. Nodes without an explicit status will default to `'unknown'`. This ensures every node always has a status value.
 
 ---
 
@@ -591,21 +607,23 @@ Status changes are tracked with:
 
 1. **Required Node Attributes**: All nodes must have `category` and `type` attributes with predefined allowed values. This enforces a consistent classification scheme across the graph.
 
-2. **SQLite Choice**: Lightweight, file-based database suitable for small to medium graphs. No separate database server required.
+2. **Default Status**: The `status()` method returns status for all nodes, using `'unknown'` as the default for nodes without an explicit status. This ensures consistent status reporting across the entire graph.
 
-3. **JSON Storage**: Node data stored as JSON for flexible, schema-less data structures (beyond the required category/type).
+3. **SQLite Choice**: Lightweight, file-based database suitable for small to medium graphs. No separate database server required.
 
-4. **Audit Trail**: All modifications automatically logged for compliance and debugging.
+4. **JSON Storage**: Node data stored as JSON for flexible, schema-less data structures (beyond the required category/type).
 
-5. **Foreign Keys**: Cascading deletes ensure referential integrity (deleting a node removes its edges).
+5. **Audit Trail**: All modifications automatically logged for compliance and debugging.
 
-6. **Global Context**: AuditContext allows implicit tracking without passing user/IP to every method.
+6. **Foreign Keys**: Cascading deletes ensure referential integrity (deleting a node removes its edges).
 
-7. **Idempotent Operations**: Using `INSERT OR IGNORE` prevents duplicate errors on retry.
+7. **Global Context**: AuditContext allows implicit tracking without passing user/IP to every method.
 
-8. **Strict Typing**: PHP 8 strict types catch errors early and improve IDE support.
+8. **Idempotent Operations**: Using `INSERT OR IGNORE` prevents duplicate errors on retry.
 
-9. **Transaction Support**: Enables atomic multi-operation updates.
+9. **Strict Typing**: PHP 8 strict types catch errors early and improve IDE support.
+
+10. **Transaction Support**: Enables atomic multi-operation updates.
 
 ---
 
