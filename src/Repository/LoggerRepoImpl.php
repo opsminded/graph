@@ -35,16 +35,16 @@ final class LoggerRepoImpl implements GraphRepoInterface
         return $this->repo->getNodeExists($id);
     }
 
-    public function insertNode(string $id, string $category, string $type, array $data = []): bool
+    public function insertNode(string $id, string $label, string $category, string $type, array $data = []): bool
     {
         $this->logger->debug("Inserting node with ID: $id");
-        return $this->repo->insertNode($id, $category, $type, $data);
+        return $this->repo->insertNode($id, $label, $category, $type, $data);
     }
 
-    public function updateNode(string $id, string $category, string $type, array $data = []): bool
+    public function updateNode(string $id, string $label, string $category, string $type, array $data = []): bool
     {
         $this->logger->debug("Updating node with ID: $id");
-        return $this->repo->updateNode($id, $category, $type, $data);
+        return $this->repo->updateNode($id, $label, $category, $type, $data);
     }
 
     public function deleteNode(string $id): bool

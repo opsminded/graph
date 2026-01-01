@@ -36,6 +36,10 @@ final class SqliteStatusRepoImpl implements StatusRepoInterface
 
     public function setNodeStatus(string $id, string $status): void
     {
+        // validate if status is one of the allowed values
+        if (!in_array($status, self::ALLOWED_STATUSES, true)) {
+            throw new \InvalidArgumentException("Invalid status: $status");
+        }
         $stmt = $this->pdo->prepare("REPLACE INTO status (node_id, status) VALUES (?, ?)");
         $stmt->execute([$id, $status]);
     }

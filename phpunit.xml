@@ -10,10 +10,9 @@
         <include>
             <directory>src</directory>
         </include>
+        <report>
+            <html outputDirectory="coverage/html"/>
+            <clover outputFile="coverage/clover.xml"/>
+        </report>
     </coverage>
-
-    <logging>
-        <log type="coverage-html" target="coverage/html" />
-        <log type="coverage-clover" target="coverage/clover.xml" />
-    </logging>
 </phpunit>

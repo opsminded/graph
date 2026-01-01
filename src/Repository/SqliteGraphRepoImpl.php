@@ -42,7 +42,7 @@ final class SqliteGraphRepoImpl implements GraphRepoInterface
     public function getNodes(): array
     {
         try {
-            $stmt = $this->pdo->query("SELECT id, data FROM nodes");
+            $stmt = $this->pdo->query("SELECT data FROM nodes");
             $rows = $stmt->fetchAll();
 
             $nodes = [];
@@ -74,14 +74,18 @@ final class SqliteGraphRepoImpl implements GraphRepoInterface
 
 
 
-    public function insertNode(string $id, string $category, string $type, array $data = []): bool
+    public function insertNode(string $id, string $label, string $category, string $type, array $data = []): bool
     {
         try {
-            $sql        = "INSERT OR IGNORE INTO nodes (id, category, type, data) VALUES (:id, :category, :type, :data)";
+            $sql        = "INSERT OR IGNORE INTO nodes (id, label, category, type, data) VALUES (:id, :label, :category, :type, :data)";
             $stmt       = $this->pdo->prepare($sql);
             $data['id'] = $id;
+            $data['label'] = $label;
+            $data['category'] = $category;
+            $data['type'] = $type;
             $stmt->execute([
                 ':id'      => $id,
+                ':label'   => $label,
                 ':category' => $category,
                 ':type'    => $type,
                 ':data'    => json_encode($data, JSON_UNESCAPED_UNICODE)
@@ -95,13 +99,18 @@ final class SqliteGraphRepoImpl implements GraphRepoInterface
         // @codeCoverageIgnoreEnd
     }
 
-    public function updateNode(string $id, string $category, string $type, array $data = []): bool
+    public function updateNode(string $id, string $label, string $category, string $type, array $data = []): bool
     {
         try {
-            $stmt = $this->pdo->prepare("UPDATE nodes SET category = :category, type = :type, data = :data WHERE id = :id");
+            $stmt = $this->pdo->prepare("UPDATE nodes SET label = :label, category = :category, type = :type, data = :data WHERE id = :id");
             $data['id'] = $id;
+            $data['label'] = $label;
+            $data['category'] = $category;
+            $data['type'] = $type;
+            
             $stmt->execute([
                 ':id'      => $id,
+                ':label'   => $label,
                 ':category' => $category,
                 ':type'    => $type,
                 ':data'    => json_encode($data, JSON_UNESCAPED_UNICODE)
@@ -134,7 +143,7 @@ final class SqliteGraphRepoImpl implements GraphRepoInterface
     public function getEdge(string $id): ?array
     {
         try {
-            $stmt = $this->pdo->prepare("SELECT id, data FROM edges WHERE id = :id");
+            $stmt = $this->pdo->prepare("SELECT data FROM edges WHERE id = :id");
             $stmt->execute([':id' => $id]);
             $row = $stmt->fetch();
             if ($row) {
@@ -151,7 +160,7 @@ final class SqliteGraphRepoImpl implements GraphRepoInterface
     public function getEdges(): array
     {
         try {
-            $stmt  = $this->pdo->query("SELECT source, target, data FROM edges");
+            $stmt  = $this->pdo->query("SELECT data FROM edges");
             $rows  = $stmt->fetchAll();
             $edges = [];
             foreach ($rows as $row) {
@@ -277,6 +286,7 @@ final class SqliteGraphRepoImpl implements GraphRepoInterface
         $this->pdo->exec("
             CREATE TABLE IF NOT EXISTS nodes (
                 id TEXT PRIMARY KEY,
+                label TEXT NOT NULL,
                 category TEXT NOT NULL,
                 type TEXT NOT NULL,
                 data TEXT NOT NULL

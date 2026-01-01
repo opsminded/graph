@@ -38,17 +38,17 @@ final class AuditRepoImpl implements GraphRepoInterface
         return $this->repo->getNodeExists($id);
     }
 
-    public function insertNode(string $id, string $source, string $target, array $data = []): bool
+    public function insertNode(string $id, string $label, string $category, string $type, array $data = []): bool
     {
         $this->insertAuditLog('node', $id, 'insert_node', null, $data);
-        return $this->repo->insertNode($id, $source, $target, $data);
+        return $this->repo->insertNode($id, $label, $category, $type, $data);
     }
 
-    public function updateNode(string $id, string $category, string $type, array $data = []): bool
+    public function updateNode(string $id, string $label, string $category, string $type, array $data = []): bool
     {
         $oldData = $this->repo->getNode($id);
         $this->insertAuditLog('node', $id, 'update_node', $oldData, $data);
-        return $this->repo->updateNode($id, $category, $type, $data);
+        return $this->repo->updateNode($id, $label, $category, $type, $data);
     }
 
     public function deleteNode(string $id): bool

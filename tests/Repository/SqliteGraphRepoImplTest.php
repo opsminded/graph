@@ -45,7 +45,7 @@ class SqliteGraphRepoImplTest extends TestCase
         $type = 'server';
         $data = ['name' => 'Test Node', 'value' => 42];
 
-        $result = $this->repo->insertNode($id, $category, $type,     $data);
+        $result = $this->repo->insertNode($id, $id, $category, $type,     $data);
 
         $this->assertTrue($result);
         $this->assertTrue($this->repo->getNodeExists($id));
@@ -59,8 +59,8 @@ class SqliteGraphRepoImplTest extends TestCase
         $data1 = ['name' => 'First'];
         $data2 = ['name' => 'Second'];
 
-        $this->repo->insertNode($id, $category, $type, $data1);
-        $result = $this->repo->insertNode($id, $category, $type, $data2);
+        $this->repo->insertNode($id, $id, $category, $type, $data1);
+        $result = $this->repo->insertNode($id, $id, $category, $type, $data2);
 
         $this->assertTrue($result); // INSERT OR IGNORE still returns true
         $node = $this->repo->getNode($id);
@@ -78,10 +78,13 @@ class SqliteGraphRepoImplTest extends TestCase
         $type = 'server';
         $data = ['name' => 'Test Node', 'value' => 42, 'nested' => ['key' => 'value']];
 
-        $this->repo->insertNode($id, $category, $type, $data);
+        $this->repo->insertNode($id, $id, $category, $type, $data);
         $result = $this->repo->getNode($id);
 
         $data['id'] = $id;
+        $data['label'] = $id;
+        $data['category'] = $category;
+        $data['type'] = $type;
         $this->assertSame(['data' => $data], $result);
     }
 
@@ -98,9 +101,9 @@ class SqliteGraphRepoImplTest extends TestCase
     {
         $category = 'business';
         $type = 'server';
-        $this->repo->insertNode('node1', $category, $type, ['name' => 'First']);
-        $this->repo->insertNode('node2', $category, $type, ['name' => 'Second']);
-        $this->repo->insertNode('node3', $category, $type, ['name' => 'Third']);
+        $this->repo->insertNode('node1', 'node1', $category, $type, ['name' => 'First']);
+        $this->repo->insertNode('node2', 'node2', $category, $type, ['name' => 'Second']);
+        $this->repo->insertNode('node3', 'node3', $category, $type, ['name' => 'Third']);
 
         $nodes = $this->repo->getNodes();
 
@@ -126,7 +129,7 @@ class SqliteGraphRepoImplTest extends TestCase
         $id = 'node1';
         $category = 'business';
         $type = 'server';
-        $this->repo->insertNode($id, $category, $type, ['name' => 'Test']);
+        $this->repo->insertNode($id, $id, $category, $type, ['name' => 'Test']);
 
         $result = $this->repo->getNodeExists($id);
 
@@ -149,10 +152,10 @@ class SqliteGraphRepoImplTest extends TestCase
         $id = 'node1';
         $category = 'business';
         $type = 'server';
-        $this->repo->insertNode($id, $category, $type, ['name' => 'Original', 'value' => 1]);
+        $this->repo->insertNode($id, $id, $category, $type, ['name' => 'Original', 'value' => 1]);
 
         $newData = ['name' => 'Updated', 'value' => 2];
-        $result = $this->repo->updateNode($id, $category, $type, $newData);
+        $result = $this->repo->updateNode($id, $id, $category, $type, $newData);
 
         $this->assertTrue($result);
         $updated = $this->repo->getNode($id);
@@ -164,7 +167,7 @@ class SqliteGraphRepoImplTest extends TestCase
     {
         $category = 'business';
         $type = 'server';
-        $result = $this->repo->updateNode('nonexistent', $category, $type, ['name' => 'Test']);
+        $result = $this->repo->updateNode('nonexistent', 'nonexistent', $category, $type, ['name' => 'Test']);
 
         $this->assertFalse($result);
     }
@@ -178,7 +181,7 @@ class SqliteGraphRepoImplTest extends TestCase
         $id = 'node1';
         $category = 'business';
         $type = 'server';
-        $this->repo->insertNode($id, $category, $type, ['name' => 'Test']);
+        $this->repo->insertNode($id, $id, $category, $type, ['name' => 'Test']);
 
         $result = $this->repo->deleteNode($id);
 
@@ -191,8 +194,8 @@ class SqliteGraphRepoImplTest extends TestCase
         $category = 'business';
         $type = 'server';
 
-        $this->repo->insertNode('node1', $category, $type, ['name' => 'First']);
-        $this->repo->insertNode('node2', $category, $type, ['name' => 'Second']);
+        $this->repo->insertNode('node1', 'node1', $category, $type, ['name' => 'First']);
+        $this->repo->insertNode('node2', 'node2', $category, $type, ['name' => 'Second']);
         $this->repo->insertEdge('node1-node2', 'node1', 'node2');
 
         $this->assertTrue($this->repo->getEdgeExistsById('node1-node2'));
@@ -210,8 +213,8 @@ class SqliteGraphRepoImplTest extends TestCase
     {
         $category = 'business';
         $type = 'server';
-        $this->repo->insertNode('node1', $category, $type, ['name' => 'First']);
-        $this->repo->insertNode('node2', $category, $type, ['name' => 'Second']);
+        $this->repo->insertNode('node1', 'node1', $category, $type, ['name' => 'First']);
+        $this->repo->insertNode('node2', 'node2', $category, $type, ['name' => 'Second']);
 
         $result = $this->repo->insertEdge('node1-node2', 'node1', 'node2');
         $this->assertTrue($result);
@@ -222,8 +225,8 @@ class SqliteGraphRepoImplTest extends TestCase
     {
         $category = 'business';
         $type = 'server';
-        $this->repo->insertNode('node1', $category, $type, ['name' => 'First']);
-        $this->repo->insertNode('node2', $category, $type, ['name' => 'Second']);
+        $this->repo->insertNode('node1', 'node1', $category, $type, ['name' => 'First']);
+        $this->repo->insertNode('node2', 'node2', $category, $type, ['name' => 'Second']);
 
         $this->repo->insertEdge('node1-node2', 'node1', 'node2');
         $result = $this->repo->insertEdge('node1-node2', 'node1', 'node2');
@@ -239,8 +242,8 @@ class SqliteGraphRepoImplTest extends TestCase
     {
         $category = 'business';
         $type = 'server';
-        $this->repo->insertNode('node1', $category, $type, ['name' => 'First']);
-        $this->repo->insertNode('node2', $category, $type, ['name' => 'Second']);
+        $this->repo->insertNode('node1', 'node1', $category, $type, ['name' => 'First']);
+        $this->repo->insertNode('node2', 'node2', $category, $type, ['name' => 'Second']);
         $this->repo->insertEdge('node1-node2', 'node1', 'node2');
 
         $edge = $this->repo->getEdge('node1-node2');
@@ -263,9 +266,9 @@ class SqliteGraphRepoImplTest extends TestCase
         $category = 'business';
         $type = 'server';
 
-        $this->repo->insertNode('node1', $category, $type, ['name' => 'First']);
-        $this->repo->insertNode('node2', $category, $type, ['name' => 'Second']);
-        $this->repo->insertNode('node3', $category, $type, ['name' => 'Third']);
+        $this->repo->insertNode('node1', 'node1', $category, $type, ['name' => 'First']);
+        $this->repo->insertNode('node2', 'node2', $category, $type, ['name' => 'Second']);
+        $this->repo->insertNode('node3', 'node3', $category, $type, ['name' => 'Third']);
         $this->repo->insertEdge('node1-node2', 'node1', 'node2');
         $this->repo->insertEdge('node2-node3', 'node2', 'node3');
         $edges = $this->repo->getEdges();
@@ -291,8 +294,8 @@ class SqliteGraphRepoImplTest extends TestCase
     {
         $category = 'business';
         $type = 'server';
-        $this->repo->insertNode('node1', $category, $type, ['name' => 'First']);
-        $this->repo->insertNode('node2', $category, $type, ['name' => 'Second']);
+        $this->repo->insertNode('node1', 'node1', $category, $type, ['name' => 'First']);
+        $this->repo->insertNode('node2', 'node2', $category, $type, ['name' => 'Second']);
         $this->repo->insertEdge('node1-node2', 'node1', 'node2');
 
         $result = $this->repo->getEdgeExistsById('node1-node2');
@@ -304,8 +307,8 @@ class SqliteGraphRepoImplTest extends TestCase
     {
         $category = 'business';
         $type = 'server';
-        $this->repo->insertNode('node1', $category, $type, ['name' => 'First']);
-        $this->repo->insertNode('node2', $category, $type, ['name' => 'Second']);
+        $this->repo->insertNode('node1', 'node1', $category, $type, ['name' => 'First']);
+        $this->repo->insertNode('node2', 'node2', $category, $type, ['name' => 'Second']);
         $this->repo->insertEdge('node1-node2', 'node1', 'node2');
 
         // Verify edges are directional (not bidirectional)
@@ -330,8 +333,8 @@ class SqliteGraphRepoImplTest extends TestCase
     {
         $category = 'business';
         $type = 'server';
-        $this->repo->insertNode('node1', $category, $type, ['name' => 'First']);
-        $this->repo->insertNode('node2', $category, $type, ['name' => 'Second']);
+        $this->repo->insertNode('node1', 'node1', $category, $type, ['name' => 'First']);
+        $this->repo->insertNode('node2', 'node2', $category, $type, ['name' => 'Second']);
         $this->repo->insertEdge('node1-node2', 'node1', 'node2');
 
         $edgeData = ['weight' => 5, 'type' => 'connection'];
@@ -356,8 +359,8 @@ class SqliteGraphRepoImplTest extends TestCase
         $category = 'business';
         $type = 'server';
 
-        $this->repo->insertNode('node1', $category, $type, ['name' => 'First']);
-        $this->repo->insertNode('node2', $category, $type, ['name' => 'Second']);
+        $this->repo->insertNode('node1', 'node1', $category, $type, ['name' => 'First']);
+        $this->repo->insertNode('node2', 'node2', $category, $type, ['name' => 'Second']);
         $this->repo->insertEdge('node1-node2', 'node1', 'node2');
 
         $result = $this->repo->deleteEdge('node1-node2');
@@ -397,7 +400,7 @@ class SqliteGraphRepoImplTest extends TestCase
 
         // Create
         $this->assertFalse($this->repo->getNodeExists($id));
-        $this->assertTrue($this->repo->insertNode($id, $category, $type, $initialData));
+        $this->assertTrue($this->repo->insertNode($id, $id, $category, $type, $initialData));
         $this->assertTrue($this->repo->getNodeExists($id));
 
         // Read
@@ -406,7 +409,7 @@ class SqliteGraphRepoImplTest extends TestCase
         $this->assertSame('active', $node['data']['status']);
 
         // Update
-        $this->assertTrue($this->repo->updateNode($id, $category, $type, $updatedData));
+        $this->assertTrue($this->repo->updateNode($id, $id, $category, $type, $updatedData));
         $node = $this->repo->getNode($id);
         $this->assertSame('Updated', $node['data']['name']);
         $this->assertSame('inactive', $node['data']['status']);
@@ -424,9 +427,9 @@ class SqliteGraphRepoImplTest extends TestCase
         $type = 'server';
         
         // Create a small graph: A -> B -> C, A -> C
-        $this->repo->insertNode('A', $category, $type, ['name' => 'Node A']);
-        $this->repo->insertNode('B', $category, $type, ['name' => 'Node B']);
-        $this->repo->insertNode('C', $category, $type, ['name' => 'Node C']);
+        $this->repo->insertNode('A', 'A', $category, $type, ['name' => 'Node A']);
+        $this->repo->insertNode('B', 'B', $category, $type, ['name' => 'Node B']);
+        $this->repo->insertNode('C', 'C', $category, $type, ['name' => 'Node C']);
         $this->repo->insertEdge('A-B', 'A', 'B');
         $this->repo->insertEdge('B-C', 'B', 'C');
         $this->repo->insertEdge('A-C', 'A', 'C');
@@ -454,7 +457,7 @@ class SqliteGraphRepoImplTest extends TestCase
             'special' => 'Café résumé'
         ];
 
-        $this->repo->insertNode($id, $category, $type, $data);
+        $this->repo->insertNode($id, $id, $category, $type, $data);
         $retrieved = $this->repo->getNode($id);
 
         $this->assertSame('Test 测试', $retrieved['data']['name']);

@@ -48,7 +48,7 @@ class LoggerRepoImplTest extends TestCase
     {
         $category = 'business';
         $type = 'server';
-        $this->repo->insertNode('node1', $category, $type, ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertNode('node1', 'node1', $category, $type, ['category' => 'business', 'type' => 'application']);
 
         $result = $this->repo->getNode('node1');
 
@@ -67,8 +67,8 @@ class LoggerRepoImplTest extends TestCase
     {
         $category = 'business';
         $type = 'application';
-        $this->repo->insertNode('node1', $category, $type, ['category' => 'business', 'type' => 'application']);
-        $this->repo->insertNode('node2', $category, $type, ['category' => 'infrastructure', 'type' => 'server']);
+        $this->repo->insertNode('node1', 'node1', $category, $type, ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertNode('node2', 'node2', $category, $type, ['category' => 'infrastructure', 'type' => 'server']);
 
         $result = $this->repo->getNodes();
 
@@ -80,7 +80,7 @@ class LoggerRepoImplTest extends TestCase
     {
         $category = 'business';
         $type = 'application';
-        $this->repo->insertNode('node1', $category, $type, ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertNode('node1', 'node1', $category, $type, ['category' => 'business', 'type' => 'application']);
 
         $exists = $this->repo->getNodeExists('node1');
         $notExists = $this->repo->getNodeExists('nonexistent');
@@ -95,7 +95,7 @@ class LoggerRepoImplTest extends TestCase
     {
         $category = 'business';
         $type = 'server';
-        $result = $this->repo->insertNode('node1', $category, $type, ['category' => 'business', 'type' => 'application', 'name' => 'Test']);
+        $result = $this->repo->insertNode('node1', 'node1', $category, $type, ['category' => 'business', 'type' => 'application', 'name' => 'Test']);
 
         $this->assertTrue($result);
         $this->assertStringContainsString('Inserting node with ID: node1', $this->getLogContent());
@@ -109,9 +109,9 @@ class LoggerRepoImplTest extends TestCase
     {
         $category = 'business';
         $type = 'server';
-        $this->repo->insertNode('node1', $category, $type, ['category' => 'business', 'type' => 'application', 'name' => 'Original']);
+        $this->repo->insertNode('node1', 'node1', $category, $type, ['category' => 'business', 'type' => 'application', 'name' => 'Original']);
 
-        $result = $this->repo->updateNode('node1', $category, $type, ['name' => 'Updated']);
+        $result = $this->repo->updateNode('node1', 'node1', $category, $type, ['name' => 'Updated']);
 
         $this->assertTrue($result);
         $this->assertStringContainsString('Updating node with ID: node1', $this->getLogContent());
@@ -124,7 +124,7 @@ class LoggerRepoImplTest extends TestCase
     {
         $category = 'business';
         $type = 'application';
-        $this->repo->insertNode('node1', $category, $type, ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertNode('node1', 'node1', $category, $type, ['category' => 'business', 'type' => 'application']);
 
         $result = $this->repo->deleteNode('node1');
 
@@ -138,8 +138,8 @@ class LoggerRepoImplTest extends TestCase
     {
         $category = 'business';
         $type = 'application';
-        $this->repo->insertNode('node1', $category, $type, ['category' => 'business', 'type' => 'application']);
-        $this->repo->insertNode('node2', $category, $type, ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertNode('node1', 'node1', $category, $type, ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertNode('node2', 'node2', $category, $type, ['category' => 'business', 'type' => 'application']);
         $this->repo->insertEdge('edge1', 'node1', 'node2', []);
 
         $result = $this->repo->getEdge('edge1');
@@ -158,9 +158,9 @@ class LoggerRepoImplTest extends TestCase
     {
         $category = 'business';
         $type = 'application';
-        $this->repo->insertNode('node1', $category, $type, ['category' => 'business', 'type' => 'application']);
-        $this->repo->insertNode('node2', $category, $type, ['category' => 'business', 'type' => 'application']);
-        $this->repo->insertNode('node3', $category, $type, ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertNode('node1', 'node1', $category, $type, ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertNode('node2', 'node2', $category, $type, ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertNode('node3', 'node3', $category, $type, ['category' => 'business', 'type' => 'application']);
         $this->repo->insertEdge('edge1', 'node1', 'node2', []);
         $this->repo->insertEdge('edge2', 'node2', 'node3', []);
 
@@ -174,8 +174,8 @@ class LoggerRepoImplTest extends TestCase
     {
         $category = 'business';
         $type = 'application';
-        $this->repo->insertNode('node1', $category, $type, ['category' => 'business', 'type' => 'application']);
-        $this->repo->insertNode('node2', $category, $type, ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertNode('node1', 'node1', $category, $type, ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertNode('node2', 'node2', $category, $type, ['category' => 'business', 'type' => 'application']);
         $this->repo->insertEdge('edge1', 'node1', 'node2', []);
 
         $exists = $this->repo->getEdgeExistsById('edge1');
@@ -191,8 +191,8 @@ class LoggerRepoImplTest extends TestCase
     {
         $category = 'business';
         $type = 'application';
-        $this->repo->insertNode('node1', $category, $type, ['category' => 'business', 'type' => 'application']);
-        $this->repo->insertNode('node2', $category, $type, ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertNode('node1', 'node1', $category, $type, ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertNode('node2', 'node2', $category, $type, ['category' => 'business', 'type' => 'application']);
 
         $result = $this->repo->insertEdge('edge1', 'node1', 'node2', ['weight' => 10]);
         $this->assertTrue($result);
@@ -206,8 +206,8 @@ class LoggerRepoImplTest extends TestCase
     {
         $category = 'business';
         $type = 'application';
-        $this->repo->insertNode('node1', $category, $type, ['category' => 'business', 'type' => 'application']);
-        $this->repo->insertNode('node2', $category, $type, ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertNode('node1', 'node1', $category, $type, ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertNode('node2', 'node2', $category, $type, ['category' => 'business', 'type' => 'application']);
         $this->repo->insertEdge('edge1', 'node1', 'node2', ['weight' => 10]);
 
         $result = $this->repo->updateEdge('edge1', 'node1', 'node2', ['weight' => 20]);
@@ -223,8 +223,8 @@ class LoggerRepoImplTest extends TestCase
     {
         $category = 'business';
         $type = 'application';
-        $this->repo->insertNode('node1', $category, $type, ['category' => 'business', 'type' => 'application']);
-        $this->repo->insertNode('node2', $category, $type, ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertNode('node1', 'node1', $category, $type, ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertNode('node2', 'node2', $category, $type, ['category' => 'business', 'type' => 'application']);
         $this->repo->insertEdge('edge1', 'node1', 'node2', []);
 
         $result = $this->repo->deleteEdge('edge1');
@@ -239,8 +239,8 @@ class LoggerRepoImplTest extends TestCase
     {
         $category = 'business';
         $type = 'application';
-        $this->repo->insertNode('node1', $category, $type, ['category' => 'business', 'type' => 'application']);
-        $this->repo->insertNode('node2', $category, $type, ['category' => 'infrastructure', 'type' => 'server']);
+        $this->repo->insertNode('node1', 'node1', $category, $type, ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertNode('node2', 'node2', $category, $type, ['category' => 'infrastructure', 'type' => 'server']);
         $this->repo->insertEdge('edge1', 'node1', 'node2', []);
         $this->repo->getNodes();
         $this->repo->getEdges();
@@ -261,7 +261,7 @@ class LoggerRepoImplTest extends TestCase
     {
         $category = 'business';
         $type = 'application';
-        $this->repo->insertNode('node1', $category, $type, ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertNode('node1', 'node1', $category, $type, ['category' => 'business', 'type' => 'application']);
 
         $logContent = $this->getLogContent();
         // Check for timestamp pattern: YYYY-MM-DD HH:MM:SS
