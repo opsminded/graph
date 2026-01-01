@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Opsminded\Graph\Service;
 
 use Opsminded\Graph\Model\Node;
+use Opsminded\Graph\Model\Nodes;
 use Opsminded\Graph\Model\Edge;
+use Opsminded\Graph\Model\Edges;
 use Opsminded\Graph\Repository\GraphRepoInterface;
 
 final class BasicGraphServiceImpl implements GraphServiceInterface
@@ -30,16 +32,16 @@ final class BasicGraphServiceImpl implements GraphServiceInterface
     public function getNode(string $id): ?Node
     {
         $row  = $this->repo->getNode($id);
-        $node = new Node($row['id'], $row['data']);
+        $node = new Node($row['id'], $row['label'], $row['category'], $row['type'], $row['data']);
         return $node;
     }
 
-    public function getNodes(): array
+    public function getNodes(): Nodes
     {
         $rows  = $this->repo->getNodes();
-        $nodes = [];
+        $nodes = new Nodes();
         foreach ($rows as $row) {
-            $nodes[] = new Node($row['id'], $row['data']);
+            $nodes->addNode(new Node($row['id'], $row['label'], $row['category'], $row['type'], $row['data']));
         }
         return $nodes;
     }
@@ -51,12 +53,24 @@ final class BasicGraphServiceImpl implements GraphServiceInterface
 
     public function insertNode(Node $node): bool
     {
-        return $this->repo->insertNode($node['id'], $node['data']);
+        return $this->repo->insertNode(
+            $node->getId(),
+            $node->getLabel(),
+            $node->getCategory(),
+            $node->getType(),
+            $node->getData()
+        );
     }
 
     public function updateNode(Node $node): bool
     {
-        return $this->repo->updateNode($node['id'], $node['data']);
+        return $this->repo->updateNode(
+            $node->getId(),
+            $node->getLabel(),
+            $node->getCategory(),
+            $node->getType(),
+            $node->getData()
+        );
     }
 
     public function deleteNode(string $id): bool
@@ -69,24 +83,31 @@ final class BasicGraphServiceImpl implements GraphServiceInterface
         return $this->repo->getEdge($source, $target);
     }
 
-    public function getEdges(): array
+    public function getEdges(): Edges
     {
-        return $this->repo->getEdges();
+        $rows  = $this->repo->getEdges();
+        $edges = new Edges();
+        foreach ($rows as $row) {
+            $edges->addEdge(new Edge($row['id'], $row['source'], $row['target'], $row));
+        }
+        return $edges;
     }
 
     public function getEdgeExists(string $source, string $target): bool
     {
-        return $this->repo->getEdgeExists($source, $target);
+        return $this->repo->getEdgeExistsByNodes($source, $target);
     }
 
     public function insertEdge(Edge $edge): bool
     {
-        return $this->repo->insertEdge($edge->getFromNodeId(), $edge->getToNodeId(), $edge->getData());
+        $id = $edge->getSourceNodeId() . '@' . $edge->getTargetNodeId();
+        return $this->repo->insertEdge($id, $edge->getSourceNodeId(), $edge->getTargetNodeId(), $edge->getData());
     }
 
     public function updateEdge(Edge $edge): bool
     {
-        return $this->repo->updateEdge($edge->getFromNodeId(), $edge->getToNodeId(), $edge->getData());
+        $id = $edge->getSourceNodeId() . '@' . $edge->getTargetNodeId();
+        return $this->repo->updateEdge($id, $edge->getSourceNodeId(), $edge->getTargetNodeId(), $edge->getData());
     }
 
     public function deleteEdge(string $source, string $target): bool

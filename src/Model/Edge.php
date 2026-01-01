@@ -6,12 +6,14 @@ namespace Opsminded\Graph\Model;
 
 final class Edge
 {
+    private string $id;
     private string $source;
     private string $target;
     private array $data;
 
-    public function __construct(string $source, string $target, array $data = [])
+    public function __construct(string $id, string $source, string $target, array $data = [])
     {
+        $this->id     = $id;
         $this->source = $source;
         $this->target = $target;
         $this->data   = $data;
@@ -19,7 +21,7 @@ final class Edge
 
     public function getId(): string
     {
-        return $this->data['id'];
+        return $this->id;
     }
 
     public function getSourceNodeId(): string
