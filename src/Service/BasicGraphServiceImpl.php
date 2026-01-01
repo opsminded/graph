@@ -29,14 +29,14 @@ final class BasicGraphServiceImpl implements GraphServiceInterface
 
     public function getNode(string $id): ?Node
     {
-        $row = $this->repo->getNode($id);
+        $row  = $this->repo->getNode($id);
         $node = new Node($row['id'], $row['data']);
         return $node;
     }
 
     public function getNodes(): array
     {
-        $rows = $this->repo->getNodes();
+        $rows  = $this->repo->getNodes();
         $nodes = [];
         foreach ($rows as $row) {
             $nodes[] = new Node($row['id'], $row['data']);
@@ -48,17 +48,17 @@ final class BasicGraphServiceImpl implements GraphServiceInterface
     {
         return $this->repo->getNodeExists($id);
     }
-    
+
     public function insertNode(Node $node): bool
     {
         return $this->repo->insertNode($node['id'], $node['data']);
     }
-    
+
     public function updateNode(Node $node): bool
     {
         return $this->repo->updateNode($node['id'], $node['data']);
     }
-    
+
     public function deleteNode(string $id): bool
     {
         return $this->repo->deleteNode($id);
@@ -68,27 +68,27 @@ final class BasicGraphServiceImpl implements GraphServiceInterface
     {
         return $this->repo->getEdge($source, $target);
     }
-    
+
     public function getEdges(): array
     {
         return $this->repo->getEdges();
     }
-    
+
     public function getEdgeExists(string $source, string $target): bool
     {
         return $this->repo->getEdgeExists($source, $target);
     }
-    
+
     public function insertEdge(Edge $edge): bool
     {
         return $this->repo->insertEdge($edge->getFromNodeId(), $edge->getToNodeId(), $edge->getData());
     }
-    
+
     public function updateEdge(Edge $edge): bool
     {
         return $this->repo->updateEdge($edge->getFromNodeId(), $edge->getToNodeId(), $edge->getData());
     }
-    
+
     public function deleteEdge(string $source, string $target): bool
     {
         return $this->repo->deleteEdge($source, $target);

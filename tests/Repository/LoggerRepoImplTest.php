@@ -267,4 +267,21 @@ class LoggerRepoImplTest extends TestCase
         // Check for timestamp pattern: YYYY-MM-DD HH:MM:SS
         $this->assertMatchesRegularExpression('/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/', $logContent);
     }
+
+    public function testGetEdgeExistsByNodesLogsAndDelegates(): void
+    {
+        $category = 'business';
+        $type = 'application';
+        $this->repo->insertNode('node1', 'node1', $category, $type, ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertNode('node2', 'node2', $category, $type, ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertEdge('edge1', 'node1', 'node2', []);
+
+        $exists = $this->repo->getEdgeExistsByNodes('node1', 'node2');
+        $notExists = $this->repo->getEdgeExistsByNodes('node3', 'node4');
+
+        $this->assertTrue($exists);
+        $this->assertFalse($notExists);
+        $this->assertStringContainsString('Checking if edge exists from source: node1 to target: node2', $this->getLogContent());
+        $this->assertStringContainsString('Checking if edge exists from source: node3 to target: node4', $this->getLogContent());
+    }
 }

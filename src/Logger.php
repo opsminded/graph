@@ -27,7 +27,8 @@ class Logger
 
     public function log(string $message, array $data = []): void
     {
-        $message = date('Y-m-d H:i:s') . ' ' . $message . ' (' . json_encode($data, JSON_UNESCAPED_UNICODE) . ')' . PHP_EOL;
+        $message = date('Y-m-d H:i:s') . ' ' .
+        $message . ' (' . json_encode($data, JSON_UNESCAPED_UNICODE) . ')' . PHP_EOL;
         fwrite($this->fd, $message);
     }
 }

@@ -241,4 +241,12 @@ class SqliteStatusRepoImplTest extends TestCase
         $count = $stmt->fetchColumn();
         $this->assertEquals(1, $count);
     }
+
+    public function testSetNodeStatusThrowsExceptionForInvalidStatus(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid status');
+
+        $this->statusRepo->setNodeStatus('node1', 'invalid_status');
+    }
 }

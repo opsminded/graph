@@ -353,4 +353,54 @@ class AuditRepoImplTest extends TestCase
         $this->repo->deleteNode('node1');
         $this->assertFalse($this->repo->getNodeExists('node1'));
     }
+
+    public function testGetEdgeExistsByNodes(): void
+    {
+        $this->repo->insertNode('node1', 'node1', 'business', 'application', ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertNode('node2', 'node2', 'business', 'application', ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertEdge('edge1', 'node1', 'node2', []);
+
+        // Clear previous audit logs
+        $this->pdo->exec("DELETE FROM audit");
+
+        $result = $this->repo->getEdgeExistsByNodes('node1', 'node2');
+
+        $this->assertTrue($result);
+
+        $log = $this->getLatestAuditLog();
+        $this->assertNotNull($log);
+        $this->assertEquals('edge', $log['entity_type']);
+        $this->assertEquals('node1->node2', $log['entity_id']);
+        $this->assertEquals('get_edge_exists_by_nodes', $log['action']);
+    }
+
+    public function testInsertAuditLog(): void
+    {
+        $oldData = ['name' => 'Old Value', 'status' => 'inactive'];
+        $newData = ['name' => 'New Value', 'status' => 'active'];
+
+        AuditContext::set('admin', '10.0.0.1');
+
+        $result = $this->repo->insertAuditLog('test_entity', 'entity123', 'test_action', $oldData, $newData);
+
+        $this->assertTrue($result);
+
+        $log = $this->getLatestAuditLog();
+        $this->assertNotNull($log);
+        $this->assertEquals('test_entity', $log['entity_type']);
+        $this->assertEquals('entity123', $log['entity_id']);
+        $this->assertEquals('test_action', $log['action']);
+        $this->assertEquals('admin', $log['user_id']);
+        $this->assertEquals('10.0.0.1', $log['ip_address']);
+
+        $retrievedOldData = json_decode($log['old_data'], true);
+        $this->assertEquals('Old Value', $retrievedOldData['name']);
+        $this->assertEquals('inactive', $retrievedOldData['status']);
+
+        $retrievedNewData = json_decode($log['new_data'], true);
+        $this->assertEquals('New Value', $retrievedNewData['name']);
+        $this->assertEquals('active', $retrievedNewData['status']);
+
+        AuditContext::clear();
+    }
 }

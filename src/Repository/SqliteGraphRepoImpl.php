@@ -11,7 +11,7 @@ use RuntimeException;
 final class SqliteGraphRepoImpl implements GraphRepoInterface
 {
     private PDO $pdo;
-    
+
     public function __construct(PDO $pdo)
     {
         $this->pdo = $pdo;
@@ -76,19 +76,25 @@ final class SqliteGraphRepoImpl implements GraphRepoInterface
 
     public function insertNode(string $id, string $label, string $category, string $type, array $data = []): bool
     {
+        // validations
+        $this->validateNode($id, $label, $category, $type, $data);
+
         try {
-            $sql        = "INSERT OR IGNORE INTO nodes (id, label, category, type, data) VALUES (:id, :label, :category, :type, :data)";
-            $stmt       = $this->pdo->prepare($sql);
-            $data['id'] = $id;
-            $data['label'] = $label;
+            $sql = "
+                INSERT OR IGNORE INTO nodes 
+                (id, label, category, type, data) 
+                VALUES (:id, :label, :category, :type, :data)";
+            $stmt             = $this->pdo->prepare($sql);
+            $data['id']       = $id;
+            $data['label']    = $label;
             $data['category'] = $category;
-            $data['type'] = $type;
+            $data['type']     = $type;
             $stmt->execute([
-                ':id'      => $id,
-                ':label'   => $label,
+                ':id'       => $id,
+                ':label'    => $label,
                 ':category' => $category,
-                ':type'    => $type,
-                ':data'    => json_encode($data, JSON_UNESCAPED_UNICODE)
+                ':type'     => $type,
+                ':data'     => json_encode($data, JSON_UNESCAPED_UNICODE)
             ]);
             return true;
             // @codeCoverageIgnoreStart
@@ -101,19 +107,27 @@ final class SqliteGraphRepoImpl implements GraphRepoInterface
 
     public function updateNode(string $id, string $label, string $category, string $type, array $data = []): bool
     {
+        $this->validateNode($id, $label, $category, $type, $data);
+
         try {
-            $stmt = $this->pdo->prepare("UPDATE nodes SET label = :label, category = :category, type = :type, data = :data WHERE id = :id");
-            $data['id'] = $id;
-            $data['label'] = $label;
+            $stmt = $this->pdo->prepare("
+                UPDATE nodes
+                SET    label = :label, 
+                       category = :category, 
+                       type = :type, 
+                       data = :data
+                WHERE  id = :id");
+            $data['id']       = $id;
+            $data['label']    = $label;
             $data['category'] = $category;
-            $data['type'] = $type;
-            
+            $data['type']     = $type;
+
             $stmt->execute([
-                ':id'      => $id,
-                ':label'   => $label,
+                ':id'       => $id,
+                ':label'    => $label,
                 ':category' => $category,
-                ':type'    => $type,
-                ':data'    => json_encode($data, JSON_UNESCAPED_UNICODE)
+                ':type'     => $type,
+                ':data'     => json_encode($data, JSON_UNESCAPED_UNICODE)
             ]);
             return $stmt->rowCount() > 0;
             // @codeCoverageIgnoreStart
@@ -221,15 +235,18 @@ final class SqliteGraphRepoImpl implements GraphRepoInterface
         if ($r) {
             return false;
         }
-        
+
         try {
-            $sql            = "INSERT OR IGNORE INTO edges (id, source, target, data) VALUES (:id, :source, :target, :data)";
+            $sql = "
+                INSERT OR IGNORE INTO edges
+                (id, source, target, data)
+                VALUES (:id, :source, :target, :data)";
             $stmt           = $this->pdo->prepare($sql);
             $data['id']     = $id;
             $data['source'] = $source;
             $data['target'] = $target;
             $stmt->execute([
-                ':id' => $id,
+                ':id'     => $id,
                 ':source' => $source,
                 ':target' => $target,
                 ':data'   => json_encode($data, JSON_UNESCAPED_UNICODE)
@@ -255,8 +272,8 @@ final class SqliteGraphRepoImpl implements GraphRepoInterface
                 SET data = :data
                 WHERE id = :id");
             $stmt->execute([
-                ':id' => $id,
-                ':data'   => json_encode($data, JSON_UNESCAPED_UNICODE)
+                ':id'   => $id,
+                ':data' => json_encode($data, JSON_UNESCAPED_UNICODE)
             ]);
             return true;
             // @codeCoverageIgnoreStart
@@ -279,6 +296,22 @@ final class SqliteGraphRepoImpl implements GraphRepoInterface
             return false;
         }
         // @codeCoverageIgnoreEnd
+    }
+
+    private function validateNode(string $id, string $label, string $category, string $type, array $data): void
+    {
+        if (!preg_match(self::ID_VALIDATION_REGEX, $id)) {
+            throw new RuntimeException("Invalid ID format: $id");
+        }
+        if (strlen($label) > self::LABEL_MAX_LENGTH) {
+            throw new RuntimeException("Label exceeds maximum length of " . self::LABEL_MAX_LENGTH);
+        }
+        if (!in_array($category, self::ALLOWED_CATEGORIES, true)) {
+            throw new RuntimeException("Invalid category: $category");
+        }
+        if (!in_array($type, self::ALLOWED_TYPES, true)) {
+            throw new RuntimeException("Invalid type: $type");
+        }
     }
 
     private function initSchema(): void
@@ -307,7 +340,7 @@ final class SqliteGraphRepoImpl implements GraphRepoInterface
         $this->pdo->exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_edges_source_target ON edges (source, target)");
     }
 
-        public static function createConnection(string $dbFile): PDO
+    public static function createConnection(string $dbFile): PDO
     {
         $pdo = new PDO('sqlite:' . $dbFile);
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);

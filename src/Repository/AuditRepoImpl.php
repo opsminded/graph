@@ -15,7 +15,7 @@ final class AuditRepoImpl implements GraphRepoInterface
 
     public function __construct(PDO $pdo, GraphRepoInterface $repo)
     {
-        $this->pdo = $pdo;
+        $this->pdo  = $pdo;
         $this->repo = $repo;
         $this->initSchema();
     }
@@ -110,8 +110,7 @@ final class AuditRepoImpl implements GraphRepoInterface
         ?array $new_data = null,
     ): bool {
         try {
-
-            $user_id = AuditContext::getUser();
+            $user_id    = AuditContext::getUser();
             $ip_address = AuditContext::getIp();
 
             $stmt = $this->pdo->prepare("

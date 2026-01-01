@@ -6,7 +6,7 @@ namespace Opsminded\Graph\Repository;
 
 interface StatusRepoInterface
 {
-    public const ALLOWED_STATUSES   = ['unknown', 'healthy', 'unhealthy', 'maintenance'];
+    public const ALLOWED_STATUSES = ['unknown', 'healthy', 'unhealthy', 'maintenance'];
 
     public function getStatuses(): array;
     public function getNodeStatus(string $id): string;

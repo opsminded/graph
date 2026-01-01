@@ -464,4 +464,131 @@ class SqliteGraphRepoImplTest extends TestCase
         $this->assertSame('🚀', $retrieved['data']['emoji']);
         $this->assertSame('Café résumé', $retrieved['data']['special']);
     }
+
+    // ========================================
+    // Additional Edge Methods - getEdgeExistsByNodes()
+    // ========================================
+
+    public function testGetEdgeExistsByNodes(): void
+    {
+        $category = 'business';
+        $type = 'server';
+        $this->repo->insertNode('node1', 'node1', $category, $type, ['name' => 'First']);
+        $this->repo->insertNode('node2', 'node2', $category, $type, ['name' => 'Second']);
+        $this->repo->insertEdge('edge1', 'node1', 'node2');
+
+        $result = $this->repo->getEdgeExistsByNodes('node1', 'node2');
+
+        $this->assertTrue($result);
+    }
+
+    public function testGetEdgeExistsByNodesReturnsFalseWhenEdgeDoesNotExist(): void
+    {
+        $category = 'business';
+        $type = 'server';
+        $this->repo->insertNode('node1', 'node1', $category, $type, ['name' => 'First']);
+        $this->repo->insertNode('node2', 'node2', $category, $type, ['name' => 'Second']);
+
+        $result = $this->repo->getEdgeExistsByNodes('node1', 'node2');
+
+        $this->assertFalse($result);
+    }
+
+    // ========================================
+    // Validation Tests
+    // ========================================
+
+    public function testInsertNodeWithInvalidId(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Invalid ID format');
+
+        $this->repo->insertNode('invalid id with spaces!', 'label', 'business', 'server', []);
+    }
+
+    public function testInsertNodeWithInvalidCategory(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Invalid category');
+
+        $this->repo->insertNode('node1', 'label', 'invalid_category', 'server', []);
+    }
+
+    public function testInsertNodeWithInvalidType(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Invalid type');
+
+        $this->repo->insertNode('node1', 'label', 'business', 'invalid_type', []);
+    }
+
+    public function testInsertNodeWithLabelTooLong(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Label exceeds maximum length');
+
+        $longLabel = str_repeat('a', 21); // Max is 20
+        $this->repo->insertNode('node1', $longLabel, 'business', 'server', []);
+    }
+
+    public function testUpdateNodeWithInvalidCategory(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Invalid category');
+
+        $this->repo->insertNode('node1', 'label', 'business', 'server', ['name' => 'Test']);
+        $this->repo->updateNode('node1', 'label', 'invalid_category', 'server', ['name' => 'Updated']);
+    }
+
+    public function testUpdateNodeWithInvalidType(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Invalid type');
+
+        $this->repo->insertNode('node1', 'label', 'business', 'server', ['name' => 'Test']);
+        $this->repo->updateNode('node1', 'label', 'business', 'invalid_type', ['name' => 'Updated']);
+    }
+
+    public function testInsertEdgeReturnsFalseWhenInverseEdgeExists(): void
+    {
+        $category = 'business';
+        $type = 'server';
+        $this->repo->insertNode('node1', 'node1', $category, $type, ['name' => 'First']);
+        $this->repo->insertNode('node2', 'node2', $category, $type, ['name' => 'Second']);
+
+        // Insert edge from node1 to node2
+        $this->repo->insertEdge('edge1', 'node1', 'node2');
+
+        // Try to insert inverse edge (node2 to node1) should return false
+        $result = $this->repo->insertEdge('edge2', 'node2', 'node1');
+
+        $this->assertFalse($result);
+        $this->assertFalse($this->repo->getEdgeExistsById('edge2'));
+    }
+
+    // ========================================
+    // Static Method Tests
+    // ========================================
+
+    public function testCreateConnection(): void
+    {
+        $testDbFile = sys_get_temp_dir() . '/test_connection_' . uniqid() . '.db';
+
+        $pdo = SqliteGraphRepoImpl::createConnection($testDbFile);
+
+        $this->assertInstanceOf(PDO::class, $pdo);
+        $this->assertEquals(PDO::ERRMODE_EXCEPTION, $pdo->getAttribute(PDO::ATTR_ERRMODE));
+        $this->assertEquals(PDO::FETCH_ASSOC, $pdo->getAttribute(PDO::ATTR_DEFAULT_FETCH_MODE));
+
+        // Test that foreign keys are enabled
+        $stmt = $pdo->query('PRAGMA foreign_keys');
+        $result = $stmt->fetchColumn();
+        $this->assertEquals('1', $result);
+
+        // Clean up
+        $pdo = null;
+        if (file_exists($testDbFile)) {
+            @unlink($testDbFile);
+        }
+    }
 }

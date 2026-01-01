@@ -18,7 +18,7 @@ final class SqliteStatusRepoImpl implements StatusRepoInterface
 
     public function getStatuses(): array
     {
-        $stmt = $this->pdo->query("SELECT * FROM status order by node_id ASC");
+        $stmt   = $this->pdo->query("SELECT * FROM status order by node_id ASC");
         $status = $stmt->fetchAll();
         return $status;
     }

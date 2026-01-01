@@ -6,6 +6,11 @@ namespace Opsminded\Graph\Repository;
 
 interface GraphRepoInterface
 {
+    public const ALLOWED_CATEGORIES  = ['business', 'application', 'infrastructure'];
+    public const ALLOWED_TYPES       = ['server', 'database', 'application', 'network'];
+    public const ID_VALIDATION_REGEX = '/^[a-zA-Z0-9\-_]+$/';
+    public const LABEL_MAX_LENGTH    = 20;
+
     public function getNode(string $id): ?array;
     public function getNodes(): array;
     public function getNodeExists(string $id): bool;
