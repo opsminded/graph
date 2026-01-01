@@ -33,7 +33,10 @@ final class BasicGraphServiceImpl implements GraphServiceInterface
     public function getNode(string $id): ?Node
     {
         $row  = $this->repo->getNode($id);
-        $node = new Node($row['id'], $row['label'], $row['category'], $row['type'], $row['data']);
+        if ($row === null) {
+            return null;
+        }
+        $node = new Node($row['data']['id'], $row['data']['label'], $row['data']['category'], $row['data']['type'], $row['data']);
         return $node;
     }
 
@@ -42,7 +45,7 @@ final class BasicGraphServiceImpl implements GraphServiceInterface
         $rows  = $this->repo->getNodes();
         $nodes = new Nodes();
         foreach ($rows as $row) {
-            $nodes->addNode(new Node($row['id'], $row['label'], $row['category'], $row['type'], $row['data']));
+            $nodes->addNode(new Node($row['data']['id'], $row['data']['label'], $row['data']['category'], $row['data']['type'], $row['data']));
         }
         return $nodes;
     }
@@ -81,7 +84,12 @@ final class BasicGraphServiceImpl implements GraphServiceInterface
 
     public function getEdge(string $source, string $target): ?Edge
     {
-        return $this->repo->getEdge($source, $target);
+        $id = $source . '@' . $target;
+        $row = $this->repo->getEdge($id);
+        if ($row === null) {
+            return null;
+        }
+        return new Edge($row['data']['id'], $row['data']['source'], $row['data']['target'], $row['data']);
     }
 
     public function getEdges(): Edges
@@ -89,7 +97,7 @@ final class BasicGraphServiceImpl implements GraphServiceInterface
         $rows  = $this->repo->getEdges();
         $edges = new Edges();
         foreach ($rows as $row) {
-            $edges->addEdge(new Edge($row['id'], $row['source'], $row['target'], $row));
+            $edges->addEdge(new Edge($row['data']['id'], $row['data']['source'], $row['data']['target'], $row['data']));
         }
         return $edges;
     }
@@ -113,6 +121,7 @@ final class BasicGraphServiceImpl implements GraphServiceInterface
 
     public function deleteEdge(string $source, string $target): bool
     {
-        return $this->repo->deleteEdge($source, $target);
+        $id = $source . '@' . $target;
+        return $this->repo->deleteEdge($id);
     }
 }

@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Dom\Sqlite;
 use PHPUnit\Framework\TestCase;
 use Opsminded\Graph\Repository\GraphRepoInterface;
 use Opsminded\Graph\Repository\SqliteGraphRepoImpl;
