@@ -46,7 +46,9 @@ class LoggerRepoImplTest extends TestCase
 
     public function testGetNodeLogsAndDelegates(): void
     {
-        $this->repo->insertNode('node1', ['category' => 'business', 'type' => 'application']);
+        $category = 'business';
+        $type = 'server';
+        $this->repo->insertNode('node1', $category, $type, ['category' => 'business', 'type' => 'application']);
 
         $result = $this->repo->getNode('node1');
 
@@ -58,16 +60,15 @@ class LoggerRepoImplTest extends TestCase
 
     public function testGetNodeReturnsNullForNonExistentNode(): void
     {
-        $result = $this->repo->getNode('nonexistent');
-
-        $this->assertNull($result);
-        $this->assertStringContainsString('Getting node with ID: nonexistent', $this->getLogContent());
+        $this->assertNull($this->repo->getNode('nonexistent'), 'Node should not exist.');
     }
 
     public function testGetNodesLogsAndDelegates(): void
     {
-        $this->repo->insertNode('node1', ['category' => 'business', 'type' => 'application']);
-        $this->repo->insertNode('node2', ['category' => 'infrastructure', 'type' => 'server']);
+        $category = 'business';
+        $type = 'application';
+        $this->repo->insertNode('node1', $category, $type, ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertNode('node2', $category, $type, ['category' => 'infrastructure', 'type' => 'server']);
 
         $result = $this->repo->getNodes();
 
@@ -77,7 +78,9 @@ class LoggerRepoImplTest extends TestCase
 
     public function testGetNodeExistsLogsAndDelegates(): void
     {
-        $this->repo->insertNode('node1', ['category' => 'business', 'type' => 'application']);
+        $category = 'business';
+        $type = 'application';
+        $this->repo->insertNode('node1', $category, $type, ['category' => 'business', 'type' => 'application']);
 
         $exists = $this->repo->getNodeExists('node1');
         $notExists = $this->repo->getNodeExists('nonexistent');
@@ -90,7 +93,9 @@ class LoggerRepoImplTest extends TestCase
 
     public function testInsertNodeLogsAndDelegates(): void
     {
-        $result = $this->repo->insertNode('node1', ['category' => 'business', 'type' => 'application', 'name' => 'Test']);
+        $category = 'business';
+        $type = 'server';
+        $result = $this->repo->insertNode('node1', $category, $type, ['category' => 'business', 'type' => 'application', 'name' => 'Test']);
 
         $this->assertTrue($result);
         $this->assertStringContainsString('Inserting node with ID: node1', $this->getLogContent());
@@ -102,9 +107,11 @@ class LoggerRepoImplTest extends TestCase
 
     public function testUpdateNodeLogsAndDelegates(): void
     {
-        $this->repo->insertNode('node1', ['category' => 'business', 'type' => 'application', 'name' => 'Original']);
+        $category = 'business';
+        $type = 'server';
+        $this->repo->insertNode('node1', $category, $type, ['category' => 'business', 'type' => 'application', 'name' => 'Original']);
 
-        $result = $this->repo->updateNode('node1', ['name' => 'Updated']);
+        $result = $this->repo->updateNode('node1', $category, $type, ['name' => 'Updated']);
 
         $this->assertTrue($result);
         $this->assertStringContainsString('Updating node with ID: node1', $this->getLogContent());
@@ -115,7 +122,9 @@ class LoggerRepoImplTest extends TestCase
 
     public function testDeleteNodeLogsAndDelegates(): void
     {
-        $this->repo->insertNode('node1', ['category' => 'business', 'type' => 'application']);
+        $category = 'business';
+        $type = 'application';
+        $this->repo->insertNode('node1', $category, $type, ['category' => 'business', 'type' => 'application']);
 
         $result = $this->repo->deleteNode('node1');
 
@@ -127,32 +136,33 @@ class LoggerRepoImplTest extends TestCase
 
     public function testGetEdgeLogsAndDelegates(): void
     {
-        $this->repo->insertNode('node1', ['category' => 'business', 'type' => 'application']);
-        $this->repo->insertNode('node2', ['category' => 'business', 'type' => 'application']);
-        $this->repo->insertEdge('node1', 'node2', []);
+        $category = 'business';
+        $type = 'application';
+        $this->repo->insertNode('node1', $category, $type, ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertNode('node2', $category, $type, ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertEdge('edge1', 'node1', 'node2', []);
 
-        $result = $this->repo->getEdge('node1', 'node2');
+        $result = $this->repo->getEdge('edge1');
 
         $this->assertNotNull($result);
         $this->assertArrayHasKey('data', $result);
-        $this->assertStringContainsString('Getting edge from source: node1 to target: node2', $this->getLogContent());
+        $this->assertStringContainsString('Getting edge with ID: edge1', $this->getLogContent());
     }
 
     public function testGetEdgeReturnsNullForNonExistentEdge(): void
     {
-        $result = $this->repo->getEdge('source1', 'target1');
-
-        $this->assertNull($result);
-        $this->assertStringContainsString('Getting edge from source: source1 to target: target1', $this->getLogContent());
+        $this->assertNull($this->repo->getEdge('source1'), 'Edge should not exist.');
     }
 
     public function testGetEdgesLogsAndDelegates(): void
     {
-        $this->repo->insertNode('node1', ['category' => 'business', 'type' => 'application']);
-        $this->repo->insertNode('node2', ['category' => 'business', 'type' => 'application']);
-        $this->repo->insertNode('node3', ['category' => 'business', 'type' => 'application']);
-        $this->repo->insertEdge('node1', 'node2', []);
-        $this->repo->insertEdge('node2', 'node3', []);
+        $category = 'business';
+        $type = 'application';
+        $this->repo->insertNode('node1', $category, $type, ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertNode('node2', $category, $type, ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertNode('node3', $category, $type, ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertEdge('edge1', 'node1', 'node2', []);
+        $this->repo->insertEdge('edge2', 'node2', 'node3', []);
 
         $result = $this->repo->getEdges();
 
@@ -162,67 +172,76 @@ class LoggerRepoImplTest extends TestCase
 
     public function testGetEdgeExistsLogsAndDelegates(): void
     {
-        $this->repo->insertNode('node1', ['category' => 'business', 'type' => 'application']);
-        $this->repo->insertNode('node2', ['category' => 'business', 'type' => 'application']);
-        $this->repo->insertEdge('node1', 'node2', []);
+        $category = 'business';
+        $type = 'application';
+        $this->repo->insertNode('node1', $category, $type, ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertNode('node2', $category, $type, ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertEdge('edge1', 'node1', 'node2', []);
 
-        $exists = $this->repo->getEdgeExists('node1', 'node2');
-        $notExists = $this->repo->getEdgeExists('node1', 'nonexistent');
+        $exists = $this->repo->getEdgeExistsById('edge1');
+        $notExists = $this->repo->getEdgeExistsById('nonexistent');
 
         $this->assertTrue($exists);
         $this->assertFalse($notExists);
-        $this->assertStringContainsString('Checking if edge exists from source: node1 to target: node2', $this->getLogContent());
-        $this->assertStringContainsString('Checking if edge exists from source: node1 to target: nonexistent', $this->getLogContent());
+        $this->assertStringContainsString('Checking if edge exists with ID: edge1', $this->getLogContent());
+        $this->assertStringContainsString('Checking if edge exists with ID: nonexistent', $this->getLogContent());
     }
 
     public function testInsertEdgeLogsAndDelegates(): void
     {
-        $this->repo->insertNode('node1', ['category' => 'business', 'type' => 'application']);
-        $this->repo->insertNode('node2', ['category' => 'business', 'type' => 'application']);
+        $category = 'business';
+        $type = 'application';
+        $this->repo->insertNode('node1', $category, $type, ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertNode('node2', $category, $type, ['category' => 'business', 'type' => 'application']);
 
-        $result = $this->repo->insertEdge('node1', 'node2', ['weight' => 10]);
-
+        $result = $this->repo->insertEdge('edge1', 'node1', 'node2', ['weight' => 10]);
         $this->assertTrue($result);
         $this->assertStringContainsString('Inserting edge from source: node1 to target: node2', $this->getLogContent());
 
-        $edge = $this->repo->getEdge('node1', 'node2');
+        $edge = $this->repo->getEdge('edge1');
         $this->assertNotNull($edge);
     }
 
     public function testUpdateEdgeLogsAndDelegates(): void
     {
-        $this->repo->insertNode('node1', ['category' => 'business', 'type' => 'application']);
-        $this->repo->insertNode('node2', ['category' => 'business', 'type' => 'application']);
-        $this->repo->insertEdge('node1', 'node2', ['weight' => 10]);
+        $category = 'business';
+        $type = 'application';
+        $this->repo->insertNode('node1', $category, $type, ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertNode('node2', $category, $type, ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertEdge('edge1', 'node1', 'node2', ['weight' => 10]);
 
-        $result = $this->repo->updateEdge('node1', 'node2', ['weight' => 20]);
+        $result = $this->repo->updateEdge('edge1', 'node1', 'node2', ['weight' => 20]);
 
         $this->assertTrue($result);
         $this->assertStringContainsString('Updating edge from source: node1 to target: node2', $this->getLogContent());
 
-        $edge = $this->repo->getEdge('node1', 'node2');
+        $edge = $this->repo->getEdge('edge1');
         $this->assertEquals(20, $edge['data']['weight']);
     }
 
     public function testDeleteEdgeLogsAndDelegates(): void
     {
-        $this->repo->insertNode('node1', ['category' => 'business', 'type' => 'application']);
-        $this->repo->insertNode('node2', ['category' => 'business', 'type' => 'application']);
-        $this->repo->insertEdge('node1', 'node2', []);
+        $category = 'business';
+        $type = 'application';
+        $this->repo->insertNode('node1', $category, $type, ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertNode('node2', $category, $type, ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertEdge('edge1', 'node1', 'node2', []);
 
-        $result = $this->repo->deleteEdge('node1', 'node2');
+        $result = $this->repo->deleteEdge('edge1');
 
         $this->assertTrue($result);
-        $this->assertStringContainsString('Deleting edge from source: node1 to target: node2', $this->getLogContent());
+        $this->assertStringContainsString('Deleting edge with ID: edge1', $this->getLogContent());
 
-        $this->assertFalse($this->repo->getEdgeExists('node1', 'node2'));
+        $this->assertFalse($this->repo->getEdgeExistsById('edge1'));
     }
 
     public function testMultipleOperationsCreateMultipleLogEntries(): void
     {
-        $this->repo->insertNode('node1', ['category' => 'business', 'type' => 'application']);
-        $this->repo->insertNode('node2', ['category' => 'infrastructure', 'type' => 'server']);
-        $this->repo->insertEdge('node1', 'node2', []);
+        $category = 'business';
+        $type = 'application';
+        $this->repo->insertNode('node1', $category, $type, ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertNode('node2', $category, $type, ['category' => 'infrastructure', 'type' => 'server']);
+        $this->repo->insertEdge('edge1', 'node1', 'node2', []);
         $this->repo->getNodes();
         $this->repo->getEdges();
 
@@ -240,7 +259,9 @@ class LoggerRepoImplTest extends TestCase
 
     public function testLoggingIncludesTimestamps(): void
     {
-        $this->repo->insertNode('node1', ['category' => 'business', 'type' => 'application']);
+        $category = 'business';
+        $type = 'application';
+        $this->repo->insertNode('node1', $category, $type, ['category' => 'business', 'type' => 'application']);
 
         $logContent = $this->getLogContent();
         // Check for timestamp pattern: YYYY-MM-DD HH:MM:SS

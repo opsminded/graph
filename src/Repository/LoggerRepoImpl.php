@@ -35,16 +35,16 @@ final class LoggerRepoImpl implements GraphRepoInterface
         return $this->repo->getNodeExists($id);
     }
 
-    public function insertNode(string $id, array $data): bool
+    public function insertNode(string $id, string $category, string $type, array $data = []): bool
     {
         $this->logger->debug("Inserting node with ID: $id");
-        return $this->repo->insertNode($id, $data);
+        return $this->repo->insertNode($id, $category, $type, $data);
     }
 
-    public function updateNode(string $id, array $data): bool
+    public function updateNode(string $id, string $category, string $type, array $data = []): bool
     {
         $this->logger->debug("Updating node with ID: $id");
-        return $this->repo->updateNode($id, $data);
+        return $this->repo->updateNode($id, $category, $type, $data);
     }
 
     public function deleteNode(string $id): bool
@@ -53,10 +53,10 @@ final class LoggerRepoImpl implements GraphRepoInterface
         return $this->repo->deleteNode($id);
     }
 
-    public function getEdge(string $source, string $target): ?array
+    public function getEdge(string $id): ?array
     {
-        $this->logger->debug("Getting edge from source: $source to target: $target");
-        return $this->repo->getEdge($source, $target);
+        $this->logger->debug("Getting edge with ID: $id");
+        return $this->repo->getEdge($id);
     }
 
     public function getEdges(): array
@@ -65,27 +65,33 @@ final class LoggerRepoImpl implements GraphRepoInterface
         return $this->repo->getEdges();
     }
 
-    public function getEdgeExists(string $source, string $target): bool
+    public function getEdgeExistsById(string $id): bool
+    {
+        $this->logger->debug("Checking if edge exists with ID: $id");
+        return $this->repo->getEdgeExistsById($id);
+    }
+
+    public function getEdgeExistsByNodes(string $source, string $target): bool
     {
         $this->logger->debug("Checking if edge exists from source: $source to target: $target");
-        return $this->repo->getEdgeExists($source, $target);
+        return $this->repo->getEdgeExistsByNodes($source, $target);
     }
 
-    public function insertEdge(string $source, string $target, array $data = []): bool
+    public function insertEdge(string $id, string $source, string $target, array $data = []): bool
     {
         $this->logger->debug("Inserting edge from source: $source to target: $target");
-        return $this->repo->insertEdge($source, $target, $data);
+        return $this->repo->insertEdge($id, $source, $target, $data);
     }
 
-    public function updateEdge(string $source, string $target, array $data = []): bool
+    public function updateEdge(string $id, string $source, string $target, array $data = []): bool
     {
         $this->logger->debug("Updating edge from source: $source to target: $target");
-        return $this->repo->updateEdge($source, $target, $data);
+        return $this->repo->updateEdge($id, $source, $target, $data);
     }
 
-    public function deleteEdge(string $source, string $target): bool
+    public function deleteEdge(string $id): bool
     {
-        $this->logger->debug("Deleting edge from source: $source to target: $target");
-        return $this->repo->deleteEdge($source, $target);
+        $this->logger->debug("Deleting edge with ID: $id");
+        return $this->repo->deleteEdge($id);
     }
 }

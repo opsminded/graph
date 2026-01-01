@@ -24,12 +24,4 @@ final class Node
     {
         return $this->data;
     }
-
-    public function toArray(): array
-    {
-        return [
-            'id'   => $this->id,
-            'data' => $this->data,
-        ];
-    }
 }

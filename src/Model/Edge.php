@@ -6,44 +6,34 @@ namespace Opsminded\Graph\Model;
 
 final class Edge
 {
-    private string $from;
-    private string $to;
+    private string $source;
+    private string $target;
     private array $data;
 
-    public function __construct(string $from, string $to, array $data = [])
+    public function __construct(string $source, string $target, array $data = [])
     {
-        $this->from = $from;
-        $this->to   = $to;
-        $this->data = $data;
+        $this->source = $source;
+        $this->target = $target;
+        $this->data   = $data;
     }
 
     public function getId(): string
     {
-        return $this->from . ':' . $this->to;
+        return $this->data['id'];
     }
 
-    public function getFromNodeId(): string
+    public function getSourceNodeId(): string
     {
-        return $this->from;
+        return $this->source;
     }
 
-    public function getToNodeId(): string
+    public function getTargetNodeId(): string
     {
-        return $this->to;
+        return $this->target;
     }
 
     public function getData(): array
     {
         return $this->data;
-    }
-
-    public function toArray(): array
-    {
-        return [
-            'id'   => $this->getId(),
-            'from' => $this->from,
-            'to'   => $this->to,
-            'data' => $this->data,
-        ];
     }
 }

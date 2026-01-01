@@ -70,7 +70,7 @@ class AuditRepoImplTest extends TestCase
 
     public function testGetNodeCreatesAuditLog(): void
     {
-        $this->repo->insertNode('node1', ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertNode('node1', 'business', 'application', ['category' => 'business', 'type' => 'application']);
 
         // Clear previous audit logs
         $this->pdo->exec("DELETE FROM audit");
@@ -110,7 +110,7 @@ class AuditRepoImplTest extends TestCase
     {
         $nodeData = ['category' => 'business', 'type' => 'application', 'name' => 'Test Node'];
 
-        $this->repo->insertNode('node1', $nodeData);
+        $this->repo->insertNode('node1', 'business', 'application', $nodeData);
 
         $log = $this->getLatestAuditLog();
         $this->assertNotNull($log);
@@ -127,12 +127,12 @@ class AuditRepoImplTest extends TestCase
 
     public function testUpdateNodeCreatesAuditLogWithOldAndNewData(): void
     {
-        $this->repo->insertNode('node1', ['category' => 'business', 'type' => 'application', 'name' => 'Original']);
+        $this->repo->insertNode('node1', 'business', 'application', ['category' => 'business', 'type' => 'application', 'name' => 'Original']);
 
         // Clear previous audit logs to focus on update
         $this->pdo->exec("DELETE FROM audit");
 
-        $this->repo->updateNode('node1', ['name' => 'Updated']);
+        $this->repo->updateNode('node1', 'business', 'application', ['name' => 'Updated']);
 
         $log = $this->getLatestAuditLog();
         $this->assertNotNull($log);
@@ -150,7 +150,7 @@ class AuditRepoImplTest extends TestCase
 
     public function testDeleteNodeCreatesAuditLogWithOldData(): void
     {
-        $this->repo->insertNode('node1', ['category' => 'business', 'type' => 'application', 'name' => 'To Delete']);
+        $this->repo->insertNode('node1', 'business', 'application', ['category' => 'business', 'type' => 'application', 'name' => 'To Delete']);
 
         // Clear previous audit logs
         $this->pdo->exec("DELETE FROM audit");
@@ -172,19 +172,19 @@ class AuditRepoImplTest extends TestCase
 
     public function testGetEdgeCreatesAuditLog(): void
     {
-        $this->repo->insertNode('node1', ['category' => 'business', 'type' => 'application']);
-        $this->repo->insertNode('node2', ['category' => 'business', 'type' => 'application']);
-        $this->repo->insertEdge('node1', 'node2', []);
+        $this->repo->insertNode('node1', 'business', 'application', ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertNode('node2', 'business', 'application', ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertEdge('edge1', 'node1', 'node2', []);
 
         // Clear previous audit logs
         $this->pdo->exec("DELETE FROM audit");
 
-        $this->repo->getEdge('node1', 'node2');
+        $this->repo->getEdge('edge1');
 
         $log = $this->getLatestAuditLog();
         $this->assertNotNull($log);
         $this->assertEquals('edge', $log['entity_type']);
-        $this->assertEquals('node1->node2', $log['entity_id']);
+        $this->assertEquals('edge1', $log['entity_id']);
         $this->assertEquals('get_edge', $log['action']);
     }
 
@@ -201,30 +201,30 @@ class AuditRepoImplTest extends TestCase
 
     public function testGetEdgeExistsCreatesAuditLog(): void
     {
-        $this->repo->getEdgeExists('node1', 'node2');
+        $this->repo->getEdgeExistsById('node1-node2');
 
         $log = $this->getLatestAuditLog();
         $this->assertNotNull($log);
         $this->assertEquals('edge', $log['entity_type']);
-        $this->assertEquals('node1->node2', $log['entity_id']);
+        $this->assertEquals('node1-node2', $log['entity_id']);
         $this->assertEquals('get_edge_exists', $log['action']);
     }
 
     public function testInsertEdgeCreatesAuditLogWithNewData(): void
     {
-        $this->repo->insertNode('node1', ['category' => 'business', 'type' => 'application']);
-        $this->repo->insertNode('node2', ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertNode('node1', 'business', 'application', ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertNode('node2', 'business', 'application', ['category' => 'business', 'type' => 'application']);
 
         // Clear previous audit logs
         $this->pdo->exec("DELETE FROM audit");
 
         $edgeData = ['weight' => 10];
-        $this->repo->insertEdge('node1', 'node2', $edgeData);
+        $this->repo->insertEdge('node1-node2', 'node1', 'node2', $edgeData);
 
         $log = $this->getLatestAuditLog();
         $this->assertNotNull($log);
         $this->assertEquals('edge', $log['entity_type']);
-        $this->assertEquals('node1->node2', $log['entity_id']);
+        $this->assertEquals('node1-node2', $log['entity_id']);
         $this->assertEquals('insert_edge', $log['action']);
         $this->assertNull($log['old_data']);
 
@@ -234,19 +234,19 @@ class AuditRepoImplTest extends TestCase
 
     public function testUpdateEdgeCreatesAuditLogWithOldAndNewData(): void
     {
-        $this->repo->insertNode('node1', ['category' => 'business', 'type' => 'application']);
-        $this->repo->insertNode('node2', ['category' => 'business', 'type' => 'application']);
-        $this->repo->insertEdge('node1', 'node2', ['weight' => 10]);
+        $this->repo->insertNode('node1', 'business', 'application', ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertNode('node2', 'business', 'application', ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertEdge('edge1', 'node1', 'node2', ['weight' => 10]);
 
         // Clear previous audit logs
         $this->pdo->exec("DELETE FROM audit");
 
-        $this->repo->updateEdge('node1', 'node2', ['weight' => 20]);
+        $this->repo->updateEdge('edge1', 'node1', 'node2', ['weight' => 20]);
 
         $log = $this->getLatestAuditLog();
         $this->assertNotNull($log);
         $this->assertEquals('edge', $log['entity_type']);
-        $this->assertEquals('node1->node2', $log['entity_id']);
+        $this->assertEquals('edge1', $log['entity_id']);
         $this->assertEquals('update_edge', $log['action']);
 
         $oldData = json_decode($log['old_data'], true);
@@ -258,19 +258,19 @@ class AuditRepoImplTest extends TestCase
 
     public function testDeleteEdgeCreatesAuditLogWithOldData(): void
     {
-        $this->repo->insertNode('node1', ['category' => 'business', 'type' => 'application']);
-        $this->repo->insertNode('node2', ['category' => 'business', 'type' => 'application']);
-        $this->repo->insertEdge('node1', 'node2', ['weight' => 10]);
+        $this->repo->insertNode('node1', 'business', 'application', ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertNode('node2', 'business', 'application', ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertEdge('edge1', 'node1', 'node2', ['weight' => 10]);
 
         // Clear previous audit logs
         $this->pdo->exec("DELETE FROM audit");
 
-        $this->repo->deleteEdge('node1', 'node2');
+        $this->repo->deleteEdge('edge1');
 
         $log = $this->getLatestAuditLog();
         $this->assertNotNull($log);
         $this->assertEquals('edge', $log['entity_type']);
-        $this->assertEquals('node1->node2', $log['entity_id']);
+        $this->assertEquals('edge1', $log['entity_id']);
         $this->assertEquals('delete_edge', $log['action']);
 
         $oldData = json_decode($log['old_data'], true);
@@ -283,7 +283,7 @@ class AuditRepoImplTest extends TestCase
     {
         AuditContext::set('testuser', '192.168.1.100');
 
-        $this->repo->insertNode('node1', ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertNode('node1', 'business', 'application', ['category' => 'business', 'type' => 'application']);
 
         $log = $this->getLatestAuditLog();
         $this->assertNotNull($log);
@@ -297,7 +297,7 @@ class AuditRepoImplTest extends TestCase
     {
         AuditContext::clear();
 
-        $this->repo->insertNode('node1', ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertNode('node1', 'business', 'application', ['category' => 'business', 'type' => 'application']);
 
         $log = $this->getLatestAuditLog();
         $this->assertNotNull($log);
@@ -307,9 +307,9 @@ class AuditRepoImplTest extends TestCase
 
     public function testMultipleOperationsCreateMultipleAuditLogs(): void
     {
-        $this->repo->insertNode('node1', ['category' => 'business', 'type' => 'application']);
-        $this->repo->insertNode('node2', ['category' => 'infrastructure', 'type' => 'server']);
-        $this->repo->updateNode('node1', ['name' => 'Updated']);
+        $this->repo->insertNode('node1', 'business', 'application', ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertNode('node2', 'infrastructure', 'server', ['category' => 'infrastructure', 'type' => 'server']);
+        $this->repo->updateNode('node1', 'business', 'application', ['name' => 'Updated']);
         $this->repo->deleteNode('node2');
 
         $logs = $this->getAuditLogs();
@@ -324,7 +324,7 @@ class AuditRepoImplTest extends TestCase
 
     public function testAuditLogsIncludeTimestamps(): void
     {
-        $this->repo->insertNode('node1', ['category' => 'business', 'type' => 'application']);
+        $this->repo->insertNode('node1', 'business', 'application', ['category' => 'business', 'type' => 'application']);
 
         $log = $this->getLatestAuditLog();
         $this->assertNotNull($log);
@@ -338,7 +338,7 @@ class AuditRepoImplTest extends TestCase
     public function testOperationsDelegateCorrectly(): void
     {
         // Test that operations still work correctly through the decorator
-        $this->repo->insertNode('node1', ['category' => 'business', 'type' => 'application', 'name' => 'Test']);
+        $this->repo->insertNode('node1', 'business', 'application', ['category' => 'business', 'type' => 'application', 'name' => 'Test']);
 
         $node = $this->repo->getNode('node1');
         $this->assertNotNull($node);
@@ -346,7 +346,7 @@ class AuditRepoImplTest extends TestCase
 
         $this->assertTrue($this->repo->getNodeExists('node1'));
 
-        $this->repo->updateNode('node1', ['name' => 'Updated']);
+        $this->repo->updateNode('node1', 'business', 'application', ['name' => 'Updated']);
         $updatedNode = $this->repo->getNode('node1');
         $this->assertEquals('Updated', $updatedNode['data']['name']);
 

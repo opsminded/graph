@@ -18,7 +18,7 @@ final class SqliteStatusRepoImpl implements StatusRepoInterface
 
     public function getStatuses(): array
     {
-        $stmt = $this->pdo->query("SELECT * FROM status");
+        $stmt = $this->pdo->query("SELECT * FROM status order by node_id ASC");
         $status = $stmt->fetchAll();
         return $status;
     }
@@ -27,7 +27,11 @@ final class SqliteStatusRepoImpl implements StatusRepoInterface
     {
         $stmt = $this->pdo->prepare("SELECT status FROM status WHERE node_id = ?");
         $stmt->execute([$id]);
-        return $stmt->fetchColumn();
+        $status = $stmt->fetchColumn();
+        if ($status === false) {
+            return 'unknown';
+        }
+        return $status;
     }
 
     public function setNodeStatus(string $id, string $status): void
@@ -40,7 +44,7 @@ final class SqliteStatusRepoImpl implements StatusRepoInterface
     {
         $this->pdo->exec("
             CREATE TABLE IF NOT EXISTS status (
-                node_id TEXT NOT NULL,
+                node_id TEXT PRIMARY KEY NOT NULL,
                 status TEXT NOT NULL,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )

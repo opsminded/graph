@@ -41,9 +41,11 @@ class SqliteGraphRepoImplTest extends TestCase
     public function testInsertNodeSuccessfully(): void
     {
         $id = 'node1';
+        $category = 'business';
+        $type = 'server';
         $data = ['name' => 'Test Node', 'value' => 42];
 
-        $result = $this->repo->insertNode($id, $data);
+        $result = $this->repo->insertNode($id, $category, $type,     $data);
 
         $this->assertTrue($result);
         $this->assertTrue($this->repo->getNodeExists($id));
@@ -52,11 +54,13 @@ class SqliteGraphRepoImplTest extends TestCase
     public function testInsertNodeWithDuplicateIdUsesInsertOrIgnore(): void
     {
         $id = 'node1';
+        $category = 'business';
+        $type = 'server';
         $data1 = ['name' => 'First'];
         $data2 = ['name' => 'Second'];
 
-        $this->repo->insertNode($id, $data1);
-        $result = $this->repo->insertNode($id, $data2);
+        $this->repo->insertNode($id, $category, $type, $data1);
+        $result = $this->repo->insertNode($id, $category, $type, $data2);
 
         $this->assertTrue($result); // INSERT OR IGNORE still returns true
         $node = $this->repo->getNode($id);
@@ -70,9 +74,11 @@ class SqliteGraphRepoImplTest extends TestCase
     public function testGetNodeReturnsDataWhenNodeExists(): void
     {
         $id = 'node1';
+        $category = 'business';
+        $type = 'server';
         $data = ['name' => 'Test Node', 'value' => 42, 'nested' => ['key' => 'value']];
 
-        $this->repo->insertNode($id, $data);
+        $this->repo->insertNode($id, $category, $type, $data);
         $result = $this->repo->getNode($id);
 
         $data['id'] = $id;
@@ -81,9 +87,7 @@ class SqliteGraphRepoImplTest extends TestCase
 
     public function testGetNodeReturnsNullWhenNodeDoesNotExist(): void
     {
-        $result = $this->repo->getNode('nonexistent');
-
-        $this->assertNull($result);
+        $this->assertNull($this->repo->getNode('nonexistent'), 'Node should not exist.');
     }
 
     // ========================================
@@ -92,9 +96,11 @@ class SqliteGraphRepoImplTest extends TestCase
 
     public function testGetNodesReturnsAllNodes(): void
     {
-        $this->repo->insertNode('node1', ['name' => 'First']);
-        $this->repo->insertNode('node2', ['name' => 'Second']);
-        $this->repo->insertNode('node3', ['name' => 'Third']);
+        $category = 'business';
+        $type = 'server';
+        $this->repo->insertNode('node1', $category, $type, ['name' => 'First']);
+        $this->repo->insertNode('node2', $category, $type, ['name' => 'Second']);
+        $this->repo->insertNode('node3', $category, $type, ['name' => 'Third']);
 
         $nodes = $this->repo->getNodes();
 
@@ -118,7 +124,9 @@ class SqliteGraphRepoImplTest extends TestCase
     public function testGetNodeExistsReturnsTrueWhenNodeExists(): void
     {
         $id = 'node1';
-        $this->repo->insertNode($id, ['name' => 'Test']);
+        $category = 'business';
+        $type = 'server';
+        $this->repo->insertNode($id, $category, $type, ['name' => 'Test']);
 
         $result = $this->repo->getNodeExists($id);
 
@@ -139,10 +147,12 @@ class SqliteGraphRepoImplTest extends TestCase
     public function testUpdateNodeSuccessfullyUpdatesData(): void
     {
         $id = 'node1';
-        $this->repo->insertNode($id, ['name' => 'Original', 'value' => 1]);
+        $category = 'business';
+        $type = 'server';
+        $this->repo->insertNode($id, $category, $type, ['name' => 'Original', 'value' => 1]);
 
         $newData = ['name' => 'Updated', 'value' => 2];
-        $result = $this->repo->updateNode($id, $newData);
+        $result = $this->repo->updateNode($id, $category, $type, $newData);
 
         $this->assertTrue($result);
         $updated = $this->repo->getNode($id);
@@ -152,7 +162,9 @@ class SqliteGraphRepoImplTest extends TestCase
 
     public function testUpdateNodeReturnsFalseWhenNodeDoesNotExist(): void
     {
-        $result = $this->repo->updateNode('nonexistent', ['name' => 'Test']);
+        $category = 'business';
+        $type = 'server';
+        $result = $this->repo->updateNode('nonexistent', $category, $type, ['name' => 'Test']);
 
         $this->assertFalse($result);
     }
@@ -164,7 +176,9 @@ class SqliteGraphRepoImplTest extends TestCase
     public function testDeleteNodeSuccessfullyRemovesNode(): void
     {
         $id = 'node1';
-        $this->repo->insertNode($id, ['name' => 'Test']);
+        $category = 'business';
+        $type = 'server';
+        $this->repo->insertNode($id, $category, $type, ['name' => 'Test']);
 
         $result = $this->repo->deleteNode($id);
 
@@ -174,13 +188,18 @@ class SqliteGraphRepoImplTest extends TestCase
 
     public function testDeleteNodeCascadesDeletesEdges(): void
     {
-        $this->repo->insertNode('node1', ['name' => 'First']);
-        $this->repo->insertNode('node2', ['name' => 'Second']);
-        $this->repo->insertEdge('node1', 'node2');
+        $category = 'business';
+        $type = 'server';
+
+        $this->repo->insertNode('node1', $category, $type, ['name' => 'First']);
+        $this->repo->insertNode('node2', $category, $type, ['name' => 'Second']);
+        $this->repo->insertEdge('node1-node2', 'node1', 'node2');
+
+        $this->assertTrue($this->repo->getEdgeExistsById('node1-node2'));
 
         $this->repo->deleteNode('node1');
 
-        $this->assertFalse($this->repo->getEdgeExists('node1', 'node2'));
+        $this->assertFalse($this->repo->getEdgeExistsById('node1-node2'));
     }
 
     // ========================================
@@ -189,22 +208,25 @@ class SqliteGraphRepoImplTest extends TestCase
 
     public function testInsertEdgeSuccessfully(): void
     {
-        $this->repo->insertNode('node1', ['name' => 'First']);
-        $this->repo->insertNode('node2', ['name' => 'Second']);
+        $category = 'business';
+        $type = 'server';
+        $this->repo->insertNode('node1', $category, $type, ['name' => 'First']);
+        $this->repo->insertNode('node2', $category, $type, ['name' => 'Second']);
 
-        $result = $this->repo->insertEdge('node1', 'node2');
-
+        $result = $this->repo->insertEdge('node1-node2', 'node1', 'node2');
         $this->assertTrue($result);
-        $this->assertTrue($this->repo->getEdgeExists('node1', 'node2'));
+        $this->assertTrue($this->repo->getEdgeExistsById('node1-node2'));
     }
 
     public function testInsertEdgeWithDuplicateUsesInsertOrIgnore(): void
     {
-        $this->repo->insertNode('node1', ['name' => 'First']);
-        $this->repo->insertNode('node2', ['name' => 'Second']);
+        $category = 'business';
+        $type = 'server';
+        $this->repo->insertNode('node1', $category, $type, ['name' => 'First']);
+        $this->repo->insertNode('node2', $category, $type, ['name' => 'Second']);
 
-        $this->repo->insertEdge('node1', 'node2');
-        $result = $this->repo->insertEdge('node1', 'node2');
+        $this->repo->insertEdge('node1-node2', 'node1', 'node2');
+        $result = $this->repo->insertEdge('node1-node2', 'node1', 'node2');
 
         $this->assertTrue($result); // INSERT OR IGNORE still returns true
     }
@@ -215,12 +237,13 @@ class SqliteGraphRepoImplTest extends TestCase
 
     public function testGetEdgeReturnsEdgeWhenExists(): void
     {
-        $this->repo->insertNode('node1', ['name' => 'First']);
-        $this->repo->insertNode('node2', ['name' => 'Second']);
-        $this->repo->insertEdge('node1', 'node2');
+        $category = 'business';
+        $type = 'server';
+        $this->repo->insertNode('node1', $category, $type, ['name' => 'First']);
+        $this->repo->insertNode('node2', $category, $type, ['name' => 'Second']);
+        $this->repo->insertEdge('node1-node2', 'node1', 'node2');
 
-        $edge = $this->repo->getEdge('node1', 'node2');
-
+        $edge = $this->repo->getEdge('node1-node2');
         $this->assertNotEmpty($edge);
         $this->assertSame('node1', $edge['data']['source']);
         $this->assertSame('node2', $edge['data']['target']);
@@ -228,9 +251,7 @@ class SqliteGraphRepoImplTest extends TestCase
 
     public function testGetEdgeReturnsNullWhenEdgeDoesNotExist(): void
     {
-        $edge = $this->repo->getEdge('nonexistent1', 'nonexistent2');
-
-        $this->assertNull($edge);
+        $this->assertNull($this->repo->getEdge('nonexistent1-node2'), 'Edge should not exist.');
     }
 
     // ========================================
@@ -239,12 +260,14 @@ class SqliteGraphRepoImplTest extends TestCase
 
     public function testGetEdgesReturnsAllEdges(): void
     {
-        $this->repo->insertNode('node1', ['name' => 'First']);
-        $this->repo->insertNode('node2', ['name' => 'Second']);
-        $this->repo->insertNode('node3', ['name' => 'Third']);
-        $this->repo->insertEdge('node1', 'node2');
-        $this->repo->insertEdge('node2', 'node3');
+        $category = 'business';
+        $type = 'server';
 
+        $this->repo->insertNode('node1', $category, $type, ['name' => 'First']);
+        $this->repo->insertNode('node2', $category, $type, ['name' => 'Second']);
+        $this->repo->insertNode('node3', $category, $type, ['name' => 'Third']);
+        $this->repo->insertEdge('node1-node2', 'node1', 'node2');
+        $this->repo->insertEdge('node2-node3', 'node2', 'node3');
         $edges = $this->repo->getEdges();
 
         $this->assertCount(2, $edges);
@@ -266,30 +289,35 @@ class SqliteGraphRepoImplTest extends TestCase
 
     public function testGetEdgeExistsReturnsTrueForDirectEdge(): void
     {
-        $this->repo->insertNode('node1', ['name' => 'First']);
-        $this->repo->insertNode('node2', ['name' => 'Second']);
-        $this->repo->insertEdge('node1', 'node2');
+        $category = 'business';
+        $type = 'server';
+        $this->repo->insertNode('node1', $category, $type, ['name' => 'First']);
+        $this->repo->insertNode('node2', $category, $type, ['name' => 'Second']);
+        $this->repo->insertEdge('node1-node2', 'node1', 'node2');
 
-        $result = $this->repo->getEdgeExists('node1', 'node2');
+        $result = $this->repo->getEdgeExistsById('node1-node2');
 
         $this->assertTrue($result);
     }
 
-    public function testGetEdgeExistsReturnsTrueForReverseEdge(): void
+    public function testGetEdgeExistsReturnsFalseForReverseEdge(): void
     {
-        $this->repo->insertNode('node1', ['name' => 'First']);
-        $this->repo->insertNode('node2', ['name' => 'Second']);
-        $this->repo->insertEdge('node1', 'node2');
+        $category = 'business';
+        $type = 'server';
+        $this->repo->insertNode('node1', $category, $type, ['name' => 'First']);
+        $this->repo->insertNode('node2', $category, $type, ['name' => 'Second']);
+        $this->repo->insertEdge('node1-node2', 'node1', 'node2');
 
-        // Check bidirectional existence
-        $result = $this->repo->getEdgeExists('node2', 'node1');
+        // Verify edges are directional (not bidirectional)
+        // The reverse edge should NOT exist
+        $result = $this->repo->getEdgeExistsById('node2-node1');
 
-        $this->assertTrue($result);
+        $this->assertFalse($result);
     }
 
     public function testGetEdgeExistsReturnsFalseWhenEdgeDoesNotExist(): void
     {
-        $result = $this->repo->getEdgeExists('nonexistent1', 'nonexistent2');
+        $result = $this->repo->getEdgeExistsById('nonexistent1', 'nonexistent2');
 
         $this->assertFalse($result);
     }
@@ -300,20 +328,22 @@ class SqliteGraphRepoImplTest extends TestCase
 
     public function testUpdateEdgeSuccessfullyUpdatesData(): void
     {
-        $this->repo->insertNode('node1', ['name' => 'First']);
-        $this->repo->insertNode('node2', ['name' => 'Second']);
-        $this->repo->insertEdge('node1', 'node2');
+        $category = 'business';
+        $type = 'server';
+        $this->repo->insertNode('node1', $category, $type, ['name' => 'First']);
+        $this->repo->insertNode('node2', $category, $type, ['name' => 'Second']);
+        $this->repo->insertEdge('node1-node2', 'node1', 'node2');
 
         $edgeData = ['weight' => 5, 'type' => 'connection'];
-        $result = $this->repo->updateEdge('node1', 'node2', $edgeData);
+        $result = $this->repo->updateEdge('node1-node2', 'node1', 'node2', $edgeData);
 
         $this->assertTrue($result);
     }
 
     public function testUpdateEdgeReturnsSuccessEvenWhenEdgeDoesNotExist(): void
     {
-        $result = $this->repo->updateEdge('nonexistent1', 'nonexistent2', ['weight' => 1]);
-
+        $id = 'nonexistent1-nonexistent2';
+        $result = $this->repo->updateEdge($id, 'nonexistent1', 'nonexistent2', ['weight' => 1]);
         $this->assertTrue($result);
     }
 
@@ -323,14 +353,16 @@ class SqliteGraphRepoImplTest extends TestCase
 
     public function testDeleteEdgeSuccessfullyRemovesEdge(): void
     {
-        $this->repo->insertNode('node1', ['name' => 'First']);
-        $this->repo->insertNode('node2', ['name' => 'Second']);
-        $this->repo->insertEdge('node1', 'node2');
+        $category = 'business';
+        $type = 'server';
 
-        $result = $this->repo->deleteEdge('node1', 'node2');
+        $this->repo->insertNode('node1', $category, $type, ['name' => 'First']);
+        $this->repo->insertNode('node2', $category, $type, ['name' => 'Second']);
+        $this->repo->insertEdge('node1-node2', 'node1', 'node2');
 
+        $result = $this->repo->deleteEdge('node1-node2');
         $this->assertTrue($result);
-        $this->assertFalse($this->repo->getEdgeExists('node1', 'node2'));
+        $this->assertFalse($this->repo->getEdgeExistsById('node1', 'node2'));
     }
 
     // ========================================
@@ -340,11 +372,15 @@ class SqliteGraphRepoImplTest extends TestCase
     public function testSchemaInitializationCreatesTablesCorrectly(): void
     {
         // Test that we can perform operations without errors (schema was initialized)
-        $node = $this->repo->getNode('test');
-        $this->assertNull($node);
-
         $edges = $this->repo->getEdges();
         $this->assertIsArray($edges);
+
+        $nodes = $this->repo->getNodes();
+        $this->assertIsArray($nodes);
+
+        // Verify we can check for existence without errors
+        $exists = $this->repo->getNodeExists('test');
+        $this->assertFalse($exists);
     }
 
     // ========================================
@@ -354,12 +390,14 @@ class SqliteGraphRepoImplTest extends TestCase
     public function testCompleteNodeLifecycle(): void
     {
         $id = 'lifecycle_node';
+        $category = 'business';
+        $type = 'server';
         $initialData = ['name' => 'Initial', 'status' => 'active'];
         $updatedData = ['name' => 'Updated', 'status' => 'inactive'];
 
         // Create
         $this->assertFalse($this->repo->getNodeExists($id));
-        $this->assertTrue($this->repo->insertNode($id, $initialData));
+        $this->assertTrue($this->repo->insertNode($id, $category, $type, $initialData));
         $this->assertTrue($this->repo->getNodeExists($id));
 
         // Read
@@ -368,7 +406,7 @@ class SqliteGraphRepoImplTest extends TestCase
         $this->assertSame('active', $node['data']['status']);
 
         // Update
-        $this->assertTrue($this->repo->updateNode($id, $updatedData));
+        $this->assertTrue($this->repo->updateNode($id, $category, $type, $updatedData));
         $node = $this->repo->getNode($id);
         $this->assertSame('Updated', $node['data']['name']);
         $this->assertSame('inactive', $node['data']['status']);
@@ -376,19 +414,22 @@ class SqliteGraphRepoImplTest extends TestCase
         // Delete
         $this->assertTrue($this->repo->deleteNode($id));
         $this->assertFalse($this->repo->getNodeExists($id));
+
         $this->assertNull($this->repo->getNode($id));
     }
 
     public function testMultipleNodesAndEdgesGraph(): void
     {
+        $category = 'business';
+        $type = 'server';
+        
         // Create a small graph: A -> B -> C, A -> C
-        $this->repo->insertNode('A', ['name' => 'Node A']);
-        $this->repo->insertNode('B', ['name' => 'Node B']);
-        $this->repo->insertNode('C', ['name' => 'Node C']);
-
-        $this->repo->insertEdge('A', 'B');
-        $this->repo->insertEdge('B', 'C');
-        $this->repo->insertEdge('A', 'C');
+        $this->repo->insertNode('A', $category, $type, ['name' => 'Node A']);
+        $this->repo->insertNode('B', $category, $type, ['name' => 'Node B']);
+        $this->repo->insertNode('C', $category, $type, ['name' => 'Node C']);
+        $this->repo->insertEdge('A-B', 'A', 'B');
+        $this->repo->insertEdge('B-C', 'B', 'C');
+        $this->repo->insertEdge('A-C', 'A', 'C');
 
         $nodes = $this->repo->getNodes();
         $edges = $this->repo->getEdges();
@@ -397,21 +438,23 @@ class SqliteGraphRepoImplTest extends TestCase
         $this->assertCount(3, $edges);
 
         // Verify all edges exist
-        $this->assertTrue($this->repo->getEdgeExists('A', 'B'));
-        $this->assertTrue($this->repo->getEdgeExists('B', 'C'));
-        $this->assertTrue($this->repo->getEdgeExists('A', 'C'));
+        $this->assertTrue($this->repo->getEdgeExistsById('A-B'));
+        $this->assertTrue($this->repo->getEdgeExistsById('B-C'));
+        $this->assertTrue($this->repo->getEdgeExistsById('A-C'));
     }
 
     public function testJsonEncodingPreservesUnicodeCharacters(): void
     {
         $id = 'unicode_node';
+        $category = 'business';
+        $type = 'server';
         $data = [
             'name' => 'Test 测试',
             'emoji' => '🚀',
             'special' => 'Café résumé'
         ];
 
-        $this->repo->insertNode($id, $data);
+        $this->repo->insertNode($id, $category, $type, $data);
         $retrieved = $this->repo->getNode($id);
 
         $this->assertSame('Test 测试', $retrieved['data']['name']);

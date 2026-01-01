@@ -27,18 +27,16 @@ final class SqliteGraphRepoImpl implements GraphRepoInterface
             $stmt->execute([':id' => $id]);
             $row = $stmt->fetch();
 
-            if ($row === false) {
-                return null;
+            if ($row) {
+                return ['data' => json_decode($row['data'], true)];
             }
-
-            return ['data' => json_decode($row['data'], true)];
 
             // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase fetch node failed: " . $e->getMessage());
-            throw new RuntimeException("Failed to fetch node: " . $e->getMessage());
         }
         // @codeCoverageIgnoreEnd
+        return null;
     }
 
     public function getNodes(): array
@@ -76,15 +74,17 @@ final class SqliteGraphRepoImpl implements GraphRepoInterface
 
 
 
-    public function insertNode(string $id, array $data): bool
+    public function insertNode(string $id, string $category, string $type, array $data = []): bool
     {
         try {
-            $sql        = "INSERT OR IGNORE INTO nodes (id, data) VALUES (:id, :data)";
+            $sql        = "INSERT OR IGNORE INTO nodes (id, category, type, data) VALUES (:id, :category, :type, :data)";
             $stmt       = $this->pdo->prepare($sql);
             $data['id'] = $id;
             $stmt->execute([
-                ':id'   => $id,
-                ':data' => json_encode($data, JSON_UNESCAPED_UNICODE)
+                ':id'      => $id,
+                ':category' => $category,
+                ':type'    => $type,
+                ':data'    => json_encode($data, JSON_UNESCAPED_UNICODE)
             ]);
             return true;
             // @codeCoverageIgnoreStart
@@ -95,14 +95,16 @@ final class SqliteGraphRepoImpl implements GraphRepoInterface
         // @codeCoverageIgnoreEnd
     }
 
-    public function updateNode(string $id, array $data): bool
+    public function updateNode(string $id, string $category, string $type, array $data = []): bool
     {
         try {
-            $stmt = $this->pdo->prepare("UPDATE nodes SET data = :data WHERE id = :id");
+            $stmt = $this->pdo->prepare("UPDATE nodes SET category = :category, type = :type, data = :data WHERE id = :id");
             $data['id'] = $id;
             $stmt->execute([
-                ':id'   => $id,
-                ':data' => json_encode($data, JSON_UNESCAPED_UNICODE)
+                ':id'      => $id,
+                ':category' => $category,
+                ':type'    => $type,
+                ':data'    => json_encode($data, JSON_UNESCAPED_UNICODE)
             ]);
             return $stmt->rowCount() > 0;
             // @codeCoverageIgnoreStart
@@ -129,23 +131,21 @@ final class SqliteGraphRepoImpl implements GraphRepoInterface
         // @codeCoverageIgnoreEnd
     }
 
-    public function getEdge(string $source, string $target): ?array
+    public function getEdge(string $id): ?array
     {
         try {
-            $stmt = $this->pdo->prepare("SELECT source, target, data FROM edges WHERE source = :source AND target = :target");
-            $stmt->execute([':source' => $source, ':target' => $target]);
+            $stmt = $this->pdo->prepare("SELECT id, data FROM edges WHERE id = :id");
+            $stmt->execute([':id' => $id]);
             $row = $stmt->fetch();
-            if ($row === false) {
-                return null;
+            if ($row) {
+                return ['data' => json_decode($row['data'], true)];
             }
-            $edge = ['data' => json_decode($row['data'], true)];
-            return $edge;
             // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase fetch edge failed: " . $e->getMessage());
-            throw new RuntimeException("Failed to fetch edge: " . $e->getMessage());
         }
         // @codeCoverageIgnoreEnd
+        return null;
     }
 
     public function getEdges(): array
@@ -166,13 +166,31 @@ final class SqliteGraphRepoImpl implements GraphRepoInterface
         // @codeCoverageIgnoreEnd
     }
 
-    public function getEdgeExists(string $source, string $target): bool
+    public function getEdgeExistsById(string $id): bool
     {
         try {
             $stmt = $this->pdo->prepare("
                 SELECT COUNT(*) FROM edges
-                WHERE (source = :source AND target = :target)
-                   OR (source = :target AND target = :source)
+                WHERE id = :id
+            ");
+            $stmt->execute([
+                ':id' => $id
+            ]);
+            return $stmt->fetchColumn() > 0;
+            // @codeCoverageIgnoreStart
+        } catch (PDOException $e) {
+            error_log("GraphDatabase edge exists check failed: " . $e->getMessage());
+            return false;
+        }
+        // @codeCoverageIgnoreEnd
+    }
+
+    public function getEdgeExistsByNodes(string $source, string $target): bool
+    {
+        try {
+            $stmt = $this->pdo->prepare("
+                SELECT COUNT(*) FROM edges
+                WHERE source = :source AND target = :target
             ");
             $stmt->execute([
                 ':source' => $source,
@@ -187,15 +205,22 @@ final class SqliteGraphRepoImpl implements GraphRepoInterface
         // @codeCoverageIgnoreEnd
     }
 
-    public function insertEdge(string $source, string $target, array $data = []): bool
+    public function insertEdge(string $id, string $source, string $target, array $data = []): bool
     {
+        // verify if the inverse edge exists
+        $r = $this->getEdgeExistsByNodes($target, $source);
+        if ($r) {
+            return false;
+        }
+        
         try {
-            $sql            = "INSERT OR IGNORE INTO edges (source, target, data) VALUES (:source, :target, :data)";
+            $sql            = "INSERT OR IGNORE INTO edges (id, source, target, data) VALUES (:id, :source, :target, :data)";
             $stmt           = $this->pdo->prepare($sql);
-            $data['id']     = "{$source}-{$target}";
+            $data['id']     = $id;
             $data['source'] = $source;
             $data['target'] = $target;
             $stmt->execute([
+                ':id' => $id,
                 ':source' => $source,
                 ':target' => $target,
                 ':data'   => json_encode($data, JSON_UNESCAPED_UNICODE)
@@ -209,20 +234,19 @@ final class SqliteGraphRepoImpl implements GraphRepoInterface
         // @codeCoverageIgnoreEnd
     }
 
-    public function updateEdge(string $source, string $target, array $data = []): bool
+    public function updateEdge(string $id, string $source, string $target, array $data = []): bool
     {
         try {
-            $data['id']     = "{$source}-{$target}";
+            $data['id']     = $id;
             $data['source'] = $source;
             $data['target'] = $target;
 
             $stmt = $this->pdo->prepare("
                 UPDATE edges
                 SET data = :data
-                WHERE source = :source AND target = :target");
+                WHERE id = :id");
             $stmt->execute([
-                ':source' => $source,
-                ':target' => $target,
+                ':id' => $id,
                 ':data'   => json_encode($data, JSON_UNESCAPED_UNICODE)
             ]);
             return true;
@@ -234,11 +258,11 @@ final class SqliteGraphRepoImpl implements GraphRepoInterface
         // @codeCoverageIgnoreEnd
     }
 
-    public function deleteEdge(string $source, string $target): bool
+    public function deleteEdge(string $id): bool
     {
         try {
-            $stmt = $this->pdo->prepare("DELETE FROM edges WHERE source = :source AND target = :target");
-            $stmt->execute([':source' => $source, ':target' => $target]);
+            $stmt = $this->pdo->prepare("DELETE FROM edges WHERE id = :id");
+            $stmt->execute([':id' => $id]);
             return true;
             // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
@@ -253,20 +277,24 @@ final class SqliteGraphRepoImpl implements GraphRepoInterface
         $this->pdo->exec("
             CREATE TABLE IF NOT EXISTS nodes (
                 id TEXT PRIMARY KEY,
+                category TEXT NOT NULL,
+                type TEXT NOT NULL,
                 data TEXT NOT NULL
             )
         ");
 
         $this->pdo->exec("
             CREATE TABLE IF NOT EXISTS edges (
+                id TEXT PRIMARY KEY,
                 source TEXT NOT NULL,
                 target TEXT NOT NULL,
                 data TEXT,
-                PRIMARY KEY (source, target),
                 FOREIGN KEY (source) REFERENCES nodes(id) ON DELETE CASCADE,
                 FOREIGN KEY (target) REFERENCES nodes(id) ON DELETE CASCADE
             )
         ");
+
+        $this->pdo->exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_edges_source_target ON edges (source, target)");
     }
 
         public static function createConnection(string $dbFile): PDO

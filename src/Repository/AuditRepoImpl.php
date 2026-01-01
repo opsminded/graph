@@ -38,17 +38,17 @@ final class AuditRepoImpl implements GraphRepoInterface
         return $this->repo->getNodeExists($id);
     }
 
-    public function insertNode(string $id, array $data): bool
+    public function insertNode(string $id, string $source, string $target, array $data = []): bool
     {
         $this->insertAuditLog('node', $id, 'insert_node', null, $data);
-        return $this->repo->insertNode($id, $data);
+        return $this->repo->insertNode($id, $source, $target, $data);
     }
 
-    public function updateNode(string $id, array $data): bool
+    public function updateNode(string $id, string $category, string $type, array $data = []): bool
     {
         $oldData = $this->repo->getNode($id);
         $this->insertAuditLog('node', $id, 'update_node', $oldData, $data);
-        return $this->repo->updateNode($id, $data);
+        return $this->repo->updateNode($id, $category, $type, $data);
     }
 
     public function deleteNode(string $id): bool
@@ -58,10 +58,10 @@ final class AuditRepoImpl implements GraphRepoInterface
         return $this->repo->deleteNode($id);
     }
 
-    public function getEdge(string $source, string $target): ?array
+    public function getEdge(string $id): ?array
     {
-        $this->insertAuditLog('edge', $source . '->' . $target, 'get_edge');
-        return $this->repo->getEdge($source, $target);
+        $this->insertAuditLog('edge', $id, 'get_edge');
+        return $this->repo->getEdge($id);
     }
 
     public function getEdges(): array
@@ -70,30 +70,36 @@ final class AuditRepoImpl implements GraphRepoInterface
         return $this->repo->getEdges();
     }
 
-    public function getEdgeExists(string $source, string $target): bool
+    public function getEdgeExistsById(string $id): bool
     {
-        $this->insertAuditLog('edge', $source . '->' . $target, 'get_edge_exists');
-        return $this->repo->getEdgeExists($source, $target);
+        $this->insertAuditLog('edge', $id, 'get_edge_exists');
+        return $this->repo->getEdgeExistsById($id);
     }
 
-    public function insertEdge(string $source, string $target, array $data = []): bool
+    public function getEdgeExistsByNodes(string $source, string $target): bool
     {
-        $this->insertAuditLog('edge', $source . '->' . $target, 'insert_edge', null, $data);
-        return $this->repo->insertEdge($source, $target, $data);
+        $this->insertAuditLog('edge', $source . '->' . $target, 'get_edge_exists_by_nodes');
+        return $this->repo->getEdgeExistsByNodes($source, $target);
     }
 
-    public function updateEdge(string $source, string $target, array $data = []): bool
+    public function insertEdge(string $id, string $source, string $target, array $data = []): bool
     {
-        $oldData = $this->repo->getEdge($source, $target);
-        $this->insertAuditLog('edge', $source . '->' . $target, 'update_edge', $oldData, $data);
-        return $this->repo->updateEdge($source, $target, $data);
+        $this->insertAuditLog('edge', $id, 'insert_edge', null, $data);
+        return $this->repo->insertEdge($id, $source, $target, $data);
     }
 
-    public function deleteEdge(string $source, string $target): bool
+    public function updateEdge(string $id, string $source, string $target, array $data = []): bool
     {
-        $oldData = $this->repo->getEdge($source, $target);
-        $this->insertAuditLog('edge', $source . '->' . $target, 'delete_edge', $oldData, null);
-        return $this->repo->deleteEdge($source, $target);
+        $oldData = $this->repo->getEdge($id);
+        $this->insertAuditLog('edge', $id, 'update_edge', $oldData, $data);
+        return $this->repo->updateEdge($id, $source, $target, $data);
+    }
+
+    public function deleteEdge(string $id): bool
+    {
+        $oldData = $this->repo->getEdge($id);
+        $this->insertAuditLog('edge', $id, 'delete_edge', $oldData, null);
+        return $this->repo->deleteEdge($id);
     }
 
     public function insertAuditLog(
