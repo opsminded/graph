@@ -8,6 +8,7 @@ use Opsminded\Graph\Model\Node;
 use Opsminded\Graph\Model\Nodes;
 use Opsminded\Graph\Model\Edge;
 use Opsminded\Graph\Model\Edges;
+use Opsminded\Graph\Model\Graph;
 use Opsminded\Graph\Repository\GraphRepoInterface;
 
 final class BasicGraphServiceImpl implements GraphServiceInterface
@@ -19,14 +20,14 @@ final class BasicGraphServiceImpl implements GraphServiceInterface
         $this->repo = $repo;
     }
 
-    public function getGraph(): array
+    public function getGraph(): Graph
     {
         $nodes = $this->repo->getNodes();
         $edges = $this->repo->getEdges();
-        return [
-            'nodes' => $nodes,
-            'edges' => $edges
-        ];
+
+        $graph = new Graph($nodes, $edges);
+
+        return $graph;
     }
 
     public function getNode(string $id): ?Node

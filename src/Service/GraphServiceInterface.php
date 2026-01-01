@@ -8,10 +8,11 @@ use Opsminded\Graph\Model\Node;
 use Opsminded\Graph\Model\Nodes;
 use Opsminded\Graph\Model\Edge;
 use Opsminded\Graph\Model\Edges;
+use Opsminded\Graph\Model\Graph;
 
 interface GraphServiceInterface
 {
-    public function getGraph(): array;
+    public function getGraph(): Graph;
 
     public function getNode(string $id): ?Node;
     public function getNodes(): Nodes;
