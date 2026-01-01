@@ -110,14 +110,20 @@ class BasicGraphServiceImplTest extends TestCase
         $this->assertCount(3, $nodeArray);
 
         $this->assertInstanceOf(Node::class, $nodeArray[0]);
-        $this->assertSame('node1', $nodeArray[0]->getId());
-        $this->assertSame('Node 1', $nodeArray[0]->getLabel());
+        /** @var Node $node1 */
+        $node1 = $nodeArray[0];
+        $this->assertSame('node1', $node1->getId());
+        $this->assertSame('Node 1', $node1->getLabel());
 
         $this->assertInstanceOf(Node::class, $nodeArray[1]);
-        $this->assertSame('node2', $nodeArray[1]->getId());
+        /** @var Node $node2 */
+        $node2 = $nodeArray[1];
+        $this->assertSame('node2', $node2->getId());
 
         $this->assertInstanceOf(Node::class, $nodeArray[2]);
-        $this->assertSame('node3', $nodeArray[2]->getId());
+        /** @var Node $node3 */
+        $node3 = $nodeArray[2];
+        $this->assertSame('node3', $node3->getId());
     }
 
     public function testGetNodesReturnsEmptyCollectionWhenNoNodes(): void
@@ -281,12 +287,16 @@ class BasicGraphServiceImplTest extends TestCase
         $this->assertCount(2, $edgeArray);
 
         $this->assertInstanceOf(Edge::class, $edgeArray[0]);
-        $this->assertSame('edge1', $edgeArray[0]->getId());
-        $this->assertSame('node1', $edgeArray[0]->getSourceNodeId());
-        $this->assertSame('node2', $edgeArray[0]->getTargetNodeId());
+        /** @var Edge $edge1 */
+        $edge1 = $edgeArray[0];
+        $this->assertSame('edge1', $edge1->getId());
+        $this->assertSame('node1', $edge1->getSourceNodeId());
+        $this->assertSame('node2', $edge1->getTargetNodeId());
 
         $this->assertInstanceOf(Edge::class, $edgeArray[1]);
-        $this->assertSame('edge2', $edgeArray[1]->getId());
+        /** @var Edge $edge2 */
+        $edge2 = $edgeArray[1];
+        $this->assertSame('edge2', $edge2->getId());
     }
 
     public function testGetEdgesReturnsEmptyCollectionWhenNoEdges(): void
