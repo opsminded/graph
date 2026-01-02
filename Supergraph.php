@@ -229,6 +229,10 @@ final class GraphContext
 
 interface GraphDatabaseInterface
 {
+    public function getUser(string $id): ?array;
+    public function insertUser(string $id, string $group): bool;
+    public function updateUser(string $id, string $group): bool;
+
     public function getNode(string $id): ?array;
     public function getNodes(): array;
     public function insertNode(string $id, string $label, string $category, string $type, array $data = []): bool;
@@ -265,6 +269,68 @@ final class GraphDatabase implements GraphDatabaseInterface
     {
         $this->pdo = $pdo;
         $this->initSchema();
+    }
+
+    public function getUser(string $id): ?array
+    {
+        try {
+            $stmt = $this->pdo->prepare("SELECT * FROM users WHERE id = :id");
+            $stmt->execute([':id' => $id]);
+            $row = $stmt->fetch();
+
+            if ($row) {
+                return $row;
+            }
+
+            // @codeCoverageIgnoreStart
+        } catch (PDOException $e) {
+            error_log("GraphDatabase fetch node failed: " . $e->getMessage());
+        }
+        // @codeCoverageIgnoreEnd
+        return null;
+    }
+
+    public function insertUser(string $id, string $group): bool
+    {
+        try {
+            $sql = "
+                INSERT OR IGNORE INTO users 
+                (id, user_group)
+                VALUES (:id, :group)";
+            $stmt             = $this->pdo->prepare($sql);
+            $stmt->execute([
+                ':id'       => $id,
+                ':group'    => $group
+            ]);
+            return true;
+            // @codeCoverageIgnoreStart
+        } catch (PDOException $e) {
+            error_log("GraphDatabase insert node failed: " . $e->getMessage());
+            return false;
+        }
+        // @codeCoverageIgnoreEnd
+    }
+
+    public function updateUser(string $id, string $group): bool
+    {
+        try {
+            $stmt = $this->pdo->prepare("
+                UPDATE users
+                SET    user_group = :group
+                WHERE  id = :id"
+            );
+            
+            $stmt->execute([
+                ':id'       => $id,
+                ':group'    => $group
+            ]);
+            return $stmt->rowCount() > 0;
+            // @codeCoverageIgnoreStart
+        } catch (PDOException $e) {
+            error_log("GraphDatabase update node failed: " . $e->getMessage());
+            throw new RuntimeException("Failed to update node: " . $e->getMessage());
+        }
+        // @codeCoverageIgnoreEnd
     }
 
     public function getNode(string $id): ?array
@@ -574,6 +640,15 @@ final class GraphDatabase implements GraphDatabaseInterface
 
     private function initSchema(): void
     {
+        $this->pdo->exec("
+            CREATE TABLE IF NOT EXISTS users (
+                id TEXT PRIMARY KEY,
+                user_group TEXT NOT NULL
+            )
+        ");
+
+        $this->pdo->exec("INSERT INTO users VALUES('admin', 'admin')");
+
         $this->pdo->exec("
             CREATE TABLE IF NOT EXISTS nodes (
                 id TEXT PRIMARY KEY,
