@@ -291,12 +291,9 @@ final class GraphDatabase implements GraphDatabaseInterface
             if ($row) {
                 return $row;
             }
-
-            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase fetch node failed: " . $e->getMessage());
         }
-        // @codeCoverageIgnoreEnd
         return null;
     }
 
@@ -313,12 +310,10 @@ final class GraphDatabase implements GraphDatabaseInterface
                 ':group'    => $group
             ]);
             return true;
-            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase insert node failed: " . $e->getMessage());
             return false;
         }
-        // @codeCoverageIgnoreEnd
     }
 
     public function updateUser(string $id, string $group): bool
@@ -335,12 +330,10 @@ final class GraphDatabase implements GraphDatabaseInterface
                 ':group'    => $group
             ]);
             return $stmt->rowCount() > 0;
-            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase update node failed: " . $e->getMessage());
             throw new RuntimeException("Failed to update node: " . $e->getMessage());
         }
-        // @codeCoverageIgnoreEnd
     }
 
     public function getNode(string $id): ?array
@@ -353,12 +346,9 @@ final class GraphDatabase implements GraphDatabaseInterface
             if ($row) {
                 return $row;
             }
-
-            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase fetch node failed: " . $e->getMessage());
         }
-        // @codeCoverageIgnoreEnd
         return null;
     }
 
@@ -368,12 +358,10 @@ final class GraphDatabase implements GraphDatabaseInterface
             $stmt = $this->pdo->query("SELECT * FROM nodes");
             $rows = $stmt->fetchAll();
             return $rows;
-            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase fetch all nodes failed: " . $e->getMessage());
             return [];
         }
-        // @codeCoverageIgnoreEnd
     }
 
     public function insertNode(string $id, string $label, string $category, string $type, array $data = []): bool
@@ -396,12 +384,10 @@ final class GraphDatabase implements GraphDatabaseInterface
                 ':data'     => json_encode($data, JSON_UNESCAPED_UNICODE)
             ]);
             return true;
-            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase insert node failed: " . $e->getMessage());
             return false;
         }
-        // @codeCoverageIgnoreEnd
     }
 
     public function updateNode(string $id, string $label, string $category, string $type, array $data = []): bool
@@ -427,12 +413,10 @@ final class GraphDatabase implements GraphDatabaseInterface
                 ':data'     => json_encode($data, JSON_UNESCAPED_UNICODE)
             ]);
             return $stmt->rowCount() > 0;
-            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase update node failed: " . $e->getMessage());
             throw new RuntimeException("Failed to update node: " . $e->getMessage());
         }
-        // @codeCoverageIgnoreEnd
     }
 
     public function deleteNode(string $id): bool
@@ -441,12 +425,10 @@ final class GraphDatabase implements GraphDatabaseInterface
             $stmt = $this->pdo->prepare("DELETE FROM nodes WHERE id = :id");
             $stmt->execute([':id' => $id]);
             return true;
-            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase delete node failed: " . $e->getMessage());
             return false;
         }
-        // @codeCoverageIgnoreEnd
     }
 
     public function getEdge(string $source, string $target): ?array
@@ -464,11 +446,9 @@ final class GraphDatabase implements GraphDatabaseInterface
             if ($row) {
                 return $row;
             }
-            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase edge exists check failed: " . $e->getMessage());
         }
-        // @codeCoverageIgnoreEnd
         return null;
     }
 
@@ -486,11 +466,9 @@ final class GraphDatabase implements GraphDatabaseInterface
             if ($row) {
                 return $row;
             }
-            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase edge exists check failed: " . $e->getMessage());
         }
-        // @codeCoverageIgnoreEnd
         return null;
     }
 
@@ -500,12 +478,10 @@ final class GraphDatabase implements GraphDatabaseInterface
             $stmt  = $this->pdo->query("SELECT * FROM edges");
             $rows  = $stmt->fetchAll();
             return $rows;
-            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase fetch all edges failed: " . $e->getMessage());
             return [];
         }
-        // @codeCoverageIgnoreEnd
     }
 
     public function insertEdge(string $id, string $source, string $target, array $data = []): bool
@@ -532,12 +508,10 @@ final class GraphDatabase implements GraphDatabaseInterface
                 ':data'   => json_encode($data, JSON_UNESCAPED_UNICODE)
             ]);
             return true;
-            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase insert edge or ignore failed: " . $e->getMessage());
             return false;
         }
-        // @codeCoverageIgnoreEnd
     }
 
     public function updateEdge(string $id, string $source, string $target, array $data = []): bool
@@ -556,12 +530,10 @@ final class GraphDatabase implements GraphDatabaseInterface
                 ':data' => json_encode($data, JSON_UNESCAPED_UNICODE)
             ]);
             return true;
-            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase update node failed: " . $e->getMessage());
             throw new RuntimeException("Failed to update node: " . $e->getMessage());
         }
-        // @codeCoverageIgnoreEnd
     }
 
     public function deleteEdge(string $id): bool
@@ -570,12 +542,10 @@ final class GraphDatabase implements GraphDatabaseInterface
             $stmt = $this->pdo->prepare("DELETE FROM edges WHERE id = :id");
             $stmt->execute([':id' => $id]);
             return true;
-            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase delete edge failed: " . $e->getMessage());
             return false;
         }
-        // @codeCoverageIgnoreEnd
     }
 
     public function getStatuses(): array
@@ -640,12 +610,10 @@ final class GraphDatabase implements GraphDatabaseInterface
                 ':ip_address'  => $ip_address
             ]);
             return true;
-            // @codeCoverageIgnoreStart
         } catch (PDOException $e) {
             error_log("GraphDatabase audit log insert failed: " . $e->getMessage());
             return false;
         }
-        // @codeCoverageIgnoreEnd
     }
 
     private function initSchema(): void
