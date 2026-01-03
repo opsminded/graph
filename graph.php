@@ -2,10 +2,6 @@
 
 declare(strict_types=1);
 
-ini_set('xdebug.mode', '1');
-
-xdebug_start_code_coverage(XDEBUG_CC_UNUSED | XDEBUG_CC_DEAD_CODE);
-
 final class User
 {
     public string $id;
@@ -425,16 +421,20 @@ final class GraphDatabase implements GraphDatabaseInterface
 
     public function getNode(string $id): ?array
     {
-        try {
-            $stmt = $this->pdo->prepare("SELECT * FROM nodes WHERE id = :id");
-            $stmt->execute([':id' => $id]);
-            $row = $stmt->fetch();
+        $this->logger->debug("fetching node '{$id}'");
 
+        try {
+            $sql = "SELECT * FROM nodes WHERE id = :id";
+            $params = [':id' => $id];
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            $row = $stmt->fetch();
             if ($row) {
                 return $row;
             }
         } catch (PDOException $e) {
-            error_log("GraphDatabase fetch node failed: " . $e->getMessage());
+            $this->logger->error("exception with node id '{$id}'");
+            throw new DatabaseException("could not get node data with id '{$id}'", 0, $e, $sql, $params);
         }
         return null;
     }
@@ -1346,7 +1346,8 @@ final class GraphController implements GraphControllerInterface
     {
         $this->logger->debug('inserting node', $req->data);
         try {
-            $node = new Node($req->data['id'], $req->data['label'], $req->data['category'], $req->data['type'], $req->data['data']);
+            $data = json_decode($req->data['data'], true);
+            $node = new Node($req->data['id'], $req->data['label'], $req->data['category'], $req->data['type'], $data);
             $this->service->insertNode($node);
             $this->logger->info('node inserted', $req->data);
             return new CreatedResponse('node inserted', $req->data);
@@ -1360,9 +1361,15 @@ final class GraphController implements GraphControllerInterface
     
     public function updateNode(Request $req): ResponseInterface
     {
+        $this->logger->debug('updating node', $req->data);
+
         try {
-            $edge = new Edge($req->data['id'], $req->data['source'], $req->data['target'], $req->data['data']);
+            $data = json_decode($req->data['data'], true);
+            $edge = new Edge($req->data['id'], $req->data['category'], $req->data['type'], $data);
             $this->service->insertEdge($edge);
+            $this->logger->info('edge inserted', $req->data);
+            $resp = new CreatedResponse('edge created', $req->data);
+            return $resp;
         } catch( Exception $e)
         {
             return new InternalServerErrorResponse($e->getMessage(), $req->data);
@@ -1564,77 +1571,4 @@ final class RequestRouter
     }
 }
 
-function tests() {
-    GraphContext::$user = new User('test_user', '127.0.0.1', new Group('contributor'));
-    $pdo = GraphDatabase::createConnection('sqlite::memory:');
-    $databaseLogger = new Logger('database.log');
 
-    $graphDb = new GraphDatabase($pdo, $databaseLogger);
-
-    $serviceLogger = new Logger('service.log');
-    $graphService = new GraphService($graphDb, $serviceLogger);
-
-    $controllerLogger = new Logger('controller.log');
-    $graphController = new GraphController($graphService, $controllerLogger);
-
-    ####################################################################################
-    $insertNodeReq = new Request();
-    $insertNodeReq->data = ['id' => 'node1', 'label' => 'node1', 'category' => 'business', 'type' => 'server', 'data' => ['info' => 'first node']];
-    $resp = $graphController->insertNode($insertNodeReq);
-
-    $insertNodeReq = new Request();
-    $insertNodeReq->data = ['id' => 'node2', 'label' => 'node1', 'category' => 'business', 'type' => 'server', 'data' => ['info' => 'second node']];
-    $resp = $graphController->insertNode($insertNodeReq);
-
-    $insertNodeReq = new Request();
-    $insertNodeReq->data = ['id' => 'node3', 'label' => 'node1', 'category' => 'business', 'type' => 'server', 'data' => ['info' => 'third node']];
-    $resp = $graphController->insertNode($insertNodeReq);
-    
-    $_GET['id'] = 'node1';
-    $getNodeReq = new Request();
-    $node1 = $graphController->getNode($getNodeReq);
-    ####################################################################################
-    
-    
-    // $node1 = new Node('node1', 'Node 1', 'business', 'application', ['info' => 'First node']);
-    // $node2 = new Node('node2', 'Node 2', 'infrastructure', 'server', ['info' => 'Second node']);
-    // $edge = new Edge('edge1', 'node1', 'node2', ['relation' => 'connects to']);
-    
-    // $graphService->insertNode($node1);
-    // $graphService->insertNode($node2);
-    // $graphService->insertEdge($edge);
-
-    // $graphService->deleteEdge('node1', 'node2');
-    // $graphService->deleteNode('node1');
-    // $graphService->deleteNode('node2');
-
-    // $auditLogs = $graphService->getLogs(10);
-    // print_r($auditLogs);
-    // exit();
-    // foreach ($auditLogs->logs as $log) {
-    //     echo "Audit Log - Entity: " . $log->entityType . ", Action:
-    // " . $log->action . ", Entity ID: " . $log->entityId . PHP_EOL;
-    // }
-
-    // $statuses = $graphService->getStatuses();
-    // foreach ($statuses->statuses as $status) {
-    //     echo "Node ID: " . $status->nodeId . ", Status: " . $status->status . PHP_EOL;
-    // }
-    
-    // $nodeStatus = $graphService->getNodeStatus('node1');
-    // echo "Node1 Status: " . $nodeStatus->status . PHP_EOL;
-
-    // $status = $graphService->getNodeStatus('node1');
-    //echo "Node1 Status: " . $status->status . PHP_EOL;
-}
-
-tests();
-
-$coverage = xdebug_get_code_coverage();
-xdebug_stop_code_coverage();
-
-// Salvar em arquivo
-file_put_contents('coverage.json', json_encode($coverage, JSON_PRETTY_PRINT));
-
-// Ou exibir
-print_r($coverage);
