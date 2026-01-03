@@ -237,24 +237,67 @@ final class GraphContext
     public static User $user;
 }
 
+interface LoggerInterface
+{
+    public function info(string $message, array $data = []): void;
+    public function debug(string $message, array $data = []): void;
+    public function error(string $message, array $data = []): void;
+}
+
+final class Logger implements LoggerInterface
+{
+    private string $fileName;
+    private $fd;
+
+    public function __construct($file_name)
+    {
+        $this->fileName = $file_name;
+        $this->fd = fopen($this->fileName, 'a');
+    }
+
+    public function info(string $message, array $data = []): void
+    {
+        $this->log('INFO', $message, $data);
+    }
+
+    public function debug(string $message, array $data = []): void
+    {
+        $this->log('DEBUG', $message, $data);
+    }
+
+    public function error(string $message, array $data = []): void
+    {
+        $this->log('ERROR', $message, $data);
+    }
+
+    private function log(string $type, $message, $data = [])
+    {
+        $trace = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 3);
+        $method = "{$trace[2]['class']}::{$trace[2]['function']}";
+        $data = json_encode($data);
+        $message = "[{$type}] {$method}: $message ($data)\n";
+        fwrite($this->fd, $message);
+    }
+}
+
 interface GraphDatabaseInterface
 {
     public function getUser(string $id): ?array;
-    public function insertUser(string $id, string $group): bool;
-    public function updateUser(string $id, string $group): bool;
+    public function insertUser(string $id, string $group): void;
+    public function updateUser(string $id, string $group): void;
 
     public function getNode(string $id): ?array;
     public function getNodes(): array;
-    public function insertNode(string $id, string $label, string $category, string $type, array $data = []): bool;
-    public function updateNode(string $id, string $label, string $category, string $type, array $data = []): bool;
-    public function deleteNode(string $id): bool;
+    public function insertNode(string $id, string $label, string $category, string $type, array $data = []): void;
+    public function updateNode(string $id, string $label, string $category, string $type, array $data = []): void;
+    public function deleteNode(string $id): void;
 
     public function getEdge(string $source, string $target): ?array;
     public function getEdgeById(string $id): ?array;
     public function getEdges(): array;
-    public function insertEdge(string $id, string $source, string $target, array $data = []): bool;
-    public function updateEdge(string $id, string $source, string $target, array $data = []): bool;
-    public function deleteEdge(string $id): bool;
+    public function insertEdge(string $id, string $source, string $target, array $data = []): void;
+    public function updateEdge(string $id, string $source, string $target, array $data = []): void;
+    public function deleteEdge(string $id): void;
 
     public function getStatuses(): array;
     public function getNodeStatus(string $id): ?string;
@@ -271,68 +314,112 @@ interface GraphDatabaseInterface
         string $ip_address): bool;
 }
 
+final class DatabaseException extends RuntimeException
+{
+    private ?string $query;
+    private ?array $params;
+
+    
+    public function __construct(string $message = "",  int $code = 0, ?Throwable $previous = null, ?string $query = null, ?array $params) {
+        parent::__construct($message, $code, $previous);
+        $this->query = $query;
+        $this->params = $params;
+    }
+}
+
 final class GraphDatabase implements GraphDatabaseInterface
 {
     private PDO $pdo;
+    private Logger $logger;
 
-    public function __construct(PDO $pdo)
+    private const USER_ERROR_CODE_GROUP = 1000;
+    private const NODE_ERROR_CODE_GROUP = 2000;
+    private const EDGE_ERROR_CODE_GROUP = 3000;
+
+    public function __construct(PDO $pdo, Logger $logger)
     {
         $this->pdo = $pdo;
+        $this->logger = $logger;
         $this->initSchema();
     }
 
     public function getUser(string $id): ?array
     {
+        $this->logger->debug("getting user id: '{$id}'");
         try {
-            $stmt = $this->pdo->prepare("SELECT * FROM users WHERE id = :id");
-            $stmt->execute([':id' => $id]);
+            $sql = "SELECT * FROM users WHERE id = :id";
+            $params = [':id' => $id];
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
             $row = $stmt->fetch();
 
             if ($row) {
                 return $row;
             }
         } catch (PDOException $e) {
-            error_log("GraphDatabase fetch node failed: " . $e->getMessage());
+            $e = new DatabaseException(
+                "GraphDatabase Exception while trying to get user data. ID: {$id}",
+                self::USER_ERROR_CODE_GROUP + 1,
+                $e,
+                $sql,
+                $params
+            );
         }
         return null;
     }
 
-    public function insertUser(string $id, string $group): bool
+    public function insertUser(string $id, string $group): void
     {
         try {
             $sql = "
                 INSERT OR IGNORE INTO users 
                 (id, user_group)
                 VALUES (:id, :group)";
-            $stmt             = $this->pdo->prepare($sql);
-            $stmt->execute([
+            
+            $params = [
                 ':id'       => $id,
                 ':group'    => $group
-            ]);
-            return true;
+            ];
+
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
         } catch (PDOException $e) {
-            error_log("GraphDatabase insert node failed: " . $e->getMessage());
-            return false;
+            $e = new DatabaseException(
+                "GraphDatabase Exception while trying to insert new user. ID: {$id}",
+                self::USER_ERROR_CODE_GROUP + 2,
+                $e,
+                $sql,
+                $params
+            );
         }
     }
 
-    public function updateUser(string $id, string $group): bool
+    public function updateUser(string $id, string $group): void
     {
         try {
-            $stmt = $this->pdo->prepare("
+            $sql = "
                 UPDATE users
                 SET    user_group = :group
-                WHERE  id = :id"
-            );
-            
-            $stmt->execute([
+                WHERE  id = :id
+            ";
+
+            $params = [
                 ':id'       => $id,
                 ':group'    => $group
-            ]);
-            return $stmt->rowCount() > 0;
+            ];
+
+            $stmt = $this->pdo->prepare($sql);
+            
+            $stmt->execute($params);
+
         } catch (PDOException $e) {
-            error_log("GraphDatabase update node failed: " . $e->getMessage());
-            throw new RuntimeException("Failed to update node: " . $e->getMessage());
+            $e = new DatabaseException(
+                "GraphDatabase Exception while trying to update user. ID: {$id}",
+                self::USER_ERROR_CODE_GROUP + 3,
+                $e,
+                $sql,
+                $params
+            );
         }
     }
 
@@ -364,7 +451,7 @@ final class GraphDatabase implements GraphDatabaseInterface
         }
     }
 
-    public function insertNode(string $id, string $label, string $category, string $type, array $data = []): bool
+    public function insertNode(string $id, string $label, string $category, string $type, array $data = []): void
     {
         try {
             $sql = "
@@ -383,14 +470,12 @@ final class GraphDatabase implements GraphDatabaseInterface
                 ':type'     => $type,
                 ':data'     => json_encode($data, JSON_UNESCAPED_UNICODE)
             ]);
-            return true;
         } catch (PDOException $e) {
-            error_log("GraphDatabase insert node failed: " . $e->getMessage());
-            return false;
+            // TODO
         }
     }
 
-    public function updateNode(string $id, string $label, string $category, string $type, array $data = []): bool
+    public function updateNode(string $id, string $label, string $category, string $type, array $data = []): void
     {
         try {
             $stmt = $this->pdo->prepare("
@@ -412,22 +497,18 @@ final class GraphDatabase implements GraphDatabaseInterface
                 ':type'     => $type,
                 ':data'     => json_encode($data, JSON_UNESCAPED_UNICODE)
             ]);
-            return $stmt->rowCount() > 0;
         } catch (PDOException $e) {
-            error_log("GraphDatabase update node failed: " . $e->getMessage());
-            throw new RuntimeException("Failed to update node: " . $e->getMessage());
+            // TODO
         }
     }
 
-    public function deleteNode(string $id): bool
+    public function deleteNode(string $id): void
     {
         try {
             $stmt = $this->pdo->prepare("DELETE FROM nodes WHERE id = :id");
             $stmt->execute([':id' => $id]);
-            return true;
         } catch (PDOException $e) {
-            error_log("GraphDatabase delete node failed: " . $e->getMessage());
-            return false;
+            // TODO
         }
     }
 
@@ -484,14 +565,11 @@ final class GraphDatabase implements GraphDatabaseInterface
         }
     }
 
-    public function insertEdge(string $id, string $source, string $target, array $data = []): bool
+    public function insertEdge(string $id, string $source, string $target, array $data = []): void
     {
         // verify if the inverse edge exists
         $r = $this->getEdge($target, $source);
-        if ($r) {
-            return false;
-        }
-
+        
         try {
             $sql = "
                 INSERT OR IGNORE INTO edges
@@ -507,14 +585,12 @@ final class GraphDatabase implements GraphDatabaseInterface
                 ':target' => $target,
                 ':data'   => json_encode($data, JSON_UNESCAPED_UNICODE)
             ]);
-            return true;
         } catch (PDOException $e) {
-            error_log("GraphDatabase insert edge or ignore failed: " . $e->getMessage());
-            return false;
+            // TODO
         }
     }
 
-    public function updateEdge(string $id, string $source, string $target, array $data = []): bool
+    public function updateEdge(string $id, string $source, string $target, array $data = []): void
     {
         try {
             $data['id']     = $id;
@@ -529,22 +605,18 @@ final class GraphDatabase implements GraphDatabaseInterface
                 ':id'   => $id,
                 ':data' => json_encode($data, JSON_UNESCAPED_UNICODE)
             ]);
-            return true;
         } catch (PDOException $e) {
-            error_log("GraphDatabase update node failed: " . $e->getMessage());
-            throw new RuntimeException("Failed to update node: " . $e->getMessage());
+            // TODO
         }
     }
 
-    public function deleteEdge(string $id): bool
+    public function deleteEdge(string $id): void
     {
         try {
             $stmt = $this->pdo->prepare("DELETE FROM edges WHERE id = :id");
             $stmt->execute([':id' => $id]);
-            return true;
         } catch (PDOException $e) {
-            error_log("GraphDatabase delete edge failed: " . $e->getMessage());
-            return false;
+            // TODO
         }
     }
 
@@ -686,25 +758,29 @@ final class GraphDatabase implements GraphDatabaseInterface
     }
 }
 
+final class GraphServiceException extends RuntimeException
+{
+}
+
 interface GraphServiceInterface
 {
     public function getUser(string $id): ?User;
-    public function insertUser(User $user): bool;
-    public function updateUser(User $user): bool;
+    public function insertUser(User $user): void;
+    public function updateUser(User $user): void;
 
     public function getGraph(): Graph;
 
     public function getNode(string $id): ?Node;
     public function getNodes(): Nodes;
-    public function insertNode(Node $node): bool;
-    public function updateNode(Node $node): bool;
-    public function deleteNode(string $id): bool;
+    public function insertNode(Node $node): void;
+    public function updateNode(Node $node): void;
+    public function deleteNode(string $id): void;
 
     public function getEdge(string $source, string $target): ?Edge;
     public function getEdges(): Edges;
-    public function insertEdge(Edge $edge): bool;
-    public function updateEdge(Edge $edge): bool;
-    public function deleteEdge(string $id): bool;
+    public function insertEdge(Edge $edge): void;
+    public function updateEdge(Edge $edge): void;
+    public function deleteEdge(string $id): void;
 
     public function getStatuses(): NodeStatuses;
     public function getNodeStatus(string $id): NodeStatus;
@@ -736,10 +812,12 @@ final class GraphService implements GraphServiceInterface
     ];
 
     private GraphDatabaseInterface $db;
+    private Logger $logger;
 
-    public function __construct(GraphDatabaseInterface $db)
+    public function __construct(GraphDatabaseInterface $db, Logger $logger)
     {
         $this->db = $db;
+        $this->logger = $logger;
     }
 
     public function getUser(string $id): ?User
@@ -752,14 +830,14 @@ final class GraphService implements GraphServiceInterface
         return null;
     }
 
-    public function insertUser(User $user): bool
+    public function insertUser(User $user): void
     {
-        return $this->db->insertUser($user->id, $user->group->id);
+        $this->db->insertUser($user->id, $user->group->id);
     }
 
-    public function updateUser(User $user): bool
+    public function updateUser(User $user): void
     {
-        return $this->db->updateUser($user->id, $user->group->id);
+        $this->db->updateUser($user->id, $user->group->id);
     }
 
     public function getGraph(): Graph
@@ -809,14 +887,20 @@ final class GraphService implements GraphServiceInterface
         return $nodes;
     }
 
-    public function insertNode(Node $node): bool
+    public function insertNode(Node $node): void
     {
+        $this->logger->debug('inserting node', $node->toArray());
+
         if (! $this->isAllowed(__METHOD__)) {
-            throw new RuntimeException("Permission denied to insert node.");
+            $this->logger->info('permission denied', $node->toArray());
+            throw new GraphServiceException('permission denied');
         }
 
+        $this->logger->info('permission allowed', $node->toArray());
+
         $this->insertAuditLog(new AuditLog( 'node', $node->id, 'insert', null, $node->toArray()));
-        return $this->db->insertNode(
+
+        $this->db->insertNode(
             $node->id,
             $node->label,
             $node->category,
@@ -825,7 +909,7 @@ final class GraphService implements GraphServiceInterface
         );
     }
 
-    public function updateNode(Node $node): bool
+    public function updateNode(Node $node): void
     {
         if (! $this->isAllowed(__METHOD__)) {
             throw new RuntimeException("Permission denied to update node.");
@@ -834,7 +918,7 @@ final class GraphService implements GraphServiceInterface
         $old = $this->getNode($node->id);
         $this->insertAuditLog(new AuditLog( 'node', $node->id, 'update', $old->toArray(), $node->toArray()));
 
-        return $this->db->updateNode(
+        $this->db->updateNode(
             $node->id,
             $node->label,
             $node->category,
@@ -843,7 +927,7 @@ final class GraphService implements GraphServiceInterface
         );
     }
 
-    public function deleteNode(string $id): bool
+    public function deleteNode(string $id): void
     {
         if (! $this->isAllowed(__METHOD__)) {
             throw new RuntimeException("Permission denied to delete node.");
@@ -851,7 +935,7 @@ final class GraphService implements GraphServiceInterface
 
         $old = $this->getNode($id);
         $this->insertAuditLog(new AuditLog( 'node', $id, 'delete', $old->toArray(), null));
-        return $this->db->deleteNode($id);
+        $this->db->deleteNode($id);
     }
 
     public function getEdge(string $source, string $target): ?Edge
@@ -893,13 +977,13 @@ final class GraphService implements GraphServiceInterface
         return $edges;
     }
 
-    public function insertEdge(Edge $edge): bool
+    public function insertEdge(Edge $edge): void
     {
         if (! $this->isAllowed(__METHOD__)) {
             throw new RuntimeException("Permission denied to insert edge.");
         }
         $this->insertAuditLog(new AuditLog( 'edge', $edge->id, 'insert', null, $edge->toArray()));
-        return $this->db->insertEdge(
+        $this->db->insertEdge(
             $edge->id,
             $edge->source,
             $edge->target,
@@ -907,7 +991,7 @@ final class GraphService implements GraphServiceInterface
         );
     }
 
-    public function updateEdge(Edge $edge): bool
+    public function updateEdge(Edge $edge): void
     {
         if (! $this->isAllowed(__METHOD__)) {
             throw new RuntimeException("Permission denied to update edge.");
@@ -915,7 +999,7 @@ final class GraphService implements GraphServiceInterface
         $old = $this->getEdge($edge->source, $edge->target);
         $this->insertAuditLog(new AuditLog( 'edge', $edge->id, 'update', $old->toArray(), $edge->toArray()));
 
-        return $this->db->updateEdge(
+        $this->db->updateEdge(
             $edge->id,
             $edge->source,
             $edge->target,
@@ -923,12 +1007,12 @@ final class GraphService implements GraphServiceInterface
         );
     }
 
-    public function deleteEdge(string $id): bool
+    public function deleteEdge(string $id): void
     {
         if (! $this->isAllowed(__METHOD__)) {
             throw new RuntimeException("Permission denied to delete edge.");
         }
-        return $this->db->deleteEdge($id);
+        $this->db->deleteEdge($id);
     }
 
     public function getStatuses(): NodeStatuses
@@ -998,15 +1082,11 @@ final class GraphService implements GraphServiceInterface
         return $logs;
     }
 
-    public function insertAuditLog(AuditLog $auditLog): void
+    private function insertAuditLog(AuditLog $auditLog): void
     {
         $user_id   = GraphContext::$user->id;
         $ip_address = GraphContext::$user->ipAddress;
 
-        if (! $this->isAllowed(__METHOD__)) {
-            throw new RuntimeException("Permission denied to insert audit log.");
-        }
-        
         $this->db->insertAuditLog(
             $auditLog->entityType,
             $auditLog->entityId,
@@ -1186,10 +1266,12 @@ interface GraphControllerInterface
 final class GraphController implements GraphControllerInterface
 {
     private GraphServiceInterface $service;
+    private Logger $logger;
 
-    public function __construct(GraphServiceInterface $service)
+    public function __construct(GraphServiceInterface $service, Logger $logger)
     {
         $this->service = $service;
+        $this->logger = $logger;
     }
 
     public function getUser(Request $req): ResponseInterface
@@ -1258,9 +1340,11 @@ final class GraphController implements GraphControllerInterface
 
     public function insertNode(Request $req): ResponseInterface
     {
+        $this->logger->debug('inserting node', $req->data);
         try {
             $node = new Node($req->data['id'], $req->data['label'], $req->data['category'], $req->data['type'], $req->data['data']);
             $this->service->insertNode($node);
+            $this->logger->info('node inserted', $req->data);
         } catch( Exception $e)
         {
             return new InternalServerErrorResponse($e->getMessage(), $req->data);
@@ -1477,19 +1561,22 @@ final class RequestRouter
 
 function tests() {
     GraphContext::$user = new User('test_user', '127.0.0.1', new Group('contributor'));
-
     $pdo = GraphDatabase::createConnection('sqlite::memory:');
-    $graphDb = new GraphDatabase($pdo);
-    $graphService = new GraphService($graphDb);
+    $databaseLogger = new Logger('database.log');
 
-    $graphController = new GraphController($graphService);
+    $graphDb = new GraphDatabase($pdo, $databaseLogger);
+
+    $serviceLogger = new Logger('service.log');
+    $graphService = new GraphService($graphDb, $serviceLogger);
+
+    $controllerLogger = new Logger('controller.log');
+    $graphController = new GraphController($graphService, $controllerLogger);
 
     $insertNodeReq = new Request();
     $insertNodeReq->data = ['id' => 'node1', 'label' => 'node1', 'category' => 'business', 'type' => 'server', 'data' => ['info' => 'first node']];
     $resp = $graphController->insertNode($insertNodeReq);
     print_r($resp);
     exit();
-
     
     // $node1 = new Node('node1', 'Node 1', 'business', 'application', ['info' => 'First node']);
     // $node2 = new Node('node2', 'Node 2', 'infrastructure', 'server', ['info' => 'Second node']);

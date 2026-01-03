@@ -1,0 +1,2 @@
+[DEBUG] GraphController::insertNode: inserting node ({"id":"node1","label":"node1","category":"business","type":"server","data":{"info":"first node"}})
+[INFO] GraphController::insertNode: node inserted ({"id":"node1","label":"node1","category":"business","type":"server","data":{"info":"first node"}})
