@@ -108,17 +108,50 @@ function test_node_good_path()
     if (! empty($diff)) {
         throw new Exception('test_node_good_path');
     }
+
+    ######################################################################
     
     $req = new Request();
     $req->data = [
         'id'       => 'node1',
         'label'    => 'node1',
         'category' => 'business',
-        'type' => 'server',
+        'type' => 'database',
         'data' => '{}'
     ];
     $resp = $graphController->updateNode($req);
     print_r($resp);
+
+    ######################################################################
+    $_GET['id'] = 'node1';
+    $req = new Request();
+    $resp = $graphController->getNode($req);
+    
+    if ($resp->code != 200) {
+        throw new Exception('test_node_good_path');
+    }
+
+    if($resp->status != 'success') {
+        throw new Exception('test_node_good_path');
+    }
+
+    if ($resp->message != 'node found') {
+        throw new Exception('test_node_good_path');
+    }
+
+    $expected = [
+        'info'     => 'first node',
+        'id'       => 'node1',
+        'label'    => 'node1',
+        'category' => 'business',
+        'type'     => 'database',
+    ];
+
+    $diff = array_diff_recursive($resp->data['data'], $expected);
+    print_r($diff);
+    if (! empty($diff)) {
+        throw new Exception('test_node_good_path');
+    }
 }
 
 function tests() {

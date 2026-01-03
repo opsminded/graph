@@ -477,29 +477,41 @@ final class GraphDatabase implements GraphDatabaseInterface
 
     public function updateNode(string $id, string $label, string $category, string $type, array $data = []): void
     {
+        $this->logger->debug("updating node with id: {$id}");
+
         try {
-            $stmt = $this->pdo->prepare("
+            $sql = "
                 UPDATE nodes
                 SET    label = :label, 
                        category = :category, 
                        type = :type, 
                        data = :data
-                WHERE  id = :id");
+                WHERE  id = :id
+            ";
+
+            $stmt = $this->pdo->prepare($sql);
+
             $data['id']       = $id;
             $data['label']    = $label;
             $data['category'] = $category;
             $data['type']     = $type;
 
-            $stmt->execute([
+            $params = [
                 ':id'       => $id,
                 ':label'    => $label,
                 ':category' => $category,
                 ':type'     => $type,
                 ':data'     => json_encode($data, JSON_UNESCAPED_UNICODE)
-            ]);
+            ];
+
+            $stmt->execute($params);
+
+            $this->logger->info("node with id: {$id} updated");
         } catch (PDOException $e) {
-            // TODO
+            throw new DatabaseException('could not update node', 0, $e, $sql, $params);
         }
+
+        throw new DatabaseException('TODO could not update node', 0, null, $sql, $params);
     }
 
     public function deleteNode(string $id): void
@@ -1365,10 +1377,10 @@ final class GraphController implements GraphControllerInterface
 
         try {
             $data = json_decode($req->data['data'], true);
-            $edge = new Edge($req->data['id'], $req->data['category'], $req->data['type'], $data);
-            $this->service->insertEdge($edge);
-            $this->logger->info('edge inserted', $req->data);
-            $resp = new CreatedResponse('edge created', $req->data);
+            $node = new Node($req->data['id'], $req->data['label'], $req->data['category'], $req->data['type'], $data);
+            $this->service->updateNode($node);
+            $this->logger->info('node updated', $req->data);
+            $resp = new CreatedResponse('node updated', $req->data);
             return $resp;
         } catch( Exception $e)
         {
