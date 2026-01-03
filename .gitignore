@@ -6,3 +6,6 @@ composer.phar
 /.DS_Store
 coverage
 .php-cs-fixer.cache
+service.log
+controller.log
+database.log

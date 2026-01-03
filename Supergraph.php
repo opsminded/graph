@@ -2,6 +2,10 @@
 
 declare(strict_types=1);
 
+ini_set('xdebug.mode', '1');
+
+xdebug_start_code_coverage(XDEBUG_CC_UNUSED | XDEBUG_CC_DEAD_CODE);
+
 final class User
 {
     public string $id;
@@ -332,10 +336,6 @@ final class GraphDatabase implements GraphDatabaseInterface
     private PDO $pdo;
     private Logger $logger;
 
-    private const USER_ERROR_CODE_GROUP = 1000;
-    private const NODE_ERROR_CODE_GROUP = 2000;
-    private const EDGE_ERROR_CODE_GROUP = 3000;
-
     public function __construct(PDO $pdo, Logger $logger)
     {
         $this->pdo = $pdo;
@@ -359,7 +359,7 @@ final class GraphDatabase implements GraphDatabaseInterface
         } catch (PDOException $e) {
             $e = new DatabaseException(
                 "GraphDatabase Exception while trying to get user data. ID: {$id}",
-                self::USER_ERROR_CODE_GROUP + 1,
+                0,
                 $e,
                 $sql,
                 $params
@@ -386,7 +386,7 @@ final class GraphDatabase implements GraphDatabaseInterface
         } catch (PDOException $e) {
             $e = new DatabaseException(
                 "GraphDatabase Exception while trying to insert new user. ID: {$id}",
-                self::USER_ERROR_CODE_GROUP + 2,
+                0,
                 $e,
                 $sql,
                 $params
@@ -415,7 +415,7 @@ final class GraphDatabase implements GraphDatabaseInterface
         } catch (PDOException $e) {
             $e = new DatabaseException(
                 "GraphDatabase Exception while trying to update user. ID: {$id}",
-                self::USER_ERROR_CODE_GROUP + 3,
+                0,
                 $e,
                 $sql,
                 $params
@@ -1263,6 +1263,10 @@ interface GraphControllerInterface
     public function getLogs(Request $req): ResponseInterface;
 }
 
+final class GraphControllerException extends RuntimeException
+{
+}
+
 final class GraphController implements GraphControllerInterface
 {
     private GraphServiceInterface $service;
@@ -1345,12 +1349,13 @@ final class GraphController implements GraphControllerInterface
             $node = new Node($req->data['id'], $req->data['label'], $req->data['category'], $req->data['type'], $req->data['data']);
             $this->service->insertNode($node);
             $this->logger->info('node inserted', $req->data);
-        } catch( Exception $e)
+            return new CreatedResponse('node inserted', $req->data);
+        } catch( GraphServiceException $e)
         {
-            return new InternalServerErrorResponse($e->getMessage(), $req->data);
+            $this->logger->error('The service could not insert new node:' . $e->getMessage());
+            throw new GraphControllerException('The service could not insert new node:' . $e->getMessage(), 0, $e);
         }
-        
-        return new InternalServerErrorResponse('unknow todo in insertNode', $req->data);
+        return new InternalServerErrorResponse('unknow error inserting node', $req->data);
     }
     
     public function updateNode(Request $req): ResponseInterface
@@ -1572,11 +1577,24 @@ function tests() {
     $controllerLogger = new Logger('controller.log');
     $graphController = new GraphController($graphService, $controllerLogger);
 
+    ####################################################################################
     $insertNodeReq = new Request();
     $insertNodeReq->data = ['id' => 'node1', 'label' => 'node1', 'category' => 'business', 'type' => 'server', 'data' => ['info' => 'first node']];
     $resp = $graphController->insertNode($insertNodeReq);
-    print_r($resp);
-    exit();
+
+    $insertNodeReq = new Request();
+    $insertNodeReq->data = ['id' => 'node2', 'label' => 'node1', 'category' => 'business', 'type' => 'server', 'data' => ['info' => 'second node']];
+    $resp = $graphController->insertNode($insertNodeReq);
+
+    $insertNodeReq = new Request();
+    $insertNodeReq->data = ['id' => 'node3', 'label' => 'node1', 'category' => 'business', 'type' => 'server', 'data' => ['info' => 'third node']];
+    $resp = $graphController->insertNode($insertNodeReq);
+    
+    $_GET['id'] = 'node1';
+    $getNodeReq = new Request();
+    $node1 = $graphController->getNode($getNodeReq);
+    ####################################################################################
+    
     
     // $node1 = new Node('node1', 'Node 1', 'business', 'application', ['info' => 'First node']);
     // $node2 = new Node('node2', 'Node 2', 'infrastructure', 'server', ['info' => 'Second node']);
@@ -1611,3 +1629,12 @@ function tests() {
 }
 
 tests();
+
+$coverage = xdebug_get_code_coverage();
+xdebug_stop_code_coverage();
+
+// Salvar em arquivo
+file_put_contents('coverage.json', json_encode($coverage, JSON_PRETTY_PRINT));
+
+// Ou exibir
+print_r($coverage);
