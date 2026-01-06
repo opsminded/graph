@@ -5,13 +5,11 @@ declare(strict_types=1);
 final class User
 {
     public string $id;
-    public ?string $ipAddress;
     public Group $group;
 
-    public function __construct(string $id, ?string $ipAddress, Group $group)
+    public function __construct(string $id, Group $group)
     {
         $this->id = $id;
-        $this->ipAddress = $ipAddress;
         $this->group = $group;
     }
 
@@ -234,7 +232,16 @@ final class AuditLogs
 
 final class GraphContext
 {
-    public static User $user;
+    public static string $user_id;
+    public static string $user_ip;
+    public static string $user_group;
+
+    public static function update(string $user_id, string $user_ip, string $user_group)
+    {
+        self::$user_id = $user_id;
+        self::$user_ip = $user_ip;
+        self::$user_group = $user_group;
+    }
 }
 
 interface LoggerInterface
@@ -300,8 +307,8 @@ interface GraphDatabaseInterface
     public function deleteEdge(string $id): void;
 
     public function getStatuses(): array;
-    public function getNodeStatus(string $id): ?string;
-    public function setNodeStatus(string $id, string $status): void;
+    public function getNodeStatus(string $id): array;
+    public function updateNodeStatus(string $id, string $status): void;
 
     public function getLogs($limit): array;
     public function insertAuditLog(
@@ -430,6 +437,7 @@ final class GraphDatabase implements GraphDatabaseInterface
             $stmt->execute($params);
             $row = $stmt->fetch();
             if ($row) {
+                $row['data'] = json_decode($row['data'], true);
                 return $row;
             }
         } catch (PDOException $e) {
@@ -444,6 +452,9 @@ final class GraphDatabase implements GraphDatabaseInterface
         try {
             $stmt = $this->pdo->query("SELECT * FROM nodes");
             $rows = $stmt->fetchAll();
+            foreach($rows as &$row) {
+                $row['data'] = json_decode($row['data'], true);
+            }
             return $rows;
         } catch (PDOException $e) {
             error_log("GraphDatabase fetch all nodes failed: " . $e->getMessage());
@@ -459,10 +470,6 @@ final class GraphDatabase implements GraphDatabaseInterface
                 (id, label, category, type, data) 
                 VALUES (:id, :label, :category, :type, :data)";
             $stmt             = $this->pdo->prepare($sql);
-            $data['id']       = $id;
-            $data['label']    = $label;
-            $data['category'] = $category;
-            $data['type']     = $type;
             $stmt->execute([
                 ':id'       => $id,
                 ':label'    => $label,
@@ -490,11 +497,6 @@ final class GraphDatabase implements GraphDatabaseInterface
             ";
 
             $stmt = $this->pdo->prepare($sql);
-
-            $data['id']       = $id;
-            $data['label']    = $label;
-            $data['category'] = $category;
-            $data['type']     = $type;
 
             $params = [
                 ':id'       => $id,
@@ -535,6 +537,7 @@ final class GraphDatabase implements GraphDatabaseInterface
             ]);
             $row = $stmt->fetch();
             if ($row) {
+                $row['data'] = json_decode($row['data'], true);
                 return $row;
             }
         } catch (PDOException $e) {
@@ -555,6 +558,7 @@ final class GraphDatabase implements GraphDatabaseInterface
             ]);
             $row = $stmt->fetch();
             if ($row) {
+                $row['data'] = json_decode($row['data'], true);
                 return $row;
             }
         } catch (PDOException $e) {
@@ -568,6 +572,9 @@ final class GraphDatabase implements GraphDatabaseInterface
         try {
             $stmt  = $this->pdo->query("SELECT * FROM edges");
             $rows  = $stmt->fetchAll();
+            foreach($rows as &$row) {
+                $row['data'] = json_decode($row['data'], true);
+            }
             return $rows;
         } catch (PDOException $e) {
             error_log("GraphDatabase fetch all edges failed: " . $e->getMessage());
@@ -586,9 +593,6 @@ final class GraphDatabase implements GraphDatabaseInterface
                 (id, source, target, data)
                 VALUES (:id, :source, :target, :data)";
             $stmt           = $this->pdo->prepare($sql);
-            $data['id']     = $id;
-            $data['source'] = $source;
-            $data['target'] = $target;
             $stmt->execute([
                 ':id'     => $id,
                 ':source' => $source,
@@ -603,16 +607,16 @@ final class GraphDatabase implements GraphDatabaseInterface
     public function updateEdge(string $id, string $source, string $target, array $data = []): void
     {
         try {
-            $data['id']     = $id;
-            $data['source'] = $source;
-            $data['target'] = $target;
-
             $stmt = $this->pdo->prepare("
                 UPDATE edges
-                SET data = :data
-                WHERE id = :id");
+                SET    source = :source,
+                       target = :target,
+                       data   = :data
+                WHERE  id = :id");
             $stmt->execute([
                 ':id'   => $id,
+                'source' => $source,
+                'target' => $target,
                 ':data' => json_encode($data, JSON_UNESCAPED_UNICODE)
             ]);
         } catch (PDOException $e) {
@@ -641,20 +645,19 @@ final class GraphDatabase implements GraphDatabaseInterface
         return $status;
     }
 
-    public function getNodeStatus(string $id): ?string
+    public function getNodeStatus(string $id): array
     {
         $stmt = $this->pdo->prepare("
-            SELECT s.status
+            SELECT n.id, s.status
             FROM nodes n
             LEFT JOIN status s
             ON n.id = s.node_id
             WHERE n.id = ?");
         $stmt->execute([$id]);
-        $status = $stmt->fetch();
-        return $status ? $status['status'] : null;
+        return $stmt->fetch();
     }
 
-    public function setNodeStatus(string $id, string $status): void
+    public function updateNodeStatus(string $id, string $status): void
     {
         $stmt = $this->pdo->prepare("REPLACE INTO status (node_id, status) VALUES (?, ?)");
         $stmt->execute([$id, $status]);
@@ -768,6 +771,10 @@ final class GraphDatabase implements GraphDatabaseInterface
     }
 }
 
+final class SecurityException extends RuntimeException
+{
+}
+
 final class GraphServiceException extends RuntimeException
 {
 }
@@ -802,6 +809,7 @@ interface GraphServiceInterface
 final class GraphService implements GraphServiceInterface
 {
     private const SECURE_ACTIONS = [
+        'GraphService::getUser'        => true,
         'GraphService::getGraph'       => true,
         'GraphService::getNode'        => true,
         'GraphService::getNodes'       => true,
@@ -811,6 +819,10 @@ final class GraphService implements GraphServiceInterface
         'GraphService::getNodeStatus'  => true,
         'GraphService::setNodeStatus'  => true,
         'GraphService::getLogs'        => true,
+
+        'GraphService::insertUser'     => false,
+        'GraphService::updateUser'     => false,
+
         'GraphService::insertNode'     => false,
         'GraphService::updateNode'     => false,
         'GraphService::deleteNode'     => false,
@@ -831,9 +843,12 @@ final class GraphService implements GraphServiceInterface
 
     public function getUser(string $id): ?User
     {
+        $this->verify(__METHOD__);
+
         $data = $this->db->getUser($id);
         if ($data) {
-            $user = new User($id, null, $data['user_group']);
+            $g = new Group($data['user_group']);
+            $user = new User($id, $g);
             return $user;
         }
         return null;
@@ -841,16 +856,19 @@ final class GraphService implements GraphServiceInterface
 
     public function insertUser(User $user): void
     {
+        $this->verify(__METHOD__);
         $this->db->insertUser($user->id, $user->group->id);
     }
 
     public function updateUser(User $user): void
     {
+        $this->verify(__METHOD__);
         $this->db->updateUser($user->id, $user->group->id);
     }
 
     public function getGraph(): Graph
     {
+        $this->verify(__METHOD__);
         $nodes = $this->getNodes()->nodes;
         $edges = $this->getEdges()->edges;
         return new Graph($nodes, $edges);
@@ -858,10 +876,7 @@ final class GraphService implements GraphServiceInterface
 
     public function getNode(string $id): ?Node
     {
-        if (! $this->isAllowed(__METHOD__)) {
-            throw new RuntimeException("Permission denied to get node.");
-        }
-
+        $this->verify(__METHOD__);
         $data = $this->db->getNode($id);
         if ($data) {
             return new Node(
@@ -877,10 +892,7 @@ final class GraphService implements GraphServiceInterface
 
     public function getNodes(): Nodes
     {
-        if(! $this->isAllowed(__METHOD__)) {
-            throw new RuntimeException("Permission denied to get nodes.");
-        }
-
+        $this->verify(__METHOD__);
         $nodesData = $this->db->getNodes();
         $nodes     = new Nodes();
         foreach ($nodesData as $data) {
@@ -900,48 +912,25 @@ final class GraphService implements GraphServiceInterface
     {
         $this->logger->debug('inserting node', $node->toArray());
 
-        if (! $this->isAllowed(__METHOD__)) {
-            $this->logger->info('permission denied', $node->toArray());
-            throw new GraphServiceException('permission denied');
-        }
-
-        $this->logger->info('permission allowed', $node->toArray());
-
+        $this->verify(__METHOD__);
+        
+        $this->logger->debug('permission allowed', $node->toArray());
         $this->insertAuditLog(new AuditLog( 'node', $node->id, 'insert', null, $node->toArray()));
-
-        $this->db->insertNode(
-            $node->id,
-            $node->label,
-            $node->category,
-            $node->type,
-            $node->data
-        );
+        $this->db->insertNode($node->id, $node->label, $node->category, $node->type, $node->data);
     }
 
     public function updateNode(Node $node): void
     {
-        if (! $this->isAllowed(__METHOD__)) {
-            throw new RuntimeException("Permission denied to update node.");
-        }
-
+        $this->verify(__METHOD__);
         $old = $this->getNode($node->id);
         $this->insertAuditLog(new AuditLog( 'node', $node->id, 'update', $old->toArray(), $node->toArray()));
 
-        $this->db->updateNode(
-            $node->id,
-            $node->label,
-            $node->category,
-            $node->type,
-            $node->data
-        );
+        $this->db->updateNode($node->id, $node->label, $node->category, $node->type, $node->data);
     }
 
     public function deleteNode(string $id): void
     {
-        if (! $this->isAllowed(__METHOD__)) {
-            throw new RuntimeException("Permission denied to delete node.");
-        }
-
+        $this->verify(__METHOD__);
         $old = $this->getNode($id);
         $this->insertAuditLog(new AuditLog( 'node', $id, 'delete', $old->toArray(), null));
         $this->db->deleteNode($id);
@@ -949,10 +938,7 @@ final class GraphService implements GraphServiceInterface
 
     public function getEdge(string $source, string $target): ?Edge
     {
-        if (! $this->isAllowed(__METHOD__)) {
-            throw new RuntimeException("Permission denied to get edge.");
-        }
-
+        $this->verify(__METHOD__);
         $edgesData = $this->db->getEdges();
         foreach ($edgesData as $data) {
             if ($data['source'] === $source && $data['target'] === $target) {
@@ -969,9 +955,8 @@ final class GraphService implements GraphServiceInterface
 
     public function getEdges(): Edges
     {
-        if (! $this->isAllowed(__METHOD__)) {
-            throw new RuntimeException("Permission denied to get edges.");
-        }
+        $this->verify(__METHOD__);
+
         $edgesData = $this->db->getEdges();
         $edges     = new Edges();
         foreach ($edgesData as $data) {
@@ -988,55 +973,34 @@ final class GraphService implements GraphServiceInterface
 
     public function insertEdge(Edge $edge): void
     {
-        if (! $this->isAllowed(__METHOD__)) {
-            throw new RuntimeException("Permission denied to insert edge.");
-        }
+        $this->verify(__METHOD__);
         $this->insertAuditLog(new AuditLog( 'edge', $edge->id, 'insert', null, $edge->toArray()));
-        $this->db->insertEdge(
-            $edge->id,
-            $edge->source,
-            $edge->target,
-            $edge->data
-        );
+        $this->db->insertEdge($edge->id, $edge->source, $edge->target, $edge->data);
     }
 
     public function updateEdge(Edge $edge): void
     {
-        if (! $this->isAllowed(__METHOD__)) {
-            throw new RuntimeException("Permission denied to update edge.");
-        }
+        $this->verify(__METHOD__);
         $old = $this->getEdge($edge->source, $edge->target);
         $this->insertAuditLog(new AuditLog( 'edge', $edge->id, 'update', $old->toArray(), $edge->toArray()));
 
-        $this->db->updateEdge(
-            $edge->id,
-            $edge->source,
-            $edge->target,
-            $edge->data
-        );
+        $this->db->updateEdge($edge->id, $edge->source, $edge->target, $edge->data);
     }
 
     public function deleteEdge(string $id): void
     {
-        if (! $this->isAllowed(__METHOD__)) {
-            throw new RuntimeException("Permission denied to delete edge.");
-        }
+        $this->verify(__METHOD__);
         $this->db->deleteEdge($id);
     }
 
     public function getStatuses(): NodeStatuses
     {
-        if (! $this->isAllowed(__METHOD__)) {
-            throw new RuntimeException("Permission denied to get statuses.");
-        }
+        $this->verify(__METHOD__);
 
         $statusesData = $this->db->getStatuses();
         $nodeStatuses = new NodeStatuses();
         foreach ($statusesData as $data) {
-            $status = new NodeStatus(
-                $data['id'],
-                $data['status'] ?? 'unknown'
-            );
+            $status = new NodeStatus($data['id'], $data['status'] ?? 'unknown');
             $nodeStatuses->addStatus($status);
         }
         return $nodeStatuses;
@@ -1044,31 +1008,22 @@ final class GraphService implements GraphServiceInterface
 
     public function getNodeStatus(string $id): NodeStatus
     {
-        if (! $this->isAllowed(__METHOD__)) {
-            throw new RuntimeException("Permission denied to get node status.");
-        }
+        $this->verify(__METHOD__);
 
         $statusData = $this->db->getNodeStatus($id);
-        return new NodeStatus(
-            $id,
-            $statusData ?? 'unknown'
-        );
+        return new NodeStatus($id, $statusData['status'] ?? 'unknown');
     }
 
     public function setNodeStatus(NodeStatus $status): void
     {
-        if (! $this->isAllowed(__METHOD__)) {
-            throw new RuntimeException("Permission denied to set node status.");
-        }
+        $this->verify(__METHOD__);
 
-        $this->db->setNodeStatus($status->nodeId, $status->status);
+        $this->db->updateNodeStatus($status->nodeId, $status->status);
     }
 
     public function getLogs($limit): AuditLogs
     {
-        if (! $this->isAllowed(__METHOD__)) {
-            throw new RuntimeException("Permission denied to get audit logs.");
-        }
+        $this->verify(__METHOD__);
 
         $logs = new AuditLogs();
         $rows = $this->db->getLogs($limit);
@@ -1093,8 +1048,8 @@ final class GraphService implements GraphServiceInterface
 
     private function insertAuditLog(AuditLog $auditLog): void
     {
-        $user_id   = GraphContext::$user->id;
-        $ip_address = GraphContext::$user->ipAddress;
+        $user_id   = GraphContext::$user_id;
+        $ip_address = GraphContext::$user_ip;
 
         $this->db->insertAuditLog(
             $auditLog->entityType,
@@ -1107,9 +1062,9 @@ final class GraphService implements GraphServiceInterface
         );
     }
 
-    private function isAllowed(string $action): bool
+    private function verify(string $action): void
     {
-        $group = GraphContext::$user->group;
+        $group = GraphContext::$user_group;
 
         // validate action
         // if action is one of the keys in the array self::SECURE_ACTIONS
@@ -1118,22 +1073,22 @@ final class GraphService implements GraphServiceInterface
         }
 
         // if is admin, allow all
-        if ($group->id === 'admin') {
-            return true;
+        if ($group === 'admin') {
+            return;
         }
 
         // if action is in the SAFE_ACTIONS, allow all
         if (self::SECURE_ACTIONS[$action]) {
-            return true;
+            return;
         }
         
         // if action is restricted, only allow contributor
-        if (self::SECURE_ACTIONS[$action] == false && $group->id == 'contributor')
+        if (self::SECURE_ACTIONS[$action] == false && $group == 'contributor')
         {
-            return true;
+            return;
         }
 
-        return false;
+        throw new GraphServiceException('action not allowed: ' . $action);
     }
 }
 

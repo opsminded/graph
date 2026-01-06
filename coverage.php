@@ -4,15 +4,14 @@
 $coverageData = json_decode(file_get_contents('coverage.json'), true);
 
 echo "<html><head><meta charset='UTF-8'><style>
-body { font-family: monospace; font-size: 12px; background: #222; color: #ddd; margin: 0; }
-.covered { background: #1a4d1a; }
-.not-covered { background: #4d1a1a; }
-.not-executable { background: #2a2a2a; color: #666; }
+body { font-family: monospace; font-size: 14px; margin: 0; }
+.covered { background: #0f0; }
+.not-executable { background: #fff652ff; }
 .line { padding: 2px 10px; white-space: pre; border-left: 3px solid transparent; }
 .covered { border-left-color: #0f0; }
-.not-covered { border-left-color: #f00; }
+.not-covered { border-left-color: #f00; background-color: rgba(253, 18, 18, 0.52);}
 .num { color: #666; width: 50px; display: inline-block; text-align: right; margin-right: 10px; }
-h2 { background: #333; padding: 10px; margin: 20px 0 0 0; position: sticky; top: 0; }
+h2 { padding: 10px; margin: 20px 0 0 0; position: sticky; top: 0; }
 </style></head><body>";
 
 foreach ($coverageData as $file => $lines) {
