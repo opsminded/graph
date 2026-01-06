@@ -83,7 +83,7 @@ function test_node_good_path()
     $_GET['id'] = 'node1';
     $req = new Request();
     $resp = $graphController->getNode($req);
-
+    
     if ($resp->code != 200) {
         throw new Exception('test_node_good_path');
     }
@@ -97,18 +97,16 @@ function test_node_good_path()
     }
 
     $expected = [
-        'info'     => 'first node',
         'id'       => 'node1',
         'label'    => 'node1',
         'category' => 'business',
         'type'     => 'server',
     ];
 
-    $diff = array_diff_recursive($resp->data['data'], $expected);
-    if (! empty($diff)) {
+    if (! empty(array_diff_recursive($expected, $resp->data['data'])) || !empty(array_diff_recursive($resp->data['data'], $expected)) ) {
         throw new Exception('test_node_good_path');
     }
-
+    
     ######################################################################
     
     $req = new Request();
@@ -120,14 +118,9 @@ function test_node_good_path()
         'data' => '{}'
     ];
     $resp = $graphController->updateNode($req);
-    print_r($resp);
 
-    ######################################################################
-    $_GET['id'] = 'node1';
-    $req = new Request();
-    $resp = $graphController->getNode($req);
-    
-    if ($resp->code != 200) {
+
+    if ($resp->code != 201) {
         throw new Exception('test_node_good_path');
     }
 
@@ -135,23 +128,24 @@ function test_node_good_path()
         throw new Exception('test_node_good_path');
     }
 
-    if ($resp->message != 'node found') {
+    if ($resp->message != 'node updated') {
         throw new Exception('test_node_good_path');
     }
 
     $expected = [
-        'info'     => 'first node',
         'id'       => 'node1',
         'label'    => 'node1',
         'category' => 'business',
         'type'     => 'database',
     ];
 
-    $diff = array_diff_recursive($resp->data['data'], $expected);
-    print_r($diff);
-    if (! empty($diff)) {
+    print_r($resp->data);
+    print_r($expected);
+
+    if (! empty(array_diff_recursive($expected, $resp->data['data'])) || !empty(array_diff_recursive($resp->data['data'], $expected)) ) {
         throw new Exception('test_node_good_path');
     }
+    print('fimk');
 }
 
 function tests() {

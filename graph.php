@@ -471,7 +471,7 @@ final class GraphDatabase implements GraphDatabaseInterface
                 ':data'     => json_encode($data, JSON_UNESCAPED_UNICODE)
             ]);
         } catch (PDOException $e) {
-            // TODO
+            throw $e;
         }
     }
 
@@ -510,8 +510,6 @@ final class GraphDatabase implements GraphDatabaseInterface
         } catch (PDOException $e) {
             throw new DatabaseException('could not update node', 0, $e, $sql, $params);
         }
-
-        throw new DatabaseException('TODO could not update node', 0, null, $sql, $params);
     }
 
     public function deleteNode(string $id): void
@@ -520,7 +518,7 @@ final class GraphDatabase implements GraphDatabaseInterface
             $stmt = $this->pdo->prepare("DELETE FROM nodes WHERE id = :id");
             $stmt->execute([':id' => $id]);
         } catch (PDOException $e) {
-            // TODO
+            throw $e;
         }
     }
 
@@ -598,7 +596,7 @@ final class GraphDatabase implements GraphDatabaseInterface
                 ':data'   => json_encode($data, JSON_UNESCAPED_UNICODE)
             ]);
         } catch (PDOException $e) {
-            // TODO
+            throw $e;
         }
     }
 
@@ -618,7 +616,7 @@ final class GraphDatabase implements GraphDatabaseInterface
                 ':data' => json_encode($data, JSON_UNESCAPED_UNICODE)
             ]);
         } catch (PDOException $e) {
-            // TODO
+            throw $e;
         }
     }
 
@@ -628,7 +626,7 @@ final class GraphDatabase implements GraphDatabaseInterface
             $stmt = $this->pdo->prepare("DELETE FROM edges WHERE id = :id");
             $stmt->execute([':id' => $id]);
         } catch (PDOException $e) {
-            // TODO
+            throw $e;
         }
     }
 
@@ -804,22 +802,21 @@ interface GraphServiceInterface
 final class GraphService implements GraphServiceInterface
 {
     private const SECURE_ACTIONS = [
-        'GraphService::getGraph'      => true,
-        'GraphService::getNode'       => true,
-        'GraphService::getNodes'      => true,
-        'GraphService::getEdge'       => true,
-        'GraphService::getEdges'      => true,
-        'GraphService::getStatuses'   => true,
-        'GraphService::getNodeStatus' => true,
-        'GraphService::setNodeStatus' => true,
-        'GraphService::getLogs'       => true,
-        'GraphService::insertNode'    => false,
-        'GraphService::updateNode'    => false,
-        'GraphService::deleteNode'    => false,
-        'GraphService::insertEdge'    => false,
-        'GraphService::updateEdge'    => false,
-        'GraphService::deleteEdge'    => false,
-
+        'GraphService::getGraph'       => true,
+        'GraphService::getNode'        => true,
+        'GraphService::getNodes'       => true,
+        'GraphService::getEdge'        => true,
+        'GraphService::getEdges'       => true,
+        'GraphService::getStatuses'    => true,
+        'GraphService::getNodeStatus'  => true,
+        'GraphService::setNodeStatus'  => true,
+        'GraphService::getLogs'        => true,
+        'GraphService::insertNode'     => false,
+        'GraphService::updateNode'     => false,
+        'GraphService::deleteNode'     => false,
+        'GraphService::insertEdge'     => false,
+        'GraphService::updateEdge'     => false,
+        'GraphService::deleteEdge'     => false,
         'GraphService::insertAuditLog' => false,
     ];
 
@@ -1380,10 +1377,13 @@ final class GraphController implements GraphControllerInterface
             $node = new Node($req->data['id'], $req->data['label'], $req->data['category'], $req->data['type'], $data);
             $this->service->updateNode($node);
             $this->logger->info('node updated', $req->data);
+
+            $req->data['data'] = $data;
             $resp = new CreatedResponse('node updated', $req->data);
             return $resp;
         } catch( Exception $e)
         {
+            $this->logger->error('updating node error: ' . $e->getMessage(), $req->data);
             return new InternalServerErrorResponse($e->getMessage(), $req->data);
         }
         
@@ -1530,26 +1530,21 @@ final class GraphController implements GraphControllerInterface
 final class RequestRouter
 {
     private $routes = [
-        ['method' => 'GET', 'path' => '/getGraph', 'class_method' => 'getGraph'],
-        
-        ['method' => 'GET', 'path' => '/getNode', 'class_method' => 'getNode'],
-        ['method' => 'GET', 'path' => '/getNodes', 'class_method' => 'getNodes'],
-        ['method' => 'GET', 'path' => '/insertNode', 'class_method' => 'insertNode'],
-        ['method' => 'GET', 'path' => '/updateNode', 'class_method' => 'updateNode'],
-        ['method' => 'GET', 'path' => '/deleteNode', 'class_method' => 'deleteNode'],
-
-        ['method' => 'GET', 'path' => '/getEdge', 'class_method' => 'getEdge'],
-        ['method' => 'GET', 'path' => '/getEdges', 'class_method' => 'getEdges'],
-        ['method' => 'GET', 'path' => '/insertEdge', 'class_method' => 'insertEdge'],
-        ['method' => 'GET', 'path' => '/updateEdge', 'class_method' => 'updateEdge'],
-        ['method' => 'GET', 'path' => '/deleteEdge', 'class_method' => 'deleteEdge'],
-
-        ['method' => 'GET', 'path' => '/getStatuses', 'class_method' => 'getStatuses'],
-        ['method' => 'GET', 'path' => '/getNodeStatus', 'class_method' => 'getNodeStatus'],
-
-        ['method' => 'GET', 'path' => '/getLogs', 'class_method' => 'getLogs'],
-
-        ];
+        ['method' => 'GET',    'path' => '/getGraph',      'class_method' => 'getGraph'],
+        ['method' => 'GET',    'path' => '/getNode',       'class_method' => 'getNode'],
+        ['method' => 'GET',    'path' => '/getNodes',      'class_method' => 'getNodes'],
+        ['method' => 'POST',   'path' => '/insertNode',    'class_method' => 'insertNode'],
+        ['method' => 'UPDATE', 'path' => '/updateNode',    'class_method' => 'updateNode'],
+        ['method' => 'DELETE', 'path' => '/deleteNode',    'class_method' => 'deleteNode'],
+        ['method' => 'GET',    'path' => '/getEdge',       'class_method' => 'getEdge'],
+        ['method' => 'GET',    'path' => '/getEdges',      'class_method' => 'getEdges'],
+        ['method' => 'POST',   'path' => '/insertEdge',    'class_method' => 'insertEdge'],
+        ['method' => 'UPDATE', 'path' => '/updateEdge',    'class_method' => 'updateEdge'],
+        ['method' => 'DELETE', 'path' => '/deleteEdge',    'class_method' => 'deleteEdge'],
+        ['method' => 'GET',    'path' => '/getStatuses',   'class_method' => 'getStatuses'],
+        ['method' => 'GET',    'path' => '/getNodeStatus', 'class_method' => 'getNodeStatus'],
+        ['method' => 'GET',    'path' => '/getLogs',       'class_method' => 'getLogs'],
+    ];
 
     public GraphController $controller;
     
@@ -1560,8 +1555,7 @@ final class RequestRouter
 
     public function handle(): void
     {
-        $method = $_SERVER['REQUEST_METHOD'];
-
+        $method     = $_SERVER['REQUEST_METHOD'];
         $scriptName = $_SERVER['SCRIPT_NAME'];
         $requestUri = $_SERVER['REQUEST_URI'];
         $requestUri = strtok($requestUri, '?');
