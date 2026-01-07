@@ -1092,7 +1092,6 @@ final class GraphService implements GraphServiceInterface
     private function verify(string $action): void
     {
         $group = GraphContext::getUserGroup();
-        print("group:{$group}|\n");
 
         // validate action
         // if action is one of the keys in the array self::SECURE_ACTIONS

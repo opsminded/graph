@@ -839,5 +839,12 @@ xdebug_stop_code_coverage();
 // Salvar em arquivo
 file_put_contents('coverage.json', json_encode($coverage, JSON_PRETTY_PRINT));
 
-echo "fim\n";
+if (file_exists('database.log')) {
+    @unlink('database.log');
+}
 
+if (file_exists('service.log')) {
+    @unlink('service.log');
+}
+
+echo "fim\n";
