@@ -1,6 +1,8 @@
 <?php
 // generate-minimal-report.php
 
+$main_file = 'graph.php';
+
 $coverageData = json_decode(file_get_contents('coverage.json'), true);
 
 echo "<html><head><meta charset='UTF-8'><style>
@@ -17,6 +19,10 @@ h2 {background: #fff; padding: 10px; margin: 20px 0 0 0; position: sticky; top: 
 foreach ($coverageData as $file => $lines) {
     if (strpos($file, 'vendor/') !== false || !file_exists($file)) continue;
     
+    if (!str_contains($file, $main_file)) {
+        continue;
+    }
+
     $content = file($file);
     $covered = count(array_filter($lines, fn($c) => $c > 0));
     $total = count($lines);
@@ -67,6 +73,10 @@ foreach ($coverageData as $file => $lines) {
         } elseif(trim($line) == ')");') {
             $class = 'covered';
         } elseif(str_starts_with(trim($line), "'")) {
+            $class = 'covered';
+        } elseif(str_starts_with(trim($line), "<?php")) {
+            $class = 'covered';
+        } elseif(str_starts_with(trim($line), "declare")) {
             $class = 'covered';
         } elseif(str_starts_with(trim($line), "$") && (str_ends_with(trim($line), ",") || str_ends_with(trim($line), "s"))) {
             $class = 'covered';

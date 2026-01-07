@@ -9,16 +9,30 @@ require_once __DIR__ . '/graph.php';
 ini_set('xdebug.mode', '1');
 xdebug_start_code_coverage(XDEBUG_CC_UNUSED | XDEBUG_CC_DEAD_CODE);
 
-function createConnection(): GraphDatabase
+function createConnection(): array
 {
     $pdo = GraphDatabase::createConnection('sqlite::memory:');
     $databaseLogger = new Logger('database.log');
     $graphDb = new GraphDatabase($pdo, $databaseLogger);
-    return $graphDb;
+    return [$graphDb, $pdo];
+}
+
+function test_DatabaseException(): void {
+    $sql = "SELECT 1";
+    $params = ['id' => 1];
+    $pdoe = new PDOException("pdo message", 1001, null);
+    $dbe = new DatabaseException("database exception message", 0, $pdoe, $sql, $params);
+    if ($dbe->getMessage() != 'database exception message') {
+        throw new Exception('exception in test_DatabaseException');
+    }
+
+    if($dbe->getPrevious()->getMessage() != 'pdo message') {
+        throw new Exception('exception in test_DatabaseException');
+    }
 }
 
 function test_Database_getUser(): void {
-    $graphDb = createConnection();
+    [$graphDb, $pdo] = createConnection();
 
     $user = $graphDb->getUser('maria');
     if ($user !== null) {
@@ -31,8 +45,22 @@ function test_Database_getUser(): void {
     }
 }
 
+function test_Database_getUser_Exception(): void
+{
+    [$graphDb, $pdo] = createConnection();
+    $pdo->exec('DROP TABLE users');
+
+    try {
+        $graphDb->getUser('maria');
+        return;
+    } catch(DatabaseException $e) {
+        return;
+    }
+    throw new Exception('other exception in test_Database_getUser_Exception');
+}
+
 function test_Database_insertUser(): void {
-    $graphDb = createConnection();
+    [$graphDb, $pdo] = createConnection();
     $graphDb->insertUser('maria', 'contributor');
     $user = $graphDb->getUser('maria');
     if($user['id'] !== 'maria' || $user['user_group'] !== 'contributor') {
@@ -40,8 +68,22 @@ function test_Database_insertUser(): void {
     }
 }
 
-function test_Database_updateUser(): void {
-    $graphDb = createConnection();
+function test_Database_insertUser_Exception(): void {
+    [$graphDb, $pdo] = createConnection();
+    $pdo->exec('DROP TABLE users');
+
+    try {
+        $graphDb->insertUser('maria', 'contributor');
+        return;
+    } catch(DatabaseException $e) {
+        return;
+    }
+    throw new Exception('other exception in test_Database_insertUser_Exception');
+}
+
+function test_Database_updateUser(): void
+{
+    [$graphDb, $pdo] = createConnection();
     $graphDb->insertUser('maria', 'contributor');
     $graphDb->updateUser('maria', 'admin');
     $user = $graphDb->getUser('maria');
@@ -50,8 +92,22 @@ function test_Database_updateUser(): void {
     }
 }
 
+function test_Database_updateUser_Exception(): void
+{
+    [$graphDb, $pdo] = createConnection();
+    $pdo->exec('DROP TABLE users');
+
+    try {
+        $graphDb->updateUser('maria', 'contributor');
+        return;
+    } catch(DatabaseException $e) {
+        return;
+    }
+    throw new Exception('other exception in test_Database_updateUser_Exception');
+}
+
 function test_Database_getNode(): void {
-    $graphDb = createConnection();
+    [$graphDb, $pdo] = createConnection();
     $graphDb->insertNode('node1', 'Node 01', 'business', 'service', ['running_on' => 'SRV01OP']);
     $node = $graphDb->getNode('node1');
     if($node['id'] != 'node1' || $node['label'] != 'Node 01' || $node['category'] != 'business' || $node['type'] != 'service') {
@@ -63,8 +119,22 @@ function test_Database_getNode(): void {
     }
 }
 
+function test_Database_getNode_Exception(): void
+{
+    [$graphDb, $pdo] = createConnection();
+    $pdo->exec('DROP TABLE nodes');
+
+    try {
+        $graphDb->getNode('node1');
+        return;
+    } catch(DatabaseException $e) {
+        return;
+    }
+    throw new Exception('other exception in test_Database_getNode_Exception');
+}
+
 function test_Database_getNodes(): void {
-    $graphDb = createConnection();
+    [$graphDb, $pdo] = createConnection();
     $graphDb->insertNode('node1', 'Node 01', 'application', 'service', ['running_on' => 'SRV01OP']);
     $graphDb->insertNode('node2', 'Node 02', 'business', 'database', ['running_on' => 'SRV011P']);
     $nodes = $graphDb->getNodes();
@@ -90,8 +160,22 @@ function test_Database_getNodes(): void {
     }
 }
 
+function test_Database_getNodes_Exception(): void
+{
+    [$graphDb, $pdo] = createConnection();
+    $pdo->exec('DROP TABLE nodes');
+
+    try {
+        $graphDb->getNodes();
+        return;
+    } catch(DatabaseException $e) {
+        return;
+    }
+    throw new Exception('other exception in test_Database_getNodes_Exception');
+}
+
 function test_Database_insertNode(): void {
-    $graphDb = createConnection();
+    [$graphDb, $pdo] = createConnection();
     $graphDb->insertNode('node1', 'Node 01', 'business', 'service', ['running_on' => 'SRV01OP']);
     $node = $graphDb->getNode('node1');
     if($node['id'] != 'node1' || $node['label'] != 'Node 01' || $node['category'] != 'business' || $node['type'] != 'service') {
@@ -103,8 +187,22 @@ function test_Database_insertNode(): void {
     }
 }
 
+function test_Database_insertNode_Exception(): void
+{
+    [$graphDb, $pdo] = createConnection();
+    $pdo->exec('DROP TABLE nodes');
+
+    try {
+        $graphDb->insertNode('node1', 'Node 01', 'business', 'service', ['running_on' => 'SRV01OP']);
+        return;
+    } catch(DatabaseException $e) {
+        return;
+    }
+    throw new Exception('other exception in test_Database_insertNode_Exception');
+}
+
 function test_Database_updateNode(): void {
-    $graphDb = createConnection();
+    [$graphDb, $pdo] = createConnection();
     $graphDb->insertNode('node1', 'Node 01', 'business', 'service', ['running_on' => 'SRV01OP']);
     $graphDb->updateNode('node1', 'Novo Label', 'application', 'outro', ['other' => 'diff']);
     $node = $graphDb->getNode('node1');
@@ -117,8 +215,22 @@ function test_Database_updateNode(): void {
     }
 }
 
+function test_Database_updateNode_Exception(): void
+{
+    [$graphDb, $pdo] = createConnection();
+    $pdo->exec('DROP TABLE nodes');
+
+    try {
+        $graphDb->updateNode('node1', 'Novo Label', 'application', 'outro', ['other' => 'diff']);
+        return;
+    } catch(DatabaseException $e) {
+        return;
+    }
+    throw new Exception('other exception in test_Database_updateNode_Exception');
+}
+
 function test_Database_deleteNode(): void {
-    $graphDb = createConnection();
+    [$graphDb, $pdo] = createConnection();
     $node = $graphDb->getNode('node1');
     if ($node !== null) {
         throw new Exception('error on test_deleteNode');
@@ -136,8 +248,22 @@ function test_Database_deleteNode(): void {
     }
 }
 
+function test_Database_deleteNode_Exception(): void
+{
+    [$graphDb, $pdo] = createConnection();
+    $pdo->exec('DROP TABLE nodes');
+
+    try {
+        $graphDb->deleteNode('node1');
+        return;
+    } catch(DatabaseException $e) {
+        return;
+    }
+    throw new Exception('other exception in test_Database_deleteNode_Exception');
+}
+
 function test_Database_getEdge(): void {
-    $graphDb = createConnection();
+    [$graphDb, $pdo] = createConnection();
     $edge = $graphDb->getEdge('node1', 'node2');
     if ($edge !== null) {
         throw new Exception('error on test_getEdge');
@@ -149,7 +275,7 @@ function test_Database_getEdge(): void {
     $graphDb->insertEdge('edge1', 'node1', 'node2', ['a' => 'b']);
 
     $edge = $graphDb->getEdge('node1', 'node2');
-
+    
     if($edge['id'] != 'edge1' || $edge['source'] != 'node1' || $edge['target'] != 'node2') {
         throw new Exception('error on test_Database_getEdge');
     }
@@ -159,8 +285,22 @@ function test_Database_getEdge(): void {
     }
 }
 
+function test_Database_getEdge_Exception(): void
+{
+    [$graphDb, $pdo] = createConnection();
+    $pdo->exec('DROP TABLE edges');
+
+    try {
+        $graphDb->getEdge('node1', 'node2');
+        return;
+    } catch(DatabaseException $e) {
+        return;
+    }
+    throw new Exception('other exception in test_Database_getEdge_Exception');
+}
+
 function test_Database_getEdgeById(): void {
-    $graphDb = createConnection();
+    [$graphDb, $pdo] = createConnection();
     $edge = $graphDb->getEdge('node1', 'node2');
     if ($edge !== null) {
         throw new Exception('error on test_Database_getEdge');
@@ -180,10 +320,29 @@ function test_Database_getEdgeById(): void {
     if ($edge['data']['a'] != 'b') {
         throw new Exception('error on test_Database_getEdge');
     }
+
+    $edge = $graphDb->getEdgeById('edge2');
+    if ($edge !== null) {
+        throw new Exception('error on test_Database_getEdge');
+    }
+}
+
+function test_Database_getEdgeById_Exception(): void
+{
+    [$graphDb, $pdo] = createConnection();
+    $pdo->exec('DROP TABLE edges');
+
+    try {
+        $edge = $graphDb->getEdgeById('edge1');
+        return;
+    } catch(DatabaseException $e) {
+        return;
+    }
+    throw new Exception('other exception in test_Database_getEdgeById_Exception');
 }
 
 function test_Database_getEdges(): void {
-    $graphDb = createConnection();
+    [$graphDb, $pdo] = createConnection();
     $edge = $graphDb->getEdge('node1', 'node2');
     if ($edge !== null) {
         throw new Exception('error on test_getEdges');
@@ -215,31 +374,83 @@ function test_Database_getEdges(): void {
     }
 }
 
+function test_Database_getEdges_Exception(): void
+{
+    [$graphDb, $pdo] = createConnection();
+    $pdo->exec('DROP TABLE edges');
+
+    try {
+        $graphDb->getEdges();
+        return;
+    } catch(DatabaseException $e) {
+        return;
+    }
+    throw new Exception('other exception in test_Database_getEdges_Exception');
+}
+
 function test_Database_insertEdge(): void {
-    $graphDb = createConnection();
+    [$graphDb, $pdo] = createConnection();
     $edge = $graphDb->getEdge('node1', 'node2');
     if ($edge !== null) {
-        throw new Exception('error on test_getEdge');
+        throw new Exception('error on test_Database_insertEdge');
     }
 
     $graphDb->insertNode('node1', 'Node 01', 'application', 'service', ['running_on' => 'SRV01OP']);
     $graphDb->insertNode('node2', 'Node 02', 'business', 'database', ['running_on' => 'SRV011P']);
 
     $graphDb->insertEdge('edge1', 'node1', 'node2', ['a' => 'b']);
-
+    
     $edge = $graphDb->getEdge('node1', 'node2');
 
     if($edge['id'] != 'edge1' || $edge['source'] != 'node1' || $edge['target'] != 'node2') {
-        throw new Exception('error on test_getEdge');
+        throw new Exception('error on test_Database_insertEdge');
     }
 
     if ($edge['data']['a'] != 'b') {
-        throw new Exception('error on test_getEdge');
+        throw new Exception('error on test_Database_insertEdge');
+    }
+
+    // circular test
+    $graphDb->insertEdge('edge2', 'node2', 'node1', ['a' => 'b']);
+    $edge = $graphDb->getEdge('node2', 'node1');
+    if ($edge !== null) {
+        throw new Exception('error on test_Database_insertEdge');
     }
 }
 
+function test_Database_insertEdge_Exception(): void
+{
+    [$graphDb, $pdo] = createConnection();
+    $pdo->exec('DROP TABLE edges');
+
+    try {
+        $graphDb->insertEdge('edge1', 'node1', 'node2', ['a' => 'b']);
+        return;
+    } catch(DatabaseException $e) {
+        return;
+    }
+    throw new Exception('other exception in test_Database_insertEdge_Exception');
+}
+
+function test_Database_insertEdge_Exception2(): void
+{
+    [$graphDb, $pdo] = createConnection();
+    $graphDb->insertEdge('edge1', 'node1', 'node2', ['a' => 'b']);
+
+    $pdo->exec('ALTER TABLE edges ADD CONSTRAINT chk_test CHECK (1=0)');
+
+    try {
+        $graphDb->insertEdge('edge1', 'node1', 'node2', ['a' => 'b']);
+        return;
+    } catch(DatabaseException $e) {
+        return;
+    }
+    throw new Exception('other exception in test_Database_insertEdge_Exception2');
+
+}
+
 function test_Database_updateEdge(): void {
-    $graphDb = createConnection();
+    [$graphDb, $pdo] = createConnection();
     $edge = $graphDb->getEdge('node1', 'node2');
     if ($edge !== null) {
         throw new Exception('error on test_updateEdge');
@@ -263,8 +474,22 @@ function test_Database_updateEdge(): void {
     }
 }
 
+function test_Database_updateEdge_Exception(): void
+{
+    [$graphDb, $pdo] = createConnection();
+    $pdo->exec('DROP TABLE edges');
+
+    try {
+        $graphDb->updateEdge('edge1', 'node2', 'node3', ['x' => 'y']);
+        return;
+    } catch(DatabaseException $e) {
+        return;
+    }
+    throw new Exception('other exception in test_Database_updateEdge_Exception');
+}
+
 function test_Database_deleteEdge(): void {
-    $graphDb = createConnection();
+    [$graphDb, $pdo] = createConnection();
     
     $graphDb->insertNode('node1', 'Node 01', 'categ1', 'type1', ['running_on' => 'SRV01OP']);
     $graphDb->insertNode('node2', 'Node 02', 'categ2', 'type2', ['running_on' => 'SRV011P']);
@@ -284,8 +509,22 @@ function test_Database_deleteEdge(): void {
     }
 }
 
+function test_Database_deleteEdge_Exception(): void
+{
+    [$graphDb, $pdo] = createConnection();
+    $pdo->exec('DROP TABLE edges');
+
+    try {
+        $graphDb->deleteEdge('edge1');
+        return;
+    } catch(DatabaseException $e) {
+        return;
+    }
+    throw new Exception('other exception in test_Database_deleteEdge_Exception');
+}
+
 function test_Database_getStatuses(): void {
-    $graphDb = createConnection();
+    [$graphDb, $pdo] = createConnection();
     $s = $graphDb->getStatuses();
     
     if (count($s) != 0) {
@@ -305,8 +544,22 @@ function test_Database_getStatuses(): void {
     }
 }
 
+function test_Database_getStatuses_Exception(): void
+{
+    [$graphDb, $pdo] = createConnection();
+    $pdo->exec('DROP TABLE status');
+
+    try {
+        $graphDb->getStatuses();
+        return;
+    } catch(DatabaseException $e) {
+        return;
+    }
+    throw new Exception('other exception in test_Database_getStatuses_Exception');
+}
+
 function test_Database_getNodeStatus(): void {
-    $graphDb = createConnection();
+    [$graphDb, $pdo] = createConnection();
     $s = $graphDb->getStatuses();
     
     if (count($s) != 0) {
@@ -323,8 +576,22 @@ function test_Database_getNodeStatus(): void {
     }
 }
 
+function test_Database_getNodeStatus_Exception(): void
+{
+    [$graphDb, $pdo] = createConnection();
+    $pdo->exec('DROP TABLE status');
+
+    try {
+        $graphDb->getNodeStatus('node1');
+        return;
+    } catch(DatabaseException $e) {
+        return;
+    }
+    throw new Exception('other exception in test_Database_getNodeStatus_Exception');
+}
+
 function test_Database_updateNodeStatus(): void {
-    $graphDb = createConnection();
+    [$graphDb, $pdo] = createConnection();
     $s = $graphDb->getStatuses();
     
     if (count($s) != 0) {
@@ -343,25 +610,147 @@ function test_Database_updateNodeStatus(): void {
     }
 }
 
+function test_Database_updateNodeStatus_Exception(): void
+{
+    [$graphDb, $pdo] = createConnection();
+    $pdo->exec('DROP TABLE status');
+
+    try {
+        $graphDb->updateNodeStatus('node1', 'healthy');
+        return;
+    } catch(DatabaseException $e) {
+        return;
+    }
+    throw new Exception('other exception in test_Database_updateNodeStatus_Exception');
+}
+
+function test_Database_getLogs(): void
+{
+    [$graphDb, $pdo] = createConnection();
+    $logs = $graphDb->getLogs(2);
+    if(count($logs) > 0) {
+        throw new Exception('problem on test_Database_getLogs');
+    }
+
+    $graphDb->insertAuditLog('node', 'node1', 'update', null, null, 'admin', '127.0.0.1');
+    sleep(1);
+    $graphDb->insertAuditLog('node', 'node2', 'update', null, null, 'admin', '127.0.0.1');
+
+    $logs = $graphDb->getLogs(2);
+    if(count($logs) != 2) {
+        throw new Exception('problem on test_Database_getLogs');
+    }
+
+    if ($logs[0]['entity_id'] != 'node2') {
+        throw new Exception('problem on test_Database_getLogs');
+    }
+
+    if ($logs[1]['entity_id'] != 'node1') {
+        throw new Exception('problem on test_Database_getLogs');
+    }
+}
+
+function test_Database_getLogs_Exception(): void
+{
+    [$graphDb, $pdo] = createConnection();
+    $pdo->exec('DROP TABLE audit');
+
+    try {
+        $graphDb->getLogs(2);
+        return;
+    } catch(DatabaseException $e) {
+        return;
+    }
+    throw new Exception('other exception in test_Database_getLogs_Exception');
+}
+
+function test_Database_insertAuditLog(): void
+{
+    [$graphDb, $pdo] = createConnection();
+    $graphDb->insertAuditLog('node', 'node1', 'update', null, null, 'admin', '127.0.0.1');
+    $logs = $graphDb->getLogs(2);
+    if(count($logs) != 1) {
+        throw new Exception('problem on test_Database_getLogs');
+    }
+
+    if ($logs[0]['entity_id'] != 'node1') {
+        throw new Exception('problem on test_Database_getLogs');
+    }
+}
+
+function test_Database_insertAuditLog_Exception(): void
+{
+    [$graphDb, $pdo] = createConnection();
+    $pdo->exec('DROP TABLE audit');
+
+    try {
+        $graphDb->insertAuditLog('node', 'node1', 'update', null, null, 'admin', '127.0.0.1');
+        return;
+    } catch(DatabaseException $e) {
+        return;
+    }
+    throw new Exception('other exception in test_Database_insertAuditLog_Exception');
+}
+
 function test_Database()
 {
+    test_DatabaseException();
+
     test_Database_getUser();
+    test_Database_getUser_Exception();
+
     test_Database_insertUser();
+    test_Database_insertUser_Exception();
+
     test_Database_updateUser();
+    test_Database_updateUser_Exception();
+
     test_Database_getNode();
+    test_Database_getNode_Exception();
+
     test_Database_getNodes();
+    test_Database_getNodes_Exception();
+
     test_Database_insertNode();
+    test_Database_insertNode_Exception();
+
     test_Database_updateNode();
+    test_Database_updateNode_Exception();
+
     test_Database_deleteNode();
+    test_Database_deleteNode_Exception();
+
     test_Database_getEdge();
+    test_Database_getEdge_Exception();
+
     test_Database_getEdgeById();
+    test_Database_getEdgeById_Exception();
+
     test_Database_getEdges();
+    test_Database_getEdges_Exception();
+
     test_Database_insertEdge();
+    test_Database_insertEdge_Exception();
+
     test_Database_updateEdge();
+    test_Database_updateEdge_Exception();
+
     test_Database_deleteEdge();
+    test_Database_deleteEdge_Exception();
+
     test_Database_getStatuses();
+    test_Database_getStatuses_Exception();
+
     test_Database_getNodeStatus();
+    test_Database_getNodeStatus_Exception();
+
     test_Database_updateNodeStatus();
+    test_Database_updateNodeStatus_Exception();
+
+    test_Database_getLogs();
+    test_Database_getLogs_Exception();
+    test_Database_insertAuditLog();
+    test_Database_insertAuditLog_Exception();
 }
 
 #######################################################################################################
@@ -1058,6 +1447,22 @@ function test_Service_updateEdge()
     }
 }
 
+function test_Service_updateEdge_Exception()
+{
+    $service = createService();
+    GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
+
+    try {
+        $updatedEdge = new Edge('edge1', 'node2', 'node3', ['weight' => '30']);
+        $service->updateEdge($updatedEdge);
+        return;
+    } catch(GraphServiceException $e) {
+        return;
+    }
+
+    throw new Exception('exception on test_Service_updateEdge_Exception');
+}
+
 function test_Service_deleteEdge()
 {
     $service = createService();
@@ -1191,6 +1596,8 @@ function test_Service_getLogs()
     }
 }
 
+
+
 function test_Service()
 {
     test_Service_getUser();
@@ -1207,6 +1614,7 @@ function test_Service()
     test_Service_getEdges();
     test_Service_insertEdge();
     test_Service_updateEdge();
+    test_Service_updateEdge_Exception();
     test_Service_deleteEdge();
     test_Service_getStatuses();
     test_Service_getNodeStatus();
@@ -1214,10 +1622,146 @@ function test_Service()
     test_Service_getLogs();
 }
 
+function createController(): GraphController
+{
+    $service = createService();
+    $logger = new Logger('controller.log');
+    $controller = new GraphController($service, $logger);
+    return $controller;
+}
+
+function test_Controller_getUser(){
+    $controller = createController();
+    GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
+
+    $_GET['id'] = 'node1';
+    $req = new Request();
+
+    $resp = $controller->getUser($req);
+    
+    if ($resp->code != 404 || $resp->status != 'error' || $resp->message != 'User not found' || $resp->data['id'] != 'node1') {
+        throw new Exception('problem on test test_Controller_getUser');
+    }
+
+    $req = new Request();
+    $req->data['id'] = 'node1';
+    $req->data['user_group'] = 'admin';
+    $controller->insertUser($req);
+
+    $resp = $controller->getUser($req);
+    
+    if ($resp->code != 200 || $resp->status != 'success' || $resp->message != 'user found' || $resp->data['id'] != 'node1' || $resp->data['group']['id'] != 'admin') {
+        throw new Exception('problem on test test_Controller_getUser');
+    }
+}
+
+function test_Controller_insertUser(){
+    $controller = createController();
+    GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
+
+    $req = new Request();
+    $req->data['id'] = 'node1';
+    $req->data['user_group'] = 'admin';
+    $controller->insertUser($req);
+}
+
+function test_Controller_updateUser(){
+    $controller = createController();
+    GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
+
+    $req = new Request();
+    $req->data['id'] = 'node1';
+    $req->data['user_group'] = 'admin';
+    $controller->updateUser($req);
+}
+
+function test_Controller_getGraph(){
+
+}
+
+function test_Controller_getNode(){
+
+}
+
+function test_Controller_getNodes(){
+
+}
+
+function test_Controller_insertNode(){
+
+}
+
+function test_Controller_updateNode(){
+
+}
+
+function test_Controller_deleteNode(){
+
+}
+
+function test_Controller_getEdge(){
+
+}
+
+function test_Controller_getEdges(){
+
+}
+
+function test_Controller_insertEdge(){
+
+}
+
+function test_Controller_updateEdge(){
+
+}
+
+function test_Controller_deleteEdge(){
+
+}
+
+function test_Controller_getStatuses(){
+
+}
+
+function test_Controller_getNodeStatus(){
+
+}
+
+function test_Controller_setNodeStatus(){
+
+}
+
+function test_Controller_getLogs(){
+
+}
+
+
+function test_Controller(): void
+{
+    test_Controller_getUser();
+    test_Controller_insertUser();
+    test_Controller_updateUser();
+    test_Controller_getGraph();
+    test_Controller_getNode();
+    test_Controller_getNodes();
+    test_Controller_insertNode();
+    test_Controller_updateNode();
+    test_Controller_deleteNode();
+    test_Controller_getEdge();
+    test_Controller_getEdges();
+    test_Controller_insertEdge();
+    test_Controller_updateEdge();
+    test_Controller_deleteEdge();
+    test_Controller_getStatuses();
+    test_Controller_getNodeStatus();
+    test_Controller_setNodeStatus();
+    test_Controller_getLogs();
+}
 
 test_Database();
 test_Models();
 test_Service();
+test_Controller();
 
 $coverage = xdebug_get_code_coverage();
 xdebug_stop_code_coverage();
