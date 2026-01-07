@@ -1,11 +1,5 @@
-vendor/
-composer.phar
-.phpunit.result.cache
-/.idea
-.vscode
-/.DS_Store
-coverage
-.php-cs-fixer.cache
+coverage.html
+coverage.json
 service.log
 controller.log
 database.log
