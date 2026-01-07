@@ -11,7 +11,7 @@ body { font-family: monospace; font-size: 14px; margin: 0; }
 .covered { border-left-color: #0f0; }
 .not-covered { border-left-color: #f00; background-color: rgba(253, 18, 18, 0.52);}
 .num { color: #666; width: 50px; display: inline-block; text-align: right; margin-right: 10px; }
-h2 { padding: 10px; margin: 20px 0 0 0; position: sticky; top: 0; }
+h2 {background: #fff; padding: 10px; margin: 20px 0 0 0; position: sticky; top: 0; }
 </style></head><body>";
 
 foreach ($coverageData as $file => $lines) {

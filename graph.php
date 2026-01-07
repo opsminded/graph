@@ -67,8 +67,8 @@ final class Graph
 
 final class Node
 {
-    private const ALLOWED_CATEGORIES  = ['business', 'application', 'infrastructure'];
-    private const ALLOWED_TYPES       = ['server', 'database', 'application', 'network'];
+    private const ALLOWED_CATEGORIES  = ['business', 'application', 'network', 'infrastructure'];
+    private const ALLOWED_TYPES       = ['server', 'database', 'application'];
     private const ID_VALIDATION_REGEX = '/^[a-zA-Z0-9\-_]+$/';
     private const LABEL_MAX_LENGTH    = 20;
     
@@ -227,20 +227,6 @@ final class AuditLogs
     public function addLog(AuditLog $log): void
     {
         $this->logs[] = $log;
-    }
-}
-
-final class GraphContext
-{
-    public static string $user_id;
-    public static string $user_ip;
-    public static string $user_group;
-
-    public static function update(string $user_id, string $user_ip, string $user_group)
-    {
-        self::$user_id = $user_id;
-        self::$user_ip = $user_ip;
-        self::$user_group = $user_group;
     }
 }
 
@@ -806,6 +792,33 @@ interface GraphServiceInterface
     public function getLogs($limit): AuditLogs;
 }
 
+final class GraphContext
+{
+    private static User $user;
+    private static ?string $user_ip;
+
+    public static function update(User $user, ?string $user_ip)
+    {
+        self::$user = $user;
+        self::$user_ip = $user_ip;
+    }
+
+    public static function getUserId(): string
+    {
+        return self::$user->id;
+    }
+
+    public static function getUserGroup(): string
+    {
+        return self::$user->group->id;
+    }
+
+    public static function getUserIp(): ?string
+    {
+        return self::$user_ip;
+    }
+}
+
 final class GraphService implements GraphServiceInterface
 {
     private const SECURE_ACTIONS = [
@@ -884,7 +897,7 @@ final class GraphService implements GraphServiceInterface
                 $data['label'],
                 $data['category'],
                 $data['type'],
-                json_decode($data['data'], true)
+                $data['data']
             );
         }
         return null;
@@ -901,7 +914,7 @@ final class GraphService implements GraphServiceInterface
                 $data['label'],
                 $data['category'],
                 $data['type'],
-                json_decode($data['data'], true)
+                $data['data']
             );
             $nodes->addNode($node);
         }
@@ -939,16 +952,14 @@ final class GraphService implements GraphServiceInterface
     public function getEdge(string $source, string $target): ?Edge
     {
         $this->verify(__METHOD__);
-        $edgesData = $this->db->getEdges();
-        foreach ($edgesData as $data) {
-            if ($data['source'] === $source && $data['target'] === $target) {
-                return new Edge(
-                    $data['id'],
-                    $data['source'],
-                    $data['target'],
-                    json_decode($data['data'], true)
-                );
-            }
+        $data = $this->db->getEdge($source, $target);
+        if($data) {
+            return new Edge(
+                $data['id'],
+                $data['source'],
+                $data['target'],
+                $data['data']
+            );
         }
         return null;
     }
@@ -964,7 +975,7 @@ final class GraphService implements GraphServiceInterface
                 $data['id'],
                 $data['source'],
                 $data['target'],
-                json_decode($data['data'], true)
+                $data['data']
             );
             $edges->addEdge($edge);
         }
@@ -981,9 +992,11 @@ final class GraphService implements GraphServiceInterface
     public function updateEdge(Edge $edge): void
     {
         $this->verify(__METHOD__);
-        $old = $this->getEdge($edge->source, $edge->target);
+        $old = $this->getEdgeById($edge->id);
+        if ($old === null) {
+            throw new GraphServiceException("edge not found. source: {$edge->source}, target: {$edge->target}");
+        }
         $this->insertAuditLog(new AuditLog( 'edge', $edge->id, 'update', $old->toArray(), $edge->toArray()));
-
         $this->db->updateEdge($edge->id, $edge->source, $edge->target, $edge->data);
     }
 
@@ -1046,10 +1059,24 @@ final class GraphService implements GraphServiceInterface
         return $logs;
     }
 
+    private function getEdgeById(string $id): Edge
+    {
+        $data = $this->db->getEdgeById($id);
+        if($data) {
+            return new Edge(
+                $data['id'],
+                $data['source'],
+                $data['target'],
+                $data['data']
+            );
+        }
+        return null;
+    }
+
     private function insertAuditLog(AuditLog $auditLog): void
     {
-        $user_id   = GraphContext::$user_id;
-        $ip_address = GraphContext::$user_ip;
+        $user_id   = GraphContext::getUserId();
+        $ip_address = GraphContext::getUserIp();
 
         $this->db->insertAuditLog(
             $auditLog->entityType,
@@ -1064,7 +1091,8 @@ final class GraphService implements GraphServiceInterface
 
     private function verify(string $action): void
     {
-        $group = GraphContext::$user_group;
+        $group = GraphContext::getUserGroup();
+        print("group:{$group}|\n");
 
         // validate action
         // if action is one of the keys in the array self::SECURE_ACTIONS
