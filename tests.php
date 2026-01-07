@@ -7,7 +7,7 @@ use SebastianBergmann\RecursionContext\Context;
 require_once __DIR__ . '/graph.php';
 
 ini_set('xdebug.mode', '1');
-xdebug_start_code_coverage(XDEBUG_CC_DEAD_CODE);
+xdebug_start_code_coverage(XDEBUG_CC_UNUSED | XDEBUG_CC_DEAD_CODE);
 
 function createConnection(): GraphDatabase
 {
@@ -343,7 +343,8 @@ function test_Database_updateNodeStatus(): void {
     }
 }
 
-function test_Database() {
+function test_Database()
+{
     test_Database_getUser();
     test_Database_insertUser();
     test_Database_updateUser();
@@ -381,8 +382,373 @@ function createService(): GraphService
     return $graphService;
 }
 
+function test_User()
+{
+    $user = new User('admin', new Group('admin'));
+    $data = $user->toArray();
+    if($data['id'] != $user->id || $data['group']['id'] != 'admin') {
+        throw new Exception('test_UserModel problem');
+    }
+}
 
-function test_Service_getUser() {
+function test_Group()
+{
+    $group = new Group('contributor');
+    $data = $group->toArray();
+    if($data['id'] != $group->id) {
+        throw new Exception('test_Group problem');
+    }
+}
+
+function test_Group_Exception()
+{
+    try {
+        $group = new Group('xpto');
+    } catch(InvalidArgumentException $e) {
+        return;
+    }
+    throw new Exception('test_Group problem');
+}
+
+function test_Graph()
+{
+    $node1 = new Node('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
+    $node2 = new Node('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
+    $edge1 = new Edge('edge1', 'node1', 'node2', ['weight' => '10']);
+
+    $graph = new Graph([$node1, $node2], [$edge1]);
+
+    if (count($graph->nodes) != 2) {
+        throw new Exception('test_Graph problem - expected 2 nodes');
+    }
+
+    if (count($graph->edges) != 1) {
+        throw new Exception('test_Graph problem - expected 1 edge');
+    }
+
+    $data = $graph->toArray();
+    if (!isset($data['nodes']) || !isset($data['edges']) || !isset($data['data']) || !isset($data['layout']) || !isset($data['styles'])) {
+        throw new Exception('test_Graph problem - missing keys in toArray');
+    }
+
+    if (count($data['nodes']) != 2 || count($data['edges']) != 1) {
+        throw new Exception('test_Graph problem - toArray count mismatch');
+    }
+}
+
+function test_Node()
+{
+    $node = new Node('node1', 'Node 01', 'business', 'server', ['key' => 'value']);
+
+    if ($node->id != 'node1' || $node->label != 'Node 01' || $node->category != 'business' || $node->type != 'server') {
+        throw new Exception('test_Node problem - property mismatch');
+    }
+
+    if ($node->data['key'] != 'value') {
+        throw new Exception('test_Node problem - data mismatch');
+    }
+
+    $data = $node->toArray();
+    if ($data['id'] != 'node1' || $data['label'] != 'Node 01' || $data['category'] != 'business' || $data['type'] != 'server') {
+        throw new Exception('test_Node problem - toArray mismatch');
+    }
+
+    if ($data['data']['key'] != 'value') {
+        throw new Exception('test_Node problem - toArray data mismatch');
+    }
+
+    // Test validation - invalid ID
+    try {
+        new Node('invalid@id', 'Label', 'business', 'server', []);
+        throw new Exception('test_Node problem - should throw exception for invalid ID');
+    } catch (InvalidArgumentException $e) {
+        // Expected
+    }
+
+    // Test validation - label too long
+    try {
+        new Node('node2', str_repeat('a', 21), 'business', 'server', []);
+        throw new Exception('test_Node problem - should throw exception for long label');
+    } catch (InvalidArgumentException $e) {
+        // Expected
+    }
+
+    // Test validation - invalid category
+    try {
+        new Node('node3', 'Label', 'invalid_category', 'server', []);
+        throw new Exception('test_Node problem - should throw exception for invalid category');
+    } catch (InvalidArgumentException $e) {
+        // Expected
+    }
+
+    // Test validation - invalid type
+    try {
+        new Node('node4', 'Label', 'business', 'invalid_type', []);
+        throw new Exception('test_Node problem - should throw exception for invalid type');
+    } catch (InvalidArgumentException $e) {
+        // Expected
+    }
+}
+
+function test_NodeStatus()
+{
+    $status = new NodeStatus('node1', 'healthy');
+
+    if ($status->nodeId != 'node1' || $status->status != 'healthy') {
+        throw new Exception('test_NodeStatus problem - property mismatch');
+    }
+
+    $data = $status->toArray();
+    if ($data['node_id'] != 'node1' || $data['status'] != 'healthy') {
+        throw new Exception('test_NodeStatus problem - toArray mismatch');
+    }
+
+    // Test all valid statuses
+    $validStatuses = ['unknown', 'healthy', 'unhealthy', 'maintenance'];
+    foreach ($validStatuses as $validStatus) {
+        $s = new NodeStatus('node2', $validStatus);
+        if ($s->status != $validStatus) {
+            throw new Exception('test_NodeStatus problem - valid status not accepted: ' . $validStatus);
+        }
+    }
+
+    // Test validation - invalid status
+    try {
+        new NodeStatus('node3', 'invalid_status');
+        throw new Exception('test_NodeStatus problem - should throw exception for invalid status');
+    } catch (InvalidArgumentException $e) {
+        // Expected
+    }
+}
+
+function test_NodeStatuses()
+{
+    $nodeStatuses = new NodeStatuses();
+
+    if (count($nodeStatuses->statuses) != 0) {
+        throw new Exception('test_NodeStatuses problem - should be empty initially');
+    }
+
+    $status1 = new NodeStatus('node1', 'healthy');
+    $status2 = new NodeStatus('node2', 'unhealthy');
+    $status3 = new NodeStatus('node3', 'maintenance');
+
+    $nodeStatuses->addStatus($status1);
+    $nodeStatuses->addStatus($status2);
+    $nodeStatuses->addStatus($status3);
+
+    if (count($nodeStatuses->statuses) != 3) {
+        throw new Exception('test_NodeStatuses problem - expected 3 statuses');
+    }
+
+    if ($nodeStatuses->statuses[0]->nodeId != 'node1' || $nodeStatuses->statuses[0]->status != 'healthy') {
+        throw new Exception('test_NodeStatuses problem - first status mismatch');
+    }
+
+    if ($nodeStatuses->statuses[1]->nodeId != 'node2' || $nodeStatuses->statuses[1]->status != 'unhealthy') {
+        throw new Exception('test_NodeStatuses problem - second status mismatch');
+    }
+
+    if ($nodeStatuses->statuses[2]->nodeId != 'node3' || $nodeStatuses->statuses[2]->status != 'maintenance') {
+        throw new Exception('test_NodeStatuses problem - third status mismatch');
+    }
+}
+
+function test_Nodes()
+{
+    $nodes = new Nodes();
+
+    if (count($nodes->nodes) != 0) {
+        throw new Exception('test_Nodes problem - should be empty initially');
+    }
+
+    $node1 = new Node('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
+    $node2 = new Node('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
+    $node3 = new Node('node3', 'Node 03', 'network', 'server', ['key' => 'value3']);
+
+    $nodes->addNode($node1);
+    $nodes->addNode($node2);
+    $nodes->addNode($node3);
+
+    if (count($nodes->nodes) != 3) {
+        throw new Exception('test_Nodes problem - expected 3 nodes');
+    }
+
+    if ($nodes->nodes[0]->id != 'node1' || $nodes->nodes[0]->label != 'Node 01') {
+        throw new Exception('test_Nodes problem - first node mismatch');
+    }
+
+    if ($nodes->nodes[1]->id != 'node2' || $nodes->nodes[1]->label != 'Node 02') {
+        throw new Exception('test_Nodes problem - second node mismatch');
+    }
+
+    if ($nodes->nodes[2]->id != 'node3' || $nodes->nodes[2]->label != 'Node 03') {
+        throw new Exception('test_Nodes problem - third node mismatch');
+    }
+}
+
+function test_Edge()
+{
+    $edge = new Edge('edge1', 'node1', 'node2', ['weight' => '10']);
+
+    if ($edge->id != 'edge1' || $edge->source != 'node1' || $edge->target != 'node2') {
+        throw new Exception('test_Edge problem - property mismatch');
+    }
+
+    if ($edge->data['weight'] != '10') {
+        throw new Exception('test_Edge problem - data mismatch');
+    }
+
+    $data = $edge->toArray();
+    if ($data['id'] != 'edge1' || $data['source'] != 'node1' || $data['target'] != 'node2') {
+        throw new Exception('test_Edge problem - toArray mismatch');
+    }
+
+    if ($data['data']['weight'] != '10') {
+        throw new Exception('test_Edge problem - toArray data mismatch');
+    }
+
+    // Test with null id
+    $edge2 = new Edge(null, 'node3', 'node4', []);
+    if ($edge2->id !== null) {
+        throw new Exception('test_Edge problem - id should be null');
+    }
+
+    if ($edge2->source != 'node3' || $edge2->target != 'node4') {
+        throw new Exception('test_Edge problem - source/target mismatch with null id');
+    }
+
+    // Test with empty data
+    $edge3 = new Edge('edge3', 'node5', 'node6');
+    if (count($edge3->data) != 0) {
+        throw new Exception('test_Edge problem - data should be empty array');
+    }
+}
+
+function test_Edges()
+{
+    $edges = new Edges();
+
+    if (count($edges->edges) != 0) {
+        throw new Exception('test_Edges problem - should be empty initially');
+    }
+
+    $edge1 = new Edge('edge1', 'node1', 'node2', ['weight' => '10']);
+    $edge2 = new Edge('edge2', 'node2', 'node3', ['weight' => '20']);
+    $edge3 = new Edge('edge3', 'node3', 'node4', ['weight' => '30']);
+
+    $edges->addEdge($edge1);
+    $edges->addEdge($edge2);
+    $edges->addEdge($edge3);
+
+    if (count($edges->edges) != 3) {
+        throw new Exception('test_Edges problem - expected 3 edges');
+    }
+
+    if ($edges->edges[0]->id != 'edge1' || $edges->edges[0]->source != 'node1' || $edges->edges[0]->target != 'node2') {
+        throw new Exception('test_Edges problem - first edge mismatch');
+    }
+
+    if ($edges->edges[1]->id != 'edge2' || $edges->edges[1]->source != 'node2' || $edges->edges[1]->target != 'node3') {
+        throw new Exception('test_Edges problem - second edge mismatch');
+    }
+
+    if ($edges->edges[2]->id != 'edge3' || $edges->edges[2]->source != 'node3' || $edges->edges[2]->target != 'node4') {
+        throw new Exception('test_Edges problem - third edge mismatch');
+    }
+}
+
+function test_AuditLog()
+{
+    $oldData = ['id' => 'node1', 'label' => 'Old Label'];
+    $newData = ['id' => 'node1', 'label' => 'New Label'];
+
+    $log = new AuditLog('node', 'node1', 'update', $oldData, $newData);
+
+    if ($log->entityType != 'node' || $log->entityId != 'node1' || $log->action != 'update') {
+        throw new Exception('test_AuditLog problem - property mismatch');
+    }
+
+    if ($log->oldData['label'] != 'Old Label') {
+        throw new Exception('test_AuditLog problem - oldData mismatch');
+    }
+
+    if ($log->newData['label'] != 'New Label') {
+        throw new Exception('test_AuditLog problem - newData mismatch');
+    }
+
+    // Test with null data
+    $log2 = new AuditLog('node', 'node2', 'insert', null, ['id' => 'node2']);
+    if ($log2->oldData !== null) {
+        throw new Exception('test_AuditLog problem - oldData should be null');
+    }
+
+    if ($log2->newData['id'] != 'node2') {
+        throw new Exception('test_AuditLog problem - newData mismatch for insert');
+    }
+
+    // Test delete action with null newData
+    $log3 = new AuditLog('edge', 'edge1', 'delete', ['id' => 'edge1'], null);
+    if ($log3->newData !== null) {
+        throw new Exception('test_AuditLog problem - newData should be null for delete');
+    }
+
+    if ($log3->oldData['id'] != 'edge1') {
+        throw new Exception('test_AuditLog problem - oldData mismatch for delete');
+    }
+}
+
+function test_AuditLogs()
+{
+    $auditLogs = new AuditLogs();
+
+    if (count($auditLogs->logs) != 0) {
+        throw new Exception('test_AuditLogs problem - should be empty initially');
+    }
+
+    $log1 = new AuditLog('node', 'node1', 'insert', null, ['id' => 'node1', 'label' => 'Node 01']);
+    $log2 = new AuditLog('node', 'node1', 'update', ['id' => 'node1', 'label' => 'Node 01'], ['id' => 'node1', 'label' => 'Updated Node']);
+    $log3 = new AuditLog('node', 'node1', 'delete', ['id' => 'node1', 'label' => 'Updated Node'], null);
+
+    $auditLogs->addLog($log1);
+    $auditLogs->addLog($log2);
+    $auditLogs->addLog($log3);
+
+    if (count($auditLogs->logs) != 3) {
+        throw new Exception('test_AuditLogs problem - expected 3 logs');
+    }
+
+    if ($auditLogs->logs[0]->action != 'insert' || $auditLogs->logs[0]->entityType != 'node') {
+        throw new Exception('test_AuditLogs problem - first log mismatch');
+    }
+
+    if ($auditLogs->logs[1]->action != 'update' || $auditLogs->logs[1]->entityId != 'node1') {
+        throw new Exception('test_AuditLogs problem - second log mismatch');
+    }
+
+    if ($auditLogs->logs[2]->action != 'delete' || $auditLogs->logs[2]->newData !== null) {
+        throw new Exception('test_AuditLogs problem - third log mismatch');
+    }
+}
+
+function test_Models()
+{
+    test_User();
+    test_Group();
+    test_Group_Exception();
+    test_Graph();
+    test_Node();
+    test_NodeStatus();
+    test_NodeStatuses();
+    test_Nodes();
+    test_Edge();
+    test_Edges();
+    test_AuditLog();
+    test_AuditLogs();
+}
+
+function test_Service_getUser()
+{
     $service = createService();
     $user = $service->getUser('maria');
     if ($user !== null) {
@@ -396,7 +762,8 @@ function test_Service_getUser() {
     }
 }
 
-function test_Service_insertUser() {
+function test_Service_insertUser()
+{
     $service = createService();
     GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
 
@@ -407,7 +774,8 @@ function test_Service_insertUser() {
     $service->insertUser(new User('maria', new Group('contributor')));
 }
 
-function test_Service_insertUserException() {
+function test_Service_insertUserException()
+{
     $service = createService();
     $user = $service->getUser('maria');
     if ($user !== null) {
@@ -423,7 +791,8 @@ function test_Service_insertUserException() {
     throw new Exception('exception on test_Service_insertUserException');
 }
 
-function test_Service_updateUser() {
+function test_Service_updateUser()
+{
     $service = createService();
     GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
 
@@ -436,7 +805,8 @@ function test_Service_updateUser() {
     }
 }
 
-function test_Service_getGraph() {
+function test_Service_getGraph()
+{
     $service = createService();
     GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
 
@@ -459,7 +829,8 @@ function test_Service_getGraph() {
     }
 }
 
-function test_Service_getNode() {
+function test_Service_getNode()
+{
     $service = createService();
     GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
 
@@ -481,7 +852,8 @@ function test_Service_getNode() {
     }
 }
 
-function test_Service_getNodes() {
+function test_Service_getNodes()
+{
     $service = createService();
     GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
 
@@ -509,7 +881,8 @@ function test_Service_getNodes() {
     }
 }
 
-function test_Service_insertNode() {
+function test_Service_insertNode()
+{
     $service = createService();
     GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
 
@@ -532,7 +905,8 @@ function test_Service_insertNode() {
     }
 }
 
-function test_Service_updateNode() {
+function test_Service_updateNode()
+{
     $service = createService();
     GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
 
@@ -552,7 +926,8 @@ function test_Service_updateNode() {
     }
 }
 
-function test_Service_deleteNode() {
+function test_Service_deleteNode()
+{
     $service = createService();
     GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
 
@@ -572,7 +947,8 @@ function test_Service_deleteNode() {
     }
 }
 
-function test_Service_getEdge() {
+function test_Service_getEdge()
+{
     $service = createService();
     GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
 
@@ -599,7 +975,8 @@ function test_Service_getEdge() {
     }
 }
 
-function test_Service_getEdges() {
+function test_Service_getEdges()
+{
     $service = createService();
     GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
 
@@ -634,7 +1011,8 @@ function test_Service_getEdges() {
     }
 }
 
-function test_Service_insertEdge() {
+function test_Service_insertEdge()
+{
     $service = createService();
     GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
 
@@ -652,7 +1030,8 @@ function test_Service_insertEdge() {
     }
 }
 
-function test_Service_updateEdge() {
+function test_Service_updateEdge()
+{
     $service = createService();
     GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
 
@@ -679,7 +1058,8 @@ function test_Service_updateEdge() {
     }
 }
 
-function test_Service_deleteEdge() {
+function test_Service_deleteEdge()
+{
     $service = createService();
     GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
 
@@ -704,7 +1084,8 @@ function test_Service_deleteEdge() {
     }
 }
 
-function test_Service_getStatuses() {
+function test_Service_getStatuses()
+{
     $service = createService();
     GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
 
@@ -727,7 +1108,8 @@ function test_Service_getStatuses() {
     }
 }
 
-function test_Service_getNodeStatus() {
+function test_Service_getNodeStatus()
+{
     $service = createService();
     GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
 
@@ -747,7 +1129,8 @@ function test_Service_getNodeStatus() {
     }
 }
 
-function test_Service_setNodeStatus() {
+function test_Service_setNodeStatus()
+{
     $service = createService();
     GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
 
@@ -769,7 +1152,8 @@ function test_Service_setNodeStatus() {
     }
 }
 
-function test_Service_getLogs() {
+function test_Service_getLogs()
+{
     $service = createService();
     GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
 
@@ -807,7 +1191,8 @@ function test_Service_getLogs() {
     }
 }
 
-function test_Service() {
+function test_Service()
+{
     test_Service_getUser();
     test_Service_insertUser();
     test_Service_insertUserException();
@@ -831,6 +1216,7 @@ function test_Service() {
 
 
 test_Database();
+test_Models();
 test_Service();
 
 $coverage = xdebug_get_code_coverage();
