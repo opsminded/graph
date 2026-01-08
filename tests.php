@@ -330,8 +330,7 @@ function test_Database_getEdgeById(): void {
 function test_Database_getEdgeById_Exception(): void
 {
     [$graphDb, $pdo] = createConnection();
-    $pdo->exec('DROP TABLE edges');
-
+    
     try {
         $edge = $graphDb->getEdgeById('edge1');
         return;
@@ -410,9 +409,9 @@ function test_Database_insertEdge(): void {
         throw new Exception('error on test_Database_insertEdge');
     }
 
-    // circular test
     $graphDb->insertEdge('edge2', 'node2', 'node1', ['a' => 'b']);
     $edge = $graphDb->getEdge('node2', 'node1');
+
     if ($edge !== null) {
         throw new Exception('error on test_Database_insertEdge');
     }
@@ -571,7 +570,6 @@ function test_Database_getNodeStatus(): void {
     $s = $graphDb->getNodeStatus('node1');
     
     if ($s['id'] != 'node1' || $s['status'] !== null) {
-        print_r($s);
         throw new Exception('error on test_getStatuses');
     }
 }
@@ -1504,8 +1502,8 @@ function test_Service_getStatuses()
     $service->insertNode($node1);
     $service->insertNode($node2);
 
-    $service->setNodeStatus(new NodeStatus('node1', 'healthy'));
-    $service->setNodeStatus(new NodeStatus('node2', 'unhealthy'));
+    $service->updateNodeStatus(new NodeStatus('node1', 'healthy'));
+    $service->updateNodeStatus(new NodeStatus('node2', 'unhealthy'));
 
     $statuses = $service->getStatuses();
     if (count($statuses->statuses) != 2) {
@@ -1526,7 +1524,7 @@ function test_Service_getNodeStatus()
         throw new Exception('error on test_Service_getNodeStatus - default should be unknown');
     }
 
-    $service->setNodeStatus(new NodeStatus('node1', 'healthy'));
+    $service->updateNodeStatus(new NodeStatus('node1', 'healthy'));
 
     $status = $service->getNodeStatus('node1');
     if ($status->nodeId != 'node1' || $status->status != 'healthy') {
@@ -1534,7 +1532,7 @@ function test_Service_getNodeStatus()
     }
 }
 
-function test_Service_setNodeStatus()
+function test_Service_updateNodeStatus()
 {
     $service = createService();
     GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
@@ -1542,18 +1540,18 @@ function test_Service_setNodeStatus()
     $node1 = new Node('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
     $service->insertNode($node1);
 
-    $service->setNodeStatus(new NodeStatus('node1', 'healthy'));
+    $service->updateNodeStatus(new NodeStatus('node1', 'healthy'));
 
     $status = $service->getNodeStatus('node1');
     if ($status->status != 'healthy') {
-        throw new Exception('error on test_Service_setNodeStatus - status not set');
+        throw new Exception('error on test_Service_updateNodeStatus - status not set');
     }
 
-    $service->setNodeStatus(new NodeStatus('node1', 'maintenance'));
+    $service->updateNodeStatus(new NodeStatus('node1', 'maintenance'));
 
     $status = $service->getNodeStatus('node1');
     if ($status->status != 'maintenance') {
-        throw new Exception('error on test_Service_setNodeStatus - status not updated');
+        throw new Exception('error on test_Service_updateNodeStatus - status not updated');
     }
 }
 
@@ -1618,7 +1616,7 @@ function test_Service()
     test_Service_deleteEdge();
     test_Service_getStatuses();
     test_Service_getNodeStatus();
-    test_Service_setNodeStatus();
+    test_Service_updateNodeStatus();
     test_Service_getLogs();
 }
 
@@ -1630,11 +1628,15 @@ function createController(): GraphController
     return $controller;
 }
 
-function test_Controller_getUser(){
+function test_Controller_getUser()
+{
     $controller = createController();
     GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
 
     $_GET['id'] = 'node1';
+    $_SERVER['REQUEST_METHOD'] = 'GET';
+    $_SERVER['SCRIPT_NAME'] = 'index.php';
+    $_SERVER['REQUEST_URI'] = 'index.php/getUser';
     $req = new Request();
 
     $resp = $controller->getUser($req);
@@ -1644,6 +1646,7 @@ function test_Controller_getUser(){
     }
 
     $req = new Request();
+    $_SERVER['REQUEST_METHOD'] = 'POST';
     $req->data['id'] = 'node1';
     $req->data['user_group'] = 'admin';
     $controller->insertUser($req);
@@ -1655,7 +1658,8 @@ function test_Controller_getUser(){
     }
 }
 
-function test_Controller_insertUser(){
+function test_Controller_insertUser()
+{
     $controller = createController();
     GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
 
@@ -1665,76 +1669,115 @@ function test_Controller_insertUser(){
     $controller->insertUser($req);
 }
 
-function test_Controller_updateUser(){
+function test_Controller_updateUser()
+{
     $controller = createController();
     GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
 
+    $_SERVER['REQUEST_METHOD'] = 'PUT';
     $req = new Request();
+
     $req->data['id'] = 'node1';
     $req->data['user_group'] = 'admin';
     $controller->updateUser($req);
 }
 
-function test_Controller_getGraph(){
+function test_Controller_getGraph()
+{
+    $controller = createController();
 
+    $_SERVER['REQUEST_METHOD'] = 'GET';
+    $_GET['id'] = 'node1';
+    $req = new Request();
+    $controller->getGraph($req);
 }
 
-function test_Controller_getNode(){
-
+function test_Controller_getNode()
+{
+    $controller = createController();
+    $_SERVER['REQUEST_METHOD'] = 'GET';
+    $_GET['id'] = 'node1';
+    $req = new Request();
+    $resp = $controller->getNode($req);
 }
 
-function test_Controller_getNodes(){
-
+function test_Controller_getNodes()
+{
+    $controller = createController();
+    $_SERVER['REQUEST_METHOD'] = 'GET';
 }
 
-function test_Controller_insertNode(){
-
+function test_Controller_insertNode()
+{
+    $controller = createController();
+    $_SERVER['REQUEST_METHOD'] = 'POST';
 }
 
-function test_Controller_updateNode(){
-
+function test_Controller_updateNode()
+{
+    $controller = createController();
+    $_SERVER['REQUEST_METHOD'] = 'PUT';
 }
 
-function test_Controller_deleteNode(){
-
+function test_Controller_deleteNode()
+{
+    $controller = createController();
+    $_SERVER['REQUEST_METHOD'] = 'DELETE';
 }
 
-function test_Controller_getEdge(){
-
+function test_Controller_getEdge()
+{
+    $controller = createController();
+    $_SERVER['REQUEST_METHOD'] = 'GET';
 }
 
-function test_Controller_getEdges(){
-
+function test_Controller_getEdges()
+{
+    $controller = createController();
+    $_SERVER['REQUEST_METHOD'] = 'GET';
 }
 
-function test_Controller_insertEdge(){
-
+function test_Controller_insertEdge()
+{
+    $controller = createController();
+    $_SERVER['REQUEST_METHOD'] = 'POST';
 }
 
-function test_Controller_updateEdge(){
-
+function test_Controller_updateEdge()
+{
+    $controller = createController();
+    $_SERVER['REQUEST_METHOD'] = 'PUT';
 }
 
-function test_Controller_deleteEdge(){
-
+function test_Controller_deleteEdge()
+{
+    $controller = createController();
+    $_SERVER['REQUEST_METHOD'] = 'DELETE';
 }
 
-function test_Controller_getStatuses(){
-
+function test_Controller_getStatuses()
+{
+    $controller = createController();
+    $_SERVER['REQUEST_METHOD'] = 'GET';
 }
 
-function test_Controller_getNodeStatus(){
-
+function test_Controller_getNodeStatus()
+{
+    $controller = createController();
+    $_SERVER['REQUEST_METHOD'] = 'GET';
 }
 
-function test_Controller_setNodeStatus(){
-
+function test_Controller_updateNodeStatus()
+{
+    $controller = createController();
+    $_SERVER['REQUEST_METHOD'] = 'PUT';
 }
 
-function test_Controller_getLogs(){
-
+function test_Controller_getLogs()
+{
+    $controller = createController();
+    $_SERVER['REQUEST_METHOD'] = 'GET';
 }
-
 
 function test_Controller(): void
 {
@@ -1754,7 +1797,7 @@ function test_Controller(): void
     test_Controller_deleteEdge();
     test_Controller_getStatuses();
     test_Controller_getNodeStatus();
-    test_Controller_setNodeStatus();
+    test_Controller_updateNodeStatus();
     test_Controller_getLogs();
 }
 

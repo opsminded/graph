@@ -533,18 +533,15 @@ final class GraphDatabase implements GraphDatabaseInterface
             ':id' => $id,
         ];
 
-        try {
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->execute($params);
-            $row = $stmt->fetch();
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $row = $stmt->fetch();
 
-            if ($row) {
-                $row['data'] = json_decode($row['data'], true);
-                return $row;
-            }
-        } catch (PDOException $e) {
-            throw $this->logger->databaseException('PDO Exception in getEdgeById', $params, $e, $sql, $params);
+        if ($row) {
+            $row['data'] = json_decode($row['data'], true);
+            return $row;
         }
+        
         return null;
     }
 
@@ -566,42 +563,11 @@ final class GraphDatabase implements GraphDatabaseInterface
 
     public function insertEdge(string $id, string $source, string $target, array $data = []): void
     {
-        // exists?
-        $sql = "SELECT * FROM edges WHERE id = :id";
-        $params = [':id' => $id];
-
-        try {
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->execute($params);
-            $row = $stmt->fetch();
-            
-            if ($row !== false) {
-                return;
-            }
-        } catch (PDOException $e) {
-            throw $this->logger->databaseException('PDO Exception in getEdgeById', $params, $e, $sql, $params);
+        $edgeData = $this->getEdge($target, $source);
+        if (! is_null($edgeData)) {
+            return;
         }
 
-        // circular?
-
-        $sql = "SELECT * FROM edges WHERE source = :target and target = :source";
-        $params = [
-            ':source' => $source,
-            ':target' => $target
-        ];
-
-        try {
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->execute($params);
-            $row = $stmt->fetch();
-            
-            if ($row !== false) {
-                return;
-            }
-        } catch (PDOException $e) {
-            throw $this->logger->databaseException('PDO Exception in getEdgeById', $params, $e, $sql, $params);
-        }
-        
         $sql = "
             INSERT OR IGNORE INTO edges(id, source, target, data)
             VALUES (:id, :source, :target, :data)";
@@ -613,12 +579,8 @@ final class GraphDatabase implements GraphDatabaseInterface
             ':data'   => json_encode($data, JSON_UNESCAPED_UNICODE)
         ];
 
-        try {
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->execute($params);
-        } catch (PDOException $e) {
-            throw $this->logger->databaseException('PDO Exception in insertEdge', $params, $e, $sql, $params);
-        }
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
     }
 
     public function updateEdge(string $id, string $source, string $target, array $data = []): void
@@ -850,7 +812,7 @@ interface GraphServiceInterface
 
     public function getStatuses(): NodeStatuses;
     public function getNodeStatus(string $id): NodeStatus;
-    public function setNodeStatus(NodeStatus $status): void;
+    public function updateNodeStatus(NodeStatus $status): void;
 
     public function getLogs($limit): AuditLogs;
 }
@@ -885,27 +847,27 @@ final class GraphContext
 final class GraphService implements GraphServiceInterface
 {
     private const SECURE_ACTIONS = [
-        'GraphService::getUser'        => true,
-        'GraphService::getGraph'       => true,
-        'GraphService::getNode'        => true,
-        'GraphService::getNodes'       => true,
-        'GraphService::getEdge'        => true,
-        'GraphService::getEdges'       => true,
-        'GraphService::getStatuses'    => true,
-        'GraphService::getNodeStatus'  => true,
-        'GraphService::setNodeStatus'  => true,
-        'GraphService::getLogs'        => true,
+        'GraphService::getUser'          => true,
+        'GraphService::getGraph'         => true,
+        'GraphService::getNode'          => true,
+        'GraphService::getNodes'         => true,
+        'GraphService::getEdge'          => true,
+        'GraphService::getEdges'         => true,
+        'GraphService::getStatuses'      => true,
+        'GraphService::getNodeStatus'    => true,
+        'GraphService::updateNodeStatus' => true,
+        'GraphService::getLogs'          => true,
 
-        'GraphService::insertUser'     => false,
-        'GraphService::updateUser'     => false,
+        'GraphService::insertUser'       => false,
+        'GraphService::updateUser'       => false,
 
-        'GraphService::insertNode'     => false,
-        'GraphService::updateNode'     => false,
-        'GraphService::deleteNode'     => false,
-        'GraphService::insertEdge'     => false,
-        'GraphService::updateEdge'     => false,
-        'GraphService::deleteEdge'     => false,
-        'GraphService::insertAuditLog' => false,
+        'GraphService::insertNode'       => false,
+        'GraphService::updateNode'       => false,
+        'GraphService::deleteNode'       => false,
+        'GraphService::insertEdge'       => false,
+        'GraphService::updateEdge'       => false,
+        'GraphService::deleteEdge'       => false,
+        'GraphService::insertAuditLog'   => false,
     ];
 
     private GraphDatabaseInterface $db;
@@ -919,80 +881,114 @@ final class GraphService implements GraphServiceInterface
 
     public function getUser(string $id): ?User
     {
-        $this->verify();
+        try {
+            $this->verify();
 
-        $data = $this->db->getUser($id);
-        if ($data) {
-            $g = new Group($data['user_group']);
-            $user = new User($id, $g);
-            return $user;
+            $data = $this->db->getUser($id);
+            if ($data) {
+                $g = new Group($data['user_group']);
+                $user = new User($id, $g);
+                return $user;
+            }
+            return null;
+        } catch(DatabaseException $e) {
+            $t = new GraphServiceException("insertUser exception", 0, $e);
+            throw $t;
         }
-        return null;
     }
 
     public function insertUser(User $user): void
     {
-        $this->verify();
-        $this->db->insertUser($user->id, $user->group->id);
+        try {
+            $this->verify();
+            $this->db->insertUser($user->id, $user->group->id);
+        } catch(DatabaseException $e) {
+            $t = new GraphServiceException("insertUser exception", 0, $e);
+            throw $t;
+        }
     }
 
     public function updateUser(User $user): void
     {
-        $this->verify();
-        $this->db->updateUser($user->id, $user->group->id);
+        try {
+            $this->verify();
+            $this->db->updateUser($user->id, $user->group->id);
+        } catch(DatabaseException $e) {
+            $t = new GraphServiceException("insertUser exception", 0, $e);
+            throw $t;
+        }
     }
 
     public function getGraph(): Graph
     {
-        $this->verify();
-        $nodes = $this->getNodes()->nodes;
-        $edges = $this->getEdges()->edges;
-        return new Graph($nodes, $edges);
+        try {
+            $this->verify();
+            $nodes = $this->getNodes()->nodes;
+            $edges = $this->getEdges()->edges;
+            return new Graph($nodes, $edges);
+        } catch(DatabaseException $e) {
+            $t = new GraphServiceException("insertUser exception", 0, $e);
+            throw $t;
+        }
     }
 
     public function getNode(string $id): ?Node
     {
-        $this->verify();
-        $data = $this->db->getNode($id);
-        if ($data) {
-            return new Node(
-                $data['id'],
-                $data['label'],
-                $data['category'],
-                $data['type'],
-                $data['data']
-            );
+        try {
+            $this->verify();
+            $data = $this->db->getNode($id);
+            if (! is_null($data)) {
+                return new Node(
+                    $data['id'],
+                    $data['label'],
+                    $data['category'],
+                    $data['type'],
+                    $data['data']
+                );
+            }
+            return null;
+        } catch(DatabaseException $e) {
+            $t = new GraphServiceException("insertUser exception", 0, $e);
+            throw $t;
         }
-        return null;
     }
 
     public function getNodes(): Nodes
     {
-        $this->verify();
-        $nodesData = $this->db->getNodes();
-        $nodes     = new Nodes();
-        foreach ($nodesData as $data) {
-            $node = new Node(
-                $data['id'],
-                $data['label'],
-                $data['category'],
-                $data['type'],
-                $data['data']
-            );
-            $nodes->addNode($node);
+        try {
+            $this->verify();
+            $nodesData = $this->db->getNodes();
+            $nodes     = new Nodes();
+            foreach ($nodesData as $data) {
+                $node = new Node(
+                    $data['id'],
+                    $data['label'],
+                    $data['category'],
+                    $data['type'],
+                    $data['data']
+                );
+                $nodes->addNode($node);
+            }
+            return $nodes;
+        } catch(DatabaseException $e) {
+            $t = new GraphServiceException("insertUser exception", 0, $e);
+            throw $t;
         }
-        return $nodes;
     }
 
     public function insertNode(Node $node): void
     {
         $this->logger->debug('inserting node', $node->toArray());
 
-        $this->verify();
-        
-        $this->logger->debug('permission allowed', $node->toArray());
-        $this->insertAuditLog(new AuditLog( 'node', $node->id, 'insert', null, $node->toArray()));
-        $this->db->insertNode($node->id, $node->label, $node->category, $node->type, $node->data);
+        try {
+            $this->verify();
+            $this->logger->debug('permission allowed', $node->toArray());
+            $this->insertAuditLog(new AuditLog( 'node', $node->id, 'insert', null, $node->toArray()));
+            $this->db->insertNode($node->id, $node->label, $node->category, $node->type, $node->data);
+        } catch(DatabaseException $e) {
+            $t = new GraphServiceException("insertUser exception", 0, $e);
+            throw $t;
+        }
     }
 
     public function updateNode(Node $node): void
@@ -1090,7 +1086,7 @@ final class GraphService implements GraphServiceInterface
         return new NodeStatus($id, $statusData['status'] ?? 'unknown');
     }
 
-    public function setNodeStatus(NodeStatus $status): void
+    public function updateNodeStatus(NodeStatus $status): void
     {
         $this->verify();
 
@@ -1199,10 +1195,34 @@ final class Request
     public array $data;
     public array $params;
     public string $path;
+    public string $method;
 
     public function __construct()
     {
         $this->params = $_GET;
+
+        if(is_null($_SERVER['REQUEST_METHOD'])) {
+            throw new RequestException('method not set', [], $this->params, '');
+        }
+
+        if(! in_array($_SERVER['REQUEST_METHOD'], ['GET', 'PUT', 'POST', 'DELETE'])) {
+            throw new RequestException('method not allowed: ' . $_SERVER['REQUEST_METHOD'], [], $this->params, '');
+        }
+
+        $this->method = $_SERVER['REQUEST_METHOD'];
+
+        $scriptName = $_SERVER['SCRIPT_NAME'];
+        $requestUri = $_SERVER['REQUEST_URI'];
+        $requestUri = strtok($requestUri, '?');
+        $path = str_replace($scriptName, '', $requestUri);
+        $this->path = $path;
+
+        $jsonData = file_get_contents('php://input');
+        if ($jsonData) {
+            $this->data = json_decode($jsonData, true); 
+        } else {
+            $this->data = [];
+        }
     }
 
     public function getParam($name): string
@@ -1210,22 +1230,14 @@ final class Request
         if(isset($this->params[$name])) {
             return $this->params[$name];
         }
-        throw new RequestException("param '{$name}' not found");
-    }
-
-    public function getPath(): string
-    {
-        $scriptName = $_SERVER['SCRIPT_NAME'];
-        $requestUri = $_SERVER['REQUEST_URI'];
-        $requestUri = strtok($requestUri, '?');
-        $path = str_replace($scriptName, '', $requestUri);
-        return $path;
+        throw new RequestException("param '{$name}' not found", $this->data, $this->params, $this->path);
     }
 
     public function toArray(): array
     {
         return [
-            'path'   => $this->getPath(),
+            'path'   => $this->path,
+            'method' => $this->method,
             'data'   => $this->data,
             'params' => $this->params,
         ];
@@ -1339,7 +1351,7 @@ interface GraphControllerInterface
 
     public function getStatuses(Request $req): ResponseInterface;
     public function getNodeStatus(Request $req): ResponseInterface;
-    public function setNodeStatus(Request $req): ResponseInterface;
+    public function updateNodeStatus(Request $req): ResponseInterface;
 
     public function getLogs(Request $req): ResponseInterface;
 }
@@ -1405,7 +1417,6 @@ final class GraphController implements GraphControllerInterface
         try {
             $data = $this->service->getGraph()->toArray();
             return new OKResponse('get graph', $data);
-            return $resp;
         } catch (Exception $e) {
             throw $e;
         }
@@ -1418,6 +1429,9 @@ final class GraphController implements GraphControllerInterface
         try {
             $id = $req->getParam('id');
             $node = $this->service->getNode($id);
+            if(is_null($node)) {
+                return new NotFoundResponse('node not found', ['id' => $id]);
+            }
             $data = $node->toArray();
             return new OKResponse('node found', $data);
         } catch( Exception $e)
@@ -1590,7 +1604,7 @@ final class GraphController implements GraphControllerInterface
         return new InternalServerErrorResponse($e->getMessage(), $req->data);
     }
     
-    public function setNodeStatus(Request $req): ResponseInterface
+    public function updateNodeStatus(Request $req): ResponseInterface
     {
         try {
             $status = new NodeStatus($req->data['node_id'], $req->data['status']);
