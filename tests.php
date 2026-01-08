@@ -1385,6 +1385,14 @@ function test_Service_updateNode()
     if ($retrievedNode->data['key'] != 'newvalue') {
         throw new Exception('error on test_Service_updateNode - data not updated');
     }
+
+    // try to update node not found
+    $updatedNode = new Node('node5', 'Updated Node', 'application', 'database', ['key' => 'newvalue']);
+    $exists = $service->updateNode($updatedNode);
+    if(!is_null($exists)) {
+        throw new Exception('error on test_Service_updateNode');
+    }
+
 }
 
 function test_Service_updateNode_Exception()
@@ -1421,6 +1429,13 @@ function test_Service_deleteNode()
     $deletedNode = $service->getNode('node1');
     if ($deletedNode !== null) {
         throw new Exception('error on test_Service_deleteNode - node not deleted');
+    }
+
+    // try to delete node not found
+    try {
+        $service->deleteNode('node5');
+    } catch(Exception $e) {
+        throw $e;
     }
 }
 
@@ -1595,10 +1610,29 @@ function test_Service_updateEdge()
     }
 }
 
-function test_Service_updateEdge_Exception()
+function test_Service_updateEdge_Exception1()
 {
     [$service, $pdo] = createService();
     GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
+
+    try {
+        $updatedEdge = new Edge('edge1', 'node2', 'node3', ['weight' => '30']);
+        $service->updateEdge($updatedEdge);
+        return;
+    } catch(GraphServiceException $e) {
+        return;
+    }
+
+    throw new Exception('exception on test_Service_updateEdge_Exception');
+}
+
+function test_Service_updateEdge_Exception2()
+{
+    [$service, $pdo] = createService();
+    GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
+
+    $pdo->exec('DROP TABLE edges');
+
     try {
         $updatedEdge = new Edge('edge1', 'node2', 'node3', ['weight' => '30']);
         $service->updateEdge($updatedEdge);
@@ -1847,7 +1881,8 @@ function test_Service()
     test_Service_insertEdge();
     test_Service_insertEdge_Exception();
     test_Service_updateEdge();
-    test_Service_updateEdge_Exception();
+    test_Service_updateEdge_Exception1();
+    test_Service_updateEdge_Exception2();
     test_Service_deleteEdge();
     test_Service_deleteEdge_Exception();
     test_Service_getStatuses();
@@ -1860,191 +1895,9 @@ function test_Service()
     test_Service_getLogs_Exception();
 }
 
-function createController(): GraphController
-{
-    [$service, $pdo] = createService();
-    $logger = new Logger('controller.log');
-    $controller = new GraphController($service, $logger);
-    return $controller;
-}
-
-function test_Controller_getUser()
-{
-    $controller = createController();
-    GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
-
-    $_GET['id'] = 'node1';
-    $_SERVER['REQUEST_METHOD'] = 'GET';
-    $_SERVER['SCRIPT_NAME'] = 'index.php';
-    $_SERVER['REQUEST_URI'] = 'index.php/getUser';
-    $req = new Request();
-
-    $resp = $controller->getUser($req);
-    
-    if ($resp->code != 404 || $resp->status != 'error' || $resp->message != 'User not found' || $resp->data['id'] != 'node1') {
-        throw new Exception('problem on test test_Controller_getUser');
-    }
-
-    $req = new Request();
-    $_SERVER['REQUEST_METHOD'] = 'POST';
-    $req->data['id'] = 'node1';
-    $req->data['user_group'] = 'admin';
-    $controller->insertUser($req);
-
-    $resp = $controller->getUser($req);
-    
-    if ($resp->code != 200 || $resp->status != 'success' || $resp->message != 'user found' || $resp->data['id'] != 'node1' || $resp->data['group']['id'] != 'admin') {
-        throw new Exception('problem on test test_Controller_getUser');
-    }
-}
-
-function test_Controller_insertUser()
-{
-    $controller = createController();
-    GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
-
-    $req = new Request();
-    $req->data['id'] = 'node1';
-    $req->data['user_group'] = 'admin';
-    $controller->insertUser($req);
-}
-
-function test_Controller_updateUser()
-{
-    $controller = createController();
-    GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
-
-    $_SERVER['REQUEST_METHOD'] = 'PUT';
-    $req = new Request();
-
-    $req->data['id'] = 'node1';
-    $req->data['user_group'] = 'admin';
-    $controller->updateUser($req);
-}
-
-function test_Controller_getGraph()
-{
-    $controller = createController();
-
-    $_SERVER['REQUEST_METHOD'] = 'GET';
-    $_GET['id'] = 'node1';
-    $req = new Request();
-    $controller->getGraph($req);
-}
-
-function test_Controller_getNode()
-{
-    $controller = createController();
-    $_SERVER['REQUEST_METHOD'] = 'GET';
-    $_GET['id'] = 'node1';
-    $req = new Request();
-    $resp = $controller->getNode($req);
-}
-
-function test_Controller_getNodes()
-{
-    $controller = createController();
-    $_SERVER['REQUEST_METHOD'] = 'GET';
-}
-
-function test_Controller_insertNode()
-{
-    $controller = createController();
-    $_SERVER['REQUEST_METHOD'] = 'POST';
-}
-
-function test_Controller_updateNode()
-{
-    $controller = createController();
-    $_SERVER['REQUEST_METHOD'] = 'PUT';
-}
-
-function test_Controller_deleteNode()
-{
-    $controller = createController();
-    $_SERVER['REQUEST_METHOD'] = 'DELETE';
-}
-
-function test_Controller_getEdge()
-{
-    $controller = createController();
-    $_SERVER['REQUEST_METHOD'] = 'GET';
-}
-
-function test_Controller_getEdges()
-{
-    $controller = createController();
-    $_SERVER['REQUEST_METHOD'] = 'GET';
-}
-
-function test_Controller_insertEdge()
-{
-    $controller = createController();
-    $_SERVER['REQUEST_METHOD'] = 'POST';
-}
-
-function test_Controller_updateEdge()
-{
-    $controller = createController();
-    $_SERVER['REQUEST_METHOD'] = 'PUT';
-}
-
-function test_Controller_deleteEdge()
-{
-    $controller = createController();
-    $_SERVER['REQUEST_METHOD'] = 'DELETE';
-}
-
-function test_Controller_getStatuses()
-{
-    $controller = createController();
-    $_SERVER['REQUEST_METHOD'] = 'GET';
-}
-
-function test_Controller_getNodeStatus()
-{
-    $controller = createController();
-    $_SERVER['REQUEST_METHOD'] = 'GET';
-}
-
-function test_Controller_updateNodeStatus()
-{
-    $controller = createController();
-    $_SERVER['REQUEST_METHOD'] = 'PUT';
-}
-
-function test_Controller_getLogs()
-{
-    $controller = createController();
-    $_SERVER['REQUEST_METHOD'] = 'GET';
-}
-
-function test_Controller(): void
-{
-    test_Controller_getUser();
-    test_Controller_insertUser();
-    test_Controller_updateUser();
-    test_Controller_getGraph();
-    test_Controller_getNode();
-    test_Controller_getNodes();
-    test_Controller_insertNode();
-    test_Controller_updateNode();
-    test_Controller_deleteNode();
-    test_Controller_getEdge();
-    test_Controller_getEdges();
-    test_Controller_insertEdge();
-    test_Controller_updateEdge();
-    test_Controller_deleteEdge();
-    test_Controller_getStatuses();
-    test_Controller_getNodeStatus();
-    test_Controller_updateNodeStatus();
-    test_Controller_getLogs();
-}
-
 test_Database();
 test_Models();
 test_Service();
-test_Controller();
 
 $coverage = xdebug_get_code_coverage();
 xdebug_stop_code_coverage();
@@ -2053,15 +1906,15 @@ xdebug_stop_code_coverage();
 file_put_contents('coverage.json', json_encode($coverage, JSON_PRETTY_PRINT));
 
 if (file_exists('database.log')) {
-    //@unlink('database.log');
+    @unlink('database.log');
 }
 
 if (file_exists('service.log')) {
-    //@unlink('service.log');
+    @unlink('service.log');
 }
 
 if (file_exists('controller.log')) {
-    //@unlink('controller.log');
+    @unlink('controller.log');
 }
 
 echo "fim\n";

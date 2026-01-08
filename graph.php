@@ -1061,8 +1061,14 @@ final class GraphService implements GraphServiceInterface
     {
         try {
             $this->verify();
+
+            $exists = $this->db->getNode($node->id);
+            if(is_null($exists)) {
+                return;
+            }
+
             $old = $this->getNode($node->id);
-            $this->insertAuditLog(new AuditLog( 'node', $node->id, 'update', $old->toArray(), $node->toArray()));
+            $this->insertAuditLog(new AuditLog('node', $node->id, 'update', $old->toArray(), $node->toArray()));
             $this->db->updateNode($node->id, $node->label, $node->category, $node->type, $node->data);
         } catch(DatabaseException $e) {
             $params = json_encode($e->params, JSON_UNESCAPED_UNICODE);
@@ -1075,6 +1081,12 @@ final class GraphService implements GraphServiceInterface
     {
         try {
             $this->verify();
+
+            $exists = $this->db->getNode($id);
+            if(is_null($exists)) {
+                return;
+            }
+
             $old = $this->getNode($id);
             $this->insertAuditLog(new AuditLog( 'node', $id, 'delete', $old->toArray(), null));
             $this->db->deleteNode($id);
@@ -1147,15 +1159,21 @@ final class GraphService implements GraphServiceInterface
     {
         try {
             $this->verify();
-            $old = $this->getEdgeById($edge->id);
-            if (is_null($old)) {
+
+            $exists = $this->db->getEdgeById($edge->id);
+            if (is_null($exists)) {
                 throw new GraphServiceException("edge not found", 0, null);
             }
+
+            $old = $this->getEdgeById($edge->id);
+
             $this->insertAuditLog(new AuditLog( 'edge', $edge->id, 'update', $old->toArray(), $edge->toArray()));
             $this->db->updateEdge($edge->id, $edge->source, $edge->target, $edge->data);
+
         } catch(DatabaseException $e) {
             $params = json_encode($e->params, JSON_UNESCAPED_UNICODE);
             $comp = "({$e->query})" . "(". json_encode($params) . ")";
+            
             throw new GraphServiceException("updateEdge exception: " . $comp, 0, $e);
         }
     }
@@ -1249,15 +1267,16 @@ final class GraphService implements GraphServiceInterface
     {
         try {
             $data = $this->db->getEdgeById($id);
-            if($data) {
-                return new Edge(
-                    $data['id'],
-                    $data['source'],
-                    $data['target'],
-                    $data['data']
-                );
+            if (is_null($data)) {
+                return null;
             }
-            return null;
+
+            return new Edge(
+                $data['id'],
+                $data['source'],
+                $data['target'],
+                $data['data']
+            );
         } catch(DatabaseException $e) {
             $params = json_encode($e->params, JSON_UNESCAPED_UNICODE);
             $comp = "({$e->query})" . "(". json_encode($params) . ")";
@@ -1313,511 +1332,3 @@ final class GraphService implements GraphServiceInterface
         throw new GraphServiceException('action not allowed: ' . $action);
     }
 }
-
-final class RequestException extends RuntimeException
-{
-    public array $data;
-    public array $params;
-    public string $path;
-    
-    public function __construct($message, array $data, array $params, string $path)
-    {
-        parent::__construct($message, 0, null);
-        $this->data = $data;
-        $this->params = $params;
-        $this->path = $path;
-    }
-}
-
-final class Request
-{
-    public array $data;
-    public array $params;
-    public string $path;
-    public string $method;
-
-    public function __construct()
-    {
-        $this->params = $_GET;
-
-        if(is_null($_SERVER['REQUEST_METHOD'])) {
-            throw new RequestException('method not set', [], $this->params, '');
-        }
-
-        if(! in_array($_SERVER['REQUEST_METHOD'], ['GET', 'PUT', 'POST', 'DELETE'])) {
-            throw new RequestException('method not allowed: ' . $_SERVER['REQUEST_METHOD'], [], $this->params, '');
-        }
-
-        $this->method = $_SERVER['REQUEST_METHOD'];
-
-        $scriptName = $_SERVER['SCRIPT_NAME'];
-        $requestUri = $_SERVER['REQUEST_URI'];
-        $requestUri = strtok($requestUri, '?');
-        $path = str_replace($scriptName, '', $requestUri);
-        $this->path = $path;
-
-        $jsonData = file_get_contents('php://input');
-        if ($jsonData) {
-            $this->data = json_decode($jsonData, true); 
-        } else {
-            $this->data = [];
-        }
-    }
-
-    public function getParam($name): string
-    {
-        if(isset($this->params[$name])) {
-            return $this->params[$name];
-        }
-        throw new RequestException("param '{$name}' not found", $this->data, $this->params, $this->path);
-    }
-
-    public function toArray(): array
-    {
-        return [
-            'path'   => $this->path,
-            'method' => $this->method,
-            'data'   => $this->data,
-            'params' => $this->params,
-        ];
-    }
-}
-
-interface ResponseInterface
-{
-    public function send(): void;
-}
-
-class Response implements ResponseInterface
-{
-    public int $code;
-    public string $status;
-    public string $message;
-    public array $data;
-
-    public function __construct(int $code, string $status, string $message = '', array $data)
-    {
-        $this->code = $code;
-        $this->status = $status;
-        $this->message = $message;
-        $this->data = $data;
-    }
-
-    public function send(): void
-    {
-        header('Content-Type: application/json; charset=utf-8');
-        http_response_code($this->code);
-        $this->data = ['code' => $this->code, 'status' => $this->status, 'message' => $this->message, 'data' => $this->data];
-        echo json_encode($this->data, JSON_UNESCAPED_UNICODE |  JSON_UNESCAPED_SLASHES |  JSON_PRETTY_PRINT);
-    }
-}
-
-class OKResponse extends Response
-{
-    public function __construct(string $message, array $data)
-    {
-        return parent::__construct(200, 'success', $message, $data);
-    }
-}
-
-class CreatedResponse extends Response
-{
-    public function __construct(string $message = '', array $data)
-    {
-        return parent::__construct(201, 'success', $message, $data);
-    }
-}
-
-class BadRequestResponse extends Response
-{
-    public function __construct(string $message = '', array $data)
-    {
-        return parent::__construct(400, 'error', $message, $data);
-    }
-}
-
-class UnauthorizedResponse extends Response
-{
-    public function __construct(string $message = '', array $data)
-    {
-        return parent::__construct(401, 'error', $message, $data);
-    }
-}
-
-class ForbiddenResponse extends Response
-{
-    public function __construct(string $message = '', array $data)
-    {
-        return parent::__construct(403, 'error', $message, $data);
-    }
-}
-
-class NotFoundResponse extends Response
-{
-    public function __construct(string $message = '', array $data)
-    {
-        return parent::__construct(404, 'error', $message, $data);
-    }
-}
-
-class InternalServerErrorResponse extends Response
-{
-    public function __construct(string $message = '', array $data)
-    {
-        return parent::__construct(500, 'error', $message, $data);
-    }
-}
-
-interface GraphControllerInterface
-{
-    public function getUser(Request $req): ResponseInterface;
-    public function insertUser(Request $req): ResponseInterface;
-    public function updateUser(Request $req): ResponseInterface;
-
-    public function getGraph(Request $req): ResponseInterface;
-
-    public function getNode(Request $req): ResponseInterface;
-    public function getNodes(Request $req): ResponseInterface;
-    public function insertNode(Request $req): ResponseInterface;
-    public function updateNode(Request $req): ResponseInterface;
-    public function deleteNode(Request $req): ResponseInterface;
-
-    public function getEdge(Request $req): ResponseInterface;
-    public function getEdges(Request $req): ResponseInterface;
-    public function insertEdge(Request $req): ResponseInterface;
-    public function updateEdge(Request $req): ResponseInterface;
-    public function deleteEdge(Request $req): ResponseInterface;
-
-    public function getStatuses(Request $req): ResponseInterface;
-    public function getNodeStatus(Request $req): ResponseInterface;
-    public function updateNodeStatus(Request $req): ResponseInterface;
-
-    public function getLogs(Request $req): ResponseInterface;
-}
-
-final class GraphControllerException extends RuntimeException
-{
-}
-
-final class GraphController implements GraphControllerInterface
-{
-    private GraphServiceInterface $service;
-    private Logger $logger;
-
-    public function __construct(GraphServiceInterface $service, Logger $logger)
-    {
-        $this->service = $service;
-        $this->logger = $logger;
-    }
-
-    public function getUser(Request $req): ResponseInterface
-    {
-        try {
-            $id = $req->getParam('id');
-            $user = $this->service->getUser($id);
-            if(is_null($user)) {
-                return new NotFoundResponse('User not found', ['id' => $id]);
-            }
-            return new OKResponse('user found', $user->toArray());
-        } catch(RequestException $e) {
-            return new BadRequestResponse('bad request: ' . $e->getMessage(), $req->data);
-        } catch(GraphServiceException $e) {
-            return new InternalServerErrorResponse('user not created: ' . $e->getMessage(), $req->data);
-        }
-        throw new GraphControllerException('other internal error in getUser');
-    }
-
-    public function insertUser(Request $req): ResponseInterface
-    {
-        try {
-            $user = new User($req->data['id'], new Group($req->data['user_group']));
-            $this->service->insertUser($user);
-            return new CreatedResponse('user created', $req->data);
-        } catch(GraphServiceException $e) {
-            throw $e;
-        }
-        
-        return new OKResponse('user created', $req->data);
-    }
-
-    public function updateUser(Request $req): ResponseInterface
-    {
-        try {
-            $user = new User($req->data['id'], new Group($req->data['user_group']));
-            $this->service->updateUser($user);
-            return new OKResponse('user updated', $req->data);
-        } catch(GraphServiceException $e) {
-            throw $e;
-        }
-    }
-
-    public function getGraph(Request $req): ResponseInterface
-    {
-        try {
-            $data = $this->service->getGraph()->toArray();
-            return new OKResponse('get graph', $data);
-        } catch (Exception $e) {
-            throw $e;
-        }
-
-        return new InternalServerErrorResponse($e->getMessage(), $req->data);
-    }
-
-    public function getNode(Request $req): ResponseInterface
-    {
-        try {
-            $id = $req->getParam('id');
-            $node = $this->service->getNode($id);
-            if(is_null($node)) {
-                return new NotFoundResponse('node not found', ['id' => $id]);
-            }
-            $data = $node->toArray();
-            return new OKResponse('node found', $data);
-        } catch( Exception $e)
-        {
-            throw $e;
-        }
-
-        return new InternalServerErrorResponse($e->getMessage(), $req->data);
-    }
-
-    public function getNodes(Request $req): ResponseInterface
-    {
-        try {
-            $nodes = $this->service->getNodes();
-            // TODO: corrigir
-            return new OKResponse('nodes found', []);
-            return $resp;
-        } catch( Exception $e)
-        {
-            throw $e;
-        }
-        
-        return new InternalServerErrorResponse($e->getMessage(), $req->data);
-    }
-
-    public function insertNode(Request $req): ResponseInterface
-    {
-        $this->logger->debug('inserting node', $req->toArray());
-        try {
-            $data = json_decode($req->data['data'], true);
-            $node = new Node($req->data['id'], $req->data['label'], $req->data['category'], $req->data['type'], $data);
-            $this->service->insertNode($node);
-            $this->logger->info('node inserted', $req->data);
-            return new CreatedResponse('node inserted', $req->data);
-        } catch( GraphServiceException $e)
-        {
-            throw $e;
-        }
-        return new InternalServerErrorResponse('unknow error inserting node', $req->data);
-    }
-    
-    public function updateNode(Request $req): ResponseInterface
-    {
-        $this->logger->debug('updating node', $req->data);
-
-        try {
-            $data = json_decode($req->data['data'], true);
-            $node = new Node($req->data['id'], $req->data['label'], $req->data['category'], $req->data['type'], $data);
-            $this->service->updateNode($node);
-            $this->logger->info('node updated', $req->data);
-
-            $req->data['data'] = $data;
-            $resp = new CreatedResponse('node updated', $req->data);
-            return $resp;
-        } catch( Exception $e)
-        {
-            throw $e;
-        }
-        
-        return new InternalServerErrorResponse('unknow todo in updateNode', $req->data);
-    }
-    
-    public function deleteNode(Request $req): ResponseInterface
-    {
-        try {
-            $this->service->deleteEdge($req->data['id']);
-        } catch( Exception $e)
-        {
-            throw $e;
-        }
-        
-        return new InternalServerErrorResponse('unknow todo in deleteNode', $req->data);
-    }
-
-    public function getEdge(Request $req): ResponseInterface
-    {
-        try {
-            $edge = $this->service->getEdge($req->data['source'], $req->data['target']);
-            $data = $edge->toArray();
-            return new OKResponse('node found', $data);
-        } catch( Exception $e)
-        {
-            throw $e;
-        }
-        
-        return new InternalServerErrorResponse($e->getMessage(), $req->data);
-    }
-    
-    public function getEdges(Request $req): ResponseInterface
-    {
-        try {
-            $edges = $this->service->getEdges();
-            // TODO: corrigir
-            return new OKResponse('node found', []);
-        } catch( Exception $e)
-        {
-            throw $e;
-        }
-        
-        return new InternalServerErrorResponse($e->getMessage(), $req->data);
-    }
-    
-    public function insertEdge(Request $req): ResponseInterface
-    {
-        try {
-            $edge = new Edge(null, $req->data['source'], $req->data['target']);
-            $this->service->insertEdge($edge);
-            return new OKResponse('node found', []);
-        } catch( Exception $e)
-        {
-            throw $e;
-        }
-        
-        return new InternalServerErrorResponse($e->getMessage(), $req->data);
-    }
-    
-    public function updateEdge(Request $req): ResponseInterface
-    {
-        try {
-            $edge = new Edge($req->data['id'], $req->data['source'], $req->data['target'], $req->data['data']);
-            $this->service->updateEdge($edge);
-            return new OKResponse('node found', []);
-        } catch( Exception $e)
-        {
-            throw $e;
-        }
-        
-        return new InternalServerErrorResponse($e->getMessage(), $req->data);
-    }
-    
-    public function deleteEdge(Request $req): ResponseInterface
-    {
-        try {
-            $id = $req->data['id'];
-            $this->service->deleteEdge($id);
-            return new OKResponse('node found', []);
-        } catch( Exception $e)
-        {
-            throw $e;
-        }
-        
-        return new InternalServerErrorResponse($e->getMessage(), $req->data);
-    }
-
-    public function getStatuses(Request $req): ResponseInterface
-    {
-        try {
-            $statuses = $this->service->getStatuses();
-            return new OKResponse('node found', []);
-            return $resp;
-        } catch( Exception $e)
-        {
-            throw $e;
-        }
-        
-        return new InternalServerErrorResponse($e->getMessage(), $req->data);
-    }
-    
-    public function getNodeStatus(Request $req): ResponseInterface
-    {
-        try {
-            $status = $this->service->getNodeStatus($req->data['id']);
-            $data = $status->toArray();
-            return new OKResponse('node found', []);
-        } catch( Exception $e)
-        {
-            throw $e;
-        }
-        
-        return new InternalServerErrorResponse($e->getMessage(), $req->data);
-    }
-    
-    public function updateNodeStatus(Request $req): ResponseInterface
-    {
-        try {
-            $status = new NodeStatus($req->data['node_id'], $req->data['status']);
-            return new OKResponse('node found', []);
-        } catch( Exception $e)
-        {
-            throw $e;
-        }
-        
-        return new InternalServerErrorResponse($e->getMessage(), $req->data);
-    }
-
-    public function getLogs(Request $req): ResponseInterface
-    {
-        try {
-            $logs = $this->service->getLogs($req->getParam('limit'));
-            return new OKResponse('node found', []);
-        } catch( Exception $e)
-        {
-            throw $e;
-        }
-        
-        return new InternalServerErrorResponse($e->getMessage(), $req->data);
-    }
-}
-
-final class RequestRouter
-{
-    private $routes = [
-        ['method' => 'GET',    'path' => '/getGraph',      'class_method' => 'getGraph'],
-        ['method' => 'GET',    'path' => '/getNode',       'class_method' => 'getNode'],
-        ['method' => 'GET',    'path' => '/getNodes',      'class_method' => 'getNodes'],
-        ['method' => 'POST',   'path' => '/insertNode',    'class_method' => 'insertNode'],
-        ['method' => 'UPDATE', 'path' => '/updateNode',    'class_method' => 'updateNode'],
-        ['method' => 'DELETE', 'path' => '/deleteNode',    'class_method' => 'deleteNode'],
-        ['method' => 'GET',    'path' => '/getEdge',       'class_method' => 'getEdge'],
-        ['method' => 'GET',    'path' => '/getEdges',      'class_method' => 'getEdges'],
-        ['method' => 'POST',   'path' => '/insertEdge',    'class_method' => 'insertEdge'],
-        ['method' => 'UPDATE', 'path' => '/updateEdge',    'class_method' => 'updateEdge'],
-        ['method' => 'DELETE', 'path' => '/deleteEdge',    'class_method' => 'deleteEdge'],
-        ['method' => 'GET',    'path' => '/getStatuses',   'class_method' => 'getStatuses'],
-        ['method' => 'GET',    'path' => '/getNodeStatus', 'class_method' => 'getNodeStatus'],
-        ['method' => 'GET',    'path' => '/getLogs',       'class_method' => 'getLogs'],
-    ];
-
-    public GraphController $controller;
-    
-    public function __construct(GraphController $controller)
-    {
-        $this->controller = $controller;
-    }
-
-    public function handle(): void
-    {
-        $method     = $_SERVER['REQUEST_METHOD'];
-        $scriptName = $_SERVER['SCRIPT_NAME'];
-        $requestUri = $_SERVER['REQUEST_URI'];
-        $requestUri = strtok($requestUri, '?');
-        
-        $path = str_replace($scriptName, '', $requestUri);
-        
-        $req = new Request();
-
-        foreach($this->routes as $route)
-        {
-            if ($route['method'] == $method && $route['path'] == $path)
-            {
-                $method = $route['class_method'];
-                $resp = $this->controller->$method($req);
-                print_r($resp);
-                exit();
-            }
-        }
-    }
-}
-
-
