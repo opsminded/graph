@@ -553,18 +553,22 @@ final class GraphDatabase implements GraphDatabaseInterface
             ':id' => $id,
         ];
 
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($params);
-        $row = $stmt->fetch();
-        
-        if ($row) {
-            $row['data'] = json_decode($row['data'], true);
-            $this->logger->info("edge found", ['params' => $params, 'row' => $row]);
-            return $row;
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            $row = $stmt->fetch();
+            
+            if ($row) {
+                $row['data'] = json_decode($row['data'], true);
+                $this->logger->info("edge found", ['params' => $params, 'row' => $row]);
+                return $row;
+            }
+            
+            $this->logger->info("edge not found", ['params' => $params]);
+            return null;
+        } catch (PDOException $e) {
+            throw $this->logger->databaseException('PDO Exception in getEdgeById', $params, $e, $sql, $params);
         }
-        
-        $this->logger->info("edge not found", ['params' => $params]);
-        return null;
     }
 
     public function getEdges(): array
@@ -612,7 +616,7 @@ final class GraphDatabase implements GraphDatabaseInterface
             $executed = $stmt->execute($params);
             $this->logger->info("edge inserted", ['params' => $params, 'executed' => $executed]);
         } catch (PDOException $e) {
-            throw $this->logger->databaseException('PDO Exception in getEdges', [], $e, $sql);
+            throw $this->logger->databaseException('PDO Exception in insertEdge', [], $e, $sql);
         }
     }
 
@@ -690,9 +694,10 @@ final class GraphDatabase implements GraphDatabaseInterface
 
         try {
             $stmt = $this->pdo->prepare($sql);
-            $executed = $stmt->execute($params);
-            $this->logger->info("node status fetched", ['params' => $params, 'executed' => $executed]);
-            return $stmt->fetch();
+            $stmt->execute($params);
+            $row = $stmt->fetch();
+            $this->logger->info("node status fetched", ['params' => $params, 'row' => $row]);
+            return $row;
         } catch (PDOException $e) {
             throw $this->logger->databaseException('PDO Exception in getNodeStatus', $params, $e, $sql, $params);
         }
@@ -937,15 +942,14 @@ final class GraphService implements GraphServiceInterface
             $this->verify();
 
             $data = $this->db->getUser($id);
-            if ($data) {
+            if (! is_null($data)) {
                 $g = new Group($data['user_group']);
                 $user = new User($id, $g);
                 return $user;
             }
             return null;
         } catch(DatabaseException $e) {
-            $t = new GraphServiceException("insertUser exception", 0, $e);
-            throw $t;
+            throw new GraphServiceException("insertUser exception", 0, $e);
         }
     }
 
@@ -955,8 +959,7 @@ final class GraphService implements GraphServiceInterface
             $this->verify();
             $this->db->insertUser($user->id, $user->group->id);
         } catch(DatabaseException $e) {
-            $t = new GraphServiceException("insertUser exception", 0, $e);
-            throw $t;
+            throw new GraphServiceException("insertUser exception", 0, $e);
         }
     }
 
@@ -966,8 +969,7 @@ final class GraphService implements GraphServiceInterface
             $this->verify();
             $this->db->updateUser($user->id, $user->group->id);
         } catch(DatabaseException $e) {
-            $t = new GraphServiceException("insertUser exception", 0, $e);
-            throw $t;
+            throw new GraphServiceException("updateUser exception", 0, $e);
         }
     }
 
@@ -979,8 +981,7 @@ final class GraphService implements GraphServiceInterface
             $edges = $this->getEdges()->edges;
             return new Graph($nodes, $edges);
         } catch(DatabaseException $e) {
-            $t = new GraphServiceException("insertUser exception", 0, $e);
-            throw $t;
+            throw new GraphServiceException("getGraph exception", 0, $e);
         }
     }
 
@@ -1000,8 +1001,7 @@ final class GraphService implements GraphServiceInterface
             }
             return null;
         } catch(DatabaseException $e) {
-            $t = new GraphServiceException("insertUser exception", 0, $e);
-            throw $t;
+            throw new GraphServiceException("getNode exception", 0, $e);
         }
     }
 
@@ -1023,7 +1023,7 @@ final class GraphService implements GraphServiceInterface
             }
             return $nodes;
         } catch(DatabaseException $e) {
-            $t = new GraphServiceException("insertUser exception", 0, $e);
+            $t = new GraphServiceException("getNodes exception", 0, $e);
             throw $t;
         }
     }
@@ -1039,7 +1039,7 @@ final class GraphService implements GraphServiceInterface
             $this->db->insertNode($node->id, $node->label, $node->category, $node->type, $node->data);
             $this->logger->info('node inserted', $node->toArray());
         } catch(DatabaseException $e) {
-            $t = new GraphServiceException("insertUser exception", 0, $e);
+            $t = new GraphServiceException("insertNode exception", 0, $e);
             throw $t;
         }
     }
@@ -1052,7 +1052,7 @@ final class GraphService implements GraphServiceInterface
             $this->insertAuditLog(new AuditLog( 'node', $node->id, 'update', $old->toArray(), $node->toArray()));
             $this->db->updateNode($node->id, $node->label, $node->category, $node->type, $node->data);
         } catch(DatabaseException $e) {
-            $t = new GraphServiceException("insertUser exception", 0, $e);
+            $t = new GraphServiceException("updateNode exception", 0, $e);
             throw $t;
         }
     }
@@ -1065,7 +1065,7 @@ final class GraphService implements GraphServiceInterface
             $this->insertAuditLog(new AuditLog( 'node', $id, 'delete', $old->toArray(), null));
             $this->db->deleteNode($id);
         } catch(DatabaseException $e) {
-            $t = new GraphServiceException("insertUser exception", 0, $e);
+            $t = new GraphServiceException("deleteNode exception", 0, $e);
             throw $t;
         }
     }
@@ -1085,7 +1085,7 @@ final class GraphService implements GraphServiceInterface
             }
             return null;
         } catch(DatabaseException $e) {
-            $t = new GraphServiceException("insertUser exception", 0, $e);
+            $t = new GraphServiceException("getEdge exception", 0, $e);
             throw $t;
         }
     }
@@ -1108,7 +1108,7 @@ final class GraphService implements GraphServiceInterface
             }
             return $edges;
         } catch(DatabaseException $e) {
-            $t = new GraphServiceException("insertUser exception", 0, $e);
+            $t = new GraphServiceException("getEdges exception", 0, $e);
             throw $t;
         }
     }
@@ -1120,7 +1120,7 @@ final class GraphService implements GraphServiceInterface
             $this->insertAuditLog(new AuditLog( 'edge', $edge->id, 'insert', null, $edge->toArray()));
             $this->db->insertEdge($edge->id, $edge->source, $edge->target, $edge->data);
         } catch(DatabaseException $e) {
-            $t = new GraphServiceException("insertUser exception", 0, $e);
+            $t = new GraphServiceException("insertEdge exception", 0, $e);
             throw $t;
         }
     }
@@ -1130,13 +1130,13 @@ final class GraphService implements GraphServiceInterface
         try {
             $this->verify();
             $old = $this->getEdgeById($edge->id);
-            if ($old === null) {
+            if (is_null($old)) {
                 throw new GraphServiceException("edge not found. source: {$edge->source}, target: {$edge->target}");
             }
             $this->insertAuditLog(new AuditLog( 'edge', $edge->id, 'update', $old->toArray(), $edge->toArray()));
             $this->db->updateEdge($edge->id, $edge->source, $edge->target, $edge->data);
         } catch(DatabaseException $e) {
-            $t = new GraphServiceException("insertUser exception", 0, $e);
+            $t = new GraphServiceException("updateEdge exception", 0, $e);
             throw $t;
         }
     }
@@ -1147,7 +1147,7 @@ final class GraphService implements GraphServiceInterface
             $this->verify();
             $this->db->deleteEdge($id);
         } catch(DatabaseException $e) {
-            $t = new GraphServiceException("insertUser exception", 0, $e);
+            $t = new GraphServiceException("deleteEdge exception", 0, $e);
             throw $t;
         }
     }
@@ -1165,7 +1165,7 @@ final class GraphService implements GraphServiceInterface
             }
             return $nodeStatuses;
         } catch(DatabaseException $e) {
-            $t = new GraphServiceException("insertUser exception", 0, $e);
+            $t = new GraphServiceException("getStatuses exception", 0, $e);
             throw $t;
         }
     }
@@ -1177,7 +1177,7 @@ final class GraphService implements GraphServiceInterface
             $statusData = $this->db->getNodeStatus($id);
             return new NodeStatus($id, $statusData['status'] ?? 'unknown');
         } catch(DatabaseException $e) {
-            $t = new GraphServiceException("insertUser exception", 0, $e);
+            $t = new GraphServiceException("getNodeStatus exception", 0, $e);
             throw $t;
         }
     }
@@ -1188,7 +1188,7 @@ final class GraphService implements GraphServiceInterface
             $this->verify();
             $this->db->updateNodeStatus($status->nodeId, $status->status);
         } catch(DatabaseException $e) {
-            $t = new GraphServiceException("insertUser exception", 0, $e);
+            $t = new GraphServiceException("updateNodeStatus exception", 0, $e);
             throw $t;
         }
     }
@@ -1216,8 +1216,7 @@ final class GraphService implements GraphServiceInterface
             }
             return $logs;
         } catch(DatabaseException $e) {
-            $t = new GraphServiceException("insertUser exception", 0, $e);
-            throw $t;
+            throw new GraphServiceException("getLogs exception", 0, $e);
         }
     }
 
@@ -1235,7 +1234,7 @@ final class GraphService implements GraphServiceInterface
             }
             return null;
         } catch(DatabaseException $e) {
-            $t = new GraphServiceException("insertUser exception", 0, $e);
+            $t = new GraphServiceException("getEdgeById exception", 0, $e);
             throw $t;
         }
     }
@@ -1256,7 +1255,7 @@ final class GraphService implements GraphServiceInterface
                 $ip_address
             );
         } catch(DatabaseException $e) {
-            $t = new GraphServiceException("insertUser exception", 0, $e);
+            $t = new GraphServiceException("insertAuditLog exception", 0, $e);
             throw $t;
         }
     }
@@ -1572,7 +1571,7 @@ final class GraphController implements GraphControllerInterface
 
     public function insertNode(Request $req): ResponseInterface
     {
-        $this->logger->debug('inserting node', $req->data);
+        $this->logger->debug('inserting node', $req->toArray());
         try {
             $data = json_decode($req->data['data'], true);
             $node = new Node($req->data['id'], $req->data['label'], $req->data['category'], $req->data['type'], $data);
