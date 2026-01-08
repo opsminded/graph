@@ -993,143 +993,198 @@ final class GraphService implements GraphServiceInterface
 
     public function updateNode(Node $node): void
     {
-        $this->verify();
-        $old = $this->getNode($node->id);
-        $this->insertAuditLog(new AuditLog( 'node', $node->id, 'update', $old->toArray(), $node->toArray()));
-
-        $this->db->updateNode($node->id, $node->label, $node->category, $node->type, $node->data);
+        try {
+            $this->verify();
+            $old = $this->getNode($node->id);
+            $this->insertAuditLog(new AuditLog( 'node', $node->id, 'update', $old->toArray(), $node->toArray()));
+            $this->db->updateNode($node->id, $node->label, $node->category, $node->type, $node->data);
+        } catch(DatabaseException $e) {
+            $t = new GraphServiceException("insertUser exception", 0, $e);
+            throw $t;
+        }
     }
 
     public function deleteNode(string $id): void
     {
-        $this->verify();
-        $old = $this->getNode($id);
-        $this->insertAuditLog(new AuditLog( 'node', $id, 'delete', $old->toArray(), null));
-        $this->db->deleteNode($id);
+        try {
+            $this->verify();
+            $old = $this->getNode($id);
+            $this->insertAuditLog(new AuditLog( 'node', $id, 'delete', $old->toArray(), null));
+            $this->db->deleteNode($id);
+        } catch(DatabaseException $e) {
+            $t = new GraphServiceException("insertUser exception", 0, $e);
+            throw $t;
+        }
     }
 
     public function getEdge(string $source, string $target): ?Edge
     {
-        $this->verify();
-        $data = $this->db->getEdge($source, $target);
-        if(! is_null($data)) {
-            return new Edge(
-                $data['id'],
-                $data['source'],
-                $data['target'],
-                $data['data']
-            );
+        try {
+            $this->verify();
+            $data = $this->db->getEdge($source, $target);
+            if(! is_null($data)) {
+                return new Edge(
+                    $data['id'],
+                    $data['source'],
+                    $data['target'],
+                    $data['data']
+                );
+            }
+            return null;
+        } catch(DatabaseException $e) {
+            $t = new GraphServiceException("insertUser exception", 0, $e);
+            throw $t;
         }
-        return null;
     }
 
     public function getEdges(): Edges
     {
-        $this->verify();
+        try {
+            $this->verify();
 
-        $edgesData = $this->db->getEdges();
-        $edges     = new Edges();
-        foreach ($edgesData as $data) {
-            $edge = new Edge(
-                $data['id'],
-                $data['source'],
-                $data['target'],
-                $data['data']
-            );
-            $edges->addEdge($edge);
+            $edgesData = $this->db->getEdges();
+            $edges     = new Edges();
+            foreach ($edgesData as $data) {
+                $edge = new Edge(
+                    $data['id'],
+                    $data['source'],
+                    $data['target'],
+                    $data['data']
+                );
+                $edges->addEdge($edge);
+            }
+            return $edges;
+        } catch(DatabaseException $e) {
+            $t = new GraphServiceException("insertUser exception", 0, $e);
+            throw $t;
         }
-        return $edges;
     }
 
     public function insertEdge(Edge $edge): void
     {
-        $this->verify();
-        $this->insertAuditLog(new AuditLog( 'edge', $edge->id, 'insert', null, $edge->toArray()));
-        $this->db->insertEdge($edge->id, $edge->source, $edge->target, $edge->data);
+        try {
+            $this->verify();
+            $this->insertAuditLog(new AuditLog( 'edge', $edge->id, 'insert', null, $edge->toArray()));
+            $this->db->insertEdge($edge->id, $edge->source, $edge->target, $edge->data);
+        } catch(DatabaseException $e) {
+            $t = new GraphServiceException("insertUser exception", 0, $e);
+            throw $t;
+        }
     }
 
     public function updateEdge(Edge $edge): void
     {
-        $this->verify();
-        $old = $this->getEdgeById($edge->id);
-        if ($old === null) {
-            throw new GraphServiceException("edge not found. source: {$edge->source}, target: {$edge->target}");
+        try {
+            $this->verify();
+            $old = $this->getEdgeById($edge->id);
+            if ($old === null) {
+                throw new GraphServiceException("edge not found. source: {$edge->source}, target: {$edge->target}");
+            }
+            $this->insertAuditLog(new AuditLog( 'edge', $edge->id, 'update', $old->toArray(), $edge->toArray()));
+            $this->db->updateEdge($edge->id, $edge->source, $edge->target, $edge->data);
+        } catch(DatabaseException $e) {
+            $t = new GraphServiceException("insertUser exception", 0, $e);
+            throw $t;
         }
-        $this->insertAuditLog(new AuditLog( 'edge', $edge->id, 'update', $old->toArray(), $edge->toArray()));
-        $this->db->updateEdge($edge->id, $edge->source, $edge->target, $edge->data);
     }
 
     public function deleteEdge(string $id): void
     {
-        $this->verify();
-        $this->db->deleteEdge($id);
+        try {
+            $this->verify();
+            $this->db->deleteEdge($id);
+        } catch(DatabaseException $e) {
+            $t = new GraphServiceException("insertUser exception", 0, $e);
+            throw $t;
+        }
     }
 
     public function getStatuses(): NodeStatuses
     {
-        $this->verify();
+        try {
+            $this->verify();
 
-        $statusesData = $this->db->getStatuses();
-        $nodeStatuses = new NodeStatuses();
-        foreach ($statusesData as $data) {
-            $status = new NodeStatus($data['id'], $data['status'] ?? 'unknown');
-            $nodeStatuses->addStatus($status);
+            $statusesData = $this->db->getStatuses();
+            $nodeStatuses = new NodeStatuses();
+            foreach ($statusesData as $data) {
+                $status = new NodeStatus($data['id'], $data['status'] ?? 'unknown');
+                $nodeStatuses->addStatus($status);
+            }
+            return $nodeStatuses;
+        } catch(DatabaseException $e) {
+            $t = new GraphServiceException("insertUser exception", 0, $e);
+            throw $t;
         }
-        return $nodeStatuses;
     }
 
     public function getNodeStatus(string $id): NodeStatus
     {
-        $this->verify();
-
-        $statusData = $this->db->getNodeStatus($id);
-        return new NodeStatus($id, $statusData['status'] ?? 'unknown');
+        try {
+            $this->verify();
+            $statusData = $this->db->getNodeStatus($id);
+            return new NodeStatus($id, $statusData['status'] ?? 'unknown');
+        } catch(DatabaseException $e) {
+            $t = new GraphServiceException("insertUser exception", 0, $e);
+            throw $t;
+        }
     }
 
     public function updateNodeStatus(NodeStatus $status): void
     {
-        $this->verify();
-
-        $this->db->updateNodeStatus($status->nodeId, $status->status);
+        try {
+            $this->verify();
+            $this->db->updateNodeStatus($status->nodeId, $status->status);
+        } catch(DatabaseException $e) {
+            $t = new GraphServiceException("insertUser exception", 0, $e);
+            throw $t;
+        }
     }
 
     public function getLogs($limit): AuditLogs
     {
-        $this->verify();
-
-        $logs = new AuditLogs();
-        $rows = $this->db->getLogs($limit);
-        foreach ($rows as $row) {
-            $old_data = $row['old_data'] ? json_decode($row['old_data'], true) : [];
-            $new_data = $row['new_data'] ?  json_decode($row['new_data'], true) : [];
-            $log = new AuditLog(
-                $row['entity_type'],
-                $row['entity_id'],
-                $row['action'],
-                $old_data,
-                $new_data,
-            );
-            $log->userId    = $row['user_id'];
-            $log->ipAddress = $row['ip_address'];
-            $log->createdAt = $row['created_at'];
-
-            $logs->addLog($log);
+        try {
+            $this->verify();
+            $logs = new AuditLogs();
+            $rows = $this->db->getLogs($limit);
+            foreach ($rows as $row) {
+                $old_data = $row['old_data'] ? json_decode($row['old_data'], true) : [];
+                $new_data = $row['new_data'] ?  json_decode($row['new_data'], true) : [];
+                $log = new AuditLog(
+                    $row['entity_type'],
+                    $row['entity_id'],
+                    $row['action'],
+                    $old_data,
+                    $new_data,
+                );
+                $log->userId    = $row['user_id'];
+                $log->ipAddress = $row['ip_address'];
+                $log->createdAt = $row['created_at'];
+                $logs->addLog($log);
+            }
+            return $logs;
+        } catch(DatabaseException $e) {
+            $t = new GraphServiceException("insertUser exception", 0, $e);
+            throw $t;
         }
-        return $logs;
     }
 
     private function getEdgeById(string $id): ?Edge
     {
-        $data = $this->db->getEdgeById($id);
-        if($data) {
-            return new Edge(
-                $data['id'],
-                $data['source'],
-                $data['target'],
-                $data['data']
-            );
+        try {
+            $data = $this->db->getEdgeById($id);
+            if($data) {
+                return new Edge(
+                    $data['id'],
+                    $data['source'],
+                    $data['target'],
+                    $data['data']
+                );
+            }
+            return null;
+        } catch(DatabaseException $e) {
+            $t = new GraphServiceException("insertUser exception", 0, $e);
+            throw $t;
         }
-        return null;
     }
 
     private function insertAuditLog(AuditLog $auditLog): void
@@ -1137,15 +1192,20 @@ final class GraphService implements GraphServiceInterface
         $user_id   = GraphContext::getUserId();
         $ip_address = GraphContext::getUserIp();
 
-        $this->db->insertAuditLog(
-            $auditLog->entityType,
-            $auditLog->entityId,
-            $auditLog->action,
-            $auditLog->oldData,
-            $auditLog->newData,
-            $user_id,
-            $ip_address
-        );
+        try {
+            $this->db->insertAuditLog(
+                $auditLog->entityType,
+                $auditLog->entityId,
+                $auditLog->action,
+                $auditLog->oldData,
+                $auditLog->newData,
+                $user_id,
+                $ip_address
+            );
+        } catch(DatabaseException $e) {
+            $t = new GraphServiceException("insertUser exception", 0, $e);
+            throw $t;
+        }
     }
 
     private function verify(): void
