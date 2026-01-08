@@ -313,9 +313,8 @@ interface GraphDatabaseInterface
 
 final class DatabaseException extends RuntimeException
 {
-    private ?string $query;
-    private ?array $params;
-
+    public ?string $query;
+    public ?array $params;
     
     public function __construct(string $message = "",  int $code = 0, ?Throwable $previous = null, ?string $query = null, ?array $params = null) {
         parent::__construct($message, $code, $previous);
@@ -353,7 +352,7 @@ final class GraphDatabase implements GraphDatabaseInterface
                 return $row;
             }
         } catch (PDOException $e) {
-            throw $this->logger->databaseException('PDO Exception in getUser', $params, $e, $sql, $params);
+            throw $this->logger->databaseException('PDO Exception in getUser: ' . $e->getMessage(), $params, $e, $sql, $params);
         }
         $this->logger->info("user not found", ['params' => $params]);
         return null;
@@ -600,7 +599,7 @@ final class GraphDatabase implements GraphDatabaseInterface
                 $this->logger->error("cicle detected", $edgeData);
                 return;
             }
-
+        
             $sql = "
                 INSERT OR IGNORE INTO edges(id, source, target, data)
                 VALUES (:id, :source, :target, :data)";
@@ -616,7 +615,11 @@ final class GraphDatabase implements GraphDatabaseInterface
             $executed = $stmt->execute($params);
             $this->logger->info("edge inserted", ['params' => $params, 'executed' => $executed]);
         } catch (PDOException $e) {
-            throw $this->logger->databaseException('PDO Exception in insertEdge', [], $e, $sql);
+            throw $this->logger->databaseException('PDO Exception in insertEdge', [], $e);
+        } catch (DatabaseException $e) {
+            $params = json_encode($e->params, JSON_UNESCAPED_UNICODE);
+            $comp = "({$e->query})" . "(". json_encode($params) . ")";
+            throw $this->logger->databaseException('DatabaseException in insertEdge: ' . $comp, [], $e);
         }
     }
 
@@ -949,7 +952,9 @@ final class GraphService implements GraphServiceInterface
             }
             return null;
         } catch(DatabaseException $e) {
-            throw new GraphServiceException("insertUser exception", 0, $e);
+            $params = json_encode($e->params, JSON_UNESCAPED_UNICODE);
+            $comp = $e->getMessage() . " ({$e->query})" . "(". json_encode($params) . ")";
+            throw new GraphServiceException("insertUser exception: " . $comp, 0, $e);
         }
     }
 
@@ -959,7 +964,9 @@ final class GraphService implements GraphServiceInterface
             $this->verify();
             $this->db->insertUser($user->id, $user->group->id);
         } catch(DatabaseException $e) {
-            throw new GraphServiceException("insertUser exception", 0, $e);
+            $params = json_encode($e->params, JSON_UNESCAPED_UNICODE);
+            $comp = "({$e->query})" . "(". json_encode($params) . ")";
+            throw new GraphServiceException("insertUser exception: " . $comp, 0, $e);
         }
     }
 
@@ -969,7 +976,9 @@ final class GraphService implements GraphServiceInterface
             $this->verify();
             $this->db->updateUser($user->id, $user->group->id);
         } catch(DatabaseException $e) {
-            throw new GraphServiceException("updateUser exception", 0, $e);
+            $params = json_encode($e->params, JSON_UNESCAPED_UNICODE);
+            $comp = "({$e->query})" . "(". json_encode($params) . ")";
+            throw new GraphServiceException("updateUser exception: " . $comp, 0, $e);
         }
     }
 
@@ -981,7 +990,9 @@ final class GraphService implements GraphServiceInterface
             $edges = $this->getEdges()->edges;
             return new Graph($nodes, $edges);
         } catch(DatabaseException $e) {
-            throw new GraphServiceException("getGraph exception", 0, $e);
+            $params = json_encode($e->params, JSON_UNESCAPED_UNICODE);
+            $comp = "({$e->query})" . "(". json_encode($params) . ")";
+            throw new GraphServiceException("getGraph exception: " . $comp, 0, $e);
         }
     }
 
@@ -1001,7 +1012,9 @@ final class GraphService implements GraphServiceInterface
             }
             return null;
         } catch(DatabaseException $e) {
-            throw new GraphServiceException("getNode exception", 0, $e);
+            $params = json_encode($e->params, JSON_UNESCAPED_UNICODE);
+            $comp = "({$e->query})" . "(". json_encode($params) . ")";
+            throw new GraphServiceException("getNode exception: " . $comp, 0, $e);
         }
     }
 
@@ -1023,8 +1036,9 @@ final class GraphService implements GraphServiceInterface
             }
             return $nodes;
         } catch(DatabaseException $e) {
-            $t = new GraphServiceException("getNodes exception", 0, $e);
-            throw $t;
+            $params = json_encode($e->params, JSON_UNESCAPED_UNICODE);
+            $comp = "({$e->query})" . "(". json_encode($params) . ")";
+            throw new GraphServiceException("getNodes exception: " . $comp, 0, $e);
         }
     }
 
@@ -1039,8 +1053,9 @@ final class GraphService implements GraphServiceInterface
             $this->db->insertNode($node->id, $node->label, $node->category, $node->type, $node->data);
             $this->logger->info('node inserted', $node->toArray());
         } catch(DatabaseException $e) {
-            $t = new GraphServiceException("insertNode exception", 0, $e);
-            throw $t;
+            $params = json_encode($e->params, JSON_UNESCAPED_UNICODE);
+            $comp = "({$e->query})" . "(". json_encode($params) . ")";
+            throw new GraphServiceException("insertNode exception: " . $comp, 0, $e);;
         }
     }
 
@@ -1052,8 +1067,9 @@ final class GraphService implements GraphServiceInterface
             $this->insertAuditLog(new AuditLog( 'node', $node->id, 'update', $old->toArray(), $node->toArray()));
             $this->db->updateNode($node->id, $node->label, $node->category, $node->type, $node->data);
         } catch(DatabaseException $e) {
-            $t = new GraphServiceException("updateNode exception", 0, $e);
-            throw $t;
+            $params = json_encode($e->params, JSON_UNESCAPED_UNICODE);
+            $comp = "({$e->query})" . "(". json_encode($params) . ")";
+            throw new GraphServiceException("updateNode exception: " . $comp, 0, $e);
         }
     }
 
@@ -1065,8 +1081,9 @@ final class GraphService implements GraphServiceInterface
             $this->insertAuditLog(new AuditLog( 'node', $id, 'delete', $old->toArray(), null));
             $this->db->deleteNode($id);
         } catch(DatabaseException $e) {
-            $t = new GraphServiceException("deleteNode exception", 0, $e);
-            throw $t;
+            $params = json_encode($e->params, JSON_UNESCAPED_UNICODE);
+            $comp = "({$e->query})" . "(". json_encode($params) . ")";
+            throw new GraphServiceException("deleteNode exception: " . $comp, 0, $e);
         }
     }
 
@@ -1085,8 +1102,9 @@ final class GraphService implements GraphServiceInterface
             }
             return null;
         } catch(DatabaseException $e) {
-            $t = new GraphServiceException("getEdge exception", 0, $e);
-            throw $t;
+            $params = json_encode($e->params, JSON_UNESCAPED_UNICODE);
+            $comp = "({$e->query})" . "(". json_encode($params) . ")";
+            throw new GraphServiceException("getEdge exception: " . $comp, 0, $e);
         }
     }
 
@@ -1108,8 +1126,9 @@ final class GraphService implements GraphServiceInterface
             }
             return $edges;
         } catch(DatabaseException $e) {
-            $t = new GraphServiceException("getEdges exception", 0, $e);
-            throw $t;
+            $params = json_encode($e->params, JSON_UNESCAPED_UNICODE);
+            $comp = "({$e->query})" . "(". json_encode($params) . ")";
+            throw new GraphServiceException("getEdges exception" . $comp, 0, $e);
         }
     }
 
@@ -1120,8 +1139,9 @@ final class GraphService implements GraphServiceInterface
             $this->insertAuditLog(new AuditLog( 'edge', $edge->id, 'insert', null, $edge->toArray()));
             $this->db->insertEdge($edge->id, $edge->source, $edge->target, $edge->data);
         } catch(DatabaseException $e) {
-            $t = new GraphServiceException("insertEdge exception", 0, $e);
-            throw $t;
+            $params = json_encode($e->params, JSON_UNESCAPED_UNICODE);
+            $comp = "({$e->query})" . "(". json_encode($params) . ")";
+            throw new GraphServiceException("insertEdge exception: ". $comp, 0, $e);
         }
     }
 
@@ -1131,13 +1151,14 @@ final class GraphService implements GraphServiceInterface
             $this->verify();
             $old = $this->getEdgeById($edge->id);
             if (is_null($old)) {
-                throw new GraphServiceException("edge not found. source: {$edge->source}, target: {$edge->target}");
+                throw new GraphServiceException("edge not found", 0, null);
             }
             $this->insertAuditLog(new AuditLog( 'edge', $edge->id, 'update', $old->toArray(), $edge->toArray()));
             $this->db->updateEdge($edge->id, $edge->source, $edge->target, $edge->data);
         } catch(DatabaseException $e) {
-            $t = new GraphServiceException("updateEdge exception", 0, $e);
-            throw $t;
+            $params = json_encode($e->params, JSON_UNESCAPED_UNICODE);
+            $comp = "({$e->query})" . "(". json_encode($params) . ")";
+            throw new GraphServiceException("updateEdge exception: " . $comp, 0, $e);
         }
     }
 
@@ -1147,8 +1168,9 @@ final class GraphService implements GraphServiceInterface
             $this->verify();
             $this->db->deleteEdge($id);
         } catch(DatabaseException $e) {
-            $t = new GraphServiceException("deleteEdge exception", 0, $e);
-            throw $t;
+            $params = json_encode($e->params, JSON_UNESCAPED_UNICODE);
+            $comp = "({$e->query})" . "(". json_encode($params) . ")";
+            throw new GraphServiceException("deleteEdge exception: " . $comp, 0, $e);
         }
     }
 
@@ -1165,8 +1187,9 @@ final class GraphService implements GraphServiceInterface
             }
             return $nodeStatuses;
         } catch(DatabaseException $e) {
-            $t = new GraphServiceException("getStatuses exception", 0, $e);
-            throw $t;
+            $params = json_encode($e->params, JSON_UNESCAPED_UNICODE);
+            $comp = "({$e->query})" . "(". json_encode($params) . ")";
+            throw new GraphServiceException("getStatuses exception: " . $comp, 0, $e);
         }
     }
 
@@ -1177,8 +1200,9 @@ final class GraphService implements GraphServiceInterface
             $statusData = $this->db->getNodeStatus($id);
             return new NodeStatus($id, $statusData['status'] ?? 'unknown');
         } catch(DatabaseException $e) {
-            $t = new GraphServiceException("getNodeStatus exception", 0, $e);
-            throw $t;
+            $params = json_encode($e->params, JSON_UNESCAPED_UNICODE);
+            $comp = "({$e->query})" . "(". json_encode($params) . ")";
+            throw new GraphServiceException("getNodeStatus exception: " . $comp, 0, $e);
         }
     }
 
@@ -1188,8 +1212,9 @@ final class GraphService implements GraphServiceInterface
             $this->verify();
             $this->db->updateNodeStatus($status->nodeId, $status->status);
         } catch(DatabaseException $e) {
-            $t = new GraphServiceException("updateNodeStatus exception", 0, $e);
-            throw $t;
+            $params = json_encode($e->params, JSON_UNESCAPED_UNICODE);
+            $comp = "({$e->query})" . "(". json_encode($params) . ")";
+            throw new GraphServiceException("updateNodeStatus exception: " . $comp, 0, $e);
         }
     }
 
@@ -1216,7 +1241,9 @@ final class GraphService implements GraphServiceInterface
             }
             return $logs;
         } catch(DatabaseException $e) {
-            throw new GraphServiceException("getLogs exception", 0, $e);
+            $params = json_encode($e->params, JSON_UNESCAPED_UNICODE);
+            $comp = "({$e->query})" . "(". json_encode($params) . ")";
+            throw new GraphServiceException("getLogs exception: " . $comp, 0, $e);
         }
     }
 
@@ -1234,8 +1261,9 @@ final class GraphService implements GraphServiceInterface
             }
             return null;
         } catch(DatabaseException $e) {
-            $t = new GraphServiceException("getEdgeById exception", 0, $e);
-            throw $t;
+            $params = json_encode($e->params, JSON_UNESCAPED_UNICODE);
+            $comp = "({$e->query})" . "(". json_encode($params) . ")";
+            throw new GraphServiceException("getEdgeById exception:" . $comp, 0, $e);
         }
     }
 
@@ -1255,8 +1283,9 @@ final class GraphService implements GraphServiceInterface
                 $ip_address
             );
         } catch(DatabaseException $e) {
-            $t = new GraphServiceException("insertAuditLog exception", 0, $e);
-            throw $t;
+            $params = json_encode($e->params, JSON_UNESCAPED_UNICODE);
+            $comp = "({$e->query})" . "(". json_encode($params) . ")";
+            throw new GraphServiceException("insertAuditLog exception:" . $comp, 0, $e);
         }
     }
 

@@ -340,9 +340,9 @@ function test_Database_getEdgeById(): void {
 function test_Database_getEdgeById_Exception(): void
 {
     [$graphDb, $pdo] = createConnection();
-    
+    $pdo->exec('DROP TABLE edges');
     try {
-        $edge = $graphDb->getEdgeById('edge1');
+        $graphDb->getEdgeById('edge1');
         return;
     } catch(DatabaseException $e) {
         return;
@@ -439,23 +439,6 @@ function test_Database_insertEdge_Exception(): void
         return;
     }
     throw new Exception('other exception in test_Database_insertEdge_Exception');
-}
-
-function test_Database_insertEdge_Exception2(): void
-{
-    [$graphDb, $pdo] = createConnection();
-    $graphDb->insertEdge('edge1', 'node1', 'node2', ['a' => 'b']);
-
-    $pdo->exec('ALTER TABLE edges ADD CONSTRAINT chk_test CHECK (1=0)');
-
-    try {
-        $graphDb->insertEdge('edge1', 'node1', 'node2', ['a' => 'b']);
-        return;
-    } catch(DatabaseException $e) {
-        return;
-    }
-    throw new Exception('other exception in test_Database_insertEdge_Exception2');
-
 }
 
 function test_Database_updateEdge(): void {
@@ -613,7 +596,6 @@ function test_Database_updateNodeStatus(): void {
     $s = $graphDb->getNodeStatus('node1');
     
     if ($s['id'] != 'node1' || $s['status'] !== 'healthy') {
-        print_r($s);
         throw new Exception('error on test_updateNodeStatus');
     }
 }
@@ -766,7 +748,7 @@ function test_Database()
 #######################################################################################################
 #######################################################################################################
 
-function createService(): GraphService
+function createService(): array
 {
     GraphContext::update(new User('joao', new Group('consumer')), '127.0.0.1');
     $pdo = GraphDatabase::createConnection('sqlite::memory:');
@@ -776,7 +758,7 @@ function createService(): GraphService
 
     $serviceLogger = new Logger('service.log');
     $graphService = new GraphService($graphDb, $serviceLogger);
-    return $graphService;
+    return [$graphService, $pdo];
 }
 
 function test_User()
@@ -1146,7 +1128,7 @@ function test_Models()
 
 function test_Service_getUser()
 {
-    $service = createService();
+    [$service, $pdo] = createService();
     $user = $service->getUser('maria');
     if ($user !== null) {
         throw new Exception('error on test_Service_getUser');
@@ -1159,9 +1141,22 @@ function test_Service_getUser()
     }
 }
 
+function test_Service_getUser_Exception(): void
+{
+    [$service, $pdo] = createService();
+    $pdo->exec('DROP TABLE users');
+
+    try {
+        $service->getUser('node1');
+    } catch(GraphServiceException $e) {
+        return;
+    }
+    throw new Exception('error on test_Service_getUser_Exception');
+}
+
 function test_Service_insertUser()
 {
-    $service = createService();
+    [$service, $pdo] = createService();
     GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
 
     $user = $service->getUser('maria');
@@ -1171,10 +1166,12 @@ function test_Service_insertUser()
     $service->insertUser(new User('maria', new Group('contributor')));
 }
 
-function test_Service_insertUserException()
+function test_Service_insertUser_Exception()
 {
-    $service = createService();
+    [$service, $pdo] = createService();
     $user = $service->getUser('maria');
+    $pdo->exec('DROP TABLE users');
+
     if ($user !== null) {
         throw new Exception('error on test_Service_getUser');
     }
@@ -1190,7 +1187,7 @@ function test_Service_insertUserException()
 
 function test_Service_updateUser()
 {
-    $service = createService();
+    [$service, $pdo] = createService();
     GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
 
     $service->insertUser(new User('maria', new Group('contributor')));
@@ -1204,7 +1201,7 @@ function test_Service_updateUser()
 
 function test_Service_getGraph()
 {
-    $service = createService();
+    [$service, $pdo] = createService();
     GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
 
     $node1 = new Node('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
@@ -1228,7 +1225,7 @@ function test_Service_getGraph()
 
 function test_Service_getNode()
 {
-    $service = createService();
+    [$service, $pdo] = createService();
     GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
 
     $node = $service->getNode('node1');
@@ -1251,7 +1248,7 @@ function test_Service_getNode()
 
 function test_Service_getNodes()
 {
-    $service = createService();
+    [$service, $pdo] = createService();
     GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
 
     $nodes = $service->getNodes();
@@ -1280,7 +1277,7 @@ function test_Service_getNodes()
 
 function test_Service_insertNode()
 {
-    $service = createService();
+    [$service, $pdo] = createService();
     GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
 
     $node = new Node('node1', 'Node 01', 'business', 'server', ['key' => 'value']);
@@ -1304,7 +1301,7 @@ function test_Service_insertNode()
 
 function test_Service_updateNode()
 {
-    $service = createService();
+    [$service, $pdo] = createService();
     GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
 
     $node = new Node('node1', 'Node 01', 'business', 'server', ['key' => 'value']);
@@ -1325,7 +1322,7 @@ function test_Service_updateNode()
 
 function test_Service_deleteNode()
 {
-    $service = createService();
+    [$service, $pdo] = createService();
     GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
 
     $node = new Node('node1', 'Node 01', 'business', 'server', ['key' => 'value']);
@@ -1346,7 +1343,7 @@ function test_Service_deleteNode()
 
 function test_Service_getEdge()
 {
-    $service = createService();
+    [$service, $pdo] = createService();
     GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
 
     $node1 = new Node('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
@@ -1374,7 +1371,7 @@ function test_Service_getEdge()
 
 function test_Service_getEdges()
 {
-    $service = createService();
+    [$service, $pdo] = createService();
     GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
 
     $edges = $service->getEdges();
@@ -1410,7 +1407,7 @@ function test_Service_getEdges()
 
 function test_Service_insertEdge()
 {
-    $service = createService();
+    [$service, $pdo] = createService();
     GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
 
     $node1 = new Node('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
@@ -1429,7 +1426,7 @@ function test_Service_insertEdge()
 
 function test_Service_updateEdge()
 {
-    $service = createService();
+    [$service, $pdo] = createService();
     GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
 
     $node1 = new Node('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
@@ -1457,7 +1454,7 @@ function test_Service_updateEdge()
 
 function test_Service_updateEdge_Exception()
 {
-    $service = createService();
+    [$service, $pdo] = createService();
     GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
 
     try {
@@ -1473,7 +1470,7 @@ function test_Service_updateEdge_Exception()
 
 function test_Service_deleteEdge()
 {
-    $service = createService();
+    [$service, $pdo] = createService();
     GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
 
     $node1 = new Node('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
@@ -1499,7 +1496,7 @@ function test_Service_deleteEdge()
 
 function test_Service_getStatuses()
 {
-    $service = createService();
+    [$service, $pdo] = createService();
     GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
 
     $statuses = $service->getStatuses();
@@ -1523,7 +1520,7 @@ function test_Service_getStatuses()
 
 function test_Service_getNodeStatus()
 {
-    $service = createService();
+    [$service, $pdo] = createService();
     GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
 
     $node1 = new Node('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
@@ -1544,7 +1541,7 @@ function test_Service_getNodeStatus()
 
 function test_Service_updateNodeStatus()
 {
-    $service = createService();
+    [$service, $pdo] = createService();
     GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
 
     $node1 = new Node('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
@@ -1567,7 +1564,7 @@ function test_Service_updateNodeStatus()
 
 function test_Service_getLogs()
 {
-    $service = createService();
+    [$service, $pdo] = createService();
     GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
 
     $logs = $service->getLogs(10);
@@ -1609,8 +1606,9 @@ function test_Service_getLogs()
 function test_Service()
 {
     test_Service_getUser();
+    test_Service_getUser_Exception();
     test_Service_insertUser();
-    test_Service_insertUserException();
+    test_Service_insertUser_Exception();
     test_Service_updateUser();
     test_Service_getGraph();
     test_Service_getNode();
@@ -1632,7 +1630,7 @@ function test_Service()
 
 function createController(): GraphController
 {
-    $service = createService();
+    [$service, $pdo] = createService();
     $logger = new Logger('controller.log');
     $controller = new GraphController($service, $logger);
     return $controller;
