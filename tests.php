@@ -2,12 +2,22 @@
 
 declare(strict_types=1);
 
-use SebastianBergmann\RecursionContext\Context;
-
 require_once __DIR__ . '/graph.php';
 
 ini_set('xdebug.mode', '1');
 xdebug_start_code_coverage(XDEBUG_CC_UNUSED | XDEBUG_CC_DEAD_CODE);
+
+if (file_exists('database.log')) {
+    @unlink('database.log');
+}
+
+if (file_exists('service.log')) {
+    @unlink('service.log');
+}
+
+if (file_exists('controller.log')) {
+    @unlink('controller.log');
+}
 
 function createConnection(): array
 {
@@ -1813,11 +1823,15 @@ xdebug_stop_code_coverage();
 file_put_contents('coverage.json', json_encode($coverage, JSON_PRETTY_PRINT));
 
 if (file_exists('database.log')) {
-    @unlink('database.log');
+    //@unlink('database.log');
 }
 
 if (file_exists('service.log')) {
-    @unlink('service.log');
+    //@unlink('service.log');
+}
+
+if (file_exists('controller.log')) {
+    //@unlink('controller.log');
 }
 
 echo "fim\n";
