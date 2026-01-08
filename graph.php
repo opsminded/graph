@@ -943,7 +943,6 @@ final class GraphService implements GraphServiceInterface
     {
         try {
             $this->verify();
-
             $data = $this->db->getUser($id);
             if (! is_null($data)) {
                 $g = new Group($data['user_group']);

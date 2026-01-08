@@ -1169,6 +1169,8 @@ function test_Service_insertUser()
 function test_Service_insertUser_Exception()
 {
     [$service, $pdo] = createService();
+    GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
+    
     $user = $service->getUser('maria');
     $pdo->exec('DROP TABLE users');
 
