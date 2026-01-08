@@ -988,9 +988,8 @@ final class GraphService implements GraphServiceInterface
             $nodes = $this->getNodes()->nodes;
             $edges = $this->getEdges()->edges;
             return new Graph($nodes, $edges);
-        } catch(DatabaseException $e) {
-            $params = json_encode($e->params, JSON_UNESCAPED_UNICODE);
-            $comp = "({$e->query})" . "(". json_encode($params) . ")";
+        } catch(GraphServiceException $e) {
+            $comp = $e->getMessage();
             throw new GraphServiceException("getGraph exception: " . $comp, 0, $e);
         }
     }

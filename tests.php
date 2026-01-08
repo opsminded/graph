@@ -1201,6 +1201,25 @@ function test_Service_updateUser()
     }
 }
 
+function test_Service_updateUser_Exception()
+{
+    [$service, $pdo] = createService();
+    GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
+
+    $pdo->exec('DROP TABLE users');
+    
+    try {
+        $service->updateUser(new User('maria', new Group('admin')));
+    } catch(GraphServiceException $e) {
+        return;
+    }
+
+    $user = $service->getUser('maria');
+    if($user->id != 'maria' || $user->group->id != 'admin') {
+        throw new Exception('error on test_Service_updateUser');
+    }
+}
+
 function test_Service_getGraph()
 {
     [$service, $pdo] = createService();
@@ -1225,6 +1244,21 @@ function test_Service_getGraph()
     }
 }
 
+function test_Service_getGraph_Exception()
+{
+    [$service, $pdo] = createService();
+    $pdo->exec('DROP TABLE edges');
+    $pdo->exec('DROP TABLE nodes');
+    GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
+
+    try {
+        $service->getGraph();
+    } catch(GraphServiceException $e) {
+        return;
+    }
+    throw new Exception('error on test_Service_getGraph_Exception');
+}
+
 function test_Service_getNode()
 {
     [$service, $pdo] = createService();
@@ -1246,6 +1280,20 @@ function test_Service_getNode()
     if ($node->data['key'] != 'value') {
         throw new Exception('error on test_Service_getNode - data mismatch');
     }
+}
+
+function test_Service_getNode_Exception()
+{
+    [$service, $pdo] = createService();
+    GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
+    $pdo->exec('DROP TABLE nodes');
+    try {
+        $service->getNode('node1');
+    } catch(GraphServiceException $e) {
+        return;
+    }
+
+    throw new Exception('error on test_Service_getNode_Exception');
 }
 
 function test_Service_getNodes()
@@ -1301,6 +1349,23 @@ function test_Service_insertNode()
     }
 }
 
+function test_Service_insertNode_Exception()
+{
+    [$service, $pdo] = createService();
+    GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
+
+    $pdo->exec('DROP TABLE nodes');
+
+    try {
+        $node = new Node('node1', 'Node 01', 'business', 'server', ['key' => 'value']);
+        $service->insertNode($node);
+    } catch(GraphServiceException $e) {
+        return;
+    }
+
+    throw new Exception('error on test_Service_insertNode_Exception');
+}
+
 function test_Service_updateNode()
 {
     [$service, $pdo] = createService();
@@ -1322,6 +1387,22 @@ function test_Service_updateNode()
     }
 }
 
+function test_Service_updateNode_Exception()
+{
+    [$service, $pdo] = createService();
+    GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
+    $pdo->exec('DROP TABLE nodes');
+
+    try {
+        $updatedNode = new Node('node1', 'Updated Node', 'application', 'database', ['key' => 'newvalue']);
+        $service->updateNode($updatedNode);
+    } catch(GraphServiceException $e) {
+        return;
+    }
+
+    throw new Exception('error on test_Service_updateNode_Exception');
+}
+
 function test_Service_deleteNode()
 {
     [$service, $pdo] = createService();
@@ -1341,6 +1422,21 @@ function test_Service_deleteNode()
     if ($deletedNode !== null) {
         throw new Exception('error on test_Service_deleteNode - node not deleted');
     }
+}
+
+function test_Service_deleteNode_Exception()
+{
+    [$service, $pdo] = createService();
+    GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
+    $pdo->exec('DROP TABLE nodes');
+
+    try {
+        $service->deleteNode('node1');
+    } catch(GraphServiceException $e) {
+        return;
+    }
+
+    throw new Exception('error on test_Service_deleteNode_Exception');
 }
 
 function test_Service_getEdge()
@@ -1369,6 +1465,21 @@ function test_Service_getEdge()
     if ($edge->data['weight'] != '10') {
         throw new Exception('error on test_Service_getEdge - data mismatch');
     }
+}
+
+function test_Service_getEdge_Exception()
+{
+    [$service, $pdo] = createService();
+    GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
+    $pdo->exec('DROP TABLE edges');
+
+    try {
+        $service->getEdge('node1', 'node2');
+    } catch(GraphServiceException $e) {
+        return;
+    }
+
+    throw new Exception('error on test_Service_getEdge_Exception');
 }
 
 function test_Service_getEdges()
@@ -1407,6 +1518,20 @@ function test_Service_getEdges()
     }
 }
 
+function test_Service_getEdges_Exception()
+{
+    [$service, $pdo] = createService();
+    GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
+    $pdo->exec('DROP TABLE edges');
+    try{
+        $service->getEdges();
+    } catch(GraphServiceException $e) {
+        return;
+    }
+
+    throw new Exception('error on test_Service_getEdges_Exception');
+}
+
 function test_Service_insertEdge()
 {
     [$service, $pdo] = createService();
@@ -1424,6 +1549,22 @@ function test_Service_insertEdge()
     if ($retrievedEdge->id != 'edge1' || $retrievedEdge->source != 'node1' || $retrievedEdge->target != 'node2') {
         throw new Exception('error on test_Service_insertEdge');
     }
+}
+
+function test_Service_insertEdge_Exception()
+{
+    [$service, $pdo] = createService();
+    GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
+    $pdo->exec('DROP TABLE edges');
+
+    try {
+        $edge = new Edge('edge1', 'node1', 'node2', ['weight' => '10']);
+        $service->insertEdge($edge);
+    } catch(GraphServiceException $e) {
+        return;
+    }
+
+    throw new Exception('error on test_Service_insertEdge_Exception');
 }
 
 function test_Service_updateEdge()
@@ -1458,7 +1599,6 @@ function test_Service_updateEdge_Exception()
 {
     [$service, $pdo] = createService();
     GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
-
     try {
         $updatedEdge = new Edge('edge1', 'node2', 'node3', ['weight' => '30']);
         $service->updateEdge($updatedEdge);
@@ -1496,6 +1636,22 @@ function test_Service_deleteEdge()
     }
 }
 
+function test_Service_deleteEdge_Exception()
+{
+    [$service, $pdo] = createService();
+    GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
+    $pdo->exec('DROP TABLE edges');
+
+    try {
+        $service->deleteEdge('edge1');
+        return;
+    } catch(GraphServiceException $e) {
+        return;
+    }
+
+    throw new Exception('exception on test_Service_deleteEdge_Exception');
+}
+
 function test_Service_getStatuses()
 {
     [$service, $pdo] = createService();
@@ -1520,6 +1676,22 @@ function test_Service_getStatuses()
     }
 }
 
+function test_Service_getStatuses_Exception()
+{
+    [$service, $pdo] = createService();
+    GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
+    $pdo->exec('DROP TABLE status');
+    
+    try {
+        $service->getStatuses();
+        return;
+    } catch(GraphServiceException $e) {
+        return;
+    }
+
+    throw new Exception('exception on test_Service_getStatuses_Exception');
+}
+
 function test_Service_getNodeStatus()
 {
     [$service, $pdo] = createService();
@@ -1539,6 +1711,22 @@ function test_Service_getNodeStatus()
     if ($status->nodeId != 'node1' || $status->status != 'healthy') {
         throw new Exception('error on test_Service_getNodeStatus - status should be healthy');
     }
+}
+
+function test_Service_getNodeStatus_Exception()
+{
+    [$service, $pdo] = createService();
+    GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
+    $pdo->exec('DROP TABLE status');
+    
+    try {
+        $service->getNodeStatus('node1');
+        return;
+    } catch(GraphServiceException $e) {
+        return;
+    }
+
+    throw new Exception('exception on test_Service_getNodeStatus_Exception');
 }
 
 function test_Service_updateNodeStatus()
@@ -1562,6 +1750,21 @@ function test_Service_updateNodeStatus()
     if ($status->status != 'maintenance') {
         throw new Exception('error on test_Service_updateNodeStatus - status not updated');
     }
+}
+
+function test_Service_updateNodeStatus_Exception()
+{
+    [$service, $pdo] = createService();
+    GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
+
+    try {
+        $service->updateNodeStatus(new NodeStatus('node1', 'maintenance'));
+        return;
+    } catch(GraphServiceException $e) {
+        return;
+    }
+
+    throw new Exception('exception on test_Service_updateNodeStatus_Exception');
 }
 
 function test_Service_getLogs()
@@ -1603,7 +1806,20 @@ function test_Service_getLogs()
     }
 }
 
+function test_Service_getLogs_Exception()
+{
+    [$service, $pdo] = createService();
+    GraphContext::update(new User('admin', new Group('admin')), '127.0.0.1');
+    $pdo->exec('DROP TABLE audit');
 
+    try {
+        $service->getLogs(10);
+    } catch(GraphServiceException $e) {
+        return;
+    }
+
+    throw new Exception('exception on test_Service_getLogs_Exception');
+}
 
 function test_Service()
 {
@@ -1612,22 +1828,36 @@ function test_Service()
     test_Service_insertUser();
     test_Service_insertUser_Exception();
     test_Service_updateUser();
+    test_Service_updateUser_Exception();
     test_Service_getGraph();
+    test_Service_getGraph_Exception();
     test_Service_getNode();
+    test_Service_getNode_Exception();
     test_Service_getNodes();
     test_Service_insertNode();
+    test_Service_insertNode_Exception();
     test_Service_updateNode();
+    test_Service_updateNode_Exception();
     test_Service_deleteNode();
+    test_Service_deleteNode_Exception();
     test_Service_getEdge();
+    test_Service_getEdge_Exception();
     test_Service_getEdges();
+    test_Service_getEdges_Exception();
     test_Service_insertEdge();
+    test_Service_insertEdge_Exception();
     test_Service_updateEdge();
     test_Service_updateEdge_Exception();
     test_Service_deleteEdge();
+    test_Service_deleteEdge_Exception();
     test_Service_getStatuses();
+    test_Service_getStatuses_Exception();
     test_Service_getNodeStatus();
+    test_Service_getNodeStatus_Exception();
     test_Service_updateNodeStatus();
+    test_Service_updateNodeStatus_Exception();
     test_Service_getLogs();
+    test_Service_getLogs_Exception();
 }
 
 function createController(): GraphController
