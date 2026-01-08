@@ -4,13 +4,23 @@ declare(strict_types=1);
 
 final class User
 {
-    public string $id;
-    public Group $group;
+    private string $id;
+    private Group $group;
 
     public function __construct(string $id, Group $group)
     {
         $this->id = $id;
         $this->group = $group;
+    }
+
+    public function getId(): string
+    {
+        return $this->id;
+    }
+
+    public function getGroup(): Group
+    {
+        return $this->group;
     }
 
     public function toArray(): array
@@ -26,7 +36,7 @@ final class Group
 {
     private const ALLOWED_GROUPS = ['anonymous', 'consumer', 'contributor', 'admin'];
     
-    public string $id;
+    private string $id;
     
     public function __construct(string $id)
     {
@@ -34,6 +44,11 @@ final class Group
             throw new InvalidArgumentException("Invalid user group: {$id}");
         }
         $this->id  = $id;
+    }
+
+    public function getId(): string
+    {
+        return $this->id;
     }
 
     public function toArray(): array
@@ -48,10 +63,7 @@ final class Graph
 {
     public array $nodes = [];
     public array $edges = [];
-    public array $data  = [];
-    public array $layout = [];
-    public array $styles = [];
-
+    
     public function __construct(array $nodes, array $edges)
     {
         $this->nodes = $nodes;
@@ -63,26 +75,23 @@ final class Graph
         return [
             'nodes' => $this->nodes,
             'edges' => $this->edges,
-            'data' => $this->data,
-            'layout' => $this->layout,
-            'styles' => $this->styles,
         ];
     }
 }
 
 final class Node
 {
-    private const ALLOWED_CATEGORIES  = ['business', 'application', 'network', 'infrastructure'];
-    private const ALLOWED_TYPES       = ['server', 'database', 'application'];
-    private const ID_VALIDATION_REGEX = '/^[a-zA-Z0-9\-_]+$/';
-    private const LABEL_MAX_LENGTH    = 20;
+    public const ALLOWED_CATEGORIES  = ['business', 'application', 'network', 'infrastructure'];
+    public const ALLOWED_TYPES       = ['server', 'database', 'application'];
+    public const ID_VALIDATION_REGEX = '/^[a-zA-Z0-9\-_]+$/';
+    public const LABEL_MAX_LENGTH    = 20;
     
-    public string $id;
-    public string $label;
-    public string $category;
-    public string $type;
+    private string $id;
+    private string $label;
+    private string $category;
+    private string $type;
 
-    public array $data = [];
+    private array $data = [];
 
     public function __construct(string $id, string $label, string $category, string $type, array $data)
     {
@@ -92,6 +101,31 @@ final class Node
         $this->category = $category;
         $this->type     = $type;
         $this->data     = $data;
+    }
+
+    public function getId(): string
+    {
+        return $this->id;
+    }
+
+    public function getLabel(): string
+    {
+        return $this->label;
+    }
+
+    public function getCategory(): string
+    {
+        return $this->category;
+    }
+
+    public function getType(): string
+    {
+        return $this->type;
+    }
+
+    public function getData(): array
+    {
+        return $this->data;
     }
 
     private function validate(string $id, string $label, string $category, string $type): void
@@ -129,8 +163,8 @@ final class NodeStatus
 {
     private const ALLOWED_NODE_STATUSES = ['unknown', 'healthy', 'unhealthy', 'maintenance'];
 
-    public string $nodeId;
-    public string $status;
+    private string $nodeId;
+    private string $status;
 
     public function __construct(string $nodeId, string $status)
     {
@@ -139,6 +173,16 @@ final class NodeStatus
         }
         $this->nodeId = $nodeId;
         $this->status = $status;
+    }
+
+    public function getNodeId(): string
+    {
+        return $this->nodeId;
+    }
+
+    public function getStatus(): string
+    {
+        return $this->status;
     }
 
     public function toArray(): array
@@ -150,58 +194,46 @@ final class NodeStatus
     }
 }
 
-final class NodeStatuses
-{
-    public array $statuses = [];
-
-    public function addStatus(NodeStatus $status): void
-    {
-        $this->statuses[] = $status;
-    }
-}
-
-final class Nodes
-{
-    public array $nodes = [];
-
-    public function addNode(Node $node): void
-    {
-        $this->nodes[] = $node;
-    }
-}
-
 final class Edge
 {
-    public ?string $id;
-    public string $source;
-    public string $target;
-    public array $data;
+    private string $source;
+    private string $target;
+    private array $data;
 
-    public function __construct(?string $id = null, string $source, string $target, array $data = [])
+    public function __construct(string $source, string $target, array $data = [])
     {
-        $this->id     = $id;
         $this->source = $source;
         $this->target = $target;
         $this->data   = $data;
     }
 
+    public function getId(): string
+    {
+        return "{$this->source}-{$this->target}";
+    }
+
+    public function getSource(): string
+    {
+        return $this->source;
+    }
+
+    public function getTarget(): string
+    {
+        return $this->target;
+    }
+
+    public function getData(): array
+    {
+        return $this->data;
+    }
+
     public function toArray(): array
     {
         return [
-            'id'     => $this->id,
             'source' => $this->source,
             'target' => $this->target,
             'data'   => $this->data
         ];
-    }
-}
-
-final class Edges
-{
-    public array $edges = [];
-    public function addEdge(Edge $edge): void
-    {
-        $this->edges[] = $edge;
     }
 }
 
@@ -223,15 +255,6 @@ final class AuditLog
         $this->action     = $action;
         $this->oldData    = $oldData;
         $this->newData    = $newData;
-    }
-}
-
-final class AuditLogs
-{
-    public array $logs = [];
-    public function addLog(AuditLog $log): void
-    {
-        $this->logs[] = $log;
     }
 }
 
@@ -631,12 +654,12 @@ final class GraphDatabase implements GraphDatabaseInterface
             UPDATE edges
             SET    source = :source, target = :target, data = :data
             WHERE  id = :id";
-        
+
         $params = [
-            ':id'   => $id,
-            'source' => $source,
-            'target' => $target,
-            ':data' => json_encode($data, JSON_UNESCAPED_UNICODE)
+            ':id'     => $id,
+            ':source' => $source,
+            ':target' => $target,
+            ':data'   => json_encode($data, JSON_UNESCAPED_UNICODE)
         ];
 
         try {
@@ -859,22 +882,22 @@ interface GraphServiceInterface
     public function getGraph(): Graph;
 
     public function getNode(string $id): ?Node;
-    public function getNodes(): Nodes;
+    public function getNodes(): array;
     public function insertNode(Node $node): void;
     public function updateNode(Node $node): void;
     public function deleteNode(string $id): void;
 
     public function getEdge(string $source, string $target): ?Edge;
-    public function getEdges(): Edges;
+    public function getEdges(): array;
     public function insertEdge(Edge $edge): void;
     public function updateEdge(Edge $edge): void;
-    public function deleteEdge(string $id): void;
+    public function deleteEdge(Edge $edge): void;
 
-    public function getStatuses(): NodeStatuses;
+    public function getStatuses(): array;
     public function getNodeStatus(string $id): NodeStatus;
     public function updateNodeStatus(NodeStatus $status): void;
 
-    public function getLogs($limit): AuditLogs;
+    public function getLogs($limit): array;
 }
 
 final class GraphContext
@@ -890,12 +913,12 @@ final class GraphContext
 
     public static function getUserId(): string
     {
-        return self::$user->id;
+        return self::$user->getId();
     }
 
     public static function getUserGroup(): string
     {
-        return self::$user->group->id;
+        return self::$user->getGroup()->getId();
     }
 
     public static function getUserIp(): ?string
@@ -961,7 +984,7 @@ final class GraphService implements GraphServiceInterface
     {
         try {
             $this->verify();
-            $this->db->insertUser($user->id, $user->group->id);
+            $this->db->insertUser($user->getId(), $user->getGroup()->getId());
         } catch(DatabaseException $e) {
             $params = json_encode($e->params, JSON_UNESCAPED_UNICODE);
             $comp = "({$e->query})" . "(". json_encode($params) . ")";
@@ -973,7 +996,7 @@ final class GraphService implements GraphServiceInterface
     {
         try {
             $this->verify();
-            $this->db->updateUser($user->id, $user->group->id);
+            $this->db->updateUser($user->getId(), $user->getGroup()->getId());
         } catch(DatabaseException $e) {
             $params = json_encode($e->params, JSON_UNESCAPED_UNICODE);
             $comp = "({$e->query})" . "(". json_encode($params) . ")";
@@ -985,8 +1008,8 @@ final class GraphService implements GraphServiceInterface
     {
         try {
             $this->verify();
-            $nodes = $this->getNodes()->nodes;
-            $edges = $this->getEdges()->edges;
+            $nodes = $this->getNodes();
+            $edges = $this->getEdges();
             return new Graph($nodes, $edges);
         } catch(GraphServiceException $e) {
             $comp = $e->getMessage();
@@ -1016,12 +1039,12 @@ final class GraphService implements GraphServiceInterface
         }
     }
 
-    public function getNodes(): Nodes
+    public function getNodes(): array
     {
         try {
             $this->verify();
             $nodesData = $this->db->getNodes();
-            $nodes     = new Nodes();
+            $nodes     = [];
             foreach ($nodesData as $data) {
                 $node = new Node(
                     $data['id'],
@@ -1030,7 +1053,7 @@ final class GraphService implements GraphServiceInterface
                     $data['type'],
                     $data['data']
                 );
-                $nodes->addNode($node);
+                $nodes[] = $node;
             }
             return $nodes;
         } catch(DatabaseException $e) {
@@ -1047,8 +1070,8 @@ final class GraphService implements GraphServiceInterface
         try {
             $this->verify();
             $this->logger->debug('permission allowed', $node->toArray());
-            $this->insertAuditLog(new AuditLog( 'node', $node->id, 'insert', null, $node->toArray()));
-            $this->db->insertNode($node->id, $node->label, $node->category, $node->type, $node->data);
+            $this->insertAuditLog(new AuditLog( 'node', $node->getId(), 'insert', null, $node->toArray()));
+            $this->db->insertNode($node->getId(), $node->getLabel(), $node->getCategory(), $node->getType(), $node->getData());
             $this->logger->info('node inserted', $node->toArray());
         } catch(DatabaseException $e) {
             $params = json_encode($e->params, JSON_UNESCAPED_UNICODE);
@@ -1062,14 +1085,14 @@ final class GraphService implements GraphServiceInterface
         try {
             $this->verify();
 
-            $exists = $this->db->getNode($node->id);
+            $exists = $this->db->getNode($node->getId());
             if(is_null($exists)) {
                 return;
             }
 
-            $old = $this->getNode($node->id);
-            $this->insertAuditLog(new AuditLog('node', $node->id, 'update', $old->toArray(), $node->toArray()));
-            $this->db->updateNode($node->id, $node->label, $node->category, $node->type, $node->data);
+            $old = $this->getNode($node->getId());
+            $this->insertAuditLog(new AuditLog('node', $node->getId(), 'update', $old->toArray(), $node->toArray()));
+            $this->db->updateNode($node->getId(), $node->getLabel(), $node->getCategory(), $node->getType(), $node->getData());
         } catch(DatabaseException $e) {
             $params = json_encode($e->params, JSON_UNESCAPED_UNICODE);
             $comp = "({$e->query})" . "(". json_encode($params) . ")";
@@ -1104,7 +1127,6 @@ final class GraphService implements GraphServiceInterface
             $data = $this->db->getEdge($source, $target);
             if(! is_null($data)) {
                 return new Edge(
-                    $data['id'],
                     $data['source'],
                     $data['target'],
                     $data['data']
@@ -1118,21 +1140,20 @@ final class GraphService implements GraphServiceInterface
         }
     }
 
-    public function getEdges(): Edges
+    public function getEdges(): array
     {
         try {
             $this->verify();
 
             $edgesData = $this->db->getEdges();
-            $edges     = new Edges();
+            $edges     = [];
             foreach ($edgesData as $data) {
                 $edge = new Edge(
-                    $data['id'],
                     $data['source'],
                     $data['target'],
                     $data['data']
                 );
-                $edges->addEdge($edge);
+                $edges[] = $edge;
             }
             return $edges;
         } catch(DatabaseException $e) {
@@ -1146,8 +1167,8 @@ final class GraphService implements GraphServiceInterface
     {
         try {
             $this->verify();
-            $this->insertAuditLog(new AuditLog( 'edge', $edge->id, 'insert', null, $edge->toArray()));
-            $this->db->insertEdge($edge->id, $edge->source, $edge->target, $edge->data);
+            $this->insertAuditLog(new AuditLog( 'edge', $edge->getId(), 'insert', null, $edge->toArray()));
+            $this->db->insertEdge($edge->getId(), $edge->getSource(), $edge->getTarget(), $edge->getData());
         } catch(DatabaseException $e) {
             $params = json_encode($e->params, JSON_UNESCAPED_UNICODE);
             $comp = "({$e->query})" . "(". json_encode($params) . ")";
@@ -1160,15 +1181,14 @@ final class GraphService implements GraphServiceInterface
         try {
             $this->verify();
 
-            $exists = $this->db->getEdgeById($edge->id);
+            $exists = $this->db->getEdgeById($edge->getId());
             if (is_null($exists)) {
                 throw new GraphServiceException("edge not found", 0, null);
             }
 
-            $old = $this->getEdgeById($edge->id);
-
-            $this->insertAuditLog(new AuditLog( 'edge', $edge->id, 'update', $old->toArray(), $edge->toArray()));
-            $this->db->updateEdge($edge->id, $edge->source, $edge->target, $edge->data);
+            $old = $this->getEdge($edge->getSource(), $edge->getTarget());
+            $this->insertAuditLog(new AuditLog( 'edge', $edge->getId(), 'update', $old->toArray(), $edge->toArray()));
+            $this->db->updateEdge($edge->getId(), $edge->getSource(), $edge->getTarget(), $edge->getData());
 
         } catch(DatabaseException $e) {
             $params = json_encode($e->params, JSON_UNESCAPED_UNICODE);
@@ -1178,11 +1198,11 @@ final class GraphService implements GraphServiceInterface
         }
     }
 
-    public function deleteEdge(string $id): void
+    public function deleteEdge(Edge $edge): void
     {
         try {
             $this->verify();
-            $this->db->deleteEdge($id);
+            $this->db->deleteEdge($edge->getId());
         } catch(DatabaseException $e) {
             $params = json_encode($e->params, JSON_UNESCAPED_UNICODE);
             $comp = "({$e->query})" . "(". json_encode($params) . ")";
@@ -1190,16 +1210,16 @@ final class GraphService implements GraphServiceInterface
         }
     }
 
-    public function getStatuses(): NodeStatuses
+    public function getStatuses(): array
     {
         try {
             $this->verify();
 
             $statusesData = $this->db->getStatuses();
-            $nodeStatuses = new NodeStatuses();
+            $nodeStatuses = [];
             foreach ($statusesData as $data) {
                 $status = new NodeStatus($data['id'], $data['status'] ?? 'unknown');
-                $nodeStatuses->addStatus($status);
+                $nodeStatuses[] = $status;
             }
             return $nodeStatuses;
         } catch(DatabaseException $e) {
@@ -1226,7 +1246,7 @@ final class GraphService implements GraphServiceInterface
     {
         try {
             $this->verify();
-            $this->db->updateNodeStatus($status->nodeId, $status->status);
+            $this->db->updateNodeStatus($status->getNodeId(), $status->getStatus());
         } catch(DatabaseException $e) {
             $params = json_encode($e->params, JSON_UNESCAPED_UNICODE);
             $comp = "({$e->query})" . "(". json_encode($params) . ")";
@@ -1234,11 +1254,11 @@ final class GraphService implements GraphServiceInterface
         }
     }
 
-    public function getLogs($limit): AuditLogs
+    public function getLogs($limit): array
     {
         try {
             $this->verify();
-            $logs = new AuditLogs();
+            $logs = [];
             $rows = $this->db->getLogs($limit);
             foreach ($rows as $row) {
                 $old_data = $row['old_data'] ? json_decode($row['old_data'], true) : [];
@@ -1253,34 +1273,13 @@ final class GraphService implements GraphServiceInterface
                 $log->userId    = $row['user_id'];
                 $log->ipAddress = $row['ip_address'];
                 $log->createdAt = $row['created_at'];
-                $logs->addLog($log);
+                $logs[] = $log;
             }
             return $logs;
         } catch(DatabaseException $e) {
             $params = json_encode($e->params, JSON_UNESCAPED_UNICODE);
             $comp = "({$e->query})" . "(". json_encode($params) . ")";
             throw new GraphServiceException("getLogs exception: " . $comp, 0, $e);
-        }
-    }
-
-    private function getEdgeById(string $id): ?Edge
-    {
-        try {
-            $data = $this->db->getEdgeById($id);
-            if (is_null($data)) {
-                return null;
-            }
-
-            return new Edge(
-                $data['id'],
-                $data['source'],
-                $data['target'],
-                $data['data']
-            );
-        } catch(DatabaseException $e) {
-            $params = json_encode($e->params, JSON_UNESCAPED_UNICODE);
-            $comp = "({$e->query})" . "(". json_encode($params) . ")";
-            throw new GraphServiceException("getEdgeById exception:" . $comp, 0, $e);
         }
     }
 
