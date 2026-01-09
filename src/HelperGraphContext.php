@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-final class GraphContext
+final class HelperGraphContext
 {
     private static string $user;
     private static string $group;

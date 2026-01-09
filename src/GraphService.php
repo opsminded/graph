@@ -203,7 +203,6 @@ final class GraphService implements GraphServiceInterface
     public function getStatus(): array
     {
         $this->verify();
-
         $statusesData = $this->db->getStatus();
         $nodeStatuses = [];
         foreach ($statusesData as $data) {
@@ -251,9 +250,8 @@ final class GraphService implements GraphServiceInterface
 
     private function insertLog(ModelLog $auditLog): void
     {
-        $user_id   = GraphContext::getUser();
-        $ip_address = GraphContext::getClientIp();
-
+        $user_id   = HelperGraphContext::getUser();
+        $ip_address = HelperGraphContext::getClientIp();
         $this->db->insertLog(
             $auditLog->entityType,
             $auditLog->entityId,
@@ -267,10 +265,9 @@ final class GraphService implements GraphServiceInterface
 
     private function verify(): void
     {
-        $trace = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 3);
+        $trace  = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 3);
         $action = "{$trace[1]['class']}::{$trace[1]['function']}";
-
-        $group = GraphContext::getGroup();
+        $group  = HelperGraphContext::getGroup();
 
         // if is admin, allow all
         if ($group === 'admin') {

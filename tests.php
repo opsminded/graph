@@ -57,17 +57,25 @@ foreach (glob(__DIR__ . "/tests/*.php") as $arquivo) {
 }
 
 $tests = [
-    new TestModelEdge(),
-    new TestModelGraph(),
-    new TestGraphContext(),
     new TestGraphDatabase(),
     new TestGraphService(),
+    
+    new TestHelperLogger(),
+
+    new TestHTTPController(),
+
+    new TestModelEdge(),
+    new TestModelGraph(),
+    new TestHelperGraphContext(),
+    
+    
     new TestModelGroup(),
     new TestModelLog(),
-    new TestHelperLogger(),
+    
     new TestModelNode(),
     new TestModelStatus(),
     new TestModelUser(),
+    
 ];
 
 foreach($tests as $test)
