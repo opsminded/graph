@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-class ForbiddenResponse extends HTTPResponse
+class NotFoundResponse extends HTTPResponse
 {
     public function __construct(string $message = '', array $data)
     {
-        return parent::__construct(403, 'error', $message, $data);
+        return parent::__construct(404, 'error', $message, $data);
     }
 }

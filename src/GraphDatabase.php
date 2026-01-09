@@ -2,9 +2,6 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/GraphDatabaseInterface.php';
-require_once __DIR__ . '/LoggerInterface.php';
-
 final class GraphDatabase implements GraphDatabaseInterface
 {
     private PDO $pdo;

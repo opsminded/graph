@@ -41,30 +41,33 @@ if (file_exists('controller.log')) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-require_once __DIR__ . '/tests/TestEdge.php';
-require_once __DIR__ . '/tests/TestGraph.php';
-require_once __DIR__ . '/tests/TestGraphContext.php';
-require_once __DIR__ . '/tests/TestGraphDatabase.php';
-require_once __DIR__ . '/tests/TestGraphService.php';
-require_once __DIR__ . '/tests/TestGroup.php';
-require_once __DIR__ . '/tests/TestLog.php';
-require_once __DIR__ . '/tests/TestLogger.php';
-require_once __DIR__ . '/tests/TestNode.php';
-require_once __DIR__ . '/tests/TestStatus.php';
-require_once __DIR__ . '/tests/TestUser.php';
+require_once __DIR__ . '/src/GraphDatabaseInterface.php';
+require_once __DIR__ . '/src/GraphServiceInterface.php';
+require_once __DIR__ . '/src/LoggerInterface.php';
+require_once __DIR__ . '/src/HTTPControllerInterface.php';
+require_once __DIR__ . '/src/HTTPResponseInterface.php';
+require_once __DIR__ . '/src/HTTPResponse.php';
+
+foreach (glob(__DIR__ . "/src/*.php") as $arquivo) {
+    require_once $arquivo;
+}
+
+foreach (glob(__DIR__ . "/tests/*.php") as $arquivo) {
+    require_once $arquivo;
+}
 
 $tests = [
-    new TestEdge(),
-    new TestGraph(),
+    new TestModelEdge(),
+    new TestModelGraph(),
     new TestGraphContext(),
     new TestGraphDatabase(),
     new TestGraphService(),
-    new TestGroup(),
-    new TestLog(),
-    new TestLogger(),
-    new TestNode(),
-    new TestStatus(),
-    new TestUser(),
+    new TestModelGroup(),
+    new TestModelLog(),
+    new TestHelperLogger(),
+    new TestModelNode(),
+    new TestModelStatus(),
+    new TestModelUser(),
 ];
 
 foreach($tests as $test)

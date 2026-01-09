@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-final class User
+final class ModelUser
 {
     private string $id;
-    private Group $group;
+    private ModelGroup $group;
 
-    public function __construct(string $id, Group $group)
+    public function __construct(string $id, ModelGroup $group)
     {
         $this->id = $id;
         $this->group = $group;
@@ -18,7 +18,7 @@ final class User
         return $this->id;
     }
 
-    public function getGroup(): Group
+    public function getGroup(): ModelGroup
     {
         return $this->group;
     }

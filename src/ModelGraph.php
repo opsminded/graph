@@ -2,10 +2,7 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/Edge.php';
-require_once __DIR__ . '/Node.php';
-
-final class Graph
+final class ModelGraph
 {
     private array $nodes = [];
     private array $edges = [];

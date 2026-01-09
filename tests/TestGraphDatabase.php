@@ -2,11 +2,7 @@
 
 declare(strict_types=1);
 
-require_once dirname(__DIR__) . '/src/AbstractTest.php';
-require_once dirname(__DIR__) . '/src/GraphDatabase.php';
-require_once dirname(__DIR__) . '/src/Logger.php';
-
-class TestGraphDatabase extends AbstractTest
+class TestGraphDatabase extends TestAbstractTest
 {
     private ?PDO $pdo;
     private ?LoggerInterface $logger;

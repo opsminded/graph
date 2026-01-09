@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-final class Edge
+final class ModelEdge
 {
     private string $source;
     private string $target;

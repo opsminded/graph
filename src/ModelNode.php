@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-final class Node
+final class ModelNode
 {
     public const ALLOWED_CATEGORIES  = ['business', 'application', 'network', 'infrastructure'];
     public const ALLOWED_TYPES       = ['server', 'database', 'application'];

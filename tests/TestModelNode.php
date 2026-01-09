@@ -2,13 +2,11 @@
 
 declare(strict_types=1);
 
-require_once dirname(__DIR__) . '/src/AbstractTest.php';
-
-class TestNode extends AbstractTest
+class TestModelNode extends TestAbstractTest
 {
     public function testNodeConstructor(): void
     {
-        $node = new Node('node1', 'Node 01', 'business', 'server', ['key' => 'value']);
+        $node = new ModelNode('node1', 'Node 01', 'business', 'server', ['key' => 'value']);
 
         if ($node->getId() != 'node1' || $node->getLabel() != 'Node 01' || $node->getCategory() != 'business' || $node->getType() != 'server') {
             throw new Exception('test_Node problem - property mismatch');
@@ -30,7 +28,7 @@ class TestNode extends AbstractTest
 
         // Test validation - invalid ID
         try {
-            new Node('invalid@id', 'Label', 'business', 'server', []);
+            new ModelNode('invalid@id', 'Label', 'business', 'server', []);
             throw new Exception('test_Node problem - should throw exception for invalid ID');
         } catch (InvalidArgumentException $e) {
             // Expected
@@ -38,7 +36,7 @@ class TestNode extends AbstractTest
 
         // Test validation - label too long
         try {
-            new Node('node2', str_repeat('a', 21), 'business', 'server', []);
+            new ModelNode('node2', str_repeat('a', 21), 'business', 'server', []);
             throw new Exception('test_Node problem - should throw exception for long label');
         } catch (InvalidArgumentException $e) {
             // Expected
@@ -46,7 +44,7 @@ class TestNode extends AbstractTest
 
         // Test validation - invalid category
         try {
-            new Node('node3', 'Label', 'invalid_category', 'server', []);
+            new ModelNode('node3', 'Label', 'invalid_category', 'server', []);
             throw new Exception('test_Node problem - should throw exception for invalid category');
         } catch (InvalidArgumentException $e) {
             // Expected
@@ -54,7 +52,7 @@ class TestNode extends AbstractTest
 
         // Test validation - invalid type
         try {
-            new Node('node4', 'Label', 'business', 'invalid_type', []);
+            new ModelNode('node4', 'Label', 'business', 'invalid_type', []);
             throw new Exception('test_Node problem - should throw exception for invalid type');
         } catch (InvalidArgumentException $e) {
             // Expected

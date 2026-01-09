@@ -2,19 +2,16 @@
 
 declare(strict_types=1);
 
-require_once dirname(__DIR__) . '/src/AbstractTest.php';
-require_once dirname(__DIR__) . '/src/Graph.php';
-
-class TestGraph extends AbstractTest
+class TestModelGraph extends TestAbstractTest
 {
     public function testGraphConstructor(): void
     {
-        $node1 = new Node('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
-        $node2 = new Node('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
+        $node1 = new ModelNode('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
+        $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
         
-        $edge1 = new Edge('node1', 'node2', ['weight' => '10']);
+        $edge1 = new ModelEdge('node1', 'node2', ['weight' => '10']);
 
-        $graph = new Graph([$node1, $node2], [$edge1]);
+        $graph = new ModelGraph([$node1, $node2], [$edge1]);
         
         if (count($graph->getNodes()) != 2) {
             throw new Exception('TODO message. Node quantity');

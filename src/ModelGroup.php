@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-final class Group
+final class ModelGroup
 {
     private const ALLOWED_GROUPS = ['anonymous', 'consumer', 'contributor', 'admin'];
     

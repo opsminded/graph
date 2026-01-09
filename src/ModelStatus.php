@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-final class Status
+final class ModelStatus
 {
     private const ALLOWED_NODE_STATUSES = ['unknown', 'healthy', 'unhealthy', 'maintenance'];
 

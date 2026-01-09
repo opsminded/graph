@@ -2,14 +2,11 @@
 
 declare(strict_types=1);
 
-require_once dirname(__DIR__) . '/src/AbstractTest.php';
-require_once dirname(__DIR__) . '/src/Status.php';
-
-class TestStatus extends AbstractTest
+class TestModelStatus extends TestAbstractTest
 {
     public function testStatusConstructor(): void
     {
-        $status = new Status('node1', 'healthy');
+        $status = new ModelStatus('node1', 'healthy');
 
         if($status->getNodeId() != 'node1' || $status->getStatus() != 'healthy') {
             throw new Exception('testStatusConstructor problem');
@@ -24,7 +21,7 @@ class TestStatus extends AbstractTest
     public function testStatusException(): void
     {
         try {
-            new Status('node1', 'xpto');
+            new ModelStatus('node1', 'xpto');
         } catch(InvalidArgumentException $e) {
             return;
         }

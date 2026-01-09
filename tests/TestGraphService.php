@@ -2,10 +2,7 @@
 
 declare(strict_types=1);
 
-require_once dirname(__DIR__) . '/src/AbstractTest.php';
-require_once dirname(__DIR__) . '/src/GraphService.php';
-
-class TestGraphService extends AbstractTest
+class TestGraphService extends TestAbstractTest
 {
     private ?PDO $pdo;
 
@@ -57,14 +54,14 @@ class TestGraphService extends AbstractTest
         if ($user !== null) {
             throw new Exception('error on test_Service_getUser');
         }
-        $this->service->insertUser(new User('maria', new Group('contributor')));
+        $this->service->insertUser(new ModelUser('maria', new ModelGroup('contributor')));
     }
     
     public function testUpdateUser(): void
     {
         GraphContext::update('admin', 'admin', '127.0.0.1');
-        $this->service->insertUser(new User('maria', new Group('contributor')));
-        $this->service->updateUser(new User('maria', new Group('admin')));
+        $this->service->insertUser(new ModelUser('maria', new ModelGroup('contributor')));
+        $this->service->updateUser(new ModelUser('maria', new ModelGroup('admin')));
         $user = $this->service->getUser('maria');
         if($user->getId() != 'maria' || $user->getGroup()->getId() != 'admin') {
             throw new Exception('error on test_Service_updateUser');
@@ -75,13 +72,13 @@ class TestGraphService extends AbstractTest
     {
         GraphContext::update('admin', 'admin', '127.0.0.1');
 
-        $node1 = new Node('n1', 'Node 01', 'business', 'server', ['key' => 'value1']);
-        $node2 = new Node('n2', 'Node 02', 'application', 'database', ['key' => 'value2']);
+        $node1 = new ModelNode('n1', 'Node 01', 'business', 'server', ['key' => 'value1']);
+        $node2 = new ModelNode('n2', 'Node 02', 'application', 'database', ['key' => 'value2']);
         
         $this->service->insertNode($node1);
         $this->service->insertNode($node2);
         
-        $edge1 = new Edge('n1', 'n2', ['weight' => '10']);
+        $edge1 = new ModelEdge('n1', 'n2', ['weight' => '10']);
         $this->service->insertEdge($edge1);
         
         $graph = $this->service->getGraph();
@@ -102,7 +99,7 @@ class TestGraphService extends AbstractTest
         if ($node !== null) {
             throw new Exception('error on test_Service_getNode - should be null');
         }
-        $newNode = new Node('node1', 'Node 01', 'business', 'server', ['key' => 'value']);
+        $newNode = new ModelNode('node1', 'Node 01', 'business', 'server', ['key' => 'value']);
         $this->service->insertNode($newNode);
         $node = $this->service->getNode('node1');
         if ($node->getId() != 'node1' || $node->getLabel() != 'Node 01' || $node->getCategory() != 'business' || $node->getType() != 'server') {
@@ -121,8 +118,8 @@ class TestGraphService extends AbstractTest
         if (count($nodes) != 0) {
             throw new Exception('error on test_Service_getNodes - should be empty');
         }
-        $node1 = new Node('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
-        $node2 = new Node('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
+        $node1 = new ModelNode('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
+        $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
         $this->service->insertNode($node1);
         $this->service->insertNode($node2);
         $nodes = $this->service->getNodes();
@@ -140,7 +137,7 @@ class TestGraphService extends AbstractTest
     public function testInsertNode(): void
     {
         GraphContext::update('admin', 'admin', '127.0.0.1');
-        $node = new Node('node1', 'Node 01', 'business', 'server', ['key' => 'value']);
+        $node = new ModelNode('node1', 'Node 01', 'business', 'server', ['key' => 'value']);
         $this->service->insertNode($node);
         $retrievedNode = $this->service->getNode('node1');
         if ($retrievedNode->getId() != 'node1' || $retrievedNode->getLabel() != 'Node 01') {
@@ -148,7 +145,7 @@ class TestGraphService extends AbstractTest
         }
         // Test with contributor permission
         GraphContext::update('admin', 'admin', '127.0.0.1');
-        $node2 = new Node('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
+        $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
         $this->service->insertNode($node2);
         $retrievedNode2 = $this->service->getNode('node2');
         if ($retrievedNode2->getId() != 'node2') {
@@ -159,9 +156,9 @@ class TestGraphService extends AbstractTest
     public function testUpdateNode(): void
     {
         GraphContext::update('admin', 'admin', '127.0.0.1');
-        $node = new Node('node1', 'Node 01', 'business', 'server', ['key' => 'value']);
+        $node = new ModelNode('node1', 'Node 01', 'business', 'server', ['key' => 'value']);
         $this->service->insertNode($node);
-        $updatedNode = new Node('node1', 'Updated Node', 'application', 'database', ['key' => 'newvalue']);
+        $updatedNode = new ModelNode('node1', 'Updated Node', 'application', 'database', ['key' => 'newvalue']);
         $this->service->updateNode($updatedNode);
         $retrievedNode = $this->service->getNode('node1');
         if ($retrievedNode->getLabel() != 'Updated Node' || $retrievedNode->getCategory() != 'application') {
@@ -172,7 +169,7 @@ class TestGraphService extends AbstractTest
             throw new Exception('error on test_Service_updateNode - data not updated');
         }
         // try to update node not found
-        $updatedNode = new Node('node5', 'Updated Node', 'application', 'database', ['key' => 'newvalue']);
+        $updatedNode = new ModelNode('node5', 'Updated Node', 'application', 'database', ['key' => 'newvalue']);
         $exists = $this->service->updateNode($updatedNode);
         if(!is_null($exists)) {
             throw new Exception('error on test_Service_updateNode');
@@ -185,7 +182,7 @@ class TestGraphService extends AbstractTest
 
         $this->service->deleteNode('id');
 
-        $node1 = new Node('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
+        $node1 = new ModelNode('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
         $this->service->insertNode($node1);
 
         $node = $this->service->getNode('node1');
@@ -204,15 +201,15 @@ class TestGraphService extends AbstractTest
     public function testGetEdge(): void
     {
         GraphContext::update('admin', 'admin', '127.0.0.1');
-        $node1 = new Node('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
-        $node2 = new Node('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
+        $node1 = new ModelNode('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
+        $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
         $this->service->insertNode($node1);
         $this->service->insertNode($node2);
         $edge = $this->service->getEdge('node1', 'node2');
         if ($edge !== null) {
             throw new Exception('error on test_Service_getEdge - should be null');
         }
-        $newEdge = new Edge('node1', 'node2', ['weight' => '10']);
+        $newEdge = new ModelEdge('node1', 'node2', ['weight' => '10']);
         $this->service->insertEdge($newEdge);
         $edge = $this->service->getEdge('node1', 'node2');
         if ($edge->getId() != 'node1-node2' || $edge->getSource() != 'node1' || $edge->getTarget() != 'node2') {
@@ -230,14 +227,14 @@ class TestGraphService extends AbstractTest
         if (count($edges) != 0) {
             throw new Exception('error on test_Service_getEdges - should be empty');
         }
-        $node1 = new Node('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
-        $node2 = new Node('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
-        $node3 = new Node('node3', 'Node 03', 'network', 'server', ['key' => 'value3']);
+        $node1 = new ModelNode('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
+        $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
+        $node3 = new ModelNode('node3', 'Node 03', 'network', 'server', ['key' => 'value3']);
         $this->service->insertNode($node1);
         $this->service->insertNode($node2);
         $this->service->insertNode($node3);
-        $edge1 = new Edge('node1', 'node2', ['weight' => '10']);
-        $edge2 = new Edge('node2', 'node3', ['weight' => '20']);
+        $edge1 = new ModelEdge('node1', 'node2', ['weight' => '10']);
+        $edge2 = new ModelEdge('node2', 'node3', ['weight' => '20']);
         $this->service->insertEdge($edge1);
         $this->service->insertEdge($edge2);
         $edges = $this->service->getEdges();
@@ -254,11 +251,11 @@ class TestGraphService extends AbstractTest
     
     public function testInsertEdge(): void {
         GraphContext::update('admin', 'admin', '127.0.0.1');
-        $node1 = new Node('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
-        $node2 = new Node('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
+        $node1 = new ModelNode('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
+        $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
         $this->service->insertNode($node1);
         $this->service->insertNode($node2);
-        $edge = new Edge('node1', 'node2', ['weight' => '10']);
+        $edge = new ModelEdge('node1', 'node2', ['weight' => '10']);
         $this->service->insertEdge($edge);
         $retrievedEdge = $this->service->getEdge('node1', 'node2');
         if ($retrievedEdge->getId() != 'node1-node2' || $retrievedEdge->getSource() != 'node1' || $retrievedEdge->getTarget() != 'node2') {
@@ -270,20 +267,20 @@ class TestGraphService extends AbstractTest
     {
         GraphContext::update('admin', 'admin', '127.0.0.1');
 
-        $updatedEdge = new Edge('node1', 'node2', ['weight' => '30']);
+        $updatedEdge = new ModelEdge('node1', 'node2', ['weight' => '30']);
         $this->service->updateEdge($updatedEdge);
 
-        $node1 = new Node('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
-        $node2 = new Node('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
-        $node3 = new Node('node3', 'Node 03', 'network', 'server', ['key' => 'value3']);
+        $node1 = new ModelNode('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
+        $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
+        $node3 = new ModelNode('node3', 'Node 03', 'network', 'server', ['key' => 'value3']);
         $this->service->insertNode($node1);
         $this->service->insertNode($node2);
         $this->service->insertNode($node3);
         
-        $edge = new Edge('node1', 'node2', ['weight' => '10']);
+        $edge = new ModelEdge('node1', 'node2', ['weight' => '10']);
         $this->service->insertEdge($edge);
         
-        $updatedEdge = new Edge('node1', 'node2', ['weight' => '30']);
+        $updatedEdge = new ModelEdge('node1', 'node2', ['weight' => '30']);
         $this->service->updateEdge($updatedEdge);
         $retrievedEdge = $this->service->getEdge('node1', 'node2');
 
@@ -299,17 +296,17 @@ class TestGraphService extends AbstractTest
     public function testDeleteEdge(): void
     {
         GraphContext::update('admin', 'admin', '127.0.0.1');
-        $node1 = new Node('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
-        $node2 = new Node('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
+        $node1 = new ModelNode('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
+        $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
         $this->service->insertNode($node1);
         $this->service->insertNode($node2);
-        $edge = new Edge('node1', 'node2', ['weight' => '10']);
+        $edge = new ModelEdge('node1', 'node2', ['weight' => '10']);
         $this->service->insertEdge($edge);
         $retrievedEdge = $this->service->getEdge('node1', 'node2');
         if ($retrievedEdge === null) {
             throw new Exception('error on test_Service_deleteEdge - edge not inserted');
         }
-        $this->service->deleteEdge(new Edge('node1', 'node2'));
+        $this->service->deleteEdge(new ModelEdge('node1', 'node2'));
         $edges = $this->service->getEdges();
         if (count($edges) != 0) {
             throw new Exception('error on test_Service_deleteEdge - edge not deleted');
@@ -324,12 +321,12 @@ class TestGraphService extends AbstractTest
         if (count($statuses) != 0) {
             throw new Exception('error on test_Service_getStatuses - should be empty');
         }
-        $node1 = new Node('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
-        $node2 = new Node('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
+        $node1 = new ModelNode('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
+        $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
         $this->service->insertNode($node1);
         $this->service->insertNode($node2);
-        $this->service->updateNodeStatus(new Status('node1', 'healthy'));
-        $this->service->updateNodeStatus(new Status('node2', 'unhealthy'));
+        $this->service->updateNodeStatus(new ModelStatus('node1', 'healthy'));
+        $this->service->updateNodeStatus(new ModelStatus('node2', 'unhealthy'));
         $statuses = $this->service->getStatus();
         if (count($statuses) != 2) {
             throw new Exception('error on test_Service_getStatuses - expected 2 statuses');
@@ -339,13 +336,13 @@ class TestGraphService extends AbstractTest
     public function testGetNodeStatus(): void
     {
         GraphContext::update('admin', 'admin', '127.0.0.1');
-        $node1 = new Node('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
+        $node1 = new ModelNode('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
         $this->service->insertNode($node1);
         $status = $this->service->getNodeStatus('node1');
         if ($status->getNodeId() != 'node1' || $status->getStatus() != 'unknown') {
             throw new Exception('error on test_Service_getNodeStatus - default should be unknown');
         }
-        $this->service->updateNodeStatus(new Status('node1', 'healthy'));
+        $this->service->updateNodeStatus(new ModelStatus('node1', 'healthy'));
         $status = $this->service->getNodeStatus('node1');
         if ($status->getNodeId() != 'node1' || $status->getStatus() != 'healthy') {
             throw new Exception('error on test_Service_getNodeStatus - status should be healthy');
@@ -355,14 +352,14 @@ class TestGraphService extends AbstractTest
     public function testUpdateNodeStatus(): void
     {
         GraphContext::update('admin', 'admin', '127.0.0.1');
-        $node1 = new Node('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
+        $node1 = new ModelNode('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
         $this->service->insertNode($node1);
-        $this->service->updateNodeStatus(new Status('node1', 'healthy'));
+        $this->service->updateNodeStatus(new ModelStatus('node1', 'healthy'));
         $status = $this->service->getNodeStatus('node1');
         if ($status->getStatus() != 'healthy') {
             throw new Exception('error on test_Service_updateNodeStatus - status not set');
         }
-        $this->service->updateNodeStatus(new Status('node1', 'maintenance'));
+        $this->service->updateNodeStatus(new ModelStatus('node1', 'maintenance'));
         $status = $this->service->getNodeStatus('node1');
         if ($status->getStatus() != 'maintenance') {
             throw new Exception('error on test_Service_updateNodeStatus - status not updated');
@@ -376,10 +373,10 @@ class TestGraphService extends AbstractTest
             throw new Exception('error on test_Service_getLogs - should be empty');
         }
 
-        $node1 = new Node('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
+        $node1 = new ModelNode('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
         $this->service->insertNode($node1);
         sleep(1);
-        $updatedNode = new Node('node1', 'Updated Node', 'application', 'database', ['key' => 'newvalue']);
+        $updatedNode = new ModelNode('node1', 'Updated Node', 'application', 'database', ['key' => 'newvalue']);
         $this->service->updateNode($updatedNode);
         sleep(1);
         $this->service->deleteNode('node1');

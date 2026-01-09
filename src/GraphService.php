@@ -2,10 +2,6 @@
 
 declare(strict_types=1);
 
-require_once __DIR__. '/GraphServiceInterface.php';
-require_once __DIR__. '/Group.php';
-require_once __DIR__. '/Log.php';
-
 final class GraphService implements GraphServiceInterface
 {
     private const SECURE_ACTIONS = [
@@ -41,45 +37,45 @@ final class GraphService implements GraphServiceInterface
         $this->logger = $logger;
     }
 
-    public function getUser(string $id): ?User
+    public function getUser(string $id): ?ModelUser
     {
         $this->verify();
         $data = $this->db->getUser($id);
         if (! is_null($data)) {
-            $g = new Group($data['user_group']);
-            $user = new User($id, $g);
+            $g = new ModelGroup($data['user_group']);
+            $user = new ModelUser($id, $g);
             return $user;
         }
         return null;
     }
 
-    public function insertUser(User $user): void
+    public function insertUser(ModelUser $user): void
     {
         $this->verify();
         $this->db->insertUser($user->getId(), $user->getGroup()->getId());
     }
 
-    public function updateUser(User $user): void
+    public function updateUser(ModelUser $user): void
     {
         $this->verify();
         $this->db->updateUser($user->getId(), $user->getGroup()->getId());
     }
 
-    public function getGraph(): Graph
+    public function getGraph(): ModelGraph
     {
         $this->verify();
         $nodes = $this->getNodes();
         $edges = $this->getEdges();
-        $graph = new Graph($nodes, $edges);
+        $graph = new ModelGraph($nodes, $edges);
         return $graph;
     }
 
-    public function getNode(string $id): ?Node
+    public function getNode(string $id): ?ModelNode
     {
         $this->verify();
         $data = $this->db->getNode($id);
         if (! is_null($data)) {
-            return new Node(
+            return new ModelNode(
                 $data['id'],
                 $data['label'],
                 $data['category'],
@@ -96,7 +92,7 @@ final class GraphService implements GraphServiceInterface
         $nodesData = $this->db->getNodes();
         $nodes     = [];
         foreach ($nodesData as $data) {
-            $node = new Node(
+            $node = new ModelNode(
                 $data['id'],
                 $data['label'],
                 $data['category'],
@@ -108,18 +104,18 @@ final class GraphService implements GraphServiceInterface
         return $nodes;
     }
 
-    public function insertNode(Node $node): void
+    public function insertNode(ModelNode $node): void
     {
         $this->logger->debug('inserting node', $node->toArray());
 
         $this->verify();
         $this->logger->debug('permission allowed', $node->toArray());
-        $this->insertLog(new Log('node', $node->getId(), 'insert', null, $node->toArray()));
+        $this->insertLog(new ModelLog('node', $node->getId(), 'insert', null, $node->toArray()));
         $this->db->insertNode($node->getId(), $node->getLabel(), $node->getCategory(), $node->getType(), $node->getData());
         $this->logger->info('node inserted', $node->toArray());
     }
 
-    public function updateNode(Node $node): void
+    public function updateNode(ModelNode $node): void
     {
         $this->verify();
 
@@ -129,7 +125,7 @@ final class GraphService implements GraphServiceInterface
         }
 
         $old = $this->getNode($node->getId());
-        $this->insertLog(new Log('node', $node->getId(), 'update', $old->toArray(), $node->toArray()));
+        $this->insertLog(new ModelLog('node', $node->getId(), 'update', $old->toArray(), $node->toArray()));
         $this->db->updateNode($node->getId(), $node->getLabel(), $node->getCategory(), $node->getType(), $node->getData());
     }
 
@@ -143,16 +139,16 @@ final class GraphService implements GraphServiceInterface
         }
 
         $old = $this->getNode($id);
-        $this->insertLog(new Log( 'node', $id, 'delete', $old->toArray(), null));
+        $this->insertLog(new ModelLog( 'node', $id, 'delete', $old->toArray(), null));
         $this->db->deleteNode($id);
     }
 
-    public function getEdge(string $source, string $target): ?Edge
+    public function getEdge(string $source, string $target): ?ModelEdge
     {
         $this->verify();
         $data = $this->db->getEdge($source, $target);
         if(! is_null($data)) {
-            return new Edge(
+            return new ModelEdge(
                 $data['source'],
                 $data['target'],
                 $data['data']
@@ -168,7 +164,7 @@ final class GraphService implements GraphServiceInterface
         $edgesData = $this->db->getEdges();
         $edges     = [];
         foreach ($edgesData as $data) {
-            $edge = new Edge(
+            $edge = new ModelEdge(
                 $data['source'],
                 $data['target'],
                 $data['data']
@@ -178,14 +174,14 @@ final class GraphService implements GraphServiceInterface
         return $edges;
     }
 
-    public function insertEdge(Edge $edge): void
+    public function insertEdge(ModelEdge $edge): void
     {
         $this->verify();
-        $this->insertLog(new Log( 'edge', $edge->getId(), 'insert', null, $edge->toArray()));
+        $this->insertLog(new ModelLog( 'edge', $edge->getId(), 'insert', null, $edge->toArray()));
         $this->db->insertEdge($edge->getId(), $edge->getSource(), $edge->getTarget(), $edge->getData());
     }
 
-    public function updateEdge(Edge $edge): void
+    public function updateEdge(ModelEdge $edge): void
     {
         $this->verify();
         $exists = $this->db->getEdge($edge->getSource(), $edge->getTarget());
@@ -194,11 +190,11 @@ final class GraphService implements GraphServiceInterface
         }
 
         $old = $this->getEdge($edge->getSource(), $edge->getTarget());
-        $this->insertLog(new Log('edge', $edge->getId(), 'update', $old->toArray(), $edge->toArray()));
+        $this->insertLog(new ModelLog('edge', $edge->getId(), 'update', $old->toArray(), $edge->toArray()));
         $this->db->updateEdge($edge->getId(), $edge->getSource(), $edge->getTarget(), $edge->getData());
     }
 
-    public function deleteEdge(Edge $edge): void
+    public function deleteEdge(ModelEdge $edge): void
     {
         $this->verify();
         $this->db->deleteEdge($edge->getId());
@@ -211,20 +207,20 @@ final class GraphService implements GraphServiceInterface
         $statusesData = $this->db->getStatus();
         $nodeStatuses = [];
         foreach ($statusesData as $data) {
-            $status = new Status($data['id'], $data['status'] ?? 'unknown');
+            $status = new ModelStatus($data['id'], $data['status'] ?? 'unknown');
             $nodeStatuses[] = $status;
         }
         return $nodeStatuses;
     }
 
-    public function getNodeStatus(string $id): Status
+    public function getNodeStatus(string $id): ModelStatus
     {
         $this->verify();
         $statusData = $this->db->getNodeStatus($id);
-        return new Status($id, $statusData['status'] ?? 'unknown');
+        return new ModelStatus($id, $statusData['status'] ?? 'unknown');
     }
 
-    public function updateNodeStatus(Status $status): void
+    public function updateNodeStatus(ModelStatus $status): void
     {
         $this->verify();
         $this->db->updateNodeStatus($status->getNodeId(), $status->getStatus());
@@ -238,7 +234,7 @@ final class GraphService implements GraphServiceInterface
         foreach ($rows as $row) {
             $old_data = $row['old_data'] ? json_decode($row['old_data'], true) : [];
             $new_data = $row['new_data'] ?  json_decode($row['new_data'], true) : [];
-            $log = new Log(
+            $log = new ModelLog(
                 $row['entity_type'],
                 $row['entity_id'],
                 $row['action'],
@@ -253,7 +249,7 @@ final class GraphService implements GraphServiceInterface
         return $logs;
     }
 
-    private function insertLog(Log $auditLog): void
+    private function insertLog(ModelLog $auditLog): void
     {
         $user_id   = GraphContext::getUser();
         $ip_address = GraphContext::getClientIp();

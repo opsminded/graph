@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/User.php';
-
 final class GraphContext
 {
     private static string $user;

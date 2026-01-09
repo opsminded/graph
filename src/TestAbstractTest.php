@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-abstract class AbstractTest
+abstract class TestAbstractTest
 {
     protected function up(): void
     {

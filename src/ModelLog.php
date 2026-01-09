@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-final class Log
+final class ModelLog
 {
     public string $entityType;
     public string $entityId;

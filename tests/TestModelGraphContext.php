@@ -2,10 +2,7 @@
 
 declare(strict_types=1);
 
-require_once dirname(__DIR__) . '/src/AbstractTest.php';
-require_once dirname(__DIR__) . '/src/GraphContext.php';
-
-class TestGraphContext extends AbstractTest
+class TestGraphContext extends TestAbstractTest
 {
     public function testGraphContextUpdate(): void
     {
