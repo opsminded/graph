@@ -20,4 +20,15 @@ class TestStatus extends AbstractTest
             throw new Exception('testStatusConstructor problem');
         }
     }
+
+    public function testStatusException(): void
+    {
+        try {
+            new Status('node1', 'xpto');
+        } catch(InvalidArgumentException $e) {
+            return;
+        }
+
+        throw new Exception(('problem on testStatusException'));
+    }
 }

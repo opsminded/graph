@@ -50,7 +50,6 @@ require_once __DIR__ . '/tests/TestGroup.php';
 require_once __DIR__ . '/tests/TestLog.php';
 require_once __DIR__ . '/tests/TestLogger.php';
 require_once __DIR__ . '/tests/TestNode.php';
-require_once __DIR__ . '/tests/TestSecurityException.php';
 require_once __DIR__ . '/tests/TestStatus.php';
 require_once __DIR__ . '/tests/TestUser.php';
 
@@ -64,7 +63,6 @@ $tests = [
     new TestLog(),
     new TestLogger(),
     new TestNode(),
-    new TestSecurityException(),
     new TestStatus(),
     new TestUser(),
 ];

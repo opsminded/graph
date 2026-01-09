@@ -30,79 +30,79 @@ foreach ($coverageData as $file => $lines) {
     foreach ($content as $num => $line) {
         $num++;
         if (trim($line) == '') {
-            $class = 'covered';
-        } elseif(trim($line) == '{' || trim($line) == '}') {
-            $class = 'covered';
-        } elseif (str_contains($line, 'function')) {
-            $class = 'covered';
-        } elseif (str_contains($line, 'SELECT')) {
-            $class = 'covered';
-        } elseif (str_contains($line, 'INSERT')) {
-            $class = 'covered';
-        } elseif (str_contains($line, 'UPDATE')) {
-            $class = 'covered';
-        } elseif (str_contains($line, 'VALUES')) {
-            $class = 'covered';
-        } elseif (str_contains($line, 'SET')) {
-            $class = 'covered';
-        } elseif (str_contains($line, 'WHERE')) {
-            $class = 'covered';
-        } elseif (str_contains($line, 'FROM')) {
-            $class = 'covered';
-        } elseif (str_contains($line, 'LEFT JOIN')) {
-            $class = 'covered';
-        } elseif (str_contains($line, 'ON')) {
-            $class = 'covered';
-        } elseif (str_contains($line, 'ORDER BY')) {
-            $class = 'covered';
-        } elseif (str_contains($line, 'LIMIT')) {
-            $class = 'covered';
-        } elseif (str_contains($line, 'CREATE')) {
-            $class = 'covered';
-        } elseif (str_contains($line, 'TEXT')) {
-            $class = 'covered';
-        } elseif (str_contains($line, 'DATETIME')) {
-            $class = 'covered';
-        } elseif (str_contains($line, 'INTEGER')) {
-            $class = 'covered';
-        } elseif(trim($line) == ');') {
-            $class = 'covered';
-        } elseif(trim($line) == ')");') {
-            $class = 'covered';
-        } elseif(str_starts_with(trim($line), "'")) {
-            $class = 'covered';
-        } elseif(str_starts_with(trim($line), "<?php")) {
-            $class = 'covered';
-        } elseif(str_starts_with(trim($line), "declare")) {
-            $class = 'covered';
-        } elseif(str_starts_with(trim($line), "$") && (str_ends_with(trim($line), ",") || str_ends_with(trim($line), "s"))) {
-            $class = 'covered';
-        } elseif(str_starts_with(trim($line), "string $")) {
-            $class = 'covered';
-        } elseif(str_starts_with(trim($line), "?array $")) {
-            $class = 'covered';
-        } elseif(trim($line) == '];') {
-            $class = 'covered';
-        } elseif(str_starts_with($line, 'class')) {
-            $class = 'covered';
-        } elseif(str_starts_with(trim($line), 'public')) {
-            $class = 'covered';
-        } elseif(str_starts_with(trim($line), 'private')) {
-            $class = 'covered';
-        } elseif(str_starts_with($line, 'interface')) {
-            $class = 'covered';
-        } elseif(str_starts_with($line, 'final class')) {
-            $class = 'covered';
-        } elseif(str_starts_with($line, '#')) {
-            $class = 'covered';
-        } elseif(str_starts_with(trim($line), ']);')) {
-            $class = 'covered';
-        } elseif(str_starts_with(trim($line), '//')) {
-            $class = 'covered';
-        } elseif(str_starts_with(trim($line), 'try')) {
-            $class = 'covered';
-            } elseif(str_starts_with(trim($line), 'return [')) {
-            $class = 'covered';
+        //     $class = 'covered';
+        // } elseif(trim($line) == '{' || trim($line) == '}') {
+        //     $class = 'covered';
+        // } elseif (str_contains($line, 'function')) {
+        //     $class = 'covered';
+        // } elseif (str_contains($line, 'SELECT')) {
+        //     $class = 'covered';
+        // } elseif (str_contains($line, 'INSERT')) {
+        //     $class = 'covered';
+        // } elseif (str_contains($line, 'UPDATE')) {
+        //     $class = 'covered';
+        // } elseif (str_contains($line, 'VALUES')) {
+        //     $class = 'covered';
+        // } elseif (str_contains($line, 'SET')) {
+        //     $class = 'covered';
+        // } elseif (str_contains($line, 'WHERE')) {
+        //     $class = 'covered';
+        // } elseif (str_contains($line, 'FROM')) {
+        //     $class = 'covered';
+        // } elseif (str_contains($line, 'LEFT JOIN')) {
+        //     $class = 'covered';
+        // } elseif (str_contains($line, 'ON')) {
+        //     $class = 'covered';
+        // } elseif (str_contains($line, 'ORDER BY')) {
+        //     $class = 'covered';
+        // } elseif (str_contains($line, 'LIMIT')) {
+        //     $class = 'covered';
+        // } elseif (str_contains($line, 'CREATE')) {
+        //     $class = 'covered';
+        // } elseif (str_contains($line, 'TEXT')) {
+        //     $class = 'covered';
+        // } elseif (str_contains($line, 'DATETIME')) {
+        //     $class = 'covered';
+        // } elseif (str_contains($line, 'INTEGER')) {
+        //     $class = 'covered';
+        // } elseif(trim($line) == ');') {
+        //     $class = 'covered';
+        // } elseif(trim($line) == ')");') {
+        //     $class = 'covered';
+        // } elseif(str_starts_with(trim($line), "'")) {
+        //     $class = 'covered';
+        // } elseif(str_starts_with(trim($line), "<?php")) {
+        //     $class = 'covered';
+        // } elseif(str_starts_with(trim($line), "declare")) {
+        //     $class = 'covered';
+        // } elseif(str_starts_with(trim($line), "$") && (str_ends_with(trim($line), ",") || str_ends_with(trim($line), "s"))) {
+        //     $class = 'covered';
+        // } elseif(str_starts_with(trim($line), "string $")) {
+        //     $class = 'covered';
+        // } elseif(str_starts_with(trim($line), "?array $")) {
+        //     $class = 'covered';
+        // } elseif(trim($line) == '];') {
+        //     $class = 'covered';
+        // } elseif(str_starts_with($line, 'class')) {
+        //     $class = 'covered';
+        // } elseif(str_starts_with(trim($line), 'public')) {
+        //     $class = 'covered';
+        // } elseif(str_starts_with(trim($line), 'private')) {
+        //     $class = 'covered';
+        // } elseif(str_starts_with($line, 'interface')) {
+        //     $class = 'covered';
+        // } elseif(str_starts_with($line, 'final class')) {
+        //     $class = 'covered';
+        // } elseif(str_starts_with($line, '#')) {
+        //     $class = 'covered';
+        // } elseif(str_starts_with(trim($line), ']);')) {
+        //     $class = 'covered';
+        // } elseif(str_starts_with(trim($line), '//')) {
+        //     $class = 'covered';
+        // } elseif(str_starts_with(trim($line), 'try')) {
+        //     $class = 'covered';
+        //     } elseif(str_starts_with(trim($line), 'return [')) {
+        //     $class = 'covered';
         } else {
             $class = isset($lines[$num]) ? ($lines[$num] > 0 ? 'covered' : 'not-covered') : 'not-executable';
         }

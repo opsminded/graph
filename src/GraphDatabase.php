@@ -186,32 +186,6 @@ final class GraphDatabase implements GraphDatabaseInterface
         return null;
     }
 
-    public function getEdgeById(string $id): ?array
-    {
-        $this->logger->debug("getting edge by Id", ['id' => $id]);
-
-        $sql = "
-            SELECT * FROM edges
-            WHERE id = :id";
-        
-        $params = [
-            ':id' => $id,
-        ];
-
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($params);
-        $row = $stmt->fetch();
-        
-        if ($row) {
-            $row['data'] = json_decode($row['data'], true);
-            $this->logger->info("edge found", ['params' => $params, 'row' => $row]);
-            return $row;
-        }
-        
-        $this->logger->info("edge not found", ['params' => $params]);
-        return null;
-    }
-
     public function getEdges(): array
     {
         $this->logger->debug("fetching edges");

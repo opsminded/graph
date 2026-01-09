@@ -15,7 +15,6 @@ interface GraphDatabaseInterface
     public function deleteNode(string $id): void;
 
     public function getEdge(string $source, string $target): ?array;
-    public function getEdgeById(string $id): ?array;
     public function getEdges(): array;
     public function insertEdge(string $id, string $source, string $target, array $data = []): void;
     public function updateEdge(string $id, string $source, string $target, array $data = []): void;

@@ -188,7 +188,7 @@ final class GraphService implements GraphServiceInterface
     public function updateEdge(Edge $edge): void
     {
         $this->verify();
-        $exists = $this->db->getEdgeById($edge->getId());
+        $exists = $this->db->getEdge($edge->getSource(), $edge->getTarget());
         if (is_null($exists)) {
             return;
         }

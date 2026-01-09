@@ -29,8 +29,11 @@ abstract class AbstractTest
 
     private function runTest($testName): void
     {
+        $class = get_class($this);
+
         try
         {
+            print("{$class} {$testName}\n");
             $this->up();
             $this->$testName();
             $this->down();
