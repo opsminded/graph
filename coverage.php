@@ -1,7 +1,4 @@
 <?php
-// generate-minimal-report.php
-
-$main_file = 'graph.php';
 
 $coverageData = json_decode(file_get_contents('coverage.json'), true);
 
@@ -19,7 +16,7 @@ h2 {background: #fff; padding: 10px; margin: 20px 0 0 0; position: sticky; top: 
 foreach ($coverageData as $file => $lines) {
     if (strpos($file, 'vendor/') !== false || !file_exists($file)) continue;
     
-    if (!str_contains($file, $main_file)) {
+    if (str_contains($file, '/tests/')) {
         continue;
     }
 
