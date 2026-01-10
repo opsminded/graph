@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-class CreatedResponse extends HTTPResponse
+class HTTPCreatedResponse extends HTTPResponse
 {
     public function __construct(string $message = '', array $data)
     {

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-class NotFoundResponse extends HTTPResponse
+class HTTPNotFoundResponse extends HTTPResponse
 {
     public function __construct(string $message = '', array $data)
     {

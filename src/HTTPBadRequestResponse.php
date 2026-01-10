@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-class BadRequestResponse extends HTTPResponse
+class HTTPBadRequestResponse extends HTTPResponse
 {
     public function __construct(string $message = '', array $data)
     {

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-final class RequestRouter
+final class HTTPRequestRouter
 {
     private $routes = [
         ['method' => 'GET',    'path' => '/getGraph',      'class_method' => 'getGraph'],
@@ -21,9 +21,9 @@ final class RequestRouter
         ['method' => 'GET',    'path' => '/getLogs',       'class_method' => 'getLogs'],
     ];
 
-    public GraphController $controller;
+    public HTTPController $controller;
     
-    public function __construct(GraphController $controller)
+    public function __construct(HTTPControllerInterface $controller)
     {
         $this->controller = $controller;
     }

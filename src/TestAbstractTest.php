@@ -33,7 +33,7 @@ abstract class TestAbstractTest
 
         try
         {
-            print("{$class} {$testName}\n");
+            //print("{$class} {$testName}\n");
             $this->up();
             $this->$testName();
             $this->down();

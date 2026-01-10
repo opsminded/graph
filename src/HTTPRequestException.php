@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-final class RequestException extends RuntimeException
+final class HTTPRequestException extends RuntimeException
 {
-    public array $data;
-    public array $params;
-    public string $path;
+    private array $data;
+    private array $params;
+    private string $path;
     
     public function __construct($message, array $data, array $params, string $path)
     {
@@ -14,5 +14,20 @@ final class RequestException extends RuntimeException
         $this->data = $data;
         $this->params = $params;
         $this->path = $path;
+    }
+
+    public function getData(): array
+    {
+        return $this->data;
+    }
+
+    public function getParams(): array
+    {
+        return $this->params;
+    }
+
+    public function getPath(): string
+    {
+        return $this->path;
     }
 }

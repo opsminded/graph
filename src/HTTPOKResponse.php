@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-class OKResponse extends HTTPResponse
+class HTTPOKResponse extends HTTPResponse
 {
     public function __construct(string $message, array $data)
     {

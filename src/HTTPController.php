@@ -41,7 +41,7 @@ final class HTTPController implements HTTPControllerInterface
             throw $e;
         }
         
-        return new OKResponse('user created', $req->data);
+        return new HTTPOKResponse('user created', $req->data);
     }
 
     public function updateUser(HTTPRequest $req): HTTPResponseInterface
@@ -49,7 +49,7 @@ final class HTTPController implements HTTPControllerInterface
         try {
             $user = new User($req->data['id'], new Group($req->data['user_group']));
             $this->service->updateUser($user);
-            return new OKResponse('user updated', $req->data);
+            return new HTTPOKResponse('user updated', $req->data);
         } catch(GraphServiceException $e) {
             throw $e;
         }
@@ -59,7 +59,7 @@ final class HTTPController implements HTTPControllerInterface
     {
         try {
             $data = $this->service->getGraph()->toArray();
-            return new OKResponse('get graph', $data);
+            return new HTTPOKResponse('get graph', $data);
         } catch (Exception $e) {
             throw $e;
         }
@@ -76,7 +76,7 @@ final class HTTPController implements HTTPControllerInterface
                 return new NotFoundResponse('node not found', ['id' => $id]);
             }
             $data = $node->toArray();
-            return new OKResponse('node found', $data);
+            return new HTTPOKResponse('node found', $data);
         } catch( Exception $e)
         {
             throw $e;
@@ -90,7 +90,7 @@ final class HTTPController implements HTTPControllerInterface
         try {
             $nodes = $this->service->getNodes();
             // TODO: corrigir
-            return new OKResponse('nodes found', []);
+            return new HTTPOKResponse('nodes found', []);
             return $resp;
         } catch( Exception $e)
         {
@@ -154,7 +154,7 @@ final class HTTPController implements HTTPControllerInterface
         try {
             $edge = $this->service->getEdge($req->data['source'], $req->data['target']);
             $data = $edge->toArray();
-            return new OKResponse('node found', $data);
+            return new HTTPOKResponse('node found', $data);
         } catch( Exception $e)
         {
             throw $e;
@@ -168,7 +168,7 @@ final class HTTPController implements HTTPControllerInterface
         try {
             $edges = $this->service->getEdges();
             // TODO: corrigir
-            return new OKResponse('node found', []);
+            return new HTTPOKResponse('node found', []);
         } catch( Exception $e)
         {
             throw $e;
@@ -182,7 +182,7 @@ final class HTTPController implements HTTPControllerInterface
         try {
             $edge = new Edge(null, $req->data['source'], $req->data['target']);
             $this->service->insertEdge($edge);
-            return new OKResponse('node found', []);
+            return new HTTPOKResponse('node found', []);
         } catch( Exception $e)
         {
             throw $e;
@@ -196,7 +196,7 @@ final class HTTPController implements HTTPControllerInterface
         try {
             $edge = new Edge($req->data['id'], $req->data['source'], $req->data['target'], $req->data['data']);
             $this->service->updateEdge($edge);
-            return new OKResponse('node found', []);
+            return new HTTPOKResponse('node found', []);
         } catch( Exception $e)
         {
             throw $e;
@@ -210,7 +210,7 @@ final class HTTPController implements HTTPControllerInterface
         try {
             $id = $req->data['id'];
             $this->service->deleteEdge($id);
-            return new OKResponse('node found', []);
+            return new HTTPOKResponse('node found', []);
         } catch( Exception $e)
         {
             throw $e;
@@ -223,7 +223,7 @@ final class HTTPController implements HTTPControllerInterface
     {
         try {
             $statuses = $this->service->getStatuses();
-            return new OKResponse('node found', []);
+            return new HTTPOKResponse('node found', []);
             return $resp;
         } catch( Exception $e)
         {
@@ -238,7 +238,7 @@ final class HTTPController implements HTTPControllerInterface
         try {
             $status = $this->service->getNodeStatus($req->data['id']);
             $data = $status->toArray();
-            return new OKResponse('node found', []);
+            return new HTTPOKResponse('node found', []);
         } catch( Exception $e)
         {
             throw $e;
@@ -251,7 +251,7 @@ final class HTTPController implements HTTPControllerInterface
     {
         try {
             $status = new NodeStatus($req->data['node_id'], $req->data['status']);
-            return new OKResponse('node found', []);
+            return new HTTPOKResponse('node found', []);
         } catch( Exception $e)
         {
             throw $e;
@@ -264,7 +264,7 @@ final class HTTPController implements HTTPControllerInterface
     {
         try {
             $logs = $this->service->getLogs($req->getParam('limit'));
-            return new OKResponse('node found', []);
+            return new HTTPOKResponse('node found', []);
         } catch( Exception $e)
         {
             throw $e;
