@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-
 final class HTTPController implements HTTPControllerInterface
 {
     private GraphServiceInterface $service;
@@ -23,22 +22,19 @@ final class HTTPController implements HTTPControllerInterface
                 return new HTTPNotFoundResponse('User not found', ['id' => $id]);
             }
             return new HTTPOKResponse('user found', $user->toArray());
-        } catch(HTTPRequestException $e) {
-            return new BadRequestResponse('bad request: ' . $e->getMessage(), $req->data);
-        } catch(GraphServiceException $e) {
-            return new InternalServerErrorResponse('user not created: ' . $e->getMessage(), $req->data);
+        } catch(Exception $e) {
+            return new HTTPBadRequestResponse('bad request: ' . $e->getMessage(), $req->data);
         }
-        throw new GraphControllerException('other internal error in getUser');
     }
 
     public function insertUser(HTTPRequest $req): HTTPResponseInterface
     {
         try {
-            $user = new User($req->data['id'], new Group($req->data['user_group']));
+            $user = new ModelUser($req->data['id'], new ModelGroup($req->data['user_group']));
             $this->service->insertUser($user);
-            return new CreatedResponse('user created', $req->data);
-        } catch(GraphServiceException $e) {
-            throw $e;
+            return new HTTPCreatedResponse('user created', $req->data);
+        } catch(Exception $e) {
+            return new HTTPBadRequestResponse('bad request: ' . $e->getMessage(), $req->data);
         }
         
         return new HTTPOKResponse('user created', $req->data);
@@ -47,10 +43,10 @@ final class HTTPController implements HTTPControllerInterface
     public function updateUser(HTTPRequest $req): HTTPResponseInterface
     {
         try {
-            $user = new User($req->data['id'], new Group($req->data['user_group']));
+            $user = new ModelUser($req->data['id'], new ModelGroup($req->data['user_group']));
             $this->service->updateUser($user);
             return new HTTPOKResponse('user updated', $req->data);
-        } catch(GraphServiceException $e) {
+        } catch (Exception $e) {
             throw $e;
         }
     }
@@ -73,7 +69,7 @@ final class HTTPController implements HTTPControllerInterface
             $id = $req->getParam('id');
             $node = $this->service->getNode($id);
             if(is_null($node)) {
-                return new NotFoundResponse('node not found', ['id' => $id]);
+                return new HTTPNotFoundResponse('node not found', ['id' => $id]);
             }
             $data = $node->toArray();
             return new HTTPOKResponse('node found', $data);
@@ -105,12 +101,11 @@ final class HTTPController implements HTTPControllerInterface
         $this->logger->debug('inserting node', $req->toArray());
         try {
             $data = json_decode($req->data['data'], true);
-            $node = new Node($req->data['id'], $req->data['label'], $req->data['category'], $req->data['type'], $data);
+            $node = new ModelNode($req->data['id'], $req->data['label'], $req->data['category'], $req->data['type'], $data);
             $this->service->insertNode($node);
             $this->logger->info('node inserted', $req->data);
-            return new CreatedResponse('node inserted', $req->data);
-        } catch( GraphServiceException $e)
-        {
+            return new HTTPCreatedResponse('node inserted', $req->data);
+        } catch (Exception $e) {
             throw $e;
         }
         return new InternalServerErrorResponse('unknow error inserting node', $req->data);
@@ -122,12 +117,12 @@ final class HTTPController implements HTTPControllerInterface
 
         try {
             $data = json_decode($req->data['data'], true);
-            $node = new Node($req->data['id'], $req->data['label'], $req->data['category'], $req->data['type'], $data);
+            $node = new ModelNode($req->data['id'], $req->data['label'], $req->data['category'], $req->data['type'], $data);
             $this->service->updateNode($node);
             $this->logger->info('node updated', $req->data);
 
             $req->data['data'] = $data;
-            $resp = new CreatedResponse('node updated', $req->data);
+            $resp = new HTTPCreatedResponse('node updated', $req->data);
             return $resp;
         } catch( Exception $e)
         {
@@ -180,7 +175,7 @@ final class HTTPController implements HTTPControllerInterface
     public function insertEdge(HTTPRequest $req): HTTPResponseInterface
     {
         try {
-            $edge = new Edge(null, $req->data['source'], $req->data['target']);
+            $edge = new ModelEdge($req->data['source'], $req->data['target']);
             $this->service->insertEdge($edge);
             return new HTTPOKResponse('node found', []);
         } catch( Exception $e)
@@ -194,7 +189,7 @@ final class HTTPController implements HTTPControllerInterface
     public function updateEdge(HTTPRequest $req): HTTPResponseInterface
     {
         try {
-            $edge = new Edge($req->data['id'], $req->data['source'], $req->data['target'], $req->data['data']);
+            $edge = new ModelEdge($req->data['source'], $req->data['target'], $req->data['data']);
             $this->service->updateEdge($edge);
             return new HTTPOKResponse('node found', []);
         } catch( Exception $e)
@@ -222,7 +217,7 @@ final class HTTPController implements HTTPControllerInterface
     public function getStatuses(HTTPRequest $req): HTTPResponseInterface
     {
         try {
-            $statuses = $this->service->getStatuses();
+            $status = $this->service->getStatus();
             return new HTTPOKResponse('node found', []);
             return $resp;
         } catch( Exception $e)
@@ -250,7 +245,7 @@ final class HTTPController implements HTTPControllerInterface
     public function updateNodeStatus(HTTPRequest $req): HTTPResponseInterface
     {
         try {
-            $status = new NodeStatus($req->data['node_id'], $req->data['status']);
+            $status = new ModelStatus($req->data['node_id'], $req->data['status']);
             return new HTTPOKResponse('node found', []);
         } catch( Exception $e)
         {

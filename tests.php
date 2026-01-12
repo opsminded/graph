@@ -62,7 +62,6 @@ $tests = [
     new TestGraphService(),
 
     new TestHelperGraphContext(),
-    new TestHTTPRequestException(),
     
     new TestHelperLogger(),
 
@@ -72,6 +71,7 @@ $tests = [
     new TestHTTPCreatedResponse(),
     new TestHTTPNotFoundResponse(),
 
+    new TestHTTPRequest(),
     new TestHTTPRequestException(),
 
     new TestHTTPResponse(),

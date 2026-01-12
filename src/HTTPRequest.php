@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-final class Request
+final class HTTPRequest
 {
     public array $data;
     public array $params;
@@ -14,11 +14,11 @@ final class Request
         $this->params = $_GET;
 
         if(is_null($_SERVER['REQUEST_METHOD'])) {
-            throw new RequestException('method not set', [], $this->params, '');
+            throw new HTTPRequestException('method not set', [], $this->params, '');
         }
 
         if(! in_array($_SERVER['REQUEST_METHOD'], ['GET', 'PUT', 'POST', 'DELETE'])) {
-            throw new RequestException('method not allowed: ' . $_SERVER['REQUEST_METHOD'], [], $this->params, '');
+            throw new HTTPRequestException('method not allowed: ' . $_SERVER['REQUEST_METHOD'], [], $this->params, '');
         }
 
         $this->method = $_SERVER['REQUEST_METHOD'];
@@ -42,7 +42,7 @@ final class Request
         if(isset($this->params[$name])) {
             return $this->params[$name];
         }
-        throw new RequestException("param '{$name}' not found", $this->data, $this->params, $this->path);
+        throw new HTTPRequestException("param '{$name}' not found", $this->data, $this->params, $this->path);
     }
 
     public function toArray(): array
