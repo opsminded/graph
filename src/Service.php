@@ -39,26 +39,34 @@ final class Service implements ServiceInterface
 
     public function getUser(string $id): ?ModelUser
     {
+        $this->logger->debug('getting user', ['id' => $id]);
         $this->verify();
         $data = $this->db->getUser($id);
         if (! is_null($data)) {
             $g = new ModelGroup($data['user_group']);
             $user = new ModelUser($id, $g);
+            $this->logger->debug('user found', ['id' => $id, 'user' => $data]);
             return $user;
         }
+        $this->logger->debug('user not found', ['id' => $id]);
         return null;
     }
 
     public function insertUser(ModelUser $user): bool
     {
+        $this->logger->debug('inserting user', ['user' => $user->toArray()]);
         $this->verify();
-        return $this->db->insertUser($user->getId(), $user->getGroup()->getId());
+        $this->db->insertUser($user->getId(), $user->getGroup()->getId());
+        $this->logger->debug('user inserted', ['user' => $user->toArray()]);
+        return true;
     }
 
     public function updateUser(ModelUser $user): bool
     {
+        $this->logger->debug('updating user', ['user' => $user->toArray()]);
         $this->verify();
         if($this->db->updateUser($user->getId(), $user->getGroup()->getId())) {
+            $this->logger->debug('user updated', ['user' => $user->toArray()]);
             return true;
         }
         return false;
@@ -66,15 +74,18 @@ final class Service implements ServiceInterface
 
     public function getGraph(): ModelGraph
     {
+        $this->logger->debug('getting graph');
         $this->verify();
         $nodes = $this->getNodes();
         $edges = $this->getEdges();
         $graph = new ModelGraph($nodes, $edges);
+        $this->logger->debug('returning graph', $graph->toArray());
         return $graph;
     }
 
     public function getNode(string $id): ?ModelNode
     {
+        $this->logger->debug('getting node');
         $this->verify();
         $data = $this->db->getNode($id);
         if (! is_null($data)) {
@@ -91,6 +102,7 @@ final class Service implements ServiceInterface
 
     public function getNodes(): array
     {
+        $this->logger->debug('getting nodes');
         $this->verify();
         $nodesData = $this->db->getNodes();
         $nodes     = [];
@@ -122,6 +134,7 @@ final class Service implements ServiceInterface
 
     public function updateNode(ModelNode $node): bool
     {
+        $this->logger->debug('updating node', ['node' => $node->toArray()]);
         $this->verify();
         $exists = $this->db->getNode($node->getId());
         if(is_null($exists)) {
@@ -135,17 +148,17 @@ final class Service implements ServiceInterface
         return false;
     }
 
-    public function deleteNode(string $id): bool
+    public function deleteNode(ModelNode $node): bool
     {
+        $this->logger->debug('deleting node', ['node' => $node->toArray()]);
         $this->verify();
-        $exists = $this->db->getNode($id);
+        $exists = $this->db->getNode($node->getId());
         if(is_null($exists)) {
             return false;
         }
-
-        $old = $this->getNode($id);
-        $this->insertLog(new ModelLog( 'node', $id, 'delete', $old->toArray(), null));
-        if ($this->db->deleteNode($id)) {
+        $old = $this->getNode($node->getId());
+        $this->insertLog(new ModelLog( 'node', $node->getId(), 'delete', $old->toArray(), null));
+        if ($this->db->deleteNode($node->getId())) {
             return true;
         }
         return false;
@@ -153,6 +166,7 @@ final class Service implements ServiceInterface
 
     public function getEdge(string $source, string $target): ?ModelEdge
     {
+        $this->logger->debug('getting edge', ['source' => $source, 'target' => $target]);
         $this->verify();
         $data = $this->db->getEdge($source, $target);
         if(! is_null($data)) {
@@ -167,6 +181,7 @@ final class Service implements ServiceInterface
 
     public function getEdges(): array
     {
+        $this->logger->debug('getting edges');
         $this->verify();
 
         $edgesData = $this->db->getEdges();
@@ -184,6 +199,7 @@ final class Service implements ServiceInterface
 
     public function insertEdge(ModelEdge $edge): bool
     {
+        $this->logger->debug('inserting edge', ['edge' => $edge->toArray()]);
         $this->verify();
         $this->insertLog(new ModelLog( 'edge', $edge->getId(), 'insert', null, $edge->toArray()));
         if ($this->db->insertEdge($edge->getId(), $edge->getSource(), $edge->getTarget(), $edge->getData())) {
@@ -194,6 +210,7 @@ final class Service implements ServiceInterface
 
     public function updateEdge(ModelEdge $edge): bool
     {
+        $this->logger->debug('updating edge', ['edge' => $edge->toArray()]);
         $this->verify();
         $exists = $this->db->getEdge($edge->getSource(), $edge->getTarget());
         if (is_null($exists)) {
@@ -210,6 +227,7 @@ final class Service implements ServiceInterface
 
     public function deleteEdge(ModelEdge $edge): bool
     {
+        $this->logger->debug('deleting edge', ['edge' => $edge->toArray()]);
         $this->verify();
         if($this->db->deleteEdge($edge->getId())) {
             return true;
@@ -219,6 +237,7 @@ final class Service implements ServiceInterface
 
     public function getStatus(): array
     {
+        $this->logger->debug('getting status');
         $this->verify();
         $statusesData = $this->db->getStatus();
         $nodeStatuses = [];
@@ -231,6 +250,7 @@ final class Service implements ServiceInterface
 
     public function getNodeStatus(string $id): ModelStatus
     {
+        $this->logger->debug('getting node status', ['id' => $id]);
         $this->verify();
         $statusData = $this->db->getNodeStatus($id);
         return new ModelStatus($id, $statusData['status'] ?? 'unknown');
@@ -238,6 +258,7 @@ final class Service implements ServiceInterface
 
     public function updateNodeStatus(ModelStatus $status): bool
     {
+        $this->logger->debug('updating node status', ['status' => $status->toArray()]);
         $this->verify();
         if ($this->db->updateNodeStatus($status->getNodeId(), $status->getStatus())) {
             return true;
@@ -247,6 +268,7 @@ final class Service implements ServiceInterface
 
     public function getLogs($limit): array
     {
+        $this->logger->debug('getting logs', ['limit' => $limit]);
         $this->verify();
         $logs = [];
         $rows = $this->db->getLogs($limit);
@@ -268,16 +290,17 @@ final class Service implements ServiceInterface
         return $logs;
     }
 
-    private function insertLog(ModelLog $auditLog): void
+    private function insertLog(ModelLog $log): void
     {
+        $this->logger->debug('insert log', ['log' => $log]);
         $user_id   = HelperContext::getUser();
         $ip_address = HelperContext::getClientIp();
         $this->db->insertLog(
-            $auditLog->entityType,
-            $auditLog->entityId,
-            $auditLog->action,
-            $auditLog->oldData,
-            $auditLog->newData,
+            $log->entityType,
+            $log->entityId,
+            $log->action,
+            $log->oldData,
+            $log->newData,
             $user_id,
             $ip_address
         );
@@ -289,22 +312,28 @@ final class Service implements ServiceInterface
         $action = "{$trace[1]['class']}::{$trace[1]['function']}";
         $group  = HelperContext::getGroup();
 
+        $this->logger->debug('verify', ['action' => $action, 'group' => $group]);
+
         // if is admin, allow all
         if ($group === 'admin') {
+            $this->logger->info('allow admin', ['action' => $action, 'group' => $group]);
             return;
         }
 
         // if action is in the SAFE_ACTIONS, allow all
         if (self::SECURE_ACTIONS[$action]) {
+            $this->logger->info('allow safe action', ['action' => $action, 'group' => $group]);
             return;
         }
         
         // if action is restricted, only allow contributor
         if (self::SECURE_ACTIONS[$action] == false && $group == 'contributor')
         {
+            $this->logger->info('contributor is allowed', ['action' => $action, 'group' => $group]);
             return;
         }
 
+        $this->logger->info('not authorized', ['action' => $action, 'group' => $group]);
         throw new RuntimeException('action not allowed: ' . $action);
     }
 }

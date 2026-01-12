@@ -14,7 +14,7 @@ interface ServiceInterface
     public function getNodes(): array;
     public function insertNode(ModelNode $node): bool;
     public function updateNode(ModelNode $node): bool;
-    public function deleteNode(string $id): bool;
+    public function deleteNode(ModelNode $node): bool;
 
     public function getEdge(string $source, string $target): ?ModelEdge;
     public function getEdges(): array;

@@ -56,6 +56,13 @@ class TestService extends TestAbstractTest
             throw new Exception('error on test_Service_getUser');
         }
         $this->service->insertUser(new ModelUser('maria', new ModelGroup('contributor')));
+        
+        try {
+            $this->service->insertUser(new ModelUser('maria', new ModelGroup('contributor')));
+        } catch(Exception $e) {
+            return;
+        }
+        throw new Exception('error on testInsertUser');
     }
     
     public function testUpdateUser(): void
@@ -67,27 +74,24 @@ class TestService extends TestAbstractTest
         if($user->getId() != 'maria' || $user->getGroup()->getId() != 'admin') {
             throw new Exception('error on test_Service_updateUser');
         }
+        if($this->service->updateUser(new ModelUser('pedro', new ModelGroup('admin')))) {
+            throw new Exception('error on testUpdateUser');
+        }
     }
     
     public function testGetGraph(): void
     {
         HelperContext::update('admin', 'admin', '127.0.0.1');
-
         $node1 = new ModelNode('n1', 'Node 01', 'business', 'server', ['key' => 'value1']);
         $node2 = new ModelNode('n2', 'Node 02', 'application', 'database', ['key' => 'value2']);
-        
         $this->service->insertNode($node1);
         $this->service->insertNode($node2);
-        
         $edge1 = new ModelEdge('n1', 'n2', ['weight' => '10']);
         $this->service->insertEdge($edge1);
-        
         $graph = $this->service->getGraph();
-
         if (count($graph->getNodes()) != 2) {
             throw new Exception('error on test_Service_getGraph - expected 2 nodes');
         }
-        
         if (count($graph->getEdges()) != 1) {
             throw new Exception('error on test_Service_getGraph - expected 1 edge');
         }
@@ -184,7 +188,7 @@ class TestService extends TestAbstractTest
     {
         HelperContext::update('admin', 'admin', '127.0.0.1');
 
-        $this->service->deleteNode('id');
+        $this->service->deleteNode(new ModelNode('id', 'one node', 'application', 'database', []));
 
         $node1 = new ModelNode('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
         $this->service->insertNode($node1);
@@ -194,7 +198,7 @@ class TestService extends TestAbstractTest
             throw new Exception('problem on testDeleteNode');
         }
 
-        $this->service->deleteNode('node1');
+        $this->service->deleteNode($node1);
 
         $node = $this->service->getNode('node1');
         if(! is_null($node)) {
@@ -383,7 +387,7 @@ class TestService extends TestAbstractTest
         $updatedNode = new ModelNode('node1', 'Updated Node', 'application', 'database', ['key' => 'newvalue']);
         $this->service->updateNode($updatedNode);
         sleep(1);
-        $this->service->deleteNode('node1');
+        $this->service->deleteNode($node1);
         sleep(1);
         $logs = $this->service->getLogs(10);
         if (count($logs) != 3) {
