@@ -41,10 +41,49 @@ final class TestHTTPController extends TestAbstractTest
 
     public function testGetUser(): void
     {
+        $_GET['id'] = 'maria';
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getUser';
+
+        $req = new HTTPRequest();
+        $resp = $this->controller->getUser($req);
+        if ($resp->code != 404 || $resp->status != 'error' || $resp->message != 'user not found') {
+            throw new Exception('error on testGetUser');
+        }
+
+        $this->database->insertUser('maria', 'contributor');
+
+        $req = new HTTPRequest();
+        $resp = $this->controller->getUser($req);
+        if($resp->code != 200 || $resp->status != 'success' || $resp->message != 'user found' || $resp->data['id'] != 'maria') {
+            throw new Exception('error on testGetUser');
+        }
+
+        unset($_GET['id']);
+        try {
+            $req = new HTTPRequest();
+            $resp = $this->controller->getUser($req);
+        } catch(Exception $e) {
+            return;
+        }
+        throw new Exception('error on testGetUser');
     }
 
     public function testInsertUser(): void
     {
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/insertUser';
+        
+        $req = new HTTPRequest();
+        $req->data['id'] = 'maria';
+        $req->data['user_group'] = 'admin';
+
+        $resp = $this->controller->insertUser($req);
+        if($resp->code != 201 || $resp->status != 'success' || $resp->message != 'user created' || $resp->data['id'] != 'maria' || $resp->data['user_group'] != 'admin') {
+            throw new Exception('error on testInsertUser');
+        }
     }
 
     public function testUpdateUser(): void

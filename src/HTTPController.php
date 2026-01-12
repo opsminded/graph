@@ -15,29 +15,19 @@ final class HTTPController implements HTTPControllerInterface
 
     public function getUser(HTTPRequest $req): HTTPResponseInterface
     {
-        try {
-            $id = $req->getParam('id');
-            $user = $this->service->getUser($id);
-            if(is_null($user)) {
-                return new HTTPNotFoundResponse('User not found', ['id' => $id]);
-            }
-            return new HTTPOKResponse('user found', $user->toArray());
-        } catch(Exception $e) {
-            return new HTTPBadRequestResponse('bad request: ' . $e->getMessage(), $req->data);
+        $id = $req->getParam('id');
+        $user = $this->service->getUser($id);
+        if(is_null($user)) {
+            return new HTTPNotFoundResponse('user not found', ['id' => $id]);
         }
+        return new HTTPOKResponse('user found', $user->toArray());
     }
 
     public function insertUser(HTTPRequest $req): HTTPResponseInterface
     {
-        try {
-            $user = new ModelUser($req->data['id'], new ModelGroup($req->data['user_group']));
-            $this->service->insertUser($user);
-            return new HTTPCreatedResponse('user created', $req->data);
-        } catch(Exception $e) {
-            return new HTTPBadRequestResponse('bad request: ' . $e->getMessage(), $req->data);
-        }
-        
-        return new HTTPOKResponse('user created', $req->data);
+        $user = new ModelUser($req->data['id'], new ModelGroup($req->data['user_group']));
+        $this->service->insertUser($user);
+        return new HTTPCreatedResponse('user created', $req->data);
     }
 
     public function updateUser(HTTPRequest $req): HTTPResponseInterface
