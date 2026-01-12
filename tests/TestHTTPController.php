@@ -10,19 +10,19 @@ final class TestHTTPController extends TestAbstractTest
     private ?Logger $serviceLogger;
     private ?Logger $controllerLogger;
 
-    private ?GraphDatabaseInterface $database;
-    private ?GraphServiceInterface $service;
+    private ?DatabaseInterface $database;
+    private ?ServiceInterface $service;
     private ?HTTPControllerInterface $controller;
 
     public function up(): void
     {
-        $this->pdo = GraphDatabase::createConnection('sqlite::memory:');
+        $this->pdo = Database::createConnection('sqlite::memory:');
         $this->databaseLogger = new Logger('database.log');
         $this->serviceLogger = new Logger('service.log');
         $this->controllerLogger = new Logger('controller.log');
 
-        $this->database = new GraphDatabase($this->pdo, $this->databaseLogger);
-        $this->service = new GraphService($this->database, $this->serviceLogger);
+        $this->database = new Database($this->pdo, $this->databaseLogger);
+        $this->service = new Service($this->database, $this->serviceLogger);
         $this->controller = new HTTPController($this->service, $this->controllerLogger);
     }
 

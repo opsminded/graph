@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 final class HTTPController implements HTTPControllerInterface
 {
-    private GraphServiceInterface $service;
+    private ServiceInterface $service;
     private Logger $logger;
 
-    public function __construct(GraphServiceInterface $service, Logger $logger)
+    public function __construct(ServiceInterface $service, Logger $logger)
     {
         $this->service = $service;
         $this->logger = $logger;

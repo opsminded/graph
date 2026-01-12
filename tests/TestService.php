@@ -2,25 +2,25 @@
 
 declare(strict_types=1);
 
-class TestGraphService extends TestAbstractTest
+class TestService extends TestAbstractTest
 {
     private ?PDO $pdo;
 
     private ?logger $databaseLogger;
     private ?logger $serviceLogger;
 
-    private ?GraphDatabaseInterface $graphDB;
-    private ?GraphServiceInterface $service;
+    private ?DatabaseInterface $graphDB;
+    private ?ServiceInterface $service;
 
     public function up(): void
     {
-        $this->pdo = GraphDatabase::createConnection('sqlite::memory:');
+        $this->pdo = Database::createConnection('sqlite::memory:');
         
         $this->databaseLogger = new Logger('database.log');
-        $this->graphDB = new GraphDatabase($this->pdo, $this->databaseLogger);
+        $this->graphDB = new Database($this->pdo, $this->databaseLogger);
 
         $this->serviceLogger = new Logger('service.log');
-        $this->service = new GraphService($this->graphDB, $this->serviceLogger);
+        $this->service = new Service($this->graphDB, $this->serviceLogger);
     }
 
     public function down(): void
@@ -34,7 +34,7 @@ class TestGraphService extends TestAbstractTest
 
     public function testGetUser(): void
     {
-        HelperGraphContext::update('admin', 'admin', '127.0.0.1');
+        HelperContext::update('admin', 'admin', '127.0.0.1');
         $user = $this->service->getUser('maria');
         if ($user !== null) {
             throw new Exception('error on test_Service_getUser');
@@ -49,7 +49,7 @@ class TestGraphService extends TestAbstractTest
     
     public function testInsertUser(): void
     {
-        HelperGraphContext::update('admin', 'admin', '127.0.0.1');
+        HelperContext::update('admin', 'admin', '127.0.0.1');
 
         $user = $this->service->getUser('maria');
         if ($user !== null) {
@@ -60,7 +60,7 @@ class TestGraphService extends TestAbstractTest
     
     public function testUpdateUser(): void
     {
-        HelperGraphContext::update('admin', 'admin', '127.0.0.1');
+        HelperContext::update('admin', 'admin', '127.0.0.1');
         $this->service->insertUser(new ModelUser('maria', new ModelGroup('contributor')));
         $this->service->updateUser(new ModelUser('maria', new ModelGroup('admin')));
         $user = $this->service->getUser('maria');
@@ -71,7 +71,7 @@ class TestGraphService extends TestAbstractTest
     
     public function testGetGraph(): void
     {
-        HelperGraphContext::update('admin', 'admin', '127.0.0.1');
+        HelperContext::update('admin', 'admin', '127.0.0.1');
 
         $node1 = new ModelNode('n1', 'Node 01', 'business', 'server', ['key' => 'value1']);
         $node2 = new ModelNode('n2', 'Node 02', 'application', 'database', ['key' => 'value2']);
@@ -95,7 +95,7 @@ class TestGraphService extends TestAbstractTest
     
     public function testGetNode(): void
     {
-        HelperGraphContext::update('admin', 'admin', '127.0.0.1');
+        HelperContext::update('admin', 'admin', '127.0.0.1');
         $node = $this->service->getNode('node1');
         if ($node !== null) {
             throw new Exception('error on test_Service_getNode - should be null');
@@ -114,7 +114,7 @@ class TestGraphService extends TestAbstractTest
     
     public function testGetNodes(): void
     {
-        HelperGraphContext::update('admin', 'admin', '127.0.0.1');
+        HelperContext::update('admin', 'admin', '127.0.0.1');
         $nodes = $this->service->getNodes();
         if (count($nodes) != 0) {
             throw new Exception('error on test_Service_getNodes - should be empty');
@@ -137,7 +137,7 @@ class TestGraphService extends TestAbstractTest
     
     public function testInsertNode(): void
     {
-        HelperGraphContext::update('admin', 'admin', '127.0.0.1');
+        HelperContext::update('admin', 'admin', '127.0.0.1');
         $node = new ModelNode('node1', 'Node 01', 'business', 'server', ['key' => 'value']);
         $this->service->insertNode($node);
         $retrievedNode = $this->service->getNode('node1');
@@ -145,7 +145,7 @@ class TestGraphService extends TestAbstractTest
             throw new Exception('error on test_Service_insertNode');
         }
         // Test with contributor permission
-        HelperGraphContext::update('admin', 'admin', '127.0.0.1');
+        HelperContext::update('admin', 'admin', '127.0.0.1');
         $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
         $this->service->insertNode($node2);
         $retrievedNode2 = $this->service->getNode('node2');
@@ -156,30 +156,33 @@ class TestGraphService extends TestAbstractTest
     
     public function testUpdateNode(): void
     {
-        HelperGraphContext::update('admin', 'admin', '127.0.0.1');
+        HelperContext::update('admin', 'admin', '127.0.0.1');
         $node = new ModelNode('node1', 'Node 01', 'business', 'server', ['key' => 'value']);
         $this->service->insertNode($node);
         $updatedNode = new ModelNode('node1', 'Updated Node', 'application', 'database', ['key' => 'newvalue']);
+        
         $this->service->updateNode($updatedNode);
         $retrievedNode = $this->service->getNode('node1');
-        if ($retrievedNode->getLabel() != 'Updated Node' || $retrievedNode->getCategory() != 'application') {
-            throw new Exception('error on test_Service_updateNode');
+
+        
+        if ($retrievedNode->getLabel() != 'Updated Node' || $retrievedNode->getCategory() != 'application' || $retrievedNode->getType() != 'database') {
+            throw new Exception('error on test_Service_updateNode compare label and category');
         }
         $data = $retrievedNode->getData();
         if ($data['key'] != 'newvalue') {
             throw new Exception('error on test_Service_updateNode - data not updated');
         }
+        
         // try to update node not found
         $updatedNode = new ModelNode('node5', 'Updated Node', 'application', 'database', ['key' => 'newvalue']);
-        $exists = $this->service->updateNode($updatedNode);
-        if(!is_null($exists)) {
-            throw new Exception('error on test_Service_updateNode');
+        if ($this->service->updateNode($updatedNode)) {
+            throw new Exception('error on test_Service_updateNode deveria ser false');
         }
     }
     
     public function testDeleteNode(): void
     {
-        HelperGraphContext::update('admin', 'admin', '127.0.0.1');
+        HelperContext::update('admin', 'admin', '127.0.0.1');
 
         $this->service->deleteNode('id');
 
@@ -201,7 +204,7 @@ class TestGraphService extends TestAbstractTest
     
     public function testGetEdge(): void
     {
-        HelperGraphContext::update('admin', 'admin', '127.0.0.1');
+        HelperContext::update('admin', 'admin', '127.0.0.1');
         $node1 = new ModelNode('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
         $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
         $this->service->insertNode($node1);
@@ -223,7 +226,7 @@ class TestGraphService extends TestAbstractTest
     }
     
     public function testGetEdges(): void {
-        HelperGraphContext::update('admin', 'admin', '127.0.0.1');
+        HelperContext::update('admin', 'admin', '127.0.0.1');
         $edges = $this->service->getEdges();
         if (count($edges) != 0) {
             throw new Exception('error on test_Service_getEdges - should be empty');
@@ -251,7 +254,7 @@ class TestGraphService extends TestAbstractTest
     }
     
     public function testInsertEdge(): void {
-        HelperGraphContext::update('admin', 'admin', '127.0.0.1');
+        HelperContext::update('admin', 'admin', '127.0.0.1');
         $node1 = new ModelNode('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
         $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
         $this->service->insertNode($node1);
@@ -266,7 +269,7 @@ class TestGraphService extends TestAbstractTest
     
     public function testUpdateEdge(): void
     {
-        HelperGraphContext::update('admin', 'admin', '127.0.0.1');
+        HelperContext::update('admin', 'admin', '127.0.0.1');
 
         $updatedEdge = new ModelEdge('node1', 'node2', ['weight' => '30']);
         $this->service->updateEdge($updatedEdge);
@@ -296,7 +299,7 @@ class TestGraphService extends TestAbstractTest
     
     public function testDeleteEdge(): void
     {
-        HelperGraphContext::update('admin', 'admin', '127.0.0.1');
+        HelperContext::update('admin', 'admin', '127.0.0.1');
         $node1 = new ModelNode('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
         $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
         $this->service->insertNode($node1);
@@ -316,7 +319,7 @@ class TestGraphService extends TestAbstractTest
     
     public function testGetStatus(): void
     {
-        HelperGraphContext::update('admin', 'admin', '127.0.0.1');
+        HelperContext::update('admin', 'admin', '127.0.0.1');
         $statuses = $this->service->getStatus();
 
         if (count($statuses) != 0) {
@@ -336,7 +339,7 @@ class TestGraphService extends TestAbstractTest
     
     public function testGetNodeStatus(): void
     {
-        HelperGraphContext::update('admin', 'admin', '127.0.0.1');
+        HelperContext::update('admin', 'admin', '127.0.0.1');
         $node1 = new ModelNode('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
         $this->service->insertNode($node1);
         $status = $this->service->getNodeStatus('node1');
@@ -352,7 +355,7 @@ class TestGraphService extends TestAbstractTest
     
     public function testUpdateNodeStatus(): void
     {
-        HelperGraphContext::update('admin', 'admin', '127.0.0.1');
+        HelperContext::update('admin', 'admin', '127.0.0.1');
         $node1 = new ModelNode('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
         $this->service->insertNode($node1);
         $this->service->updateNodeStatus(new ModelStatus('node1', 'healthy'));

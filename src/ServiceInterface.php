@@ -1,0 +1,30 @@
+<?php
+
+declare(strict_types=1);
+
+interface ServiceInterface
+{
+    public function getUser(string $id): ?ModelUser;
+    public function insertUser(ModelUser $user): bool;
+    public function updateUser(ModelUser $user): bool;
+
+    public function getGraph(): ModelGraph;
+
+    public function getNode(string $id): ?ModelNode;
+    public function getNodes(): array;
+    public function insertNode(ModelNode $node): bool;
+    public function updateNode(ModelNode $node): bool;
+    public function deleteNode(string $id): bool;
+
+    public function getEdge(string $source, string $target): ?ModelEdge;
+    public function getEdges(): array;
+    public function insertEdge(ModelEdge $edge): bool;
+    public function updateEdge(ModelEdge $edge): bool;
+    public function deleteEdge(ModelEdge $edge): bool;
+
+    public function getStatus(): array;
+    public function getNodeStatus(string $id): ModelStatus;
+    public function updateNodeStatus(ModelStatus $status): bool;
+
+    public function getLogs($limit): array;
+}

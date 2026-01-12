@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-class TestHelperGraphContext extends TestAbstractTest
+class TestHelperContext extends TestAbstractTest
 {
     public function testGraphContextUpdate(): void
     {
-        HelperGraphContext::update('maria', 'admin', '192.168.0.1');
-        if (HelperGraphContext::getUser() != 'maria') {
+        HelperContext::update('maria', 'admin', '192.168.0.1');
+        if (HelperContext::getUser() != 'maria') {
             throw new Exception('TODO message. testGraphContextUpdate');
         }
 
-        if (HelperGraphContext::getGroup() != 'admin') {
+        if (HelperContext::getGroup() != 'admin') {
             throw new Exception('TODO message. testGraphContextUpdate');
         }
 
-        if (HelperGraphContext::getClientIP() != '192.168.0.1') {
+        if (HelperContext::getClientIP() != '192.168.0.1') {
             throw new Exception('TODO message. testGraphContextUpdate');
         }
     }

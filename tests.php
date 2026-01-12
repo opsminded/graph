@@ -41,8 +41,8 @@ if (file_exists('controller.log')) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-require_once __DIR__ . '/src/GraphDatabaseInterface.php';
-require_once __DIR__ . '/src/GraphServiceInterface.php';
+require_once __DIR__ . '/src/DatabaseInterface.php';
+require_once __DIR__ . '/src/ServiceInterface.php';
 require_once __DIR__ . '/src/LoggerInterface.php';
 require_once __DIR__ . '/src/HTTPControllerInterface.php';
 require_once __DIR__ . '/src/HTTPResponseInterface.php';
@@ -57,11 +57,11 @@ foreach (glob(__DIR__ . "/tests/*.php") as $arquivo) {
 }
 
 $tests = [
-    new TestGraphDatabase(),
+    new TestDatabase(),
 
-    new TestGraphService(),
+    new TestService(),
 
-    new TestHelperGraphContext(),
+    new TestHelperContext(),
     
     new TestHelperLogger(),
 
@@ -69,12 +69,15 @@ $tests = [
     new TestHTTPOKResponse(),
     new TestHTTPBadRequestResponse(),
     new TestHTTPCreatedResponse(),
+    new TestHTTPForbiddenResponse(),
+    new TestHTTPInternalServerErrorResponse(),
     new TestHTTPNotFoundResponse(),
 
     new TestHTTPRequest(),
     new TestHTTPRequestException(),
 
     new TestHTTPResponse(),
+    new TestHTTPUnauthorizedResponse(),
     
     new TestModelEdge(),
     new TestModelGraph(),

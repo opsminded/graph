@@ -2,34 +2,34 @@
 
 declare(strict_types=1);
 
-class TestGraphDatabase extends TestAbstractTest
+class TestDatabase extends TestAbstractTest
 {
     private ?PDO $pdo;
     private ?LoggerInterface $logger;
-    private ?GraphDatabase $graphDB;
+    private ?Database $database;
 
     public function up(): void
     {
-        $this->pdo = GraphDatabase::createConnection('sqlite::memory:');
+        $this->pdo = Database::createConnection('sqlite::memory:');
         $this->logger = new Logger('database.log');
-        $this->graphDB = new GraphDatabase($this->pdo, $this->logger);
+        $this->database = new Database($this->pdo, $this->logger);
     }
 
     public function down(): void
     {
         $this->pdo = null;
         $this->logger = null;
-        $this->graphDB = null;
+        $this->database = null;
     }
 
     public function testGetUser(): void
     {
-        $user = $this->graphDB->getUser('maria');
+        $user = $this->database->getUser('maria');
         if ($user !== null) {
             throw new Exception('deveria retornar null');
         }
 
-        $user = $this->graphDB->getUser('admin');
+        $user = $this->database->getUser('admin');
         if($user['id'] !== 'admin' || $user['user_group'] !== 'admin') {
             throw new Exception('admin expected');
         }
@@ -37,25 +37,26 @@ class TestGraphDatabase extends TestAbstractTest
 
     public function testInsertUser(): void
     {
-        $this->graphDB->insertUser('maria', 'contributor');
-        $user = $this->graphDB->getUser('maria');
+        $this->database->insertUser('maria', 'contributor');
+        $user = $this->database->getUser('maria');
         if($user['id'] !== 'maria' || $user['user_group'] !== 'contributor') {
             throw new Exception('maria expected');
         }
     }
 
     public function testUpdateUser(): void {
-        $this->graphDB->insertUser('maria', 'contributor');
-        $this->graphDB->updateUser('maria', 'admin');
-        $user = $this->graphDB->getUser('maria');
+        $this->database->insertUser('maria', 'contributor');
+        $this->database->updateUser('maria', 'admin');
+        $user = $this->database->getUser('maria');
         if($user['id'] !== 'maria' || $user['user_group'] !== 'admin') {
             throw new Exception('expected maria admin');
         }
     }
 
     public function testGetNode(): void {
-        $this->graphDB->insertNode('node1', 'Node 01', 'business', 'server', ['running_on' => 'SRV01OP']);
-        $node = $this->graphDB->getNode('node1');
+        $this->database->insertNode('node1', 'Node 01', 'business', 'server', ['running_on' => 'SRV01OP']);
+        $node = $this->database->getNode('node1');
+        
         if($node['id'] != 'node1' || $node['label'] != 'Node 01' || $node['category'] != 'business' || $node['type'] != 'server') {
             throw new Exception('error on getNode');
         }
@@ -66,9 +67,9 @@ class TestGraphDatabase extends TestAbstractTest
     }
 
     public function testGetNodes(): void {
-        $this->graphDB->insertNode('node1', 'Node 01', 'application', 'application', ['running_on' => 'SRV01OP']);
-        $this->graphDB->insertNode('node2', 'Node 02', 'business', 'database', ['running_on' => 'SRV011P']);
-        $nodes = $this->graphDB->getNodes();
+        $this->database->insertNode('node1', 'Node 01', 'application', 'application', ['running_on' => 'SRV01OP']);
+        $this->database->insertNode('node2', 'Node 02', 'business', 'database', ['running_on' => 'SRV011P']);
+        $nodes = $this->database->getNodes();
 
         if(count($nodes) != 2) {
             throw new Exception('error on test_getNodes');
@@ -92,8 +93,8 @@ class TestGraphDatabase extends TestAbstractTest
     }
 
     public function testInsertNode(): void {
-        $this->graphDB->insertNode('node1', 'Node 01', 'business', 'server', ['running_on' => 'SRV01OP']);
-        $node = $this->graphDB->getNode('node1');
+        $this->database->insertNode('node1', 'Node 01', 'business', 'server', ['running_on' => 'SRV01OP']);
+        $node = $this->database->getNode('node1');
         if($node['id'] != 'node1' || $node['label'] != 'Node 01' || $node['category'] != 'business' || $node['type'] != 'server') {
             throw new Exception('error on getNode');
         }
@@ -104,9 +105,9 @@ class TestGraphDatabase extends TestAbstractTest
     }
 
     public function testUpdateNode(): void {
-        $this->graphDB->insertNode('node1', 'Node 01', 'business', 'server', ['running_on' => 'SRV01OP']);
-        $this->graphDB->updateNode('node1', 'Novo Label', 'application', 'database', ['other' => 'diff']);
-        $node = $this->graphDB->getNode('node1');
+        $this->database->insertNode('node1', 'Node 01', 'business', 'server', ['running_on' => 'SRV01OP']);
+        $this->database->updateNode('node1', 'Novo Label', 'application', 'database', ['other' => 'diff']);
+        $node = $this->database->getNode('node1');
         if($node['id'] != 'node1' || $node['label'] != 'Novo Label' || $node['category'] != 'application' || $node['type'] != 'database') {
             throw new Exception('error on test_updateNode');
         }
@@ -117,35 +118,35 @@ class TestGraphDatabase extends TestAbstractTest
     }
 
     public function testDeleteNode(): void {
-        $node = $this->graphDB->getNode('node1');
+        $node = $this->database->getNode('node1');
         if ($node !== null) {
             throw new Exception('error on test_deleteNode');
         }
-        $this->graphDB->insertNode('node1', 'Node 01', 'business', 'server', ['running_on' => 'SRV01OP']);
-        $node = $this->graphDB->getNode('node1');
+        $this->database->insertNode('node1', 'Node 01', 'business', 'server', ['running_on' => 'SRV01OP']);
+        $node = $this->database->getNode('node1');
         if($node['id'] != 'node1' || $node['label'] != 'Node 01' || $node['category'] != 'business' || $node['type'] != 'server') {
             throw new Exception('error on test_updateNode');
         }
 
-        $this->graphDB->deleteNode('node1');
-        $node = $this->graphDB->getNode('node1');
+        $this->database->deleteNode('node1');
+        $node = $this->database->getNode('node1');
         if ($node !== null) {
             throw new Exception('error on test_deleteNode');
         }
     }
 
     public function testGetEdge(): void {
-        $edge = $this->graphDB->getEdge('node1', 'node2');
+        $edge = $this->database->getEdge('node1', 'node2');
         if ($edge !== null) {
             throw new Exception('error on test_getEdge');
         }
 
-        $this->graphDB->insertNode('node1', 'Node 01', 'application', 'application', ['running_on' => 'SRV01OP']);
-        $this->graphDB->insertNode('node2', 'Node 02', 'business', 'database', ['running_on' => 'SRV011P']);
+        $this->database->insertNode('node1', 'Node 01', 'application', 'application', ['running_on' => 'SRV01OP']);
+        $this->database->insertNode('node2', 'Node 02', 'business', 'database', ['running_on' => 'SRV011P']);
 
-        $this->graphDB->insertEdge('edge1', 'node1', 'node2', ['a' => 'b']);
+        $this->database->insertEdge('edge1', 'node1', 'node2', ['a' => 'b']);
 
-        $edge = $this->graphDB->getEdge('node1', 'node2');
+        $edge = $this->database->getEdge('node1', 'node2');
 
         if($edge['id'] != 'edge1' || $edge['source'] != 'node1' || $edge['target'] != 'node2') {
             throw new Exception('error on test_Database_getEdge');
@@ -157,24 +158,24 @@ class TestGraphDatabase extends TestAbstractTest
     }
 
     public function testGetEdges(): void {
-        $edge = $this->graphDB->getEdge('node1', 'node2');
+        $edge = $this->database->getEdge('node1', 'node2');
         if ($edge !== null) {
             throw new Exception('error on test_getEdges');
         }
 
-        $edge = $this->graphDB->getEdge('node2', 'node3');
+        $edge = $this->database->getEdge('node2', 'node3');
         if ($edge !== null) {
             throw new Exception('error on test_getEdges');
         }
 
-        $this->graphDB->insertNode('node1', 'Node 01', 'business', 'server', ['running_on' => 'SRV01OP']);
-        $this->graphDB->insertNode('node2', 'Node 02', 'application', 'database', ['running_on' => 'SRV011P']);
-        $this->graphDB->insertNode('node3', 'Node 03', 'network', 'application', ['running_on' => 'SRV012P']);
+        $this->database->insertNode('node1', 'Node 01', 'business', 'server', ['running_on' => 'SRV01OP']);
+        $this->database->insertNode('node2', 'Node 02', 'application', 'database', ['running_on' => 'SRV011P']);
+        $this->database->insertNode('node3', 'Node 03', 'network', 'application', ['running_on' => 'SRV012P']);
 
-        $this->graphDB->insertEdge('edge1', 'node1', 'node2', ['a' => 'b']);
-        $this->graphDB->insertEdge('edge2', 'node2', 'node3', ['b' => 'c']);
+        $this->database->insertEdge('edge1', 'node1', 'node2', ['a' => 'b']);
+        $this->database->insertEdge('edge2', 'node2', 'node3', ['b' => 'c']);
 
-        $edges = $this->graphDB->getEdges();
+        $edges = $this->database->getEdges();
         if(count($edges) != 2) {
             throw new Exception('error on test_getEdges');
         }
@@ -189,17 +190,17 @@ class TestGraphDatabase extends TestAbstractTest
     }
 
     public function testInsertEdge(): void {
-        $edge = $this->graphDB->getEdge('node1', 'node2');
+        $edge = $this->database->getEdge('node1', 'node2');
         if ($edge !== null) {
             throw new Exception('error on test_Database_insertEdge');
         }
 
-        $this->graphDB->insertNode('node1', 'Node 01', 'application', 'application', ['running_on' => 'SRV01OP']);
-        $this->graphDB->insertNode('node2', 'Node 02', 'business', 'database', ['running_on' => 'SRV011P']);
+        $this->database->insertNode('node1', 'Node 01', 'application', 'application', ['running_on' => 'SRV01OP']);
+        $this->database->insertNode('node2', 'Node 02', 'business', 'database', ['running_on' => 'SRV011P']);
 
-        $this->graphDB->insertEdge('edge1', 'node1', 'node2', ['a' => 'b']);
+        $this->database->insertEdge('edge1', 'node1', 'node2', ['a' => 'b']);
 
-        $edge = $this->graphDB->getEdge('node1', 'node2');
+        $edge = $this->database->getEdge('node1', 'node2');
 
         if($edge['id'] != 'edge1' || $edge['source'] != 'node1' || $edge['target'] != 'node2') {
             throw new Exception('error on test_Database_insertEdge');
@@ -209,8 +210,8 @@ class TestGraphDatabase extends TestAbstractTest
             throw new Exception('error on test_Database_insertEdge');
         }
 
-        $this->graphDB->insertEdge('edge2', 'node2', 'node1', ['a' => 'b']);
-        $edge = $this->graphDB->getEdge('node2', 'node1');
+        $this->database->insertEdge('edge2', 'node2', 'node1', ['a' => 'b']);
+        $edge = $this->database->getEdge('node2', 'node1');
 
         if ($edge !== null) {
             throw new Exception('error on test_Database_insertEdge');
@@ -218,19 +219,19 @@ class TestGraphDatabase extends TestAbstractTest
     }
 
     public function testUpdateEdge(): void {
-        $edge = $this->graphDB->getEdge('node1', 'node2');
+        $edge = $this->database->getEdge('node1', 'node2');
         if ($edge !== null) {
             throw new Exception('error on test_updateEdge');
         }
 
-        $this->graphDB->insertNode('node1', 'Node 01', 'business', 'server', ['running_on' => 'SRV01OP']);
-        $this->graphDB->insertNode('node2', 'Node 02', 'application', 'database', ['running_on' => 'SRV011P']);
-        $this->graphDB->insertNode('node3', 'Node 03', 'network', 'application', ['running_on' => 'SRV012P']);
-        $this->graphDB->insertEdge('edge1', 'node1', 'node2', ['a' => 'b']);
+        $this->database->insertNode('node1', 'Node 01', 'business', 'server', ['running_on' => 'SRV01OP']);
+        $this->database->insertNode('node2', 'Node 02', 'application', 'database', ['running_on' => 'SRV011P']);
+        $this->database->insertNode('node3', 'Node 03', 'network', 'application', ['running_on' => 'SRV012P']);
+        $this->database->insertEdge('edge1', 'node1', 'node2', ['a' => 'b']);
 
-        $this->graphDB->updateEdge('edge1', 'node2', 'node3', ['x' => 'y']);
+        $this->database->updateEdge('edge1', 'node2', 'node3', ['x' => 'y']);
 
-        $edge = $this->graphDB->getEdge('node2', 'node3');
+        $edge = $this->database->getEdge('node2', 'node3');
 
         if($edge['id'] != 'edge1' || $edge['source'] != 'node2' || $edge['target'] != 'node3') {
             throw new Exception('error on test_updateEdge');
@@ -242,34 +243,34 @@ class TestGraphDatabase extends TestAbstractTest
     }
 
     public function testDeleteEdge(): void {
-        $this->graphDB->insertNode('node1', 'Node 01', 'business', 'server', ['running_on' => 'SRV01OP']);
-        $this->graphDB->insertNode('node2', 'Node 02', 'application', 'database', ['running_on' => 'SRV011P']);
-        $this->graphDB->insertNode('node3', 'Node 03', 'network', 'application', ['running_on' => 'SRV012P']);
-        $this->graphDB->insertEdge('edge1', 'node1', 'node2', ['a' => 'b']);
-        $this->graphDB->insertEdge('edge2', 'node2', 'node3', ['b' => 'c']);
+        $this->database->insertNode('node1', 'Node 01', 'business', 'server', ['running_on' => 'SRV01OP']);
+        $this->database->insertNode('node2', 'Node 02', 'application', 'database', ['running_on' => 'SRV011P']);
+        $this->database->insertNode('node3', 'Node 03', 'network', 'application', ['running_on' => 'SRV012P']);
+        $this->database->insertEdge('edge1', 'node1', 'node2', ['a' => 'b']);
+        $this->database->insertEdge('edge2', 'node2', 'node3', ['b' => 'c']);
 
-        if(count($this->graphDB->getEdges()) != 2) {
+        if(count($this->database->getEdges()) != 2) {
             throw new Exception('error on test_deleteEdge');
         }
 
-        $this->graphDB->deleteEdge('edge1');
-        $this->graphDB->deleteEdge('edge2');
+        $this->database->deleteEdge('edge1');
+        $this->database->deleteEdge('edge2');
 
-        if(count($this->graphDB->getEdges()) != 0) {
+        if(count($this->database->getEdges()) != 0) {
             throw new Exception('error on test_deleteEdge');
         }
     }
 
     public function testGetStatus(): void {
-        $s = $this->graphDB->getStatus();
+        $s = $this->database->getStatus();
 
         if (count($s) != 0) {
             throw new Exception('error on test_getStatuses');
         }
 
-        $this->graphDB->insertNode('node1', 'Node 01', 'business', 'server', ['running_on' => 'SRV01OP']);
+        $this->database->insertNode('node1', 'Node 01', 'business', 'server', ['running_on' => 'SRV01OP']);
 
-        $s = $this->graphDB->getStatus();
+        $s = $this->database->getStatus();
 
         if (count($s) != 1) {
             throw new Exception('error on test_getStatuses');
@@ -281,15 +282,15 @@ class TestGraphDatabase extends TestAbstractTest
     }
 
     public function testGetNodeStatus(): void {
-        $s = $this->graphDB->getStatus();
+        $s = $this->database->getStatus();
 
         if (count($s) != 0) {
             throw new Exception('error on test_getStatuses');
         }
 
-        $this->graphDB->insertNode('node1', 'Node 01', 'business', 'server', ['running_on' => 'SRV01OP']);
+        $this->database->insertNode('node1', 'Node 01', 'business', 'server', ['running_on' => 'SRV01OP']);
 
-        $s = $this->graphDB->getNodeStatus('node1');
+        $s = $this->database->getNodeStatus('node1');
 
         if ($s['id'] != 'node1' || $s['status'] !== null) {
             throw new Exception('error on test_getStatuses');
@@ -297,17 +298,17 @@ class TestGraphDatabase extends TestAbstractTest
     }
 
     public function testUpdateNodeStatus(): void {
-        $s = $this->graphDB->getStatus();
+        $s = $this->database->getStatus();
 
         if (count($s) != 0) {
             throw new Exception('error on test_updateNodeStatus');
         }
 
-        $this->graphDB->insertNode('node1', 'Node 01', 'business', 'server', ['running_on' => 'SRV01OP']);
+        $this->database->insertNode('node1', 'Node 01', 'business', 'server', ['running_on' => 'SRV01OP']);
 
-        $this->graphDB->updateNodeStatus('node1', 'healthy');
+        $this->database->updateNodeStatus('node1', 'healthy');
 
-        $s = $this->graphDB->getNodeStatus('node1');
+        $s = $this->database->getNodeStatus('node1');
 
         if ($s['id'] != 'node1' || $s['status'] !== 'healthy') {
             throw new Exception('error on test_updateNodeStatus');
@@ -315,16 +316,16 @@ class TestGraphDatabase extends TestAbstractTest
     }
 
     public function testGetLogs(): void {
-        $logs = $this->graphDB->getLogs(2);
+        $logs = $this->database->getLogs(2);
         if(count($logs) > 0) {
             throw new Exception('problem on test_Database_getLogs');
         }
 
-        $this->graphDB->insertLog('node', 'node1', 'update', null, null, 'admin', '127.0.0.1');
+        $this->database->insertLog('node', 'node1', 'update', null, null, 'admin', '127.0.0.1');
         sleep(1);
-        $this->graphDB->insertLog('node', 'node2', 'update', null, null, 'admin', '127.0.0.1');
+        $this->database->insertLog('node', 'node2', 'update', null, null, 'admin', '127.0.0.1');
 
-        $logs = $this->graphDB->getLogs(2);
+        $logs = $this->database->getLogs(2);
         if(count($logs) != 2) {
             throw new Exception('problem on test_Database_getLogs');
         }
@@ -339,8 +340,8 @@ class TestGraphDatabase extends TestAbstractTest
     }
 
     public function testInsertAuditLog(): void {
-        $this->graphDB->insertLog('node', 'node1', 'update', null, null, 'admin', '127.0.0.1');
-        $logs = $this->graphDB->getLogs(2);
+        $this->database->insertLog('node', 'node1', 'update', null, null, 'admin', '127.0.0.1');
+        $logs = $this->database->getLogs(2);
         if(count($logs) != 1) {
             throw new Exception('problem on test_Database_getLogs');
         }

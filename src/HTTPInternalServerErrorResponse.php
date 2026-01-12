@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-class InternalServerErrorResponse extends HTTPResponse
+class HTTPInternalServerErrorResponse extends HTTPResponse
 {
     public function __construct(string $message = '', array $data)
     {

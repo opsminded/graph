@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-class ForbiddenResponse extends HTTPResponse
+class HTTPForbiddenResponse extends HTTPResponse
 {
     public function __construct(string $message = '', array $data)
     {
