@@ -26,11 +26,11 @@ class TestDatabase extends TestAbstractTest
     {
         $user = $this->database->getUser('maria');
         if ($user !== null) {
-            throw new Exception('deveria retornar null');
+            throw new Exception('should return null');
         }
 
         $user = $this->database->getUser('admin');
-        if($user['id'] !== 'admin' || $user['user_group'] !== 'admin') {
+        if ($user['id'] !== 'admin' || $user['user_group'] !== 'admin') {
             throw new Exception('admin expected');
         }
     }
@@ -39,7 +39,7 @@ class TestDatabase extends TestAbstractTest
     {
         $this->database->insertUser('maria', 'contributor');
         $user = $this->database->getUser('maria');
-        if($user['id'] !== 'maria' || $user['user_group'] !== 'contributor') {
+        if ($user['id'] !== 'maria' || $user['user_group'] !== 'contributor') {
             throw new Exception('maria expected');
         }
         try {
@@ -54,10 +54,10 @@ class TestDatabase extends TestAbstractTest
         $this->database->insertUser('maria', 'contributor');
         $this->database->updateUser('maria', 'admin');
         $user = $this->database->getUser('maria');
-        if($user['id'] !== 'maria' || $user['user_group'] !== 'admin') {
+        if ($user['id'] !== 'maria' || $user['user_group'] !== 'admin') {
             throw new Exception('expected maria admin');
         }
-        if($this->database->updateUser('joao', 'contributor')) {
+        if ($this->database->updateUser('joao', 'contributor')) {
             throw new Exception('expected joao not found');
         }
     }
@@ -66,15 +66,15 @@ class TestDatabase extends TestAbstractTest
         $this->database->insertNode('node1', 'Node 01', 'business', 'server', ['running_on' => 'SRV01OP']);
         $node = $this->database->getNode('node1');
         
-        if($node['id'] != 'node1' || $node['label'] != 'Node 01' || $node['category'] != 'business' || $node['type'] != 'server') {
+        if ($node['id'] !== 'node1' || $node['label'] !== 'Node 01' || $node['category'] !== 'business' || $node['type'] !== 'server') {
             throw new Exception('error on getNode');
         }
 
-        if ($node['data']['running_on'] != 'SRV01OP') {
+        if ($node['data']['running_on'] !== 'SRV01OP') {
             throw new Exception('error on getNode');
         }
 
-        if(!is_null($this->database->getNode('node2'))) {
+        if (!is_null($this->database->getNode('node2'))) {
             throw new Exception('null expected');
         }
     }
@@ -84,23 +84,23 @@ class TestDatabase extends TestAbstractTest
         $this->database->insertNode('node2', 'Node 02', 'business', 'database', ['running_on' => 'SRV011P']);
         $nodes = $this->database->getNodes();
 
-        if(count($nodes) != 2) {
-            throw new Exception('error on test_getNodes');
+        if (count($nodes) !== 2) {
+            throw new Exception('error on testGetNodes');
         }
 
-        if($nodes[0]['id'] != 'node1' || $nodes[0]['label'] != 'Node 01' || $nodes[0]['category'] != 'application' || $nodes[0]['type'] != 'application') {
+        if ($nodes[0]['id'] !== 'node1' || $nodes[0]['label'] !== 'Node 01' || $nodes[0]['category'] !== 'application' || $nodes[0]['type'] !== 'application') {
             throw new Exception('error on getNode');
         }
 
-        if ($nodes[0]['data']['running_on'] != 'SRV01OP') {
+        if ($nodes[0]['data']['running_on'] !== 'SRV01OP') {
             throw new Exception('error on getNode');
         }
 
-        if($nodes[1]['id'] != 'node2' || $nodes[1]['label'] != 'Node 02' || $nodes[1]['category'] != 'business' || $nodes[1]['type'] != 'database') {
+        if ($nodes[1]['id'] !== 'node2' || $nodes[1]['label'] !== 'Node 02' || $nodes[1]['category'] !== 'business' || $nodes[1]['type'] !== 'database') {
             throw new Exception('error on getNode');
         }
 
-        if ($nodes[1]['data']['running_on'] != 'SRV011P') {
+        if ($nodes[1]['data']['running_on'] !== 'SRV011P') {
             throw new Exception('error on getNode');
         }
     }
@@ -108,10 +108,10 @@ class TestDatabase extends TestAbstractTest
     public function testInsertNode(): void {
         $this->database->insertNode('node1', 'Node 01', 'business', 'server', ['running_on' => 'SRV01OP']);
         $node = $this->database->getNode('node1');
-        if($node['id'] != 'node1' || $node['label'] != 'Node 01' || $node['category'] != 'business' || $node['type'] != 'server') {
+        if ($node['id'] !== 'node1' || $node['label'] !== 'Node 01' || $node['category'] !== 'business' || $node['type'] !== 'server') {
             throw new Exception('error on testInsertNode');
         }
-        if ($node['data']['running_on'] != 'SRV01OP') {
+        if ($node['data']['running_on'] !== 'SRV01OP') {
             throw new Exception('error on testInsertNode');
         }
         try {
@@ -126,14 +126,14 @@ class TestDatabase extends TestAbstractTest
         $this->database->insertNode('node1', 'Node 01', 'business', 'server', ['running_on' => 'SRV01OP']);
         $this->database->updateNode('node1', 'Novo Label', 'application', 'database', ['other' => 'diff']);
         $node = $this->database->getNode('node1');
-        if($node['id'] != 'node1' || $node['label'] != 'Novo Label' || $node['category'] != 'application' || $node['type'] != 'database') {
-            throw new Exception('error on test_updateNode');
+        if ($node['id'] !== 'node1' || $node['label'] !== 'Novo Label' || $node['category'] !== 'application' || $node['type'] !== 'database') {
+            throw new Exception('error on testUpdateNode');
         }
-        if ($node['data']['other'] != 'diff') {
-            throw new Exception('error on test_updateNode');
+        if ($node['data']['other'] !== 'diff') {
+            throw new Exception('error on testUpdateNode');
         }
 
-        if($this->database->updateNode('node2', 'Novo Label', 'application', 'database', ['other' => 'diff'])) {
+        if ($this->database->updateNode('node2', 'Novo Label', 'application', 'database', ['other' => 'diff'])) {
             throw new Exception('error on testUpdateNode');
         }
     }
@@ -141,22 +141,35 @@ class TestDatabase extends TestAbstractTest
     public function testDeleteNode(): void {
         $node = $this->database->getNode('node1');
         if ($node !== null) {
-            throw new Exception('error on test_deleteNode');
+            throw new Exception('error on testDeleteNode');
         }
         $this->database->insertNode('node1', 'Node 01', 'business', 'server', ['running_on' => 'SRV01OP']);
         $node = $this->database->getNode('node1');
-        if($node['id'] != 'node1' || $node['label'] != 'Node 01' || $node['category'] != 'business' || $node['type'] != 'server') {
-            throw new Exception('error on test_updateNode');
+        if ($node['id'] !== 'node1' || $node['label'] !== 'Node 01' || $node['category'] !== 'business' || $node['type'] !== 'server') {
+            throw new Exception('error on testDeleteNode');
         }
+
+        // Test deleting the node
+        if (!$this->database->deleteNode('node1')) {
+            throw new Exception('error on testDeleteNode - delete should succeed');
+        }
+
+        // Verify node was deleted
+        $node = $this->database->getNode('node1');
+        if ($node !== null) {
+            throw new Exception('error on testDeleteNode - node should be null after delete');
+        }
+
+        // Test deleting non-existent node
         if ($this->database->deleteNode('node2')) {
-            throw new Exception('error on test_deleteNode');
+            throw new Exception('error on testDeleteNode - should return false for non-existent node');
         }
     }
 
     public function testGetEdge(): void {
         $edge = $this->database->getEdge('node1', 'node2');
         if ($edge !== null) {
-            throw new Exception('error on test_getEdge');
+            throw new Exception('error on testGetEdge');
         }
 
         $this->database->insertNode('node1', 'Node 01', 'application', 'application', ['running_on' => 'SRV01OP']);
@@ -166,24 +179,24 @@ class TestDatabase extends TestAbstractTest
 
         $edge = $this->database->getEdge('node1', 'node2');
 
-        if($edge['id'] != 'edge1' || $edge['source'] != 'node1' || $edge['target'] != 'node2') {
-            throw new Exception('error on test_Database_getEdge');
+        if ($edge['id'] !== 'edge1' || $edge['source'] !== 'node1' || $edge['target'] !== 'node2') {
+            throw new Exception('error on testGetEdge');
         }
 
-        if ($edge['data']['a'] != 'b') {
-            throw new Exception('error on test_Database_getEdge');
+        if ($edge['data']['a'] !== 'b') {
+            throw new Exception('error on testGetEdge');
         }
     }
 
     public function testGetEdges(): void {
         $edge = $this->database->getEdge('node1', 'node2');
         if ($edge !== null) {
-            throw new Exception('error on test_getEdges');
+            throw new Exception('error on testGetEdges');
         }
 
         $edge = $this->database->getEdge('node2', 'node3');
         if ($edge !== null) {
-            throw new Exception('error on test_getEdges');
+            throw new Exception('error on testGetEdges');
         }
 
         $this->database->insertNode('node1', 'Node 01', 'business', 'server', ['running_on' => 'SRV01OP']);
@@ -194,23 +207,23 @@ class TestDatabase extends TestAbstractTest
         $this->database->insertEdge('edge2', 'node2', 'node3', ['b' => 'c']);
 
         $edges = $this->database->getEdges();
-        if(count($edges) != 2) {
-            throw new Exception('error on test_getEdges');
+        if (count($edges) !== 2) {
+            throw new Exception('error on testGetEdges');
         }
 
-        if($edges[0]['id'] != 'edge1' || $edges[0]['source'] != 'node1' || $edges[0]['target'] != 'node2' || $edges[0]['data']['a'] != 'b') {
-            throw new Exception('error on test_getEdges');
+        if ($edges[0]['id'] !== 'edge1' || $edges[0]['source'] !== 'node1' || $edges[0]['target'] !== 'node2' || $edges[0]['data']['a'] !== 'b') {
+            throw new Exception('error on testGetEdges');
         }
 
-        if($edges[1]['id'] != 'edge2' || $edges[1]['source'] != 'node2' || $edges[1]['target'] != 'node3' || $edges[1]['data']['b'] != 'c') {
-            throw new Exception('error on test_getEdges');
+        if ($edges[1]['id'] !== 'edge2' || $edges[1]['source'] !== 'node2' || $edges[1]['target'] !== 'node3' || $edges[1]['data']['b'] !== 'c') {
+            throw new Exception('error on testGetEdges');
         }
     }
 
     public function testInsertEdge(): void {
         $edge = $this->database->getEdge('node1', 'node2');
         if ($edge !== null) {
-            throw new Exception('error on test_Database_insertEdge');
+            throw new Exception('error on testInsertEdge');
         }
 
         $this->database->insertNode('node1', 'Node 01', 'application', 'application', ['running_on' => 'SRV01OP']);
@@ -220,19 +233,19 @@ class TestDatabase extends TestAbstractTest
 
         $edge = $this->database->getEdge('node1', 'node2');
 
-        if($edge['id'] != 'edge1' || $edge['source'] != 'node1' || $edge['target'] != 'node2') {
-            throw new Exception('error on test_Database_insertEdge');
+        if ($edge['id'] !== 'edge1' || $edge['source'] !== 'node1' || $edge['target'] !== 'node2') {
+            throw new Exception('error on testInsertEdge');
         }
 
-        if ($edge['data']['a'] != 'b') {
-            throw new Exception('error on test_Database_insertEdge');
+        if ($edge['data']['a'] !== 'b') {
+            throw new Exception('error on testInsertEdge');
         }
 
         $this->database->insertEdge('edge2', 'node2', 'node1', ['a' => 'b']);
         $edge = $this->database->getEdge('node2', 'node1');
 
         if ($edge !== null) {
-            throw new Exception('error on test_Database_insertEdge');
+            throw new Exception('error on testInsertEdge');
         }
 
         try {
@@ -240,13 +253,13 @@ class TestDatabase extends TestAbstractTest
         } catch (Exception $e) {
             return;
         }
-        throw new Exception('error on test_Database_insertEdge');
+        throw new Exception('error on testInsertEdge');
     }
 
     public function testUpdateEdge(): void {
         $edge = $this->database->getEdge('node1', 'node2');
         if ($edge !== null) {
-            throw new Exception('error on test_updateEdge');
+            throw new Exception('error on testUpdateEdge');
         }
 
         $this->database->insertNode('node1', 'Node 01', 'business', 'server', ['running_on' => 'SRV01OP']);
@@ -258,16 +271,16 @@ class TestDatabase extends TestAbstractTest
 
         $edge = $this->database->getEdge('node2', 'node3');
 
-        if($edge['id'] != 'edge1' || $edge['source'] != 'node2' || $edge['target'] != 'node3') {
-            throw new Exception('error on test_updateEdge');
+        if ($edge['id'] !== 'edge1' || $edge['source'] !== 'node2' || $edge['target'] !== 'node3') {
+            throw new Exception('error on testUpdateEdge');
         }
 
-        if ($edge['data']['x'] != 'y') {
-            throw new Exception('error on test_updateEdge');
+        if ($edge['data']['x'] !== 'y') {
+            throw new Exception('error on testUpdateEdge');
         }
 
-        if($this->database->updateEdge('edge3', 'node2', 'node3', ['x' => 'y'])) {
-            throw new Exception('error on test_updateEdge');
+        if ($this->database->updateEdge('edge3', 'node2', 'node3', ['x' => 'y'])) {
+            throw new Exception('error on testUpdateEdge');
         }
     }
 
@@ -278,18 +291,18 @@ class TestDatabase extends TestAbstractTest
         $this->database->insertEdge('edge1', 'node1', 'node2', ['a' => 'b']);
         $this->database->insertEdge('edge2', 'node2', 'node3', ['b' => 'c']);
 
-        if(count($this->database->getEdges()) != 2) {
-            throw new Exception('error on test_deleteEdge');
+        if (count($this->database->getEdges()) != 2) {
+            throw new Exception('error on testDeleteEdge');
         }
 
         $this->database->deleteEdge('edge1');
         $this->database->deleteEdge('edge2');
 
-        if(count($this->database->getEdges()) != 0) {
-            throw new Exception('error on test_deleteEdge');
+        if (count($this->database->getEdges()) != 0) {
+            throw new Exception('error on testDeleteEdge');
         }
 
-        if($this->database->deleteEdge('edge6')) {
+        if ($this->database->deleteEdge('edge6')) {
             throw new Exception('error on testDeleteEdge');
         }
     }
@@ -297,48 +310,48 @@ class TestDatabase extends TestAbstractTest
     public function testGetStatus(): void {
         $s = $this->database->getStatus();
 
-        if (count($s) != 0) {
-            throw new Exception('error on test_getStatuses');
+        if (count($s) !== 0) {
+            throw new Exception('error on testGetStatuses');
         }
 
         $this->database->insertNode('node1', 'Node 01', 'business', 'server', ['running_on' => 'SRV01OP']);
 
         $s = $this->database->getStatus();
 
-        if (count($s) != 1) {
-            throw new Exception('error on test_getStatuses');
+        if (count($s) !== 1) {
+            throw new Exception('error on testGetStatuses');
         }
 
-        if ($s[0]['id'] != 'node1' || $s[0]['status'] !== null) {
-            throw new Exception('error on test_getStatuses');
+        if ($s[0]['id'] !== 'node1' || $s[0]['status'] !== null) {
+            throw new Exception('error on testGetStatuses');
         }
     }
 
     public function testGetNodeStatus(): void {
         $s = $this->database->getStatus();
 
-        if (count($s) != 0) {
-            throw new Exception('error on test_getStatuses');
+        if (count($s) !== 0) {
+            throw new Exception('error on testGetStatuses');
         }
 
         $this->database->insertNode('node1', 'Node 01', 'business', 'server', ['running_on' => 'SRV01OP']);
 
         $s = $this->database->getNodeStatus('node1');
 
-        if ($s['id'] != 'node1' || $s['status'] !== null) {
-            throw new Exception('error on test_getStatuses');
+        if ($s['id'] !== 'node1' || $s['status'] !== null) {
+            throw new Exception('error on testGetStatuses');
         }
 
-        if(!is_null($this->database->getNodeStatus('node2'))) {
-            throw new Exception('error on test_getStatuses');
+        if (!is_null($this->database->getNodeStatus('node2'))) {
+            throw new Exception('error on testGetStatuses');
         }
     }
 
     public function testUpdateNodeStatus(): void {
         $s = $this->database->getStatus();
 
-        if (count($s) != 0) {
-            throw new Exception('error on test_updateNodeStatus');
+        if (count($s) !== 0) {
+            throw new Exception('error on testUpdateNodeStatus');
         }
 
         $this->database->insertNode('node1', 'Node 01', 'business', 'server', ['running_on' => 'SRV01OP']);
@@ -347,8 +360,8 @@ class TestDatabase extends TestAbstractTest
 
         $s = $this->database->getNodeStatus('node1');
 
-        if ($s['id'] != 'node1' || $s['status'] !== 'healthy') {
-            throw new Exception('error on test_updateNodeStatus');
+        if ($s['id'] !== 'node1' || $s['status'] !== 'healthy') {
+            throw new Exception('error on testUpdateNodeStatus');
         }
 
         try {
@@ -356,13 +369,13 @@ class TestDatabase extends TestAbstractTest
         } catch(Exception $e) {
             return;
         }
-        throw new Exception('error on test_updateNodeStatus');
+        throw new Exception('error on testUpdateNodeStatus');
     }
 
     public function testGetLogs(): void {
         $logs = $this->database->getLogs(2);
-        if(count($logs) > 0) {
-            throw new Exception('problem on test_Database_getLogs');
+        if (count($logs) > 0) {
+            throw new Exception('error on testGetLogs');
         }
 
         $this->database->insertLog('node', 'node1', 'update', null, null, 'admin', '127.0.0.1');
@@ -370,28 +383,28 @@ class TestDatabase extends TestAbstractTest
         $this->database->insertLog('node', 'node2', 'update', null, null, 'admin', '127.0.0.1');
 
         $logs = $this->database->getLogs(2);
-        if(count($logs) != 2) {
-            throw new Exception('problem on test_Database_getLogs');
+        if (count($logs) !== 2) {
+            throw new Exception('error on testGetLogs');
         }
 
-        if ($logs[0]['entity_id'] != 'node2') {
-            throw new Exception('problem on test_Database_getLogs');
+        if ($logs[0]['entity_id'] !== 'node2') {
+            throw new Exception('error on testGetLogs');
         }
 
-        if ($logs[1]['entity_id'] != 'node1') {
-            throw new Exception('problem on test_Database_getLogs');
+        if ($logs[1]['entity_id'] !== 'node1') {
+            throw new Exception('error on testGetLogs');
         }
     }
 
     public function testInsertAuditLog(): void {
         $this->database->insertLog('node', 'node1', 'update', null, null, 'admin', '127.0.0.1');
         $logs = $this->database->getLogs(2);
-        if(count($logs) != 1) {
-            throw new Exception('problem on test_Database_getLogs');
+        if (count($logs) !== 1) {
+            throw new Exception('error on testGetLogs');
         }
 
-        if ($logs[0]['entity_id'] != 'node1') {
-            throw new Exception('problem on test_Database_getLogs');
+        if ($logs[0]['entity_id'] !== 'node1') {
+            throw new Exception('error on testGetLogs');
         }
     }
 }
