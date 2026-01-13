@@ -5,6 +5,7 @@ declare(strict_types=1);
 final class HTTPRequestRouter
 {
     private $routes = [
+        ['method' => 'GET',    'path' => '/getUser',          'class_method' => 'getUser'],
         ['method' => 'POST',   'path' => '/insertUser',       'class_method' => 'insertUser'],
         ['method' => 'PUT',    'path' => '/updateUser',       'class_method' => 'updateUser'],
         ['method' => 'GET',    'path' => '/getGraph',         'class_method' => 'getGraph'],
@@ -42,6 +43,6 @@ final class HTTPRequestRouter
                 return $resp;
             }
         }
-        return new HTTPInternalServerErrorResponse("method not found in list", []);
+        return new HTTPInternalServerErrorResponse("method not found in list", ['method' => $req->method, 'path' => $req->path]);
     }
 }

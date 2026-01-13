@@ -21,11 +21,13 @@ final class HTTPRequest
         $path = str_replace($scriptName, '', $requestUri);
         $this->path = $path;
 
-        $jsonData = file_get_contents('php://input');
-        if ($jsonData) {
-            $this->data = json_decode($jsonData, true); 
-        } else {
-            $this->data = [];
+        if ($this->method === 'POST' || $this->method === 'PUT') {
+            $jsonData = file_get_contents('php://input');
+            if ($jsonData) {
+                $this->data = json_decode($jsonData, true); 
+            } else {
+                $this->data = [];
+            }
         }
     }
 
