@@ -129,7 +129,7 @@ final class Service implements ServiceInterface
             $this->logger->info('node inserted', $node->toArray());
             return true;
         }
-        return false;
+        throw new RuntimeException('unexpected error on Service::insertNode');
     }
 
     public function updateNode(ModelNode $node): bool
@@ -138,14 +138,16 @@ final class Service implements ServiceInterface
         $this->verify();
         $exists = $this->database->getNode($node->getId());
         if(is_null($exists)) {
+            $this->logger->error('node not found', $node->toArray());
             return false;
         }
         $old = $this->getNode($node->getId());
         $this->insertLog(new ModelLog('node', $node->getId(), 'update', $old->toArray(), $node->toArray()));
         if ($this->database->updateNode($node->getId(), $node->getLabel(), $node->getCategory(), $node->getType(), $node->getData())) {
+            $this->logger->info('node updated', $node->toArray());
             return true;
         }
-        return false;
+        throw new RuntimeException('unexpected error on Service::updateNode');
     }
 
     public function deleteNode(ModelNode $node): bool
@@ -154,28 +156,30 @@ final class Service implements ServiceInterface
         $this->verify();
         $exists = $this->database->getNode($node->getId());
         if(is_null($exists)) {
+            $this->logger->error('node not found', $node->toArray());
             return false;
         }
         $old = $this->getNode($node->getId());
         $this->insertLog(new ModelLog( 'node', $node->getId(), 'delete', $old->toArray(), null));
         if ($this->database->deleteNode($node->getId())) {
+            $this->logger->info('node deleted', $node->toArray());
             return true;
         }
-        return false;
+        throw new RuntimeException('unexpected error on Service::deleteNode');
     }
 
     public function getEdge(string $source, string $target): ?ModelEdge
     {
         $this->logger->debug('getting edge', ['source' => $source, 'target' => $target]);
         $this->verify();
-        $data = $this->database->getEdge($source, $target);
-        if(! is_null($data)) {
-            return new ModelEdge(
-                $data['source'],
-                $data['target'],
-                $data['data']
-            );
+        $edgeData = $this->database->getEdge($source, $target);
+        if(! is_null($edgeData)) {
+            $edge = new ModelEdge($edgeData['source'], $edgeData['target'], $edgeData['data']);
+            $data = $edge->toArray();
+            $this->logger->info('edge found', $data);
+            return $edge;
         }
+        $this->logger->info('edge not found', ['source' => $source, 'target' => $target]);
         return null;
     }
 
@@ -206,8 +210,7 @@ final class Service implements ServiceInterface
             $this->logger->info('edge inserted', ['edge' => $edge->toArray()]);
             return true;
         }
-        $this->logger->error('edge not inserted', ['edge' => $edge->toArray()]);
-        return false;
+        throw new RuntimeException('unexpected error on Service::insertEdge');
     }
 
     public function updateEdge(ModelEdge $edge): bool
@@ -226,8 +229,7 @@ final class Service implements ServiceInterface
             $this->logger->info('edge updated', ['edge' => $edge]);
             return true;
         }
-        $this->logger->error('edge not updated', ['edge' => $edge->toArray()]);
-        return false;
+        throw new RuntimeException('unexpected error on Service::updateEdge');
     }
 
     public function deleteEdge(ModelEdge $edge): bool
@@ -280,8 +282,7 @@ final class Service implements ServiceInterface
             $this->logger->info('node status updated', $data);
             return true;
         }
-        $this->logger->info('node status not updated', $data);
-        return false;
+        throw new RuntimeException('unexpected error on Service::updateEdge');
     }
 
     public function getLogs(int $limit): array

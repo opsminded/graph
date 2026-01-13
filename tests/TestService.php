@@ -372,6 +372,13 @@ class TestService extends TestAbstractTest
         if ($status->getStatus() != 'maintenance') {
             throw new Exception('error on test_Service_updateNodeStatus - status not updated');
         }
+
+        try {
+            $this->service->updateNodeStatus(new ModelStatus('node6', 'healthy'));
+        } catch(PDOException $e) {
+            return;
+        }
+        throw new Exception('error on test_Service_updateNodeStatus');
     }
     
     public function testGetLogs(): void
