@@ -21,7 +21,7 @@ interface DatabaseInterface
     public function deleteEdge(string $id): bool;
 
     public function getStatus(): array;
-    public function getNodeStatus(string $id): array;
+    public function getNodeStatus(string $id): ?array;
     public function updateNodeStatus(string $id, string $status): bool;
 
     public function getLogs(int $limit): array;

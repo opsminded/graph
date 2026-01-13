@@ -28,12 +28,12 @@ final class Service implements ServiceInterface
         'Service::insertLog'        => false,
     ];
 
-    private DatabaseInterface $db;
+    private DatabaseInterface $database;
     private Logger $logger;
 
-    public function __construct(DatabaseInterface $db, Logger $logger)
+    public function __construct(DatabaseInterface $database, Logger $logger)
     {
-        $this->db = $db;
+        $this->database = $database;
         $this->logger = $logger;
     }
 
@@ -41,7 +41,7 @@ final class Service implements ServiceInterface
     {
         $this->logger->debug('getting user', ['id' => $id]);
         $this->verify();
-        $data = $this->db->getUser($id);
+        $data = $this->database->getUser($id);
         if (! is_null($data)) {
             $g = new ModelGroup($data['user_group']);
             $user = new ModelUser($id, $g);
@@ -56,7 +56,7 @@ final class Service implements ServiceInterface
     {
         $this->logger->debug('inserting user', ['user' => $user->toArray()]);
         $this->verify();
-        $this->db->insertUser($user->getId(), $user->getGroup()->getId());
+        $this->database->insertUser($user->getId(), $user->getGroup()->getId());
         $this->logger->debug('user inserted', ['user' => $user->toArray()]);
         return true;
     }
@@ -65,7 +65,7 @@ final class Service implements ServiceInterface
     {
         $this->logger->debug('updating user', ['user' => $user->toArray()]);
         $this->verify();
-        if($this->db->updateUser($user->getId(), $user->getGroup()->getId())) {
+        if($this->database->updateUser($user->getId(), $user->getGroup()->getId())) {
             $this->logger->debug('user updated', ['user' => $user->toArray()]);
             return true;
         }
@@ -87,7 +87,7 @@ final class Service implements ServiceInterface
     {
         $this->logger->debug('getting node');
         $this->verify();
-        $data = $this->db->getNode($id);
+        $data = $this->database->getNode($id);
         if (! is_null($data)) {
             return new ModelNode(
                 $data['id'],
@@ -104,7 +104,7 @@ final class Service implements ServiceInterface
     {
         $this->logger->debug('getting nodes');
         $this->verify();
-        $nodesData = $this->db->getNodes();
+        $nodesData = $this->database->getNodes();
         $nodes     = [];
         foreach ($nodesData as $data) {
             $node = new ModelNode(
@@ -125,7 +125,7 @@ final class Service implements ServiceInterface
         $this->verify();
         $this->logger->debug('permission allowed', $node->toArray());
         $this->insertLog(new ModelLog('node', $node->getId(), 'insert', null, $node->toArray()));
-        if ($this->db->insertNode($node->getId(), $node->getLabel(), $node->getCategory(), $node->getType(), $node->getData())) {
+        if ($this->database->insertNode($node->getId(), $node->getLabel(), $node->getCategory(), $node->getType(), $node->getData())) {
             $this->logger->info('node inserted', $node->toArray());
             return true;
         }
@@ -136,13 +136,13 @@ final class Service implements ServiceInterface
     {
         $this->logger->debug('updating node', ['node' => $node->toArray()]);
         $this->verify();
-        $exists = $this->db->getNode($node->getId());
+        $exists = $this->database->getNode($node->getId());
         if(is_null($exists)) {
             return false;
         }
         $old = $this->getNode($node->getId());
         $this->insertLog(new ModelLog('node', $node->getId(), 'update', $old->toArray(), $node->toArray()));
-        if ($this->db->updateNode($node->getId(), $node->getLabel(), $node->getCategory(), $node->getType(), $node->getData())) {
+        if ($this->database->updateNode($node->getId(), $node->getLabel(), $node->getCategory(), $node->getType(), $node->getData())) {
             return true;
         }
         return false;
@@ -152,13 +152,13 @@ final class Service implements ServiceInterface
     {
         $this->logger->debug('deleting node', ['node' => $node->toArray()]);
         $this->verify();
-        $exists = $this->db->getNode($node->getId());
+        $exists = $this->database->getNode($node->getId());
         if(is_null($exists)) {
             return false;
         }
         $old = $this->getNode($node->getId());
         $this->insertLog(new ModelLog( 'node', $node->getId(), 'delete', $old->toArray(), null));
-        if ($this->db->deleteNode($node->getId())) {
+        if ($this->database->deleteNode($node->getId())) {
             return true;
         }
         return false;
@@ -168,7 +168,7 @@ final class Service implements ServiceInterface
     {
         $this->logger->debug('getting edge', ['source' => $source, 'target' => $target]);
         $this->verify();
-        $data = $this->db->getEdge($source, $target);
+        $data = $this->database->getEdge($source, $target);
         if(! is_null($data)) {
             return new ModelEdge(
                 $data['source'],
@@ -184,7 +184,7 @@ final class Service implements ServiceInterface
         $this->logger->debug('getting edges');
         $this->verify();
 
-        $edgesData = $this->db->getEdges();
+        $edgesData = $this->database->getEdges();
         $edges     = [];
         foreach ($edgesData as $data) {
             $edge = new ModelEdge(
@@ -202,9 +202,11 @@ final class Service implements ServiceInterface
         $this->logger->debug('inserting edge', ['edge' => $edge->toArray()]);
         $this->verify();
         $this->insertLog(new ModelLog( 'edge', $edge->getId(), 'insert', null, $edge->toArray()));
-        if ($this->db->insertEdge($edge->getId(), $edge->getSource(), $edge->getTarget(), $edge->getData())) {
+        if ($this->database->insertEdge($edge->getId(), $edge->getSource(), $edge->getTarget(), $edge->getData())) {
+            $this->logger->info('edge inserted', ['edge' => $edge->toArray()]);
             return true;
         }
+        $this->logger->error('edge not inserted', ['edge' => $edge->toArray()]);
         return false;
     }
 
@@ -212,16 +214,19 @@ final class Service implements ServiceInterface
     {
         $this->logger->debug('updating edge', ['edge' => $edge->toArray()]);
         $this->verify();
-        $exists = $this->db->getEdge($edge->getSource(), $edge->getTarget());
+        $exists = $this->database->getEdge($edge->getSource(), $edge->getTarget());
         if (is_null($exists)) {
+            $this->logger->error('edge not found', ['edge' => $edge->toArray()]);
             return false;
         }
 
         $old = $this->getEdge($edge->getSource(), $edge->getTarget());
         $this->insertLog(new ModelLog('edge', $edge->getId(), 'update', $old->toArray(), $edge->toArray()));
-        if($this->db->updateEdge($edge->getId(), $edge->getSource(), $edge->getTarget(), $edge->getData())) {
+        if($this->database->updateEdge($edge->getId(), $edge->getSource(), $edge->getTarget(), $edge->getData())) {
+            $this->logger->info('edge updated', ['edge' => $edge]);
             return true;
         }
+        $this->logger->error('edge not updated', ['edge' => $edge->toArray()]);
         return false;
     }
 
@@ -229,9 +234,11 @@ final class Service implements ServiceInterface
     {
         $this->logger->debug('deleting edge', ['edge' => $edge->toArray()]);
         $this->verify();
-        if($this->db->deleteEdge($edge->getId())) {
+        if($this->database->deleteEdge($edge->getId())) {
+            $this->logger->info('edge deleted', ['edge' => $edge]);
             return true;
         }
+        $this->logger->error('edge not deleted', ['edge' => $edge]);
         return false;
     }
 
@@ -239,30 +246,41 @@ final class Service implements ServiceInterface
     {
         $this->logger->debug('getting status');
         $this->verify();
-        $statusesData = $this->db->getStatus();
+        $statusesData = $this->database->getStatus();
         $nodeStatuses = [];
-        foreach ($statusesData as $data) {
-            $status = new ModelStatus($data['id'], $data['status'] ?? 'unknown');
+        $data = [];
+        foreach ($statusesData as $status) {
+            $status = new ModelStatus($status['id'], $status['status'] ?? 'unknown');
             $nodeStatuses[] = $status;
+            $data[] = $status;
         }
+        $this->logger->info('status founded', ['status' => $data]);
         return $nodeStatuses;
     }
 
-    public function getNodeStatus(string $id): ModelStatus
+    public function getNodeStatus(string $id): ?ModelStatus
     {
         $this->logger->debug('getting node status', ['id' => $id]);
         $this->verify();
-        $statusData = $this->db->getNodeStatus($id);
-        return new ModelStatus($id, $statusData['status'] ?? 'unknown');
+        $statusData = $this->database->getNodeStatus($id);
+        if(!is_null($statusData)) {
+            $this->logger->info('status founded', $statusData);
+            return new ModelStatus($id, $statusData['status'] ?? 'unknown');
+        }
+        $this->logger->error('status not found', ['id' => $id]);
+        return null;
     }
 
     public function updateNodeStatus(ModelStatus $status): bool
     {
         $this->logger->debug('updating node status', ['status' => $status->toArray()]);
         $this->verify();
-        if ($this->db->updateNodeStatus($status->getNodeId(), $status->getStatus())) {
+        $data = $status->toArray();
+        if ($this->database->updateNodeStatus($status->getNodeId(), $status->getStatus())) {
+            $this->logger->info('node status updated', $data);
             return true;
         }
+        $this->logger->info('node status not updated', $data);
         return false;
     }
 
@@ -271,7 +289,7 @@ final class Service implements ServiceInterface
         $this->logger->debug('getting logs', ['limit' => $limit]);
         $this->verify();
         $logs = [];
-        $rows = $this->db->getLogs($limit);
+        $rows = $this->database->getLogs($limit);
         foreach ($rows as $row) {
             $old_data = $row['old_data'] ? json_decode($row['old_data'], true) : [];
             $new_data = $row['new_data'] ?  json_decode($row['new_data'], true) : [];
@@ -295,15 +313,9 @@ final class Service implements ServiceInterface
         $this->logger->debug('insert log', ['log' => $log]);
         $user_id   = HelperContext::getUser();
         $ip_address = HelperContext::getClientIp();
-        $this->db->insertLog(
-            $log->entityType,
-            $log->entityId,
-            $log->action,
-            $log->oldData,
-            $log->newData,
-            $user_id,
-            $ip_address
-        );
+        if($this->database->insertLog($log->entityType, $log->entityId, $log->action, $log->oldData, $log->newData, $user_id, $ip_address)) {
+
+        }
     }
 
     private function verify(): void

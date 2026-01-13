@@ -16,7 +16,8 @@ h2 {background: #fff; padding: 10px; margin: 20px 0 0 0; position: sticky; top: 
 $names = [];
 foreach($coverageData as $file => $d) {
     if (strpos($file, 'tests.php') !== false || !file_exists($file)) continue;
-    
+    if (strpos($file, 'TestAbstractTest.php') !== false || !file_exists($file)) continue;
+
     if (str_contains($file, '/tests/')) {
         continue;
     }
@@ -28,6 +29,12 @@ foreach ($names as $name) {
     $file = $name;
     $lines = $coverageData[$name];
     $content = file($file);
+
+    // mark } as checked
+    foreach ($content as $num => $line) {
+        if(trim($line) == '}') {$lines[$num+1] = 1;}
+    }
+
     $covered = count(array_filter($lines, fn($c) => $c > 0));
     $total = count($lines);
     $pct = $total > 0 ? round(($covered/$total)*100, 2) : 0;

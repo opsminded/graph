@@ -23,7 +23,7 @@ interface ServiceInterface
     public function deleteEdge(ModelEdge $edge): bool;
 
     public function getStatus(): array;
-    public function getNodeStatus(string $id): ModelStatus;
+    public function getNodeStatus(string $id): ?ModelStatus;
     public function updateNodeStatus(ModelStatus $status): bool;
 
     public function getLogs(int $limit): array;

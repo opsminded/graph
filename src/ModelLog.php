@@ -21,4 +21,18 @@ final class ModelLog
         $this->oldData    = $oldData;
         $this->newData    = $newData;
     }
+
+    public function toArray(): array
+    {
+        return [
+            'entityType' => $this->entityType,
+            'entityId'   => $this->entityId,
+            'action'     => $this->action,
+            'oldData'    => $this->oldData,
+            'newData'    => $this->newData,
+            'userId'     => $this->userId,
+            'ipAddress'  => $this->ipAddress,
+            'createdAt'  => $this->createdAt,
+        ];
+    }
 }

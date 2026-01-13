@@ -328,6 +328,10 @@ class TestDatabase extends TestAbstractTest
         if ($s['id'] != 'node1' || $s['status'] !== null) {
             throw new Exception('error on test_getStatuses');
         }
+
+        if(!is_null($this->database->getNodeStatus('node2'))) {
+            throw new Exception('error on test_getStatuses');
+        }
     }
 
     public function testUpdateNodeStatus(): void {

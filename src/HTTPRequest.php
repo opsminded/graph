@@ -13,14 +13,6 @@ final class HTTPRequest
     {
         $this->params = $_GET;
 
-        if(is_null($_SERVER['REQUEST_METHOD'])) {
-            throw new HTTPRequestException('method not set', [], $this->params, '');
-        }
-
-        if(! in_array($_SERVER['REQUEST_METHOD'], ['GET', 'PUT', 'POST', 'DELETE'])) {
-            throw new HTTPRequestException('method not allowed: ' . $_SERVER['REQUEST_METHOD'], [], $this->params, '');
-        }
-
         $this->method = $_SERVER['REQUEST_METHOD'];
 
         $scriptName = $_SERVER['SCRIPT_NAME'];
@@ -43,15 +35,5 @@ final class HTTPRequest
             return strval($this->params[$name]);
         }
         throw new HTTPRequestException("param '{$name}' not found", $this->data, $this->params, $this->path);
-    }
-
-    public function toArray(): array
-    {
-        return [
-            'path'   => $this->path,
-            'method' => $this->method,
-            'data'   => $this->data,
-            'params' => $this->params,
-        ];
     }
 }

@@ -130,14 +130,16 @@ final class HTTPController implements HTTPControllerInterface
     {
         $edge = new ModelEdge($req->data['source'], $req->data['target']);
         $this->service->insertEdge($edge);
-        return new HTTPOKResponse('node found', []);
+        $data = $edge->toArray();
+        return new HTTPOKResponse('node found', $data);
     }
     
     public function updateEdge(HTTPRequest $req): HTTPResponseInterface
     {
         $edge = new ModelEdge($req->data['source'], $req->data['target'], $req->data['data']);
         $this->service->updateEdge($edge);
-        return new HTTPOKResponse('edge updated', []);
+        $data = $edge->toArray();
+        return new HTTPOKResponse('edge updated', $data);
     }
     
     public function deleteEdge(HTTPRequest $req): HTTPResponseInterface
@@ -146,13 +148,18 @@ final class HTTPController implements HTTPControllerInterface
         $target = $req->data['target'];
         $edge = new ModelEdge($source, $target, []);
         $this->service->deleteEdge($edge);
-        return new HTTPNoContentResponse('edge deleted', $req->data);
+        $data = $req->data;
+        return new HTTPNoContentResponse('edge deleted', $data);
     }
 
     public function getStatus(HTTPRequest $req): HTTPResponseInterface
     {
-        $status = $this->service->getStatus();
-        return new HTTPOKResponse('nodes found', []);
+        $statusData = $this->service->getStatus();
+        $data = [];
+        foreach($statusData as $status) {
+            $data[] = $status->toArray();
+        }
+        return new HTTPOKResponse('nodes found', $data);
     }
     
     public function getNodeStatus(HTTPRequest $req): HTTPResponseInterface
@@ -162,17 +169,20 @@ final class HTTPController implements HTTPControllerInterface
         } catch(HTTPRequestException $e) {
             return new HTTPBadRequestResponse($e->getMessage(), []);
         }
-
-        $status = $this->service->getNodeStatus($req->data['id']);
-        $data = $status->toArray();
-        return new HTTPOKResponse('node found', []);
+        $status = $this->service->getNodeStatus($id);
+        if(!is_null($status)) {
+            $data = $status->toArray();
+            return new HTTPOKResponse('node found', $data);
+        }
+        return new HTTPNotFoundResponse('node not found', ['id' => $id]);
     }
     
     public function updateNodeStatus(HTTPRequest $req): HTTPResponseInterface
     {
         $status = new ModelStatus($req->data['node_id'], $req->data['status']);
         $this->service->updateNodeStatus($status);
-        return new HTTPOKResponse('node found', []);
+        $data = $status->toArray();
+        return new HTTPOKResponse('node found', $data);
     }
 
     public function getLogs(HTTPRequest $req): HTTPResponseInterface
@@ -182,7 +192,11 @@ final class HTTPController implements HTTPControllerInterface
         } catch(HTTPRequestException $e) {
             return new HTTPBadRequestResponse($e->getMessage(), []);
         }
-        $logs = $this->service->getLogs(intval($limit));
-            return new HTTPOKResponse('logs found', []);
+        $logsData = $this->service->getLogs(intval($limit));
+        $data = [];
+        foreach($logsData as $log) {
+            $data[] = $log->toArray();
+        }
+        return new HTTPOKResponse('logs found', $data);
     }
 }

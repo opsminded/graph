@@ -216,7 +216,7 @@ final class Database implements DatabaseInterface
         return $rows;
     }
 
-    public function getNodeStatus(string $id): array
+    public function getNodeStatus(string $id): ?array
     {
         $this->logger->debug('fetching node status', ['id' => $id]);
         $sql = 'SELECT n.id, s.status FROM nodes n LEFT JOIN status s ON n.id = s.node_id WHERE n.id = :id';
@@ -224,8 +224,11 @@ final class Database implements DatabaseInterface
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         $row = $stmt->fetch();
-        $this->logger->info('node status fetched', ['params' => $params, 'row' => $row]);
-        return $row;
+        if($row) {
+            $this->logger->info('node status fetched', ['params' => $params, 'row' => $row]);
+            return $row;
+        }
+        return null;
     }
 
     public function updateNodeStatus(string $id, string $status): bool

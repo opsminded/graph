@@ -227,6 +227,16 @@ final class TestHTTPController extends TestAbstractTest
         $req->data['type'] = 'database';
         $req->data['data'] = ['a' => 'b'];
         $resp = $this->controller->deleteNode($req);
+        if($resp->code != 404 || $resp->status != 'error' || $resp->data['id'] != 'node1') {
+            throw new Exception('error on testDeleteNode');
+        }
+        $this->database->insertNode('node1', 'label 1', 'application', 'server');
+        $req = new HTTPRequest();
+        $req->data['id'] = 'node1';
+        $resp = $this->controller->deleteNode($req);
+        if($resp->code != 204 || $resp->status != 'success' || $resp->data['id'] != 'node1') {
+            throw new Exception('error on testDeleteNode');
+        }
     }
 
     public function testGetEdge(): void
@@ -239,6 +249,21 @@ final class TestHTTPController extends TestAbstractTest
         $req->data['source'] = 'node1';
         $req->data['target'] = 'node2';
         $resp = $this->controller->getEdge($req);
+        if($resp->code != 404 || $resp->status != 'error' || $resp->data['source'] != 'node1') {
+            throw new Exception('error on testGetEdge');
+        }
+
+        $this->database->insertNode('node1', 'label1', 'application', 'server');
+        $this->database->insertNode('node2', 'label2', 'application', 'server');
+        $this->database->insertEdge('node1-node2', 'node1', 'node2');
+        
+        $req = new HTTPRequest();
+        $req->data['source'] = 'node1';
+        $req->data['target'] = 'node2';
+        $resp = $this->controller->getEdge($req);
+        if($resp->code != 200 || $resp->status != 'success' || $resp->data['source'] != 'node1') {
+            throw new Exception('error on testGetEdge');
+        }
     }
     
     public function testGetEdges(): void
@@ -263,6 +288,9 @@ final class TestHTTPController extends TestAbstractTest
         $req->data['source'] = 'node1';
         $req->data['target'] = 'node2';
         $resp = $this->controller->insertEdge($req);
+        if($resp->code != 200 || $resp->status != 'success' || $resp->data['source'] != 'node1') {
+            throw new Exception('error on testGetEdge');
+        }
     }
     
     public function testUpdateEdge(): void
@@ -296,6 +324,23 @@ final class TestHTTPController extends TestAbstractTest
         $_SERVER['REQUEST_URI'] = 'api.php/getStatus';
         $req = new HTTPRequest();
         $resp = $this->controller->getStatus($req);
+        if($resp->code != 200 || $resp->status != 'success' || count($resp->data) > 0) {
+            throw new Exception('error on testGetStatus');
+        }
+
+        $this->database->insertNode('node1', 'label1', 'application', 'server');
+        $this->database->insertNode('node2', 'label2', 'application', 'server');
+
+        $req = new HTTPRequest();
+        $resp = $this->controller->getStatus($req);
+        if($resp->code != 200 || $resp->status != 'success' || count($resp->data) != 2) {
+            print_r($resp);
+            exit();
+            throw new Exception('error on testGetStatus');
+        }
+        if($resp->data[0]['node_id'] != 'node1' || $resp->data[1]['node_id'] != 'node2') {
+            throw new Exception('error on testGetStatus');
+        }
     }
     
     public function testGetNodeStatus(): void
@@ -305,6 +350,24 @@ final class TestHTTPController extends TestAbstractTest
         $_SERVER['REQUEST_URI'] = 'api.php/getNodeStatus';
         $req = new HTTPRequest();
         $resp = $this->controller->getNodeStatus($req);
+        if($resp->code != 400 || $resp->status != 'error' || $resp->message != 'param \'id\' not found') {
+            throw new Exception('error on testGetNodeStatus');
+        }
+
+        $_GET['id'] = 'node1';
+        $req = new HTTPRequest();
+        $resp = $this->controller->getNodeStatus($req);
+        if($resp->code != 404 || $resp->message != 'node not found' || $resp->data['id'] != 'node1') {
+            throw new Exception('error on testGetNodeStatus');
+        }
+
+        $this->database->insertNode('node1', 'label 1', 'business', 'database');
+        $_GET['id'] = 'node1';
+        $req = new HTTPRequest();
+        $resp = $this->controller->getNodeStatus($req);
+        if($resp->code != 200 || $resp->message != 'node found' || $resp->data['node_id'] != 'node1' || $resp->data['status'] != 'unknown') {
+            throw new Exception('error on testGetNodeStatus');
+        }
     }
     
     public function testUpdateNodeStatus(): void
@@ -321,11 +384,33 @@ final class TestHTTPController extends TestAbstractTest
 
     public function testGetLogs(): void
     {
-        $_GET['limit'] = 2;
         $_SERVER['REQUEST_METHOD'] = 'GET';
         $_SERVER['SCRIPT_NAME'] = 'api.php';
         $_SERVER['REQUEST_URI'] = 'api.php/getLogs';
         $req = new HTTPRequest();
         $resp = $this->controller->getLogs($req);
+        if($resp->code != 400 || $resp->message != 'param \'limit\' not found') {
+            throw new Exception('error on testGetLogs');
+        }
+        
+        $_GET['limit'] = 2;
+        $req = new HTTPRequest();
+        $resp = $this->controller->getLogs($req);
+        if($resp->code != 200 || $resp->message != 'logs found') {
+            throw new Exception('error on testGetLogs');
+        }
+        
+        $this->database->insertLog('node', 'node1', 'insert', null, ['id' => 'node1'], 'user', '293820');
+        sleep(1);
+        $this->database->insertLog('node', 'node2', 'insert', null, ['id' => 'node2'], 'user', '111111');
+        sleep(1);
+        $this->database->insertLog('node', 'node3', 'insert', null, ['id' => 'node3'], 'user', '111111');
+        
+        $_GET['limit'] = 2;
+        $req = new HTTPRequest();
+        $resp = $this->controller->getLogs($req);
+        if($resp->code != 200 || $resp->message != 'logs found') {
+            throw new Exception('error on testGetLogs');
+        }
     }
 }
