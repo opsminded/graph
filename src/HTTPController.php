@@ -29,6 +29,12 @@ final class HTTPController implements HTTPControllerInterface
 
     public function insertUser(HTTPRequest $req): HTTPResponseInterface
     {
+        if(! array_key_exists('id', $req->data)) {
+            return new HTTPBadRequestResponse('key id not found in data', $req->data);
+        }
+        if(! array_key_exists('user_group', $req->data)) {
+            return new HTTPBadRequestResponse('key user_group not found in data', $req->data);
+        }
         $user = new ModelUser($req->data['id'], new ModelGroup($req->data['user_group']));
         $this->service->insertUser($user);
         return new HTTPCreatedResponse('user created', $req->data);
@@ -36,90 +42,56 @@ final class HTTPController implements HTTPControllerInterface
 
     public function updateUser(HTTPRequest $req): HTTPResponseInterface
     {
-        try {
-            $user = new ModelUser($req->data['id'], new ModelGroup($req->data['user_group']));
-            $this->service->updateUser($user);
+        $user = new ModelUser($req->data['id'], new ModelGroup($req->data['user_group']));
+        if($this->service->updateUser($user)) {
             return new HTTPOKResponse('user updated', $req->data);
-        } catch (Exception $e) {
-            throw $e;
         }
+        return new HTTPNotFoundResponse('user not found', ['id' => $req->data['id']]);
     }
 
     public function getGraph(HTTPRequest $req): HTTPResponseInterface
     {
-        try {
-            $data = $this->service->getGraph()->toArray();
-            return new HTTPOKResponse('get graph', $data);
-        } catch (Exception $e) {
-            throw $e;
-        }
-
-        return new InternalServerErrorResponse($e->getMessage(), $req->data);
+        $data = $this->service->getGraph()->toArray();
+        return new HTTPOKResponse('get graph', $data);
     }
 
     public function getNode(HTTPRequest $req): HTTPResponseInterface
     {
         try {
             $id = $req->getParam('id');
-            $node = $this->service->getNode($id);
-            if(is_null($node)) {
-                return new HTTPNotFoundResponse('node not found', ['id' => $id]);
-            }
-            $data = $node->toArray();
-            return new HTTPOKResponse('node found', $data);
-        } catch( Exception $e)
-        {
-            throw $e;
+        } catch(HTTPRequestException $e) {
+            return new HTTPBadRequestResponse($e->getMessage(), []);
         }
-
-        return new InternalServerErrorResponse($e->getMessage(), $req->data);
+        $node = $this->service->getNode($id);
+        if(is_null($node)) {
+            return new HTTPNotFoundResponse('node not found', ['id' => $id]);
+        }
+        $data = $node->toArray();
+        return new HTTPOKResponse('node found', $data);
     }
 
     public function getNodes(HTTPRequest $req): HTTPResponseInterface
     {
-        try {
-            $nodes = $this->service->getNodes();
-            // TODO: corrigir
-            return new HTTPOKResponse('nodes found', []);
-            return $resp;
-        } catch( Exception $e)
-        {
-            throw $e;
-        }
-        
-        return new InternalServerErrorResponse($e->getMessage(), $req->data);
+        $nodes = $this->service->getNodes();
+        return new HTTPOKResponse('nodes found', []);
     }
 
     public function insertNode(HTTPRequest $req): HTTPResponseInterface
     {
-        $this->logger->debug('inserting node', $req->toArray());
-        try {
-            $node = new ModelNode($req->data['id'], $req->data['label'], $req->data['category'], $req->data['type'], $req->data['data']);
-            $this->service->insertNode($node);
-            $this->logger->info('node inserted', $req->data);
-            return new HTTPCreatedResponse('node inserted', $req->data);
-        } catch (Exception $e) {
-            throw $e;
-        }
-        return new InternalServerErrorResponse('unknow error inserting node', $req->data);
+        $node = new ModelNode($req->data['id'], $req->data['label'], $req->data['category'], $req->data['type'], $req->data['data']);
+        $this->service->insertNode($node);
+        $this->logger->info('node inserted', $req->data);
+        return new HTTPCreatedResponse('node inserted', $req->data);
     }
     
     public function updateNode(HTTPRequest $req): HTTPResponseInterface
     {
         $this->logger->debug('updating node', $req->data);
-        
-        try {
-            $node = new ModelNode($req->data['id'], $req->data['label'], $req->data['category'], $req->data['type'], $req->data['data']);
-            $this->service->updateNode($node);
-            $this->logger->info('node updated', $req->data);
-            $resp = new HTTPCreatedResponse('node updated', $req->data);
-            return $resp;
-        } catch( Exception $e)
-        {
-            throw $e;
-        }
-        
-        return new InternalServerErrorResponse('unknow todo in updateNode', $req->data);
+        $node = new ModelNode($req->data['id'], $req->data['label'], $req->data['category'], $req->data['type'], $req->data['data']);
+        $this->service->updateNode($node);
+        $this->logger->info('node updated', $req->data);
+        $resp = new HTTPCreatedResponse('node updated', $req->data);
+        return $resp;
     }
     
     public function deleteNode(HTTPRequest $req): HTTPResponseInterface
@@ -143,16 +115,8 @@ final class HTTPController implements HTTPControllerInterface
     
     public function getEdges(HTTPRequest $req): HTTPResponseInterface
     {
-        try {
-            $edges = $this->service->getEdges();
-            // TODO: corrigir
-            return new HTTPOKResponse('node found', []);
-        } catch( Exception $e)
-        {
-            throw $e;
-        }
-        
-        return new InternalServerErrorResponse($e->getMessage(), $req->data);
+        $edges = $this->service->getEdges();
+        return new HTTPOKResponse('node found', []);
     }
     
     public function insertEdge(HTTPRequest $req): HTTPResponseInterface
@@ -164,16 +128,9 @@ final class HTTPController implements HTTPControllerInterface
     
     public function updateEdge(HTTPRequest $req): HTTPResponseInterface
     {
-        try {
-            $edge = new ModelEdge($req->data['source'], $req->data['target'], $req->data['data']);
-            $this->service->updateEdge($edge);
-            return new HTTPOKResponse('node found', []);
-        } catch( Exception $e)
-        {
-            throw $e;
-        }
-        
-        return new InternalServerErrorResponse($e->getMessage(), $req->data);
+        $edge = new ModelEdge($req->data['source'], $req->data['target'], $req->data['data']);
+        $this->service->updateEdge($edge);
+        return new HTTPOKResponse('edge updated', []);
     }
     
     public function deleteEdge(HTTPRequest $req): HTTPResponseInterface
@@ -199,16 +156,9 @@ final class HTTPController implements HTTPControllerInterface
             return new HTTPBadRequestResponse($e->getMessage(), []);
         }
 
-        try {
-            $status = $this->service->getNodeStatus($req->data['id']);
-            $data = $status->toArray();
-            return new HTTPOKResponse('node found', []);
-        } catch( Exception $e)
-        {
-            throw $e;
-        }
-        
-        return new InternalServerErrorResponse($e->getMessage(), $req->data);
+        $status = $this->service->getNodeStatus($req->data['id']);
+        $data = $status->toArray();
+        return new HTTPOKResponse('node found', []);
     }
     
     public function updateNodeStatus(HTTPRequest $req): HTTPResponseInterface

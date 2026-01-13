@@ -86,12 +86,17 @@ final class TestHTTPController extends TestAbstractTest
             throw new Exception('error on testInsertUser');
         }
 
-        try {
-            $resp = $this->controller->insertUser($req);
-        } catch(Exception $e) {
-            return;
+        $req->data = [];
+        $resp = $this->controller->insertUser($req);
+        if($resp->code != 400 || $resp->message != 'key id not found in data') {
+            throw new Exception('error on testInsertUser');
         }
-        throw new Exception('error on testInsertUser');
+        
+        $req->data['id'] = 'maria';
+        $resp = $this->controller->insertUser($req);
+        if($resp->code != 400 || $resp->message != 'key user_group not found in data') {
+            throw new Exception('error on testInsertUser');
+        }
     }
 
     public function testUpdateUser(): void
@@ -105,6 +110,16 @@ final class TestHTTPController extends TestAbstractTest
         $req->data['user_group'] = 'admin';
 
         $resp = $this->controller->updateUser($req);
+        if($resp->code != 404 || $resp->status != 'error' || $resp->data['id'] != 'maria') {
+            throw new Exception('error on testUpdateUser');
+        }
+
+        $this->database->insertUser('maria', 'contributor');
+        $resp = $this->controller->updateUser($req);
+        if($resp->code != 200 || $resp->status != 'success' || $resp->message != 'user updated' || $resp->data['id'] != 'maria') {
+            throw new Exception('error on testUpdateUser');
+        }
+
     }
 
     public function testGetGraph(): void
@@ -119,15 +134,29 @@ final class TestHTTPController extends TestAbstractTest
 
     public function testGetNode(): void
     {
+        $_GET['id'] = 'node1';
         $_SERVER['REQUEST_METHOD'] = 'GET';
         $_SERVER['SCRIPT_NAME'] = 'api.php';
         $_SERVER['REQUEST_URI'] = 'api.php/getNode';
 
         $req = new HTTPRequest();
-        try {
-            $resp = $this->controller->getNode($req);
-        } catch(Exception $e) {
+        $resp = $this->controller->getNode($req);
+        if($resp->code != 404 || $resp->message != 'node not found') {
+            throw new Exception('error on testGetNode');
+        }
+        
+        $this->database->insertNode('node1', 'label 1', 'application', 'server');
+        $req = new HTTPRequest();
+        $resp = $this->controller->getNode($req);
+        if($resp->code != 200 || $resp->status != 'success' || $resp->message != 'node found') {
+            throw new Exception('error on testGetNode');
+        }
 
+        $_GET = [];
+        $req = new HTTPRequest();
+        $resp = $this->controller->getNode($req);
+        if($resp->code != 400 || $resp->message != 'param \'id\' not found') {
+            throw new Exception('error on testGetNode');
         }
     }
 
