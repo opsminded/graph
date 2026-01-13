@@ -5,20 +5,21 @@ declare(strict_types=1);
 final class HTTPRequestRouter
 {
     private $routes = [
-        ['method' => 'GET',    'path' => '/getGraph',      'class_method' => 'getGraph'],
-        ['method' => 'GET',    'path' => '/getNode',       'class_method' => 'getNode'],
-        ['method' => 'GET',    'path' => '/getNodes',      'class_method' => 'getNodes'],
-        ['method' => 'POST',   'path' => '/insertNode',    'class_method' => 'insertNode'],
-        ['method' => 'UPDATE', 'path' => '/updateNode',    'class_method' => 'updateNode'],
-        ['method' => 'DELETE', 'path' => '/deleteNode',    'class_method' => 'deleteNode'],
-        ['method' => 'GET',    'path' => '/getEdge',       'class_method' => 'getEdge'],
-        ['method' => 'GET',    'path' => '/getEdges',      'class_method' => 'getEdges'],
-        ['method' => 'POST',   'path' => '/insertEdge',    'class_method' => 'insertEdge'],
-        ['method' => 'UPDATE', 'path' => '/updateEdge',    'class_method' => 'updateEdge'],
-        ['method' => 'DELETE', 'path' => '/deleteEdge',    'class_method' => 'deleteEdge'],
-        ['method' => 'GET',    'path' => '/getStatuses',   'class_method' => 'getStatuses'],
-        ['method' => 'GET',    'path' => '/getNodeStatus', 'class_method' => 'getNodeStatus'],
-        ['method' => 'GET',    'path' => '/getLogs',       'class_method' => 'getLogs'],
+        ['method' => 'GET',    'path' => '/getGraph',         'class_method' => 'getGraph'],
+        ['method' => 'GET',    'path' => '/getNode',          'class_method' => 'getNode'],
+        ['method' => 'GET',    'path' => '/getNodes',         'class_method' => 'getNodes'],
+        ['method' => 'POST',   'path' => '/insertNode',       'class_method' => 'insertNode'],
+        ['method' => 'PUT',    'path' => '/updateNode',       'class_method' => 'updateNode'],
+        ['method' => 'DELETE', 'path' => '/deleteNode',       'class_method' => 'deleteNode'],
+        ['method' => 'GET',    'path' => '/getEdge',          'class_method' => 'getEdge'],
+        ['method' => 'GET',    'path' => '/getEdges',         'class_method' => 'getEdges'],
+        ['method' => 'POST',   'path' => '/insertEdge',       'class_method' => 'insertEdge'],
+        ['method' => 'PUT',    'path' => '/updateEdge',       'class_method' => 'updateEdge'],
+        ['method' => 'DELETE', 'path' => '/deleteEdge',       'class_method' => 'deleteEdge'],
+        ['method' => 'GET',    'path' => '/getStatuses',      'class_method' => 'getStatuses'],
+        ['method' => 'GET',    'path' => '/getNodeStatus',    'class_method' => 'getNodeStatus'],
+        ['method' => 'PUT',    'path' => '/updateNodeStatus', 'class_method' => 'updateNodeStatus'],
+        ['method' => 'GET',    'path' => '/getLogs',          'class_method' => 'getLogs'],
     ];
 
     public HTTPController $controller;

@@ -15,6 +15,9 @@ final class HTTPController implements HTTPControllerInterface
 
     public function getUser(HTTPRequest $req): HTTPResponseInterface
     {
+        if($req->method !== 'GET') {
+            return new HTTPMethodNotAllowedResponse($req->method);
+        }
         try {
             $id = $req->getParam('id');
         } catch(HTTPRequestException $e) {
@@ -30,6 +33,9 @@ final class HTTPController implements HTTPControllerInterface
 
     public function insertUser(HTTPRequest $req): HTTPResponseInterface
     {
+        if($req->method !== 'POST') {
+            return new HTTPMethodNotAllowedResponse($req->method);
+        }
         if(! array_key_exists('id', $req->data)) {
             return new HTTPBadRequestResponse('key id not found in data', $req->data);
         }
@@ -44,6 +50,9 @@ final class HTTPController implements HTTPControllerInterface
 
     public function updateUser(HTTPRequest $req): HTTPResponseInterface
     {
+        if($req->method !== 'PUT') {
+            return new HTTPMethodNotAllowedResponse($req->method);
+        }
         $user = new ModelUser($req->data['id'], new ModelGroup($req->data['user_group']));
         if($this->service->updateUser($user)) {
             return new HTTPOKResponse('user updated', $req->data);
@@ -54,12 +63,18 @@ final class HTTPController implements HTTPControllerInterface
 
     public function getGraph(HTTPRequest $req): HTTPResponseInterface
     {
+        if($req->method !== 'GET') {
+            return new HTTPMethodNotAllowedResponse($req->method);
+        }
         $data = $this->service->getGraph()->toArray();
         return new HTTPOKResponse('get graph', $data);
     }
 
     public function getNode(HTTPRequest $req): HTTPResponseInterface
     {
+        if($req->method !== 'GET') {
+            return new HTTPMethodNotAllowedResponse($req->method);
+        }
         try {
             $id = $req->getParam('id');
         } catch(HTTPRequestException $e) {
@@ -75,6 +90,9 @@ final class HTTPController implements HTTPControllerInterface
 
     public function getNodes(HTTPRequest $req): HTTPResponseInterface
     {
+        if($req->method !== 'GET') {
+            return new HTTPMethodNotAllowedResponse($req->method);
+        }
         $nodesArr = $this->service->getNodes();
         $data = [];
         foreach($nodesArr as $node) {
@@ -85,6 +103,9 @@ final class HTTPController implements HTTPControllerInterface
 
     public function insertNode(HTTPRequest $req): HTTPResponseInterface
     {
+        if($req->method !== 'POST') {
+            return new HTTPMethodNotAllowedResponse($req->method);
+        }
         $node = new ModelNode($req->data['id'], $req->data['label'], $req->data['category'], $req->data['type'], $req->data['data']);
         $this->service->insertNode($node);
         $this->logger->info('node inserted', $req->data);
@@ -93,6 +114,9 @@ final class HTTPController implements HTTPControllerInterface
     
     public function updateNode(HTTPRequest $req): HTTPResponseInterface
     {
+        if($req->method !== 'PUT') {
+            return new HTTPMethodNotAllowedResponse($req->method);
+        }
         $this->logger->debug('updating node', $req->data);
         $node = new ModelNode($req->data['id'], $req->data['label'], $req->data['category'], $req->data['type'], $req->data['data']);
         $this->service->updateNode($node);
@@ -103,6 +127,9 @@ final class HTTPController implements HTTPControllerInterface
     
     public function deleteNode(HTTPRequest $req): HTTPResponseInterface
     {
+        if($req->method !== 'DELETE') {
+            return new HTTPMethodNotAllowedResponse($req->method);
+        }
         $node = new ModelNode($req->data['id'], 'label', 'application', 'database', []);
         if($this->service->deleteNode($node)) {
             return new HTTPNoContentResponse('node deleted', ['id' => $req->data['id']]);
@@ -112,6 +139,9 @@ final class HTTPController implements HTTPControllerInterface
 
     public function getEdge(HTTPRequest $req): HTTPResponseInterface
     {
+        if($req->method !== 'GET') {
+            return new HTTPMethodNotAllowedResponse($req->method);
+        }
         $edge = $this->service->getEdge($req->data['source'], $req->data['target']);
         if(is_null($edge)) {
             return new HTTPNotFoundResponse('edge not found', $req->data);
@@ -122,12 +152,18 @@ final class HTTPController implements HTTPControllerInterface
     
     public function getEdges(HTTPRequest $req): HTTPResponseInterface
     {
+        if($req->method !== 'GET') {
+            return new HTTPMethodNotAllowedResponse($req->method);
+        }
         $edges = $this->service->getEdges();
         return new HTTPOKResponse('node found', []);
     }
     
     public function insertEdge(HTTPRequest $req): HTTPResponseInterface
     {
+        if($req->method !== 'POST') {
+            return new HTTPMethodNotAllowedResponse($req->method);
+        }
         $edge = new ModelEdge($req->data['source'], $req->data['target']);
         $this->service->insertEdge($edge);
         $data = $edge->toArray();
@@ -136,6 +172,9 @@ final class HTTPController implements HTTPControllerInterface
     
     public function updateEdge(HTTPRequest $req): HTTPResponseInterface
     {
+        if($req->method !== 'PUT') {
+            return new HTTPMethodNotAllowedResponse($req->method);
+        }
         $edge = new ModelEdge($req->data['source'], $req->data['target'], $req->data['data']);
         $this->service->updateEdge($edge);
         $data = $edge->toArray();
@@ -144,6 +183,9 @@ final class HTTPController implements HTTPControllerInterface
     
     public function deleteEdge(HTTPRequest $req): HTTPResponseInterface
     {
+        if($req->method !== 'DELETE') {
+            return new HTTPMethodNotAllowedResponse($req->method);
+        }
         $source = $req->data['source'];
         $target = $req->data['target'];
         $edge = new ModelEdge($source, $target, []);
@@ -154,6 +196,9 @@ final class HTTPController implements HTTPControllerInterface
 
     public function getStatus(HTTPRequest $req): HTTPResponseInterface
     {
+        if($req->method !== 'GET') {
+            return new HTTPMethodNotAllowedResponse($req->method);
+        }
         $statusData = $this->service->getStatus();
         $data = [];
         foreach($statusData as $status) {
@@ -164,6 +209,9 @@ final class HTTPController implements HTTPControllerInterface
     
     public function getNodeStatus(HTTPRequest $req): HTTPResponseInterface
     {
+        if($req->method !== 'GET') {
+            return new HTTPMethodNotAllowedResponse($req->method);
+        }
         try {
             $id = $req->getParam('id');
         } catch(HTTPRequestException $e) {
@@ -179,6 +227,9 @@ final class HTTPController implements HTTPControllerInterface
     
     public function updateNodeStatus(HTTPRequest $req): HTTPResponseInterface
     {
+        if($req->method !== 'PUT') {
+            return new HTTPMethodNotAllowedResponse($req->method);
+        }
         $status = new ModelStatus($req->data['node_id'], $req->data['status']);
         $this->service->updateNodeStatus($status);
         $data = $status->toArray();
@@ -187,6 +238,9 @@ final class HTTPController implements HTTPControllerInterface
 
     public function getLogs(HTTPRequest $req): HTTPResponseInterface
     {
+        if($req->method !== 'GET') {
+            return new HTTPMethodNotAllowedResponse($req->method);
+        }
         try {
             $limit = $req->getParam('limit');
         } catch(HTTPRequestException $e) {
