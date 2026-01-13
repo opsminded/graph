@@ -37,13 +37,13 @@ class TestService extends TestAbstractTest
         HelperContext::update('admin', 'admin', '127.0.0.1');
         $user = $this->service->getUser('maria');
         if ($user !== null) {
-            throw new Exception('error on test_Service_getUser');
+            throw new Exception('error on testGetUser');
         }
 
         $user = $this->service->getUser('admin');
         
-        if($user->getId() != 'admin' || $user->getGroup()->getId() != 'admin') {
-            throw new Exception('error on test_Service_getUser');
+        if ($user->getId() != 'admin' || $user->getGroup()->getId() != 'admin') {
+            throw new Exception('error on testGetUser');
         }
     }
     
@@ -71,10 +71,10 @@ class TestService extends TestAbstractTest
         $this->service->insertUser(new ModelUser('maria', new ModelGroup('contributor')));
         $this->service->updateUser(new ModelUser('maria', new ModelGroup('admin')));
         $user = $this->service->getUser('maria');
-        if($user->getId() != 'maria' || $user->getGroup()->getId() != 'admin') {
-            throw new Exception('error on test_Service_updateUser');
+        if ($user->getId() != 'maria' || $user->getGroup()->getId() != 'admin') {
+            throw new Exception('error on testUpdateUser');
         }
-        if($this->service->updateUser(new ModelUser('pedro', new ModelGroup('admin')))) {
+        if ($this->service->updateUser(new ModelUser('pedro', new ModelGroup('admin')))) {
             throw new Exception('error on testUpdateUser');
         }
     }
@@ -90,10 +90,10 @@ class TestService extends TestAbstractTest
         $this->service->insertEdge($edge1);
         $graph = $this->service->getGraph();
         if (count($graph->getNodes()) != 2) {
-            throw new Exception('error on test_Service_getGraph - expected 2 nodes');
+            throw new Exception('error on testGetGraph - expected 2 nodes');
         }
         if (count($graph->getEdges()) != 1) {
-            throw new Exception('error on test_Service_getGraph - expected 1 edge');
+            throw new Exception('error on testGetGraph - expected 1 edge');
         }
     }
     
@@ -102,17 +102,17 @@ class TestService extends TestAbstractTest
         HelperContext::update('admin', 'admin', '127.0.0.1');
         $node = $this->service->getNode('node1');
         if ($node !== null) {
-            throw new Exception('error on test_Service_getNode - should be null');
+            throw new Exception('error on testGetNode - should be null');
         }
         $newNode = new ModelNode('node1', 'Node 01', 'business', 'server', ['key' => 'value']);
         $this->service->insertNode($newNode);
         $node = $this->service->getNode('node1');
         if ($node->getId() != 'node1' || $node->getLabel() != 'Node 01' || $node->getCategory() != 'business' || $node->getType() != 'server') {
-            throw new Exception('error on test_Service_getNode');
+            throw new Exception('error on testGetNode');
         }
         $data = $node->getData();
         if ($data['key'] != 'value') {
-            throw new Exception('error on test_Service_getNode - data mismatch');
+            throw new Exception('error on testGetNode - data mismatch');
         }
     }
     
@@ -121,7 +121,7 @@ class TestService extends TestAbstractTest
         HelperContext::update('admin', 'admin', '127.0.0.1');
         $nodes = $this->service->getNodes();
         if (count($nodes) != 0) {
-            throw new Exception('error on test_Service_getNodes - should be empty');
+            throw new Exception('error on testGetNodes - should be empty');
         }
         $node1 = new ModelNode('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
         $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
@@ -129,13 +129,13 @@ class TestService extends TestAbstractTest
         $this->service->insertNode($node2);
         $nodes = $this->service->getNodes();
         if (count($nodes) != 2) {
-            throw new Exception('error on test_Service_getNodes - expected 2 nodes');
+            throw new Exception('error on testGetNodes - expected 2 nodes');
         }
         if ($nodes[0]->getId() != 'node1' || $nodes[0]->getLabel() != 'Node 01') {
-            throw new Exception('error on test_Service_getNodes - first node mismatch');
+            throw new Exception('error on testGetNodes - first node mismatch');
         }
         if ($nodes[1]->getId() != 'node2' || $nodes[1]->getLabel() != 'Node 02') {
-            throw new Exception('error on test_Service_getNodes - second node mismatch');
+            throw new Exception('error on testGetNodes - second node mismatch');
         }
     }
     
@@ -146,7 +146,7 @@ class TestService extends TestAbstractTest
         $this->service->insertNode($node);
         $retrievedNode = $this->service->getNode('node1');
         if ($retrievedNode->getId() != 'node1' || $retrievedNode->getLabel() != 'Node 01') {
-            throw new Exception('error on test_Service_insertNode');
+            throw new Exception('error on testInsertNode');
         }
         // Test with contributor permission
         HelperContext::update('admin', 'admin', '127.0.0.1');
@@ -154,7 +154,7 @@ class TestService extends TestAbstractTest
         $this->service->insertNode($node2);
         $retrievedNode2 = $this->service->getNode('node2');
         if ($retrievedNode2->getId() != 'node2') {
-            throw new Exception('error on test_Service_insertNode - contributor should be able to insert');
+            throw new Exception('error on testInsertNode - contributor should be able to insert');
         }
     }
     
@@ -170,17 +170,17 @@ class TestService extends TestAbstractTest
 
         
         if ($retrievedNode->getLabel() != 'Updated Node' || $retrievedNode->getCategory() != 'application' || $retrievedNode->getType() != 'database') {
-            throw new Exception('error on test_Service_updateNode compare label and category');
+            throw new Exception('error on testUpdateNode compare label and category');
         }
         $data = $retrievedNode->getData();
         if ($data['key'] != 'newvalue') {
-            throw new Exception('error on test_Service_updateNode - data not updated');
+            throw new Exception('error on testUpdateNode - data not updated');
         }
         
         // try to update node not found
         $updatedNode = new ModelNode('node5', 'Updated Node', 'application', 'database', ['key' => 'newvalue']);
         if ($this->service->updateNode($updatedNode)) {
-            throw new Exception('error on test_Service_updateNode deveria ser false');
+            throw new Exception('error on testUpdateNode - should be false');
         }
     }
     
@@ -194,15 +194,15 @@ class TestService extends TestAbstractTest
         $this->service->insertNode($node1);
 
         $node = $this->service->getNode('node1');
-        if(is_null($node)) {
-            throw new Exception('problem on testDeleteNode');
+        if (is_null($node)) {
+            throw new Exception('error on testDeleteNode');
         }
 
         $this->service->deleteNode($node1);
 
         $node = $this->service->getNode('node1');
-        if(! is_null($node)) {
-            throw new Exception('problem on testDeleteNode');
+        if (! is_null($node)) {
+            throw new Exception('error on testDeleteNode');
         }
     }
     
@@ -215,17 +215,17 @@ class TestService extends TestAbstractTest
         $this->service->insertNode($node2);
         $edge = $this->service->getEdge('node1', 'node2');
         if ($edge !== null) {
-            throw new Exception('error on test_Service_getEdge - should be null');
+            throw new Exception('error on testGetEdge - should be null');
         }
         $newEdge = new ModelEdge('node1', 'node2', ['weight' => '10']);
         $this->service->insertEdge($newEdge);
         $edge = $this->service->getEdge('node1', 'node2');
         if ($edge->getId() != 'node1-node2' || $edge->getSource() != 'node1' || $edge->getTarget() != 'node2') {
-            throw new Exception('error on test_Service_getEdge');
+            throw new Exception('error on testGetEdge');
         }
         $data = $edge->getData();
         if ($data['weight'] != '10') {
-            throw new Exception('error on test_Service_getEdge - data mismatch');
+            throw new Exception('error on testGetEdge - data mismatch');
         }
     }
     
@@ -233,7 +233,7 @@ class TestService extends TestAbstractTest
         HelperContext::update('admin', 'admin', '127.0.0.1');
         $edges = $this->service->getEdges();
         if (count($edges) != 0) {
-            throw new Exception('error on test_Service_getEdges - should be empty');
+            throw new Exception('error on testGetEdges - should be empty');
         }
         $node1 = new ModelNode('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
         $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
@@ -247,13 +247,13 @@ class TestService extends TestAbstractTest
         $this->service->insertEdge($edge2);
         $edges = $this->service->getEdges();
         if (count($edges) != 2) {
-            throw new Exception('error on test_Service_getEdges - expected 2 edges');
+            throw new Exception('error on testGetEdges - expected 2 edges');
         }
         if ($edges[0]->getId() != 'node1-node2' || $edges[0]->getSource() != 'node1') {
-            throw new Exception('error on test_Service_getEdges - first edge mismatch');
+            throw new Exception('error on testGetEdges - first edge mismatch');
         }
         if ($edges[1]->getId() != 'node2-node3' || $edges[1]->getSource() != 'node2') {
-            throw new Exception('error on test_Service_getEdges - second edge mismatch');
+            throw new Exception('error on testGetEdges - second edge mismatch');
         }
     }
     
@@ -267,7 +267,7 @@ class TestService extends TestAbstractTest
         $this->service->insertEdge($edge);
         $retrievedEdge = $this->service->getEdge('node1', 'node2');
         if ($retrievedEdge->getId() != 'node1-node2' || $retrievedEdge->getSource() != 'node1' || $retrievedEdge->getTarget() != 'node2') {
-            throw new Exception('error on test_Service_insertEdge');
+            throw new Exception('error on testInsertEdge');
         }
     }
     
@@ -293,11 +293,11 @@ class TestService extends TestAbstractTest
         $retrievedEdge = $this->service->getEdge('node1', 'node2');
 
         if ($retrievedEdge->getSource() != 'node1' || $retrievedEdge->getTarget() != 'node2') {
-            throw new Exception('error on test_Service_updateEdge');
+            throw new Exception('error on testUpdateEdge');
         }
         $data = $retrievedEdge->getData();
         if ($data['weight'] != '30') {
-            throw new Exception('error on test_Service_updateEdge - data not updated');
+            throw new Exception('error on testUpdateEdge - data not updated');
         }
     }
     
@@ -312,17 +312,17 @@ class TestService extends TestAbstractTest
         $this->service->insertEdge($edge);
         $retrievedEdge = $this->service->getEdge('node1', 'node2');
         if ($retrievedEdge === null) {
-            throw new Exception('error on test_Service_deleteEdge - edge not inserted');
+            throw new Exception('error on testDeleteEdge - edge not inserted');
         }
         $this->service->deleteEdge(new ModelEdge('node1', 'node2'));
         $edges = $this->service->getEdges();
         if (count($edges) != 0) {
-            throw new Exception('error on test_Service_deleteEdge - edge not deleted');
+            throw new Exception('error on testDeleteEdge - edge not deleted');
         }
 
         // Test deleting non-existent edge
         if ($this->service->deleteEdge(new ModelEdge('node1', 'node2'))) {
-            throw new Exception('error on test_Service_deleteEdge - should return false for non-existent edge');
+            throw new Exception('error on testDeleteEdge - should return false for non-existent edge');
         }
     }
     
@@ -332,7 +332,7 @@ class TestService extends TestAbstractTest
         $statuses = $this->service->getStatus();
 
         if (count($statuses) != 0) {
-            throw new Exception('error on test_Service_getStatuses - should be empty');
+            throw new Exception('error on testGetStatus - should be empty');
         }
         $node1 = new ModelNode('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
         $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
@@ -342,7 +342,7 @@ class TestService extends TestAbstractTest
         $this->service->updateNodeStatus(new ModelStatus('node2', 'unhealthy'));
         $statuses = $this->service->getStatus();
         if (count($statuses) != 2) {
-            throw new Exception('error on test_Service_getStatuses - expected 2 statuses');
+            throw new Exception('error on testGetStatus - expected 2 statuses');
         }
     }
     
@@ -353,12 +353,12 @@ class TestService extends TestAbstractTest
         $this->service->insertNode($node1);
         $status = $this->service->getNodeStatus('node1');
         if ($status->getNodeId() != 'node1' || $status->getStatus() != 'unknown') {
-            throw new Exception('error on test_Service_getNodeStatus - default should be unknown');
+            throw new Exception('error on testGetNodeStatus - default should be unknown');
         }
         $this->service->updateNodeStatus(new ModelStatus('node1', 'healthy'));
         $status = $this->service->getNodeStatus('node1');
         if ($status->getNodeId() != 'node1' || $status->getStatus() != 'healthy') {
-            throw new Exception('error on test_Service_getNodeStatus - status should be healthy');
+            throw new Exception('error on testGetNodeStatus - status should be healthy');
         }
     }
     
@@ -370,12 +370,12 @@ class TestService extends TestAbstractTest
         $this->service->updateNodeStatus(new ModelStatus('node1', 'healthy'));
         $status = $this->service->getNodeStatus('node1');
         if ($status->getStatus() != 'healthy') {
-            throw new Exception('error on test_Service_updateNodeStatus - status not set');
+            throw new Exception('error on testUpdateNodeStatus - status not set');
         }
         $this->service->updateNodeStatus(new ModelStatus('node1', 'maintenance'));
         $status = $this->service->getNodeStatus('node1');
         if ($status->getStatus() != 'maintenance') {
-            throw new Exception('error on test_Service_updateNodeStatus - status not updated');
+            throw new Exception('error on testUpdateNodeStatus - status not updated');
         }
 
         try {
@@ -383,7 +383,7 @@ class TestService extends TestAbstractTest
         } catch(PDOException $e) {
             return;
         }
-        throw new Exception('error on test_Service_updateNodeStatus');
+        throw new Exception('error on testUpdateNodeStatus');
     }
     
     public function testGetLogs(): void
@@ -391,7 +391,7 @@ class TestService extends TestAbstractTest
         HelperContext::update('admin', 'admin', '127.0.0.1');
         $logs = $this->service->getLogs(10);
         if (count($logs) != 0) {
-            throw new Exception('error on test_Service_getLogs - should be empty');
+            throw new Exception('error on testGetLogs - should be empty');
         }
 
         $node1 = new ModelNode('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
@@ -404,16 +404,16 @@ class TestService extends TestAbstractTest
         sleep(1);
         $logs = $this->service->getLogs(10);
         if (count($logs) != 3) {
-            throw new Exception('error on test_Service_getLogs - expected 3 log entries (insert, update, delete)');
+            throw new Exception('error on testGetLogs - expected 3 log entries (insert, update, delete)');
         }
         if ($logs[0]->action != 'delete' || $logs[0]->entityType != 'node') {
-            throw new Exception('error on test_Service_getLogs - first log should be delete');
+            throw new Exception('error on testGetLogs - first log should be delete');
         }
         if ($logs[1]->action != 'update' || $logs[1]->entityType != 'node') {
-            throw new Exception('error on test_Service_getLogs - second log should be update');
+            throw new Exception('error on testGetLogs - second log should be update');
         }
         if ($logs[2]->action != 'insert' || $logs[2]->entityType != 'node') {
-            throw new Exception('error on test_Service_getLogs - third log should be insert');
+            throw new Exception('error on testGetLogs - third log should be insert');
         }
     }
 }
