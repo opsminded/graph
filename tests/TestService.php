@@ -59,7 +59,7 @@ class TestService extends TestAbstractTest
         
         try {
             $this->service->insertUser(new ModelUser('maria', new ModelGroup('contributor')));
-        } catch(Exception $e) {
+        } catch (Exception $e) {
             return;
         }
         throw new Exception('error on testInsertUser');
@@ -383,7 +383,7 @@ class TestService extends TestAbstractTest
 
         try {
             $this->service->updateNodeStatus(new ModelStatus('node6', 'healthy'));
-        } catch(PDOException $e) {
+        } catch (PDOException $e) {
             return;
         }
         throw new Exception('error on testUpdateNodeStatus');

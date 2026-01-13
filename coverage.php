@@ -17,10 +17,12 @@ $names = [];
 foreach($coverageData as $file => $d) {
     if (strpos($file, 'tests.php') !== false || !file_exists($file)) continue;
     if (strpos($file, 'TestAbstractTest.php') !== false || !file_exists($file)) continue;
+    if (strpos($file, 'Interface.php') !== false || !file_exists($file)) continue;
 
     if (str_contains($file, '/tests/')) {
         continue;
     }
+
     $names[] = $file;
 }
 sort($names);
