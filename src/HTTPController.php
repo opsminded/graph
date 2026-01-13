@@ -24,7 +24,8 @@ final class HTTPController implements HTTPControllerInterface
         if(is_null($user)) {
             return new HTTPNotFoundResponse('user not found', ['id' => $id]);
         }
-        return new HTTPOKResponse('user found', $user->toArray());
+        $data = $user->toArray();
+        return new HTTPOKResponse('user found', $data);
     }
 
     public function insertUser(HTTPRequest $req): HTTPResponseInterface
@@ -37,7 +38,8 @@ final class HTTPController implements HTTPControllerInterface
         }
         $user = new ModelUser($req->data['id'], new ModelGroup($req->data['user_group']));
         $this->service->insertUser($user);
-        return new HTTPCreatedResponse('user created', $req->data);
+        $data = $user->toArray();
+        return new HTTPCreatedResponse('user created', $data);
     }
 
     public function updateUser(HTTPRequest $req): HTTPResponseInterface
@@ -46,7 +48,8 @@ final class HTTPController implements HTTPControllerInterface
         if($this->service->updateUser($user)) {
             return new HTTPOKResponse('user updated', $req->data);
         }
-        return new HTTPNotFoundResponse('user not found', ['id' => $req->data['id']]);
+        $data = $user->toArray();
+        return new HTTPNotFoundResponse('user not found', $data);
     }
 
     public function getGraph(HTTPRequest $req): HTTPResponseInterface
@@ -72,8 +75,12 @@ final class HTTPController implements HTTPControllerInterface
 
     public function getNodes(HTTPRequest $req): HTTPResponseInterface
     {
-        $nodes = $this->service->getNodes();
-        return new HTTPOKResponse('nodes found', []);
+        $nodesArr = $this->service->getNodes();
+        $data = [];
+        foreach($nodesArr as $node) {
+            $data[] = $node->toArray();
+        }
+        return new HTTPOKResponse('nodes found', $data);
     }
 
     public function insertNode(HTTPRequest $req): HTTPResponseInterface

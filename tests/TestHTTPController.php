@@ -82,7 +82,7 @@ final class TestHTTPController extends TestAbstractTest
         $req->data['user_group'] = 'admin';
 
         $resp = $this->controller->insertUser($req);
-        if($resp->code != 201 || $resp->status != 'success' || $resp->message != 'user created' || $resp->data['id'] != 'maria' || $resp->data['user_group'] != 'admin') {
+        if($resp->code != 201 || $resp->status != 'success' || $resp->message != 'user created' || $resp->data['id'] != 'maria' || $resp->data['group']['id'] != 'admin') {
             throw new Exception('error on testInsertUser');
         }
 
@@ -168,6 +168,20 @@ final class TestHTTPController extends TestAbstractTest
 
         $req = new HTTPRequest();
         $resp = $this->controller->getNodes($req);
+        if($resp->code != 200 || count($resp->data) > 0) {
+            throw new Exception('error on testGetNodes');
+        }
+
+        $this->database->insertNode('node1', 'label1', 'application', 'server');
+        $this->database->insertNode('node2', 'label2', 'application', 'server');
+        $req = new HTTPRequest();
+        $resp = $this->controller->getNodes($req);
+        if($resp->code != 200 || count($resp->data) != 2) {
+            throw new Exception('error on testGetNodes');
+        }
+        if($resp->data[0]['id'] != 'node1' || $resp->data[1]['id'] != 'node2') {
+            throw new Exception('error on testGetNodes');
+        }
     }
 
     public function testInsertNode(): void
