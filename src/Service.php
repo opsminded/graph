@@ -65,7 +65,7 @@ final class Service implements ServiceInterface
     {
         $this->logger->debug('updating user', ['user' => $user->toArray()]);
         $this->verify();
-        if($this->database->updateUser($user->getId(), $user->getGroup()->getId())) {
+        if ($this->database->updateUser($user->getId(), $user->getGroup()->getId())) {
             $this->logger->debug('user updated', ['user' => $user->toArray()]);
             return true;
         }
@@ -137,7 +137,7 @@ final class Service implements ServiceInterface
         $this->logger->debug('updating node', ['node' => $node->toArray()]);
         $this->verify();
         $exists = $this->database->getNode($node->getId());
-        if(is_null($exists)) {
+        if (is_null($exists)) {
             $this->logger->error('node not found', $node->toArray());
             return false;
         }
@@ -155,7 +155,7 @@ final class Service implements ServiceInterface
         $this->logger->debug('deleting node', ['node' => $node->toArray()]);
         $this->verify();
         $exists = $this->database->getNode($node->getId());
-        if(is_null($exists)) {
+        if (is_null($exists)) {
             $this->logger->error('node not found', $node->toArray());
             return false;
         }
@@ -173,7 +173,7 @@ final class Service implements ServiceInterface
         $this->logger->debug('getting edge', ['source' => $source, 'target' => $target]);
         $this->verify();
         $edgeData = $this->database->getEdge($source, $target);
-        if(! is_null($edgeData)) {
+        if (! is_null($edgeData)) {
             $edge = new ModelEdge($edgeData['source'], $edgeData['target'], $edgeData['data']);
             $data = $edge->toArray();
             $this->logger->info('edge found', $data);
@@ -225,7 +225,7 @@ final class Service implements ServiceInterface
 
         $old = $this->getEdge($edge->getSource(), $edge->getTarget());
         $this->insertLog(new ModelLog('edge', $edge->getId(), 'update', $old->toArray(), $edge->toArray()));
-        if($this->database->updateEdge($edge->getId(), $edge->getSource(), $edge->getTarget(), $edge->getData())) {
+        if ($this->database->updateEdge($edge->getId(), $edge->getSource(), $edge->getTarget(), $edge->getData())) {
             $this->logger->info('edge updated', ['edge' => $edge->toArray()]);
             return true;
         }
@@ -236,12 +236,18 @@ final class Service implements ServiceInterface
     {
         $this->logger->debug('deleting edge', ['edge' => $edge->toArray()]);
         $this->verify();
-        if($this->database->deleteEdge($edge->getId())) {
+        $exists = $this->database->getEdge($edge->getSource(), $edge->getTarget());
+        if (is_null($exists)) {
+            $this->logger->error('edge not found', ['edge' => $edge->toArray()]);
+            return false;
+        }
+        $old = $this->getEdge($edge->getSource(), $edge->getTarget());
+        $this->insertLog(new ModelLog('edge', $edge->getId(), 'delete', $old->toArray(), null));
+        if ($this->database->deleteEdge($edge->getId())) {
             $this->logger->info('edge deleted', ['edge' => $edge->toArray()]);
             return true;
         }
-        $this->logger->error('edge not deleted', ['edge' => $edge->toArray()]);
-        return false;
+        throw new RuntimeException('unexpected error on Service::deleteEdge');
     }
 
     public function getStatus(): array
@@ -250,13 +256,11 @@ final class Service implements ServiceInterface
         $this->verify();
         $statusesData = $this->database->getStatus();
         $nodeStatuses = [];
-        $data = [];
         foreach ($statusesData as $status) {
             $status = new ModelStatus($status['id'], $status['status'] ?? 'unknown');
             $nodeStatuses[] = $status;
-            $data[] = $status;
         }
-        $this->logger->info('status founded', ['status' => $data]);
+        $this->logger->info('status found', ['status' => $nodeStatuses]);
         return $nodeStatuses;
     }
 
@@ -265,8 +269,8 @@ final class Service implements ServiceInterface
         $this->logger->debug('getting node status', ['id' => $id]);
         $this->verify();
         $statusData = $this->database->getNodeStatus($id);
-        if(!is_null($statusData)) {
-            $this->logger->info('status founded', $statusData);
+        if (! is_null($statusData)) {
+            $this->logger->info('status found', $statusData);
             return new ModelStatus($id, $statusData['status'] ?? 'unknown');
         }
         $this->logger->error('status not found', ['id' => $id]);
@@ -314,9 +318,7 @@ final class Service implements ServiceInterface
         $this->logger->debug('insert log', ['log' => $log]);
         $user_id   = HelperContext::getUser();
         $ip_address = HelperContext::getClientIP();
-        if($this->database->insertLog($log->entityType, $log->entityId, $log->action, $log->oldData, $log->newData, $user_id, $ip_address)) {
-
-        }
+        $this->database->insertLog($log->entityType, $log->entityId, $log->action, $log->oldData, $log->newData, $user_id, $ip_address);
     }
 
     private function verify(): void

@@ -319,6 +319,11 @@ class TestService extends TestAbstractTest
         if (count($edges) != 0) {
             throw new Exception('error on test_Service_deleteEdge - edge not deleted');
         }
+
+        // Test deleting non-existent edge
+        if ($this->service->deleteEdge(new ModelEdge('node1', 'node2'))) {
+            throw new Exception('error on test_Service_deleteEdge - should return false for non-existent edge');
+        }
     }
     
     public function testGetStatus(): void
