@@ -296,14 +296,14 @@ final class Service implements ServiceInterface
         $logs = [];
         $rows = $this->database->getLogs($limit);
         foreach ($rows as $row) {
-            $old_data = $row['old_data'] ? json_decode($row['old_data'], true) : [];
-            $new_data = $row['new_data'] ?  json_decode($row['new_data'], true) : [];
+            $oldData = $row['old_data'] ? json_decode($row['old_data'], true) : [];
+            $newData = $row['new_data'] ? json_decode($row['new_data'], true) : [];
             $log = new ModelLog(
                 $row['entity_type'],
                 $row['entity_id'],
                 $row['action'],
-                $old_data,
-                $new_data,
+                $oldData,
+                $newData,
             );
             $log->userId    = $row['user_id'];
             $log->ipAddress = $row['ip_address'];
@@ -316,9 +316,9 @@ final class Service implements ServiceInterface
     private function insertLog(ModelLog $log): void
     {
         $this->logger->debug('insert log', ['log' => $log]);
-        $user_id   = HelperContext::getUser();
-        $ip_address = HelperContext::getClientIP();
-        $this->database->insertLog($log->entityType, $log->entityId, $log->action, $log->oldData, $log->newData, $user_id, $ip_address);
+        $userId   = HelperContext::getUser();
+        $ipAddress = HelperContext::getClientIP();
+        $this->database->insertLog($log->entityType, $log->entityId, $log->action, $log->oldData, $log->newData, $userId, $ipAddress);
     }
 
     private function verify(): void
@@ -335,15 +335,14 @@ final class Service implements ServiceInterface
             return;
         }
 
-        // if action is in the SAFE_ACTIONS, allow all
+        // if action is in the SECURE_ACTIONS, allow all
         if (self::SECURE_ACTIONS[$action]) {
             $this->logger->info('allow safe action', ['action' => $action, 'group' => $group]);
             return;
         }
-        
+
         // if action is restricted, only allow contributor
-        if (self::SECURE_ACTIONS[$action] == false && $group == 'contributor')
-        {
+        if (self::SECURE_ACTIONS[$action] === false && $group === 'contributor') {
             $this->logger->info('contributor is allowed', ['action' => $action, 'group' => $group]);
             return;
         }
