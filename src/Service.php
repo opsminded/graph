@@ -226,7 +226,7 @@ final class Service implements ServiceInterface
         $old = $this->getEdge($edge->getSource(), $edge->getTarget());
         $this->insertLog(new ModelLog('edge', $edge->getId(), 'update', $old->toArray(), $edge->toArray()));
         if($this->database->updateEdge($edge->getId(), $edge->getSource(), $edge->getTarget(), $edge->getData())) {
-            $this->logger->info('edge updated', ['edge' => $edge]);
+            $this->logger->info('edge updated', ['edge' => $edge->toArray()]);
             return true;
         }
         throw new RuntimeException('unexpected error on Service::updateEdge');
@@ -237,10 +237,10 @@ final class Service implements ServiceInterface
         $this->logger->debug('deleting edge', ['edge' => $edge->toArray()]);
         $this->verify();
         if($this->database->deleteEdge($edge->getId())) {
-            $this->logger->info('edge deleted', ['edge' => $edge]);
+            $this->logger->info('edge deleted', ['edge' => $edge->toArray()]);
             return true;
         }
-        $this->logger->error('edge not deleted', ['edge' => $edge]);
+        $this->logger->error('edge not deleted', ['edge' => $edge->toArray()]);
         return false;
     }
 
@@ -282,7 +282,7 @@ final class Service implements ServiceInterface
             $this->logger->info('node status updated', $data);
             return true;
         }
-        throw new RuntimeException('unexpected error on Service::updateEdge');
+        throw new RuntimeException('unexpected error on Service::updateNodeStatus');
     }
 
     public function getLogs(int $limit): array
@@ -313,7 +313,7 @@ final class Service implements ServiceInterface
     {
         $this->logger->debug('insert log', ['log' => $log]);
         $user_id   = HelperContext::getUser();
-        $ip_address = HelperContext::getClientIp();
+        $ip_address = HelperContext::getClientIP();
         if($this->database->insertLog($log->entityType, $log->entityId, $log->action, $log->oldData, $log->newData, $user_id, $ip_address)) {
 
         }

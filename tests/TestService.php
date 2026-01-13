@@ -6,8 +6,8 @@ class TestService extends TestAbstractTest
 {
     private ?PDO $pdo;
 
-    private ?logger $databaseLogger;
-    private ?logger $serviceLogger;
+    private ?Logger $databaseLogger;
+    private ?Logger $serviceLogger;
 
     private ?DatabaseInterface $graphDB;
     private ?ServiceInterface $service;
@@ -53,7 +53,7 @@ class TestService extends TestAbstractTest
 
         $user = $this->service->getUser('maria');
         if ($user !== null) {
-            throw new Exception('error on test_Service_getUser');
+            throw new Exception('error on testInsertUser');
         }
         $this->service->insertUser(new ModelUser('maria', new ModelGroup('contributor')));
         
@@ -383,6 +383,7 @@ class TestService extends TestAbstractTest
     
     public function testGetLogs(): void
     {
+        HelperContext::update('admin', 'admin', '127.0.0.1');
         $logs = $this->service->getLogs(10);
         if (count($logs) != 0) {
             throw new Exception('error on test_Service_getLogs - should be empty');
