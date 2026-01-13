@@ -291,14 +291,14 @@ class TestDatabase extends TestAbstractTest
         $this->database->insertEdge('edge1', 'node1', 'node2', ['a' => 'b']);
         $this->database->insertEdge('edge2', 'node2', 'node3', ['b' => 'c']);
 
-        if (count($this->database->getEdges()) != 2) {
+        if (count($this->database->getEdges()) !== 2) {
             throw new Exception('error on testDeleteEdge');
         }
 
         $this->database->deleteEdge('edge1');
         $this->database->deleteEdge('edge2');
 
-        if (count($this->database->getEdges()) != 0) {
+        if (count($this->database->getEdges()) !== 0) {
             throw new Exception('error on testDeleteEdge');
         }
 
@@ -311,7 +311,7 @@ class TestDatabase extends TestAbstractTest
         $s = $this->database->getStatus();
 
         if (count($s) !== 0) {
-            throw new Exception('error on testGetStatuses');
+            throw new Exception('error on testGetStatus');
         }
 
         $this->database->insertNode('node1', 'Node 01', 'business', 'server', ['running_on' => 'SRV01OP']);
@@ -319,11 +319,11 @@ class TestDatabase extends TestAbstractTest
         $s = $this->database->getStatus();
 
         if (count($s) !== 1) {
-            throw new Exception('error on testGetStatuses');
+            throw new Exception('error on testGetStatus');
         }
 
         if ($s[0]['id'] !== 'node1' || $s[0]['status'] !== null) {
-            throw new Exception('error on testGetStatuses');
+            throw new Exception('error on testGetStatus');
         }
     }
 
@@ -331,7 +331,7 @@ class TestDatabase extends TestAbstractTest
         $s = $this->database->getStatus();
 
         if (count($s) !== 0) {
-            throw new Exception('error on testGetStatuses');
+            throw new Exception('error on testGetStatus');
         }
 
         $this->database->insertNode('node1', 'Node 01', 'business', 'server', ['running_on' => 'SRV01OP']);
@@ -339,11 +339,11 @@ class TestDatabase extends TestAbstractTest
         $s = $this->database->getNodeStatus('node1');
 
         if ($s['id'] !== 'node1' || $s['status'] !== null) {
-            throw new Exception('error on testGetStatuses');
+            throw new Exception('error on testGetStatus');
         }
 
         if (!is_null($this->database->getNodeStatus('node2'))) {
-            throw new Exception('error on testGetStatuses');
+            throw new Exception('error on testGetStatus');
         }
     }
 
@@ -400,11 +400,11 @@ class TestDatabase extends TestAbstractTest
         $this->database->insertLog('node', 'node1', 'update', null, null, 'admin', '127.0.0.1');
         $logs = $this->database->getLogs(2);
         if (count($logs) !== 1) {
-            throw new Exception('error on testGetLogs');
+            throw new Exception('error on testInsertAuditLog');
         }
 
         if ($logs[0]['entity_id'] !== 'node1') {
-            throw new Exception('error on testGetLogs');
+            throw new Exception('error on testInsertAuditLog');
         }
     }
 }
