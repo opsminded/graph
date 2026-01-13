@@ -76,6 +76,8 @@ $tests = [
     new TestHTTPRequest(),
     new TestHTTPRequestException(),
 
+    new TestHTTPRequestRouter(),
+
     new TestHTTPResponse(),
     new TestHTTPUnauthorizedResponse(),
     

@@ -44,6 +44,15 @@ final class TestHTTPController extends TestAbstractTest
 
     public function testGetUser(): void
     {
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getUser';
+        $req = new HTTPRequest();
+        $resp = $this->controller->getUser($req);
+        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'getUser\'') {
+            throw new Exception('error on testGetUser');
+        }
+        
         $_GET['id'] = 'maria';
         $_SERVER['REQUEST_METHOD'] = 'GET';
         $_SERVER['SCRIPT_NAME'] = 'api.php';
@@ -73,6 +82,15 @@ final class TestHTTPController extends TestAbstractTest
 
     public function testInsertUser(): void
     {
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/insertUser';
+        $req = new HTTPRequest();
+        $resp = $this->controller->insertUser($req);
+        if ($resp->code != 405 || $resp->message != 'method \'GET\' not allowed in \'insertUser\'') {
+            throw new Exception('error on testGetUser');
+        }
+
         $_SERVER['REQUEST_METHOD'] = 'POST';
         $_SERVER['SCRIPT_NAME'] = 'api.php';
         $_SERVER['REQUEST_URI'] = 'api.php/insertUser';
@@ -101,6 +119,15 @@ final class TestHTTPController extends TestAbstractTest
 
     public function testUpdateUser(): void
     {
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/updateUser';
+        $req = new HTTPRequest();
+        $resp = $this->controller->updateUser($req);
+        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'updateUser\'') {
+            throw new Exception('error on testGetUser');
+        }
+
         $_SERVER['REQUEST_METHOD'] = 'PUT';
         $_SERVER['SCRIPT_NAME'] = 'api.php';
         $_SERVER['REQUEST_URI'] = 'api.php/updateUser';
@@ -124,6 +151,15 @@ final class TestHTTPController extends TestAbstractTest
 
     public function testGetGraph(): void
     {
+        $_SERVER['REQUEST_METHOD'] = 'PUT';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getGraph';
+        $req = new HTTPRequest();
+        $resp = $this->controller->getGraph($req);
+        if ($resp->code != 405 || $resp->message != 'method \'PUT\' not allowed in \'getGraph\'') {
+            throw new Exception('error on testGetGraph');
+        }
+
         $_SERVER['REQUEST_METHOD'] = 'GET';
         $_SERVER['SCRIPT_NAME'] = 'api.php';
         $_SERVER['REQUEST_URI'] = 'api.php/getGraph';
@@ -134,6 +170,16 @@ final class TestHTTPController extends TestAbstractTest
 
     public function testGetNode(): void
     {
+        $_GET['id'] = 'node1';
+        $_SERVER['REQUEST_METHOD'] = 'DELETE';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getNode';
+        $req = new HTTPRequest();
+        $resp = $this->controller->getNode($req);
+        if ($resp->code != 405 || $resp->message != 'method \'DELETE\' not allowed in \'getNode\'') {
+            throw new Exception('error on testGetNode');
+        }
+
         $_GET['id'] = 'node1';
         $_SERVER['REQUEST_METHOD'] = 'GET';
         $_SERVER['SCRIPT_NAME'] = 'api.php';
@@ -162,6 +208,15 @@ final class TestHTTPController extends TestAbstractTest
 
     public function testGetNodes(): void
     {
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getNodes';
+        $req = new HTTPRequest();
+        $resp = $this->controller->getNodes($req);
+        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'getNodes\'') {
+            throw new Exception('error on testGetNodes');
+        }
+
         $_SERVER['REQUEST_METHOD'] = 'GET';
         $_SERVER['SCRIPT_NAME'] = 'api.php';
         $_SERVER['REQUEST_URI'] = 'api.php/getNodes';
@@ -186,6 +241,16 @@ final class TestHTTPController extends TestAbstractTest
 
     public function testInsertNode(): void
     {
+        $_SERVER['REQUEST_METHOD'] = 'PUT';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/insertNode';
+
+        $req = new HTTPRequest();
+        $resp = $this->controller->insertNode($req);
+        if ($resp->code != 405 || $resp->message != 'method \'PUT\' not allowed in \'insertNode\'') {
+            throw new Exception('error on testInsertNode');
+        }
+
         $_SERVER['REQUEST_METHOD'] = 'POST';
         $_SERVER['SCRIPT_NAME'] = 'api.php';
         $_SERVER['REQUEST_URI'] = 'api.php/insertNode';
@@ -201,6 +266,15 @@ final class TestHTTPController extends TestAbstractTest
     
     public function testUpdateNode(): void
     {
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/updateNode';
+        $req = new HTTPRequest();
+        $resp = $this->controller->updateNode($req);
+        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'updateNode\'') {
+            throw new Exception('error on testUpdateNode');
+        }
+
         $_SERVER['REQUEST_METHOD'] = 'PUT';
         $_SERVER['SCRIPT_NAME'] = 'api.php';
         $_SERVER['REQUEST_URI'] = 'api.php/updateNode';
@@ -216,6 +290,15 @@ final class TestHTTPController extends TestAbstractTest
     
     public function testDeleteNode(): void
     {
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/deleteNode';
+        $req = new HTTPRequest();
+        $resp = $this->controller->deleteNode($req);
+        if ($resp->code != 405 || $resp->message != 'method \'GET\' not allowed in \'deleteNode\'') {
+            throw new Exception('error on testDeleteNode');
+        }
+
         $_SERVER['REQUEST_METHOD'] = 'DELETE';
         $_SERVER['SCRIPT_NAME'] = 'api.php';
         $_SERVER['REQUEST_URI'] = 'api.php/deleteNode';
@@ -241,6 +324,15 @@ final class TestHTTPController extends TestAbstractTest
 
     public function testGetEdge(): void
     {
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getEdge';
+        $req = new HTTPRequest();
+        $resp = $this->controller->getEdge($req);
+        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'getEdge\'') {
+            throw new Exception('error on testGetEdge');
+        }
+
         $_SERVER['REQUEST_METHOD'] = 'GET';
         $_SERVER['SCRIPT_NAME'] = 'api.php';
         $_SERVER['REQUEST_URI'] = 'api.php/getEdge';
@@ -268,6 +360,15 @@ final class TestHTTPController extends TestAbstractTest
     
     public function testGetEdges(): void
     {
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getEdges';
+        $req = new HTTPRequest();
+        $resp = $this->controller->getEdges($req);
+        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'getEdges\'') {
+            throw new Exception('error on testGetEdges');
+        }
+
         $_SERVER['REQUEST_METHOD'] = 'GET';
         $_SERVER['SCRIPT_NAME'] = 'api.php';
         $_SERVER['REQUEST_URI'] = 'api.php/getEdges';
@@ -278,6 +379,15 @@ final class TestHTTPController extends TestAbstractTest
     
     public function testInsertEdge(): void
     {
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/insertEdge';
+        $req = new HTTPRequest();
+        $resp = $this->controller->insertEdge($req);
+        if ($resp->code != 405 || $resp->message != 'method \'GET\' not allowed in \'insertEdge\'') {
+            throw new Exception('error on testInsertEdge');
+        }
+
         $this->database->insertNode('node1', 'label1', 'application', 'server');
         $this->database->insertNode('node2', 'label2', 'application', 'server');
         $_SERVER['REQUEST_METHOD'] = 'POST';
@@ -295,6 +405,15 @@ final class TestHTTPController extends TestAbstractTest
     
     public function testUpdateEdge(): void
     {
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/updateEdge';
+        $req = new HTTPRequest();
+        $resp = $this->controller->updateEdge($req);
+        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'updateEdge\'') {
+            throw new Exception('error on testUpdateEdge');
+        }
+
         $_SERVER['REQUEST_METHOD'] = 'PUT';
         $_SERVER['SCRIPT_NAME'] = 'api.php';
         $_SERVER['REQUEST_URI'] = 'api.php/updateEdge';
@@ -307,10 +426,18 @@ final class TestHTTPController extends TestAbstractTest
     
     public function testDeleteEdge(): void
     {
+        $_SERVER['REQUEST_METHOD'] = 'PUT';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/deleteEdge';
+        $req = new HTTPRequest();
+        $resp = $this->controller->deleteEdge($req);
+        if ($resp->code != 405 || $resp->message != 'method \'PUT\' not allowed in \'deleteEdge\'') {
+            throw new Exception('error on testDeleteEdge');
+        }
+
         $_SERVER['REQUEST_METHOD'] = 'DELETE';
         $_SERVER['SCRIPT_NAME'] = 'api.php';
         $_SERVER['REQUEST_URI'] = 'api.php/deleteEdge';
-
         $req = new HTTPRequest();
         $req->data['source'] = 'node1';
         $req->data['target'] = 'node2';
@@ -319,6 +446,15 @@ final class TestHTTPController extends TestAbstractTest
 
     public function testGetStatus(): void
     {
+        $_SERVER['REQUEST_METHOD'] = 'PUT';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getStatus';
+        $req = new HTTPRequest();
+        $resp = $this->controller->getStatus($req);
+        if ($resp->code != 405 || $resp->message != 'method \'PUT\' not allowed in \'getStatus\'') {
+            throw new Exception('error on testGetStatus');
+        }
+
         $_SERVER['REQUEST_METHOD'] = 'GET';
         $_SERVER['SCRIPT_NAME'] = 'api.php';
         $_SERVER['REQUEST_URI'] = 'api.php/getStatus';
@@ -327,7 +463,6 @@ final class TestHTTPController extends TestAbstractTest
         if ($resp->code !== 200 || $resp->status !== 'success' || count($resp->data) > 0) {
             throw new Exception('error on testGetStatus');
         }
-
         $this->database->insertNode('node1', 'label1', 'application', 'server');
         $this->database->insertNode('node2', 'label2', 'application', 'server');
 
@@ -343,6 +478,15 @@ final class TestHTTPController extends TestAbstractTest
     
     public function testGetNodeStatus(): void
     {
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getNodeStatus';
+        $req = new HTTPRequest();
+        $resp = $this->controller->getNodeStatus($req);
+        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'getNodeStatus\'') {
+            throw new Exception('error on testGetNodeStatus');
+        }
+
         $_SERVER['REQUEST_METHOD'] = 'GET';
         $_SERVER['SCRIPT_NAME'] = 'api.php';
         $_SERVER['REQUEST_URI'] = 'api.php/getNodeStatus';
@@ -370,6 +514,15 @@ final class TestHTTPController extends TestAbstractTest
     
     public function testUpdateNodeStatus(): void
     {
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/updateNodeStatus';
+        $req = new HTTPRequest();
+        $resp = $this->controller->updateNodeStatus($req);
+        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'updateNodeStatus\'') {
+            throw new Exception('error on testUpdateNodeStatus');
+        }
+
         $this->database->insertNode('node1', 'label', 'application', 'server');
         $_SERVER['REQUEST_METHOD'] = 'PUT';
         $_SERVER['SCRIPT_NAME'] = 'api.php';
@@ -382,6 +535,15 @@ final class TestHTTPController extends TestAbstractTest
 
     public function testGetLogs(): void
     {
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getLogs';
+        $req = new HTTPRequest();
+        $resp = $this->controller->getLogs($req);
+        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'getLogs\'') {
+            throw new Exception('error on testGetLogs');
+        }
+
         $_SERVER['REQUEST_METHOD'] = 'GET';
         $_SERVER['SCRIPT_NAME'] = 'api.php';
         $_SERVER['REQUEST_URI'] = 'api.php/getLogs';

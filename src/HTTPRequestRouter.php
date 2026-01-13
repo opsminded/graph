@@ -5,6 +5,8 @@ declare(strict_types=1);
 final class HTTPRequestRouter
 {
     private $routes = [
+        ['method' => 'POST',   'path' => '/insertUser',       'class_method' => 'insertUser'],
+        ['method' => 'PUT',    'path' => '/updateUser',       'class_method' => 'updateUser'],
         ['method' => 'GET',    'path' => '/getGraph',         'class_method' => 'getGraph'],
         ['method' => 'GET',    'path' => '/getNode',          'class_method' => 'getNode'],
         ['method' => 'GET',    'path' => '/getNodes',         'class_method' => 'getNodes'],
@@ -29,26 +31,17 @@ final class HTTPRequestRouter
         $this->controller = $controller;
     }
 
-    public function handle(): void
+    public function handle(HTTPRequest $req): HTTPResponse
     {
-        $method     = $_SERVER['REQUEST_METHOD'];
-        $scriptName = $_SERVER['SCRIPT_NAME'];
-        $requestUri = $_SERVER['REQUEST_URI'];
-        $requestUri = strtok($requestUri, '?');
-        
-        $path = str_replace($scriptName, '', $requestUri);
-        
-        $req = new Request();
-
         foreach($this->routes as $route)
         {
-            if ($route['method'] == $method && $route['path'] == $path)
+            if ($route['method'] == $req->method && $route['path'] == $req->path)
             {
                 $method = $route['class_method'];
                 $resp = $this->controller->$method($req);
-                print_r($resp);
-                exit();
+                return $resp;
             }
         }
+        return new HTTPInternalServerErrorResponse("method not found in list", []);
     }
 }
