@@ -26,5 +26,5 @@ interface ServiceInterface
     public function getNodeStatus(string $id): ModelStatus;
     public function updateNodeStatus(ModelStatus $status): bool;
 
-    public function getLogs($limit): array;
+    public function getLogs(int $limit): array;
 }

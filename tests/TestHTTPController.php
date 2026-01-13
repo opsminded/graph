@@ -37,6 +37,9 @@ final class TestHTTPController extends TestAbstractTest
         $this->controllerLogger = null;
 
         $this->pdo = null;
+
+        $_GET = [];
+        $_SERVER = [];
     }
 
     public function testGetUser(): void
@@ -61,13 +64,11 @@ final class TestHTTPController extends TestAbstractTest
         }
 
         unset($_GET['id']);
-        try {
-            $req = new HTTPRequest();
-            $resp = $this->controller->getUser($req);
-        } catch(Exception $e) {
-            return;
+        $req = new HTTPRequest();
+        $resp = $this->controller->getUser($req);
+        if($resp->code != 400 || $resp->status != 'error' || $resp->message != 'param \'id\' not found') {
+            throw new Exception('error on testGetUser');
         }
-        throw new Exception('error on testGetUser');
     }
 
     public function testInsertUser(): void
@@ -84,69 +85,204 @@ final class TestHTTPController extends TestAbstractTest
         if($resp->code != 201 || $resp->status != 'success' || $resp->message != 'user created' || $resp->data['id'] != 'maria' || $resp->data['user_group'] != 'admin') {
             throw new Exception('error on testInsertUser');
         }
+
+        try {
+            $resp = $this->controller->insertUser($req);
+        } catch(Exception $e) {
+            return;
+        }
+        throw new Exception('error on testInsertUser');
     }
 
     public function testUpdateUser(): void
     {
+        $_SERVER['REQUEST_METHOD'] = 'PUT';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/updateUser';
+
+        $req = new HTTPRequest();
+        $req->data['id'] = 'maria';
+        $req->data['user_group'] = 'admin';
+
+        $resp = $this->controller->updateUser($req);
     }
 
     public function testGetGraph(): void
     {
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getGraph';
+
+        $req = new HTTPRequest();
+        $resp = $this->controller->getGraph($req);
     }
 
     public function testGetNode(): void
     {
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getNode';
+
+        $req = new HTTPRequest();
+        try {
+            $resp = $this->controller->getNode($req);
+        } catch(Exception $e) {
+
+        }
     }
 
     public function testGetNodes(): void
     {
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getNodes';
+
+        $req = new HTTPRequest();
+        $resp = $this->controller->getNodes($req);
     }
 
-    public function testGnsertNode(): void
+    public function testInsertNode(): void
     {
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/insertNode';
+
+        $req = new HTTPRequest();
+        $req->data['id'] = 'node1';
+        $req->data['label'] = 'node1';
+        $req->data['category'] = 'application';
+        $req->data['type'] = 'database';
+        $req->data['data'] = ['a' => 'b'];
+        $resp = $this->controller->insertNode($req);
     }
     
-    public function testGpdateNode(): void
+    public function testUpdateNode(): void
     {
+        $_SERVER['REQUEST_METHOD'] = 'PUT';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/updateNode';
+        
+        $req = new HTTPRequest();
+        $req->data['id'] = 'node1';
+        $req->data['label'] = 'node1';
+        $req->data['category'] = 'application';
+        $req->data['type'] = 'database';
+        $req->data['data'] = ['a' => 'b'];
+        $resp = $this->controller->updateNode($req);
     }
     
-    public function testGeleteNode(): void
+    public function testDeleteNode(): void
     {
+        $_SERVER['REQUEST_METHOD'] = 'DELETE';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/deleteNode';
+
+        $req = new HTTPRequest();
+        $req->data['id'] = 'node1';
+        $req->data['label'] = 'node1';
+        $req->data['category'] = 'application';
+        $req->data['type'] = 'database';
+        $req->data['data'] = ['a' => 'b'];
+        $resp = $this->controller->deleteNode($req);
     }
 
     public function testGetEdge(): void
     {
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getEdge';
+
+        $req = new HTTPRequest();
+        $req->data['source'] = 'node1';
+        $req->data['target'] = 'node2';
+        $resp = $this->controller->getEdge($req);
     }
     
     public function testGetEdges(): void
     {
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getEdges';
+
+        $req = new HTTPRequest();
+        $resp = $this->controller->getEdges($req);
     }
     
     public function testInsertEdge(): void
     {
+        $this->database->insertNode('node1', 'label1', 'application', 'server');
+        $this->database->insertNode('node2', 'label2', 'application', 'server');
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/insertEdge';
+
+        $req = new HTTPRequest();
+        $req->data['source'] = 'node1';
+        $req->data['target'] = 'node2';
+        $resp = $this->controller->insertEdge($req);
     }
     
     public function testUpdateEdge(): void
     {
+        $_SERVER['REQUEST_METHOD'] = 'PUT';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/updateEdge';
+        $req = new HTTPRequest();
+        $req->data['source'] = 'node1';
+        $req->data['target'] = 'node2';
+        $req->data['data'] = ['a' => 'b'];
+        $resp = $this->controller->updateEdge($req);
     }
     
     public function testDeleteEdge(): void
     {
+        $_SERVER['REQUEST_METHOD'] = 'DELETE';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/deleteEdge';
+
+        $req = new HTTPRequest();
+        $req->data['source'] = 'node1';
+        $req->data['target'] = 'node2';
+        $resp = $this->controller->deleteEdge($req);
     }
 
-    public function testGetStatuses(): void
+    public function testGetStatus(): void
     {
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getStatus';
+        $req = new HTTPRequest();
+        $resp = $this->controller->getStatus($req);
     }
     
     public function testGetNodeStatus(): void
     {
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getNodeStatus';
+        $req = new HTTPRequest();
+        $resp = $this->controller->getNodeStatus($req);
     }
     
     public function testUpdateNodeStatus(): void
     {
+        $this->database->insertNode('node1', 'label', 'application', 'server');
+        $_SERVER['REQUEST_METHOD'] = 'PUT';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/updateNodeStatus';
+        $req = new HTTPRequest();
+        $req->data['node_id'] = 'node1';
+        $req->data['status'] = 'healthy';
+        $resp = $this->controller->updateNodeStatus($req);
     }
 
     public function testGetLogs(): void
     {
+        $_GET['limit'] = 2;
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getLogs';
+        $req = new HTTPRequest();
+        $resp = $this->controller->getLogs($req);
     }
 }

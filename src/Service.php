@@ -266,7 +266,7 @@ final class Service implements ServiceInterface
         return false;
     }
 
-    public function getLogs($limit): array
+    public function getLogs(int $limit): array
     {
         $this->logger->debug('getting logs', ['limit' => $limit]);
         $this->verify();

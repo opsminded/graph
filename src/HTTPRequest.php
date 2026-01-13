@@ -40,7 +40,7 @@ final class HTTPRequest
     public function getParam($name): string
     {
         if(isset($this->params[$name])) {
-            return $this->params[$name];
+            return strval($this->params[$name]);
         }
         throw new HTTPRequestException("param '{$name}' not found", $this->data, $this->params, $this->path);
     }

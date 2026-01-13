@@ -22,7 +22,7 @@ interface HTTPControllerInterface
     public function updateEdge(HTTPRequest $req): HTTPResponseInterface;
     public function deleteEdge(HTTPRequest $req): HTTPResponseInterface;
 
-    public function getStatuses(HTTPRequest $req): HTTPResponseInterface;
+    public function getStatus(HTTPRequest $req): HTTPResponseInterface;
     public function getNodeStatus(HTTPRequest $req): HTTPResponseInterface;
     public function updateNodeStatus(HTTPRequest $req): HTTPResponseInterface;
 
