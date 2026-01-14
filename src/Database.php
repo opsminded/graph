@@ -85,6 +85,36 @@ final class Database implements DatabaseInterface
         return $rows;
     }
 
+    public function getNodeParentOf(string $id): ?array
+    {
+        $this->logger->debug('fetching parent node');
+        $sql = 'SELECT n.* FROM nodes n INNER JOIN edges e ON n.id = e.source WHERE e.target = :id';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([':id' => $id]);
+        $row = $stmt->fetch();
+        if ($row) {
+            $row['data'] = json_decode($row['data'], true);
+            $this->logger->info('parent node fetched', ['row' => $row]);
+            return $row;
+        }
+        $this->logger->error('parent node not found', ['id' => $id]);
+        return null;
+    }
+
+    public function getDependentNodesOf(string $id): array
+    {
+        $this->logger->debug('fetching dependent nodes');
+        $sql = 'SELECT n.* FROM nodes n INNER JOIN edges e ON n.id = e.target WHERE e.source = :id';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([':id' => $id]);
+        $rows = $stmt->fetchAll();
+        foreach($rows as &$row) {
+            $row['data'] = json_decode($row['data'], true);
+        }
+        $this->logger->info('dependent nodes fetched', ['rows' => $rows]);
+        return $rows;
+    }
+
     public function insertNode(string $id, string $label, string $category, string $type, array $data = []): bool
     {
         $this->logger->debug('inserting new node', ['id' => $id, 'label' => $label, 'category' => $category, 'type' => $type, 'data' => $data]);

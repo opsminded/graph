@@ -38,7 +38,10 @@ class TestDatabase extends TestAbstractTest
     public function testInsertUser(): void
     {
         $this->database->insertUser('maria', 'contributor');
-        $user = $this->database->getUser('maria');
+        $stmt = $this->pdo->prepare('select * from users where id = :id');
+        $stmt->execute([':id' => 'maria']);
+        $user = $stmt->fetch();
+
         if ($user['id'] !== 'maria' || $user['user_group'] !== 'contributor') {
             throw new Exception('maria expected');
         }
@@ -51,9 +54,15 @@ class TestDatabase extends TestAbstractTest
     }
 
     public function testUpdateUser(): void {
-        $this->database->insertUser('maria', 'contributor');
+        $stmt = $this->pdo->prepare('insert into users (id, user_group) values (:id, :user_group)');
+        $stmt->execute([':id' => 'maria', ':user_group' => 'contributor']);
+        
         $this->database->updateUser('maria', 'admin');
-        $user = $this->database->getUser('maria');
+        
+        $stmt = $this->pdo->prepare('select * from users where id = :id');
+        $stmt->execute([':id' => 'maria']);
+        $user = $stmt->fetch();
+        
         if ($user['id'] !== 'maria' || $user['user_group'] !== 'admin') {
             throw new Exception('expected maria admin');
         }
@@ -63,7 +72,15 @@ class TestDatabase extends TestAbstractTest
     }
 
     public function testGetNode(): void {
-        $this->database->insertNode('node1', 'Node 01', 'business', 'server', ['running_on' => 'SRV01OP']);
+        $stmt = $this->pdo->prepare('insert into nodes (id, label, category, type, data) values (:id, :label, :category, :type, :data)');
+        $stmt->execute([
+            ':id' => 'node1',
+            ':label' => 'Node 01',
+            ':category' => 'business',
+            ':type' => 'server',
+            ':data' => json_encode(['running_on' => 'SRV01OP'])
+        ]);
+
         $node = $this->database->getNode('node1');
         
         if ($node['id'] !== 'node1' || $node['label'] !== 'Node 01' || $node['category'] !== 'business' || $node['type'] !== 'server') {
@@ -80,8 +97,22 @@ class TestDatabase extends TestAbstractTest
     }
 
     public function testGetNodes(): void {
-        $this->database->insertNode('node1', 'Node 01', 'application', 'application', ['running_on' => 'SRV01OP']);
-        $this->database->insertNode('node2', 'Node 02', 'business', 'database', ['running_on' => 'SRV011P']);
+        $stmt = $this->pdo->prepare('insert into nodes (id, label, category, type, data) values (:id, :label, :category, :type, :data)');
+        $stmt->execute([
+            ':id' => 'node1',
+            ':label' => 'Node 01',
+            ':category' => 'application',
+            ':type' => 'application',
+            ':data' => json_encode(['running_on' => 'SRV01OP'])
+        ]);
+        $stmt->execute([
+            ':id' => 'node2',
+            ':label' => 'Node 02',
+            ':category' => 'business',
+            ':type' => 'database',
+            ':data' => json_encode(['running_on' => 'SRV011P'])
+        ]);
+
         $nodes = $this->database->getNodes();
 
         if (count($nodes) !== 2) {
@@ -101,6 +132,54 @@ class TestDatabase extends TestAbstractTest
         }
 
         if ($nodes[1]['data']['running_on'] !== 'SRV011P') {
+            throw new Exception('error on getNode');
+        }
+    }
+
+    public function testGetNodeParentOf(): void
+    {
+        $this->database->insertNode('node1', 'Node 01', 'application', 'application', ['running_on' => 'SRV01OP']);
+        $this->database->insertNode('node2', 'Node 02', 'business', 'database', ['running_on' => 'SRV011P']);
+        $this->database->insertNode('node3', 'Node 03', 'network', 'application', ['running_on' => 'SRV012P']);
+
+        $this->database->insertEdge('edge1', 'node1', 'node2', ['a' => 'b']);
+        $this->database->insertEdge('edge2', 'node2', 'node3', ['b' => 'c']);
+
+        $node = $this->database->getNodeParentOf('node2');
+
+        if ($node['id'] !== 'node1' || $node['label'] !== 'Node 01' || $node['category'] !== 'application' || $node['type'] !== 'application') {
+            throw new Exception('error on testGetNodeParentOf');
+        }
+
+        if ($node['data']['running_on'] !== 'SRV01OP') {
+            throw new Exception('error on testGetNodeParentOf');
+        }
+
+        $node = $this->database->getNodeParentOf('node1');
+        if ($node !== null) {
+            throw new Exception('error on testGetNodeParentOf');
+        }
+    }
+
+    public function testGetDependentNodesOf(): void {
+        $this->database->insertNode('node1', 'Node 01', 'application', 'application', ['running_on' => 'SRV01OP']);
+        $this->database->insertNode('node2', 'Node 02', 'business', 'database', ['running_on' => 'SRV011P']);
+        $this->database->insertNode('node3', 'Node 03', 'network', 'application', ['running_on' => 'SRV012P']);
+
+        $this->database->insertEdge('edge1', 'node1', 'node2', ['a' => 'b']);
+        $this->database->insertEdge('edge2', 'node2', 'node3', ['b' => 'c']);
+
+        $nodes = $this->database->getDependentNodesOf('node2');
+
+        if (count($nodes) !== 1) {
+            throw new Exception('error on testGetDependentNodesOf');
+        }
+
+        if ($nodes[0]['id'] !== 'node3' || $nodes[0]['label'] !== 'Node 03' || $nodes[0]['category'] !== 'network' || $nodes[0]['type'] !== 'application') {
+            throw new Exception('error on getNode');
+        }
+
+        if ($nodes[0]['data']['running_on'] !== 'SRV012P') {
             throw new Exception('error on getNode');
         }
     }
