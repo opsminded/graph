@@ -75,7 +75,7 @@ final class TestHTTPController extends TestAbstractTest
         unset($_GET['id']);
         $req = new HTTPRequest();
         $resp = $this->controller->getUser($req);
-        if ($resp->code !== 400 || $resp->status !== 'error' || $resp->message !== 'param \'id\' not found') {
+        if ($resp->code !== 400 || $resp->status !== 'error' || $resp->message !== 'param \'id\' is missing') {
             throw new Exception('error on testGetUser');
         }
     }
@@ -88,7 +88,7 @@ final class TestHTTPController extends TestAbstractTest
         $req = new HTTPRequest();
         $resp = $this->controller->insertUser($req);
         if ($resp->code != 405 || $resp->message != 'method \'GET\' not allowed in \'insertUser\'') {
-            throw new Exception('error on testGetUser');
+            throw new Exception('error on testInsertUser');
         }
 
         $_SERVER['REQUEST_METHOD'] = 'POST';
@@ -125,7 +125,7 @@ final class TestHTTPController extends TestAbstractTest
         $req = new HTTPRequest();
         $resp = $this->controller->updateUser($req);
         if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'updateUser\'') {
-            throw new Exception('error on testGetUser');
+            throw new Exception('error on testUpdateUser');
         }
 
         $_SERVER['REQUEST_METHOD'] = 'PUT';
@@ -177,7 +177,7 @@ final class TestHTTPController extends TestAbstractTest
         $req = new HTTPRequest();
         $resp = $this->controller->getNode($req);
         if ($resp->code != 405 || $resp->message != 'method \'DELETE\' not allowed in \'getNode\'') {
-            throw new Exception('error on testGetNode');
+            throw new Exception('error on testGetNode 1');
         }
 
         $_GET['id'] = 'node1';
@@ -188,21 +188,21 @@ final class TestHTTPController extends TestAbstractTest
         $req = new HTTPRequest();
         $resp = $this->controller->getNode($req);
         if ($resp->code !== 404 || $resp->message !== 'node not found') {
-            throw new Exception('error on testGetNode');
+            throw new Exception('error on testGetNode 2');
         }
         
         $this->database->insertNode('node1', 'label 1', 'application', 'server');
         $req = new HTTPRequest();
         $resp = $this->controller->getNode($req);
         if ($resp->code !== 200 || $resp->status !== 'success' || $resp->message !== 'node found') {
-            throw new Exception('error on testGetNode');
+            throw new Exception('error on testGetNode 3');
         }
 
         $_GET = [];
         $req = new HTTPRequest();
         $resp = $this->controller->getNode($req);
-        if ($resp->code !== 400 || $resp->message !== 'param \'id\' not found') {
-            throw new Exception('error on testGetNode');
+        if ($resp->code !== 400 || $resp->message !== 'param \'id\' is missing') {
+            throw new Exception('error on testGetNode 4');
         }
     }
 
@@ -426,19 +426,19 @@ final class TestHTTPController extends TestAbstractTest
         $req = new HTTPRequest();
         $resp = $this->controller->getEdge($req);
         if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'getEdge\'') {
-            throw new Exception('error on testGetEdge');
+            throw new Exception('error on testGetEdge 1');
         }
 
         $_SERVER['REQUEST_METHOD'] = 'GET';
         $_SERVER['SCRIPT_NAME'] = 'api.php';
         $_SERVER['REQUEST_URI'] = 'api.php/getEdge';
 
+        $_GET['source'] = 'node1';
+        $_GET['target'] = 'node2';
         $req = new HTTPRequest();
-        $req->data['source'] = 'node1';
-        $req->data['target'] = 'node2';
         $resp = $this->controller->getEdge($req);
         if ($resp->code !== 404 || $resp->status !== 'error' || $resp->data['source'] !== 'node1') {
-            throw new Exception('error on testGetEdge');
+            throw new Exception('error on testGetEdge 2');
         }
 
         $this->database->insertNode('node1', 'label1', 'application', 'server');
@@ -450,7 +450,7 @@ final class TestHTTPController extends TestAbstractTest
         $req->data['target'] = 'node2';
         $resp = $this->controller->getEdge($req);
         if ($resp->code !== 200 || $resp->status !== 'success' || $resp->data['source'] !== 'node1') {
-            throw new Exception('error on testGetEdge');
+            throw new Exception('error on testGetEdge 3');
         }
     }
     
@@ -580,7 +580,7 @@ final class TestHTTPController extends TestAbstractTest
         $req = new HTTPRequest();
         $resp = $this->controller->getNodeStatus($req);
         if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'getNodeStatus\'') {
-            throw new Exception('error on testGetNodeStatus');
+            throw new Exception('error on testGetNodeStatus 1');
         }
 
         $_SERVER['REQUEST_METHOD'] = 'GET';
@@ -588,15 +588,15 @@ final class TestHTTPController extends TestAbstractTest
         $_SERVER['REQUEST_URI'] = 'api.php/getNodeStatus';
         $req = new HTTPRequest();
         $resp = $this->controller->getNodeStatus($req);
-        if ($resp->code !== 400 || $resp->status !== 'error' || $resp->message !== 'param \'id\' not found') {
-            throw new Exception('error on testGetNodeStatus');
+        if ($resp->code !== 400 || $resp->status !== 'error' || $resp->message !== 'param \'id\' is missing') {
+            throw new Exception('error on testGetNodeStatus 2');
         }
 
         $_GET['id'] = 'node1';
         $req = new HTTPRequest();
         $resp = $this->controller->getNodeStatus($req);
         if ($resp->code !== 404 || $resp->message !== 'node not found' || $resp->data['id'] !== 'node1') {
-            throw new Exception('error on testGetNodeStatus');
+            throw new Exception('error on testGetNodeStatus 3');
         }
 
         $this->database->insertNode('node1', 'label 1', 'business', 'database');
@@ -637,7 +637,7 @@ final class TestHTTPController extends TestAbstractTest
         $req = new HTTPRequest();
         $resp = $this->controller->getLogs($req);
         if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'getLogs\'') {
-            throw new Exception('error on testGetLogs');
+            throw new Exception('error on testGetLogs 1');
         }
 
         $_SERVER['REQUEST_METHOD'] = 'GET';
@@ -645,15 +645,15 @@ final class TestHTTPController extends TestAbstractTest
         $_SERVER['REQUEST_URI'] = 'api.php/getLogs';
         $req = new HTTPRequest();
         $resp = $this->controller->getLogs($req);
-        if ($resp->code !== 400 || $resp->message !== 'param \'limit\' not found') {
-            throw new Exception('error on testGetLogs');
+        if ($resp->code !== 400 || $resp->message !== 'param \'limit\' is missing') {
+            throw new Exception('error on testGetLogs 2');
         }
         
         $_GET['limit'] = 2;
         $req = new HTTPRequest();
         $resp = $this->controller->getLogs($req);
         if ($resp->code !== 200 || $resp->message !== 'logs found') {
-            throw new Exception('error on testGetLogs');
+            throw new Exception('error on testGetLogs 3');
         }
         
         $this->database->insertLog('node', 'node1', 'insert', null, ['id' => 'node1'], 'user', '293820');

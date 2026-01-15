@@ -1,0 +1,8 @@
+{
+    "code": 404,
+    "status": "error",
+    "message": "user not found",
+    "data": {
+        "id": "node1"
+    }
+}

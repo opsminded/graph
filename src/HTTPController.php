@@ -178,9 +178,19 @@ final class HTTPController implements HTTPControllerInterface
         if($req->method !== 'GET') {
             return new HTTPMethodNotAllowedResponse($req->method, 'getEdge');
         }
-        $edge = $this->service->getEdge($req->data['source'], $req->data['target']);
+        try {
+            $source = $req->getParam('source');
+        } catch(HTTPRequestException $e) {
+            return new HTTPBadRequestResponse($e->getMessage(), []);
+        }
+        try {
+            $target = $req->getParam('target');
+        } catch(HTTPRequestException $e) {
+            return new HTTPBadRequestResponse($e->getMessage(), []);
+        }
+        $edge = $this->service->getEdge($source, $target);
         if(is_null($edge)) {
-            return new HTTPNotFoundResponse('edge not found', $req->data);
+            return new HTTPNotFoundResponse('edge not found', ['source' => $source, 'target' => $target]);
         }
         $data = $edge->toArray();
         return new HTTPOKResponse('edge found', $data);

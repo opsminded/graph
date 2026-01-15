@@ -36,6 +36,6 @@ final class HTTPRequest
         if(isset($this->params[$name])) {
             return strval($this->params[$name]);
         }
-        throw new HTTPRequestException("param '{$name}' not found", [], $this->params, $this->path);
+        throw new HTTPRequestException("param '{$name}' is missing", [], $this->params, $this->path);
     }
 }
