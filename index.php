@@ -2,18 +2,6 @@
 
 declare(strict_types=1);
 
-if (file_exists('database.log')) {
-    @unlink('database.log');
-}
-
-if (file_exists('service.log')) {
-    @unlink('service.log');
-}
-
-if (file_exists('controller.log')) {
-    @unlink('controller.log');
-}
-
 require_once __DIR__ . '/src/DatabaseInterface.php';
 require_once __DIR__ . '/src/ServiceInterface.php';
 require_once __DIR__ . '/src/LoggerInterface.php';
@@ -29,7 +17,7 @@ foreach (glob(__DIR__ . "/tests/*.php") as $arquivo) {
     require_once $arquivo;
 }
 
-$pdo = Database::createConnection('sqlite::memory:');
+$pdo = Database::createConnection('sqlite:database.sqlite');
 $databaseLogger   = new Logger('database.log');
 $serviceLogger    = new Logger('service.log');
 $controllerLogger = new Logger('controller.log');

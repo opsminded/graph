@@ -80,6 +80,7 @@ assert_data_get() {
 
     ACTUAL_VALUE=$(curl -s $address | jq -r .data.$key)
     if [ "$ACTUAL_VALUE" != "$expected_value" ]; then
+        echo "assert_data_get failed"
         echo "address $address"
         echo "Expected data.$key: $expected_value"
         echo "Actual data.$key: $ACTUAL_VALUE"
@@ -95,9 +96,11 @@ assert_data_post() {
 
     ACTUAL_VALUE=$(curl -s -X POST -d "$data" $address | jq -r .data.$key)
     if [ "$ACTUAL_VALUE" != "$expected_value" ]; then
+        echo "assert_data_post failed"
         echo "address $address"
         echo "Expected data.$key: $expected_value"
         echo "Actual data.$key: $ACTUAL_VALUE"
+        echo "Post data: $data"
         exit 1
     fi
 }
@@ -107,20 +110,22 @@ assert_data_post() {
 function test_getUser() {
     echo test_getUser
 
-    address="$ENDPOINT/getUser?id=node1"
+    address="$ENDPOINT/getUser?id=xpto"
     assert_header_get $address 404
     assert_content_type_get $address "application/json; charset=utf-8"
     assert_error_message $address "user not found"
-    assert_data_get $address "id" "node1"
+    assert_data_get $address "id" "xpto"
 }
 
 function test_InsertUser() {
     echo test_InsertUser
 
+    tempUsernameID=$(echo $RANDOM | md5sum | head -c 10)
+    
     address="$ENDPOINT/insertUser"
-    assert_header_post $address '{"id": "node1", "label": "node1", "user_group": "admin"}' 201
-    assert_content_type_post $address '{"id": "node1", "label": "node1", "user_group": "admin"}' "application/json; charset=utf-8" 
-    assert_data_post $address '{"id": "node1", "label": "node1", "user_group": "admin"}' "id" "node1"
+    assert_header_post $address "{\"id\": \"$tempUsernameID\", \"user_group\": \"admin\"}" 201
+    assert_content_type_post $address "{\"id\": \"$tempUsernameID\", \"user_group\": \"admin\"}" "application/json; charset=utf-8" 
+    assert_data_post $address "{\"id\": \"$tempUsernameID\", \"user_group\": \"admin\"}" "id" "$tempUsernameID"
 }
 
 function test_updateUser() {

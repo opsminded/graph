@@ -305,7 +305,7 @@ final class Database implements DatabaseInterface
                 user_group TEXT NOT NULL
             )');
 
-        $this->pdo->exec('INSERT INTO users VALUES(\'admin\', \'admin\')');
+        $this->pdo->exec('INSERT OR IGNORE INTO users VALUES(\'admin\', \'admin\')');
 
         $this->pdo->exec('
             CREATE TABLE IF NOT EXISTS nodes (

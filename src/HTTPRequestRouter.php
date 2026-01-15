@@ -39,8 +39,12 @@ final class HTTPRequestRouter
             if ($route['method'] == $req->method && $route['path'] == $req->path)
             {
                 $method = $route['class_method'];
-                $resp = $this->controller->$method($req);
-                return $resp;
+                try {
+                    $resp = $this->controller->$method($req);
+                    return $resp;
+                } catch (Exception $e) {
+                    return new HTTPInternalServerErrorResponse("internal server error", ['exception_message' => $e->getMessage()]);
+                }
             }
         }
         return new HTTPInternalServerErrorResponse("method not found in list", ['method' => $req->method, 'path' => $req->path]);
