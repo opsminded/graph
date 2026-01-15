@@ -12,6 +12,8 @@ interface HTTPControllerInterface
 
     public function getNode(HTTPRequest $req): HTTPResponseInterface;
     public function getNodes(HTTPRequest $req): HTTPResponseInterface;
+    public function getNodeParentOf(HTTPRequest $req): HTTPResponseInterface;
+    public function getDependentNodesOf(HTTPRequest $req): HTTPResponseInterface;
     public function insertNode(HTTPRequest $req): HTTPResponseInterface;
     public function updateNode(HTTPRequest $req): HTTPResponseInterface;
     public function deleteNode(HTTPRequest $req): HTTPResponseInterface;

@@ -5,27 +5,27 @@ declare(strict_types=1);
 final class Service implements ServiceInterface
 {
     private const SECURE_ACTIONS = [
-        'Service::getUser'          => true,
-        'Service::getGraph'         => true,
-        'Service::getNode'          => true,
-        'Service::getNodes'         => true,
-        'Service::getEdge'          => true,
-        'Service::getEdges'         => true,
-        'Service::getStatus'        => true,
-        'Service::getNodeStatus'    => true,
-        'Service::updateNodeStatus' => true,
-        'Service::getLogs'          => true,
-
-        'Service::insertUser'       => false,
-        'Service::updateUser'       => false,
-
-        'Service::insertNode'       => false,
-        'Service::updateNode'       => false,
-        'Service::deleteNode'       => false,
-        'Service::insertEdge'       => false,
-        'Service::updateEdge'       => false,
-        'Service::deleteEdge'       => false,
-        'Service::insertLog'        => false,
+        'Service::getUser'             => true,
+        'Service::getGraph'            => true,
+        'Service::getNode'             => true,
+        'Service::getNodes'            => true,
+        'Service::getNodeParentOf'     => true,
+        'Service::getDependentNodesOf' => true,
+        'Service::getEdge'             => true,
+        'Service::getEdges'            => true,
+        'Service::getStatus'           => true,
+        'Service::getNodeStatus'       => true,
+        'Service::updateNodeStatus'    => true,
+        'Service::getLogs'             => true,
+        'Service::insertUser'          => false,
+        'Service::updateUser'          => false,
+        'Service::insertNode'          => false,
+        'Service::updateNode'          => false,
+        'Service::deleteNode'          => false,
+        'Service::insertEdge'          => false,
+        'Service::updateEdge'          => false,
+        'Service::deleteEdge'          => false,
+        'Service::insertLog'           => false,
     ];
 
     private DatabaseInterface $database;
@@ -117,6 +117,45 @@ final class Service implements ServiceInterface
             $nodes[] = $node;
         }
         return $nodes;
+    }
+
+    public function getNodeParentOf(string $id): ?ModelNode
+    {
+        $this->logger->debug('getting parent node of', ['id' => $id]);
+        $this->verify();
+        $parentData = $this->database->getNodeParentOf($id);
+        if (! is_null($parentData)) {
+            $parentNode = new ModelNode(
+                $parentData['id'],
+                $parentData['label'],
+                $parentData['category'],
+                $parentData['type'],
+                $parentData['data']
+            );
+            $this->logger->info('parent node found', $parentNode->toArray());
+            return $parentNode;
+        }
+        $this->logger->info('parent node not found', ['id' => $id]);
+        return null;
+    }
+    public function getDependentNodesOf(string $id): array
+    {
+        $this->logger->debug('getting dependent nodes of', ['id' => $id]);
+        $this->verify();
+        $dependentNodesData = $this->database->getDependentNodesOf($id);
+        $dependentNodes     = [];
+        foreach ($dependentNodesData as $data) {
+            $node = new ModelNode(
+                $data['id'],
+                $data['label'],
+                $data['category'],
+                $data['type'],
+                $data['data']
+            );
+            $dependentNodes[] = $node;
+        }
+        $this->logger->info('dependent nodes found', ['count' => count($dependentNodes)]);
+        return $dependentNodes;
     }
 
     public function insertNode(ModelNode $node): bool

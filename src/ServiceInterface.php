@@ -12,6 +12,8 @@ interface ServiceInterface
 
     public function getNode(string $id): ?ModelNode;
     public function getNodes(): array;
+    public function getNodeParentOf(string $id): ?ModelNode;
+    public function getDependentNodesOf(string $id): array;
     public function insertNode(ModelNode $node): bool;
     public function updateNode(ModelNode $node): bool;
     public function deleteNode(ModelNode $node): bool;
