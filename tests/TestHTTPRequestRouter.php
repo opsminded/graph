@@ -22,9 +22,9 @@ class TestHTTPRequestRouter extends TestAbstractTest
 
         $this->pdo = Database::createConnection('sqlite::memory:');
 
-        $this->databaseLogger = new Logger('database.log');
-        $this->serviceLogger = new Logger('service.log');
-        $this->controllerLogger = new Logger('controller.log');
+        $this->databaseLogger = new Logger();
+        $this->serviceLogger = new Logger();
+        $this->controllerLogger = new Logger();
 
         $this->database = new Database($this->pdo, $this->databaseLogger);
         $this->service = new Service($this->database, $this->serviceLogger);

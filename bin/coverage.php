@@ -1,6 +1,13 @@
 <?php
 
-$coverageData = json_decode(file_get_contents('coverage.json'), true);
+if(count($argv) != 2) {
+    print("filename missing\n");
+    exit();
+}
+
+$filename = $argv[1];
+
+$coverageData = json_decode(file_get_contents($filename), true);
 
 echo "<html><head><meta charset='UTF-8'><style>
 body { font-family: monospace; font-size: 14px; margin: 0; }

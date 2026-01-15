@@ -16,10 +16,10 @@ class TestService extends TestAbstractTest
     {
         $this->pdo = Database::createConnection('sqlite::memory:');
         
-        $this->databaseLogger = new Logger('database.log');
+        $this->databaseLogger = new Logger();
         $this->graphDB = new Database($this->pdo, $this->databaseLogger);
 
-        $this->serviceLogger = new Logger('service.log');
+        $this->serviceLogger = new Logger();
         $this->service = new Service($this->graphDB, $this->serviceLogger);
     }
 

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 class TestHTTPRequest extends TestAbstractTest
 {
     public function testHTTPRequest()

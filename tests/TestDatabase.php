@@ -11,7 +11,7 @@ class TestDatabase extends TestAbstractTest
     public function up(): void
     {
         $this->pdo = Database::createConnection('sqlite::memory:');
-        $this->logger = new Logger('database.log');
+        $this->logger = new Logger();
         $this->database = new Database($this->pdo, $this->logger);
     }
 
