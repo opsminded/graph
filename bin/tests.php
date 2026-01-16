@@ -31,11 +31,14 @@ require_once dirname(__DIR__) . '/graph.php';
 require_once dirname(__DIR__) . '/tests.php';
 
 $tests = [
+    
+    new TestHelperCytoscape(),
+
     new TestDatabase(),
     new TestService(),
     new TestHelperContext(),
     new TestHelperLogger(),
-    new TestHelperCytoscape(),
+    
     new TestHTTPController(),
     new TestHTTPOKResponse(),
     new TestHTTPBadRequestResponse(),

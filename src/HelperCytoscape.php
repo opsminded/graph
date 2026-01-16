@@ -57,16 +57,13 @@ final class HelperCytoscape
         foreach ($graphArr[ModelGraph::KEYNAME_NODES] as $index => $node) {
             $node = $node->toArray();
             $shape = $this->getNodeShape($index);
-            $node = array_merge($node, $shape);
+            $node = array_merge($node);
             $nodes[] = [
                 "data" => array_merge([
                     ModelNode::NODE_KEYNAME_ID => $node[ModelNode::NODE_KEYNAME_ID],
                     ModelNode::NODE_KEYNAME_LABEL => $node[ModelNode::NODE_KEYNAME_LABEL],
                     ModelNode::NODE_KEYNAME_CATEGORY => $node[ModelNode::NODE_KEYNAME_CATEGORY],
                     ModelNode::NODE_KEYNAME_TYPE => $node[ModelNode::NODE_KEYNAME_TYPE],
-                    ModelCategory::CATEGORY_KEYNAME_SHAPE => $node[ModelCategory::CATEGORY_KEYNAME_SHAPE],
-                    ModelCategory::CATEGORY_KEYNAME_WIDTH => $node[ModelCategory::CATEGORY_KEYNAME_WIDTH],
-                    ModelCategory::CATEGORY_KEYNAME_HEIGHT => $node[ModelCategory::CATEGORY_KEYNAME_HEIGHT],
                 ], $node["data"]),
                 "classes" => ["unknown-status-node"],
             ];
@@ -127,15 +124,10 @@ final class HelperCytoscape
 
     private function getNodeStyles(): array
     {
-        // possible status:
-        // unknown-status-node
-        // healthy-status-node
-        // unhealthy-status-node
-        // maintenance-status-node
         $style = [];
 
         $style[] = [
-            "selector" => "node.unknown-status-node",
+            "selector" => "node.node-status-unknown",
             "style" => [
                 "line-color" => "#ccc",
                 "background-color" => "#f0f0f0",
@@ -144,7 +136,7 @@ final class HelperCytoscape
         ];
         
         $style[] = [
-            "selector" => "node.healthy-status-node",
+            "selector" => "node.node-status-healthy",
             "style" => [
                 "line-color" => "#4CAF50",
                 "background-color" => "#A5D6A7",
@@ -153,7 +145,7 @@ final class HelperCytoscape
         ];
 
         $style[] = [
-            "selector" => "node.unhealthy-status-node",
+            "selector" => "node.node-status-unhealthy",
             "style" => [
                 "line-color" => "#F44336",
                 "background-color" => "#EF9A9A",
@@ -162,7 +154,7 @@ final class HelperCytoscape
         ];
         
         $style[] = [
-            "selector" => "node.maintenance-status-node",
+            "selector" => "node.node-status-maintenance",
             "style" => [
                 "line-color" => "#FF9800",
                 "background-color" => "#FFCC80",
@@ -170,6 +162,18 @@ final class HelperCytoscape
             ],
         ];
 
+        $types = $this->imagesHelper->getTypes();
+        foreach($types as $type) {
+            $style[] = [
+                "selector" => "node.node-type-{$type}",
+                "style" => [
+                    "background-image" => $type,
+                    "background-fit" => "contain",
+                    "background-clip" => "none",
+                ],
+            ];
+        }
+        
         $style[] = [
             "selector" => "node:selected",
             "style" => [

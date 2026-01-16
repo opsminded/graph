@@ -11,6 +11,11 @@ final class HelperImages
         $this->images = $images;
     }
 
+    public function getTypes(): array
+    {
+        return array_keys($this->images);
+    }
+
     public function send(string $imageName): void
     {
         if (!isset($this->images[$imageName])) {
