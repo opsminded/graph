@@ -145,7 +145,13 @@ final class HTTPController implements HTTPControllerInterface
         if($req->method !== HTTPRequest::METHOD_POST) {
             return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
-        $node = new ModelNode($req->data['id'], $req->data['label'], $req->data['category'], $req->data['type'], $req->data['data']);
+        $node = new ModelNode(
+            $req->data[ModelNode::NODE_KEYNAME_ID], 
+            $req->data[ModelNode::NODE_KEYNAME_LABEL], 
+            $req->data[ModelNode::NODE_KEYNAME_CATEGORY], 
+            $req->data[ModelNode::NODE_KEYNAME_TYPE], 
+            $req->data[ModelNode::NODE_KEYNAME_DATA]
+        );
         $this->service->insertNode($node);
         $this->logger->info("node inserted", $req->data);
         return new HTTPCreatedResponse("node inserted", $req->data);

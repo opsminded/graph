@@ -30,7 +30,8 @@ class TestDatabase extends TestAbstractTest
         }
 
         $user = $this->database->getUser('admin');
-        if ($user['id'] !== 'admin' || $user['user_group'] !== 'admin') {
+        if ($user['id'] !== 'admin' || $user['group'] !== 'admin') {
+            print_r($user);
             throw new Exception('admin expected');
         }
     }
@@ -491,7 +492,7 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('error on testGetStatus');
         }
 
-        if ($s[0]['id'] !== 'node1' || $s[0]['status'] !== null) {
+        if ($s[0][ModelStatus::STATUS_KEYNAME_NODE_ID] !== 'node1' || $s[0][ModelStatus::STATUS_KEYNAME_STATUS] !== null) {
             throw new Exception('error on testGetStatus');
         }
     }

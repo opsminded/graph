@@ -236,11 +236,11 @@ final class HelperImages
             exit;
         }
 
-        $imageData = base64_decode($this->images[$imageName]['data']);
+        $imageData = base64_decode($this->images[$imageName]["data"]);
         $imageETag = md5($imageData);
 
         header("Content-Type: image/png");
-        header('Content-Length: ' . strlen($imageData));
+        header("Content-Length: " . strlen($imageData));
 
         header("Cache-Control: public, max-age=86400");
         header("Expires: " . gmdate("D, d M Y H:i:s", time() + 86400) . " GMT");
@@ -438,7 +438,13 @@ final class HTTPController implements HTTPControllerInterface
         if($req->method !== HTTPRequest::METHOD_POST) {
             return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
-        $node = new ModelNode($req->data['id'], $req->data['label'], $req->data['category'], $req->data['type'], $req->data['data']);
+        $node = new ModelNode(
+            $req->data[ModelNode::NODE_KEYNAME_ID], 
+            $req->data[ModelNode::NODE_KEYNAME_LABEL], 
+            $req->data[ModelNode::NODE_KEYNAME_CATEGORY], 
+            $req->data[ModelNode::NODE_KEYNAME_TYPE], 
+            $req->data[ModelNode::NODE_KEYNAME_DATA]
+        );
         $this->service->insertNode($node);
         $this->logger->info("node inserted", $req->data);
         return new HTTPCreatedResponse("node inserted", $req->data);
@@ -608,38 +614,38 @@ final class HTTPController implements HTTPControllerInterface
 final class Service implements ServiceInterface
 {
     private const SECURE_ACTIONS = [
-        'Service::getUser'             => true,
-        'Service::getCategories'       => true,
-        'Service::getTypes'            => true,
-        'Service::getGraph'            => true,
-        'Service::getNode'             => true,
-        'Service::getNodes'            => true,
-        'Service::getNodeParentOf'     => true,
-        'Service::getDependentNodesOf' => true,
-        'Service::getEdge'             => true,
-        'Service::getEdges'            => true,
-        'Service::getStatus'           => true,
-        'Service::getNodeStatus'       => true,
-        'Service::updateNodeStatus'    => true,
-        'Service::getLogs'             => true,
-        'Service::insertUser'          => false,
-        'Service::updateUser'          => false,
-        'Service::insertCategory'      => false,
-        'Service::insertType'          => false,
-        'Service::insertNode'          => false,
-        'Service::updateNode'          => false,
-        'Service::deleteNode'          => false,
-        'Service::insertEdge'          => false,
-        'Service::updateEdge'          => false,
-        'Service::deleteEdge'          => false,
-        'Service::insertLog'           => false,
+        "Service::getUser"             => true,
+        "Service::getCategories"       => true,
+        "Service::getTypes"            => true,
+        "Service::getGraph"            => true,
+        "Service::getNode"             => true,
+        "Service::getNodes"            => true,
+        "Service::getNodeParentOf"     => true,
+        "Service::getDependentNodesOf" => true,
+        "Service::getEdge"             => true,
+        "Service::getEdges"            => true,
+        "Service::getStatus"           => true,
+        "Service::getNodeStatus"       => true,
+        "Service::updateNodeStatus"    => true,
+        "Service::getLogs"             => true,
+        "Service::insertUser"          => false,
+        "Service::updateUser"          => false,
+        "Service::insertCategory"      => false,
+        "Service::insertType"          => false,
+        "Service::insertNode"          => false,
+        "Service::updateNode"          => false,
+        "Service::deleteNode"          => false,
+        "Service::insertEdge"          => false,
+        "Service::updateEdge"          => false,
+        "Service::deleteEdge"          => false,
+        "Service::insertLog"           => false,
     ];
 
     private const ADMIN_ACTIONS = [
-        'Service::insertUser',
-        'Service::updateUser',
-        'Service::insertCategory',
-        'Service::insertType',
+        "Service::insertUser",
+        "Service::updateUser",
+        "Service::insertCategory",
+        "Service::insertType",
     ];
 
     private DatabaseInterface $database;
@@ -653,34 +659,34 @@ final class Service implements ServiceInterface
 
     public function getUser(string $id): ?ModelUser
     {
-        $this->logger->debug('getting user', ['id' => $id]);
+        $this->logger->debug("getting user", [ModelUser::USER_KEYNAME_ID => $id]);
         $this->verify();
         $data = $this->database->getUser($id);
         if (! is_null($data)) {
-            $g = new ModelGroup($data['user_group']);
+            $g = new ModelGroup($data[ModelUser::USER_KEYNAME_GROUP]);
             $user = new ModelUser($id, $g);
-            $this->logger->debug('user found', ['id' => $id, 'user' => $data]);
+            $this->logger->debug("user found", [ModelUser::USER_KEYNAME_ID => $id, "user" => $data]);
             return $user;
         }
-        $this->logger->debug('user not found', ['id' => $id]);
+        $this->logger->debug("user not found", [ModelUser::USER_KEYNAME_ID => $id]);
         return null;
     }
 
     public function insertUser(ModelUser $user): bool
     {
-        $this->logger->debug('inserting user', ['user' => $user->toArray()]);
+        $this->logger->debug("inserting user", ["user" => $user->toArray()]);
         $this->verify();
         $this->database->insertUser($user->getId(), $user->getGroup()->getId());
-        $this->logger->debug('user inserted', ['user' => $user->toArray()]);
+        $this->logger->debug("user inserted", ["user" => $user->toArray()]);
         return true;
     }
 
     public function updateUser(ModelUser $user): bool
     {
-        $this->logger->debug('updating user', ['user' => $user->toArray()]);
+        $this->logger->debug("updating user", ["user" => $user->toArray()]);
         $this->verify();
         if ($this->database->updateUser($user->getId(), $user->getGroup()->getId())) {
-            $this->logger->debug('user updated', ['user' => $user->toArray()]);
+            $this->logger->debug("user updated", ["user" => $user->toArray()]);
             return true;
         }
         return false;
@@ -688,17 +694,17 @@ final class Service implements ServiceInterface
 
     public function getCategories(): array
     {
-        $this->logger->debug('getting categories');
+        $this->logger->debug("getting categories");
         $this->verify();
         $categoriesData = $this->database->getCategories();
         $categories     = [];
         foreach ($categoriesData as $data) {
             $category = new ModelCategory(
-                $data['id'],
-                $data['name'],
-                $data['shape'],
-                $data['width'],
-                $data['height'],
+                $data[ModelCategory::CATEGORY_KEYNAME_ID],
+                $data[ModelCategory::CATEGORY_KEYNAME_NAME],
+                $data[ModelCategory::CATEGORY_KEYNAME_SHAPE],
+                $data[ModelCategory::CATEGORY_KEYNAME_WIDTH],
+                $data[ModelCategory::CATEGORY_KEYNAME_HEIGHT],
             );
             $categories[] = $category;
         }
@@ -707,25 +713,25 @@ final class Service implements ServiceInterface
 
     public function insertCategory(ModelCategory $category): bool
     {
-        $this->logger->debug('inserting category', $category->toArray());
+        $this->logger->debug("inserting category", ["category" => $category->toArray()]);
         $this->verify();
         if ($this->database->insertCategory($category->id, $category->name, $category->shape, $category->width, $category->height)) {
-            $this->logger->info('category inserted', $category->toArray());
+            $this->logger->info("category inserted", ["category" => $category->toArray()]);
             return true;
         }
-        throw new RuntimeException('unexpected error on Service::insertCategory');
+        throw new RuntimeException("unexpected error on Service::insertCategory");
     }
     
     public function getTypes(): array
     {
-        $this->logger->debug('getting types');
+        $this->logger->debug("getting types");
         $this->verify();
         $typesData = $this->database->getTypes();
         $types     = [];
         foreach ($typesData as $data) {
             $type = new ModelType(
-                $data['id'],
-                $data['name'],
+                $data[ModelType::TYPE_KEYNAME_ID],
+                $data[ModelType::TYPE_KEYNAME_NAME],
             );
             $types[] = $type;
         }
@@ -733,10 +739,10 @@ final class Service implements ServiceInterface
     }
     public function insertType(ModelType $type): bool
     {
-        $this->logger->debug('inserting type', $type->toArray());
+        $this->logger->debug("inserting type", ["type" => $type->toArray()]);
         $this->verify();
         if ($this->database->insertType($type->id, $type->name)) {
-            $this->logger->info('type inserted', $type->toArray());
+            $this->logger->info("type inserted", ["type" => $type->toArray()]);
             return true;
         }
         return false;
@@ -744,27 +750,27 @@ final class Service implements ServiceInterface
 
     public function getGraph(): ModelGraph
     {
-        $this->logger->debug('getting graph');
+        $this->logger->debug("getting graph");
         $this->verify();
         $nodes = $this->getNodes();
         $edges = $this->getEdges();
         $graph = new ModelGraph($nodes, $edges);
-        $this->logger->debug('returning graph', $graph->toArray());
+        $this->logger->debug("returning graph", $graph->toArray());
         return $graph;
     }
 
     public function getNode(string $id): ?ModelNode
     {
-        $this->logger->debug('getting node');
+        $this->logger->debug("getting node", ["id" => $id]);
         $this->verify();
         $data = $this->database->getNode($id);
         if (! is_null($data)) {
             return new ModelNode(
-                $data['id'],
-                $data['label'],
-                $data['category'],
-                $data['type'],
-                $data['data']
+                $data[ModelNode::NODE_KEYNAME_ID],
+                $data[ModelNode::NODE_KEYNAME_LABEL],
+                $data[ModelNode::NODE_KEYNAME_CATEGORY],
+                $data[ModelNode::NODE_KEYNAME_TYPE],
+                $data[ModelNode::NODE_KEYNAME_DATA]
             );
         }
         return null;
@@ -772,18 +778,18 @@ final class Service implements ServiceInterface
 
     public function getNodes(): array
     {
-        $this->logger->debug('getting nodes');
+        $this->logger->debug("getting nodes");
         $this->verify();
         $nodesData = $this->database->getNodes();
         $nodes     = [];
         foreach ($nodesData as $data) {
             
             $node = new ModelNode(
-                $data['id'],
-                $data['label'],
-                $data['category'],
-                $data['type'],
-                $data['data']
+                $data[ModelNode::NODE_KEYNAME_ID],
+                $data[ModelNode::NODE_KEYNAME_LABEL],
+                $data[ModelNode::NODE_KEYNAME_CATEGORY],
+                $data[ModelNode::NODE_KEYNAME_TYPE],
+                $data[ModelNode::NODE_KEYNAME_DATA]
             );
             $nodes[] = $node;
         }
@@ -792,119 +798,119 @@ final class Service implements ServiceInterface
 
     public function getNodeParentOf(string $id): ?ModelNode
     {
-        $this->logger->debug('getting parent node of', ['id' => $id]);
+        $this->logger->debug("getting parent node of", ["id" => $id]);
         $this->verify();
         $parentData = $this->database->getNodeParentOf($id);
         if (! is_null($parentData)) {
             $parentNode = new ModelNode(
-                $parentData['id'],
-                $parentData['label'],
-                $parentData['category'],
-                $parentData['type'],
-                $parentData['data']
+                $parentData[ModelNode::NODE_KEYNAME_ID],
+                $parentData[ModelNode::NODE_KEYNAME_LABEL],
+                $parentData[ModelNode::NODE_KEYNAME_CATEGORY],
+                $parentData[ModelNode::NODE_KEYNAME_TYPE],
+                $parentData[ModelNode::NODE_KEYNAME_DATA]
             );
-            $this->logger->info('parent node found', $parentNode->toArray());
+            $this->logger->info("parent node found", $parentNode->toArray());
             return $parentNode;
         }
-        $this->logger->info('parent node not found', ['id' => $id]);
+        $this->logger->info("parent node not found", [ModelNode::NODE_KEYNAME_ID => $id]);
         return null;
     }
     public function getDependentNodesOf(string $id): array
     {
-        $this->logger->debug('getting dependent nodes of', ['id' => $id]);
+        $this->logger->debug("getting dependent nodes of", [ModelNode::NODE_KEYNAME_ID => $id]);
         $this->verify();
         $dependentNodesData = $this->database->getDependentNodesOf($id);
         $dependentNodes     = [];
         foreach ($dependentNodesData as $data) {
             $node = new ModelNode(
-                $data['id'],
-                $data['label'],
-                $data['category'],
-                $data['type'],
-                $data['data']
+                $data[ModelNode::NODE_KEYNAME_ID],
+                $data[ModelNode::NODE_KEYNAME_LABEL],
+                $data[ModelNode::NODE_KEYNAME_CATEGORY],
+                $data[ModelNode::NODE_KEYNAME_TYPE],
+                $data[ModelNode::NODE_KEYNAME_DATA]
             );
             $dependentNodes[] = $node;
         }
-        $this->logger->info('dependent nodes found', ['count' => count($dependentNodes)]);
+        $this->logger->info("dependent nodes found", ["count" => count($dependentNodes)]);
         return $dependentNodes;
     }
 
     public function insertNode(ModelNode $node): bool
     {
-        $this->logger->debug('inserting node', $node->toArray());
+        $this->logger->debug("inserting node", $node->toArray());
         $this->verify();
-        $this->logger->debug('permission allowed', $node->toArray());
-        $this->insertLog(new ModelLog('node', $node->getId(), 'insert', null, $node->toArray()));
+        $this->logger->debug("permission allowed", $node->toArray());
+        $this->insertLog(new ModelLog("node", $node->getId(), "insert", null, $node->toArray()));
         if ($this->database->insertNode($node->getId(), $node->getLabel(), $node->getCategory(), $node->getType(), $node->getData())) {
-            $this->logger->info('node inserted', $node->toArray());
+            $this->logger->info("node inserted", $node->toArray());
             return true;
         }
-        throw new RuntimeException('unexpected error on Service::insertNode');
+        throw new RuntimeException("unexpected error on Service::insertNode");
     }
 
     public function updateNode(ModelNode $node): bool
     {
-        $this->logger->debug('updating node', ['node' => $node->toArray()]);
+        $this->logger->debug("updating node", ["node" => $node->toArray()]);
         $this->verify();
         $exists = $this->database->getNode($node->getId());
         if (is_null($exists)) {
-            $this->logger->error('node not found', $node->toArray());
+            $this->logger->error("node not found", $node->toArray());
             return false;
         }
         $old = $this->getNode($node->getId());
-        $this->insertLog(new ModelLog('node', $node->getId(), 'update', $old->toArray(), $node->toArray()));
+        $this->insertLog(new ModelLog("node", $node->getId(), "update", $old->toArray(), $node->toArray()));
         if ($this->database->updateNode($node->getId(), $node->getLabel(), $node->getCategory(), $node->getType(), $node->getData())) {
-            $this->logger->info('node updated', $node->toArray());
+            $this->logger->info("node updated", $node->toArray());
             return true;
         }
-        throw new RuntimeException('unexpected error on Service::updateNode');
+        throw new RuntimeException("unexpected error on Service::updateNode");
     }
 
     public function deleteNode(ModelNode $node): bool
     {
-        $this->logger->debug('deleting node', ['node' => $node->toArray()]);
+        $this->logger->debug("deleting node", ["node" => $node->toArray()]);
         $this->verify();
         $exists = $this->database->getNode($node->getId());
         if (is_null($exists)) {
-            $this->logger->error('node not found', $node->toArray());
+            $this->logger->error("node not found", $node->toArray());
             return false;
         }
         $old = $this->getNode($node->getId());
-        $this->insertLog(new ModelLog( 'node', $node->getId(), 'delete', $old->toArray(), null));
+        $this->insertLog(new ModelLog( "node", $node->getId(), "delete", $old->toArray(), null));
         if ($this->database->deleteNode($node->getId())) {
-            $this->logger->info('node deleted', $node->toArray());
+            $this->logger->info("node deleted", $node->toArray());
             return true;
         }
-        throw new RuntimeException('unexpected error on Service::deleteNode');
+        throw new RuntimeException("unexpected error on Service::deleteNode");
     }
 
     public function getEdge(string $source, string $target): ?ModelEdge
     {
-        $this->logger->debug('getting edge', ['source' => $source, 'target' => $target]);
+        $this->logger->debug("getting edge", [ModelEdge::EDGE_KEYNAME_SOURCE => $source, ModelEdge::EDGE_KEYNAME_TARGET => $target]);
         $this->verify();
         $edgeData = $this->database->getEdge($source, $target);
         if (! is_null($edgeData)) {
-            $edge = new ModelEdge($edgeData['source'], $edgeData['target'], $edgeData['data']);
+            $edge = new ModelEdge($edgeData[ModelEdge::EDGE_KEYNAME_SOURCE], $edgeData[ModelEdge::EDGE_KEYNAME_TARGET], $edgeData[ModelEdge::EDGE_KEYNAME_DATA]);
             $data = $edge->toArray();
-            $this->logger->info('edge found', $data);
+            $this->logger->info("edge found", $data);
             return $edge;
         }
-        $this->logger->info('edge not found', ['source' => $source, 'target' => $target]);
+        $this->logger->info("edge not found", [ModelEdge::EDGE_KEYNAME_SOURCE => $source, ModelEdge::EDGE_KEYNAME_TARGET => $target]);
         return null;
     }
 
     public function getEdges(): array
     {
-        $this->logger->debug('getting edges');
+        $this->logger->debug("getting edges");
         $this->verify();
 
         $edgesData = $this->database->getEdges();
         $edges     = [];
         foreach ($edgesData as $data) {
             $edge = new ModelEdge(
-                $data['source'],
-                $data['target'],
-                $data['data']
+                $data[ModelEdge::EDGE_KEYNAME_SOURCE],
+                $data[ModelEdge::EDGE_KEYNAME_TARGET],
+                $data[ModelEdge::EDGE_KEYNAME_DATA]
             );
             $edges[] = $edge;
         }
@@ -913,111 +919,111 @@ final class Service implements ServiceInterface
 
     public function insertEdge(ModelEdge $edge): bool
     {
-        $this->logger->debug('inserting edge', ['edge' => $edge->toArray()]);
+        $this->logger->debug("inserting edge", ["edge" => $edge->toArray()]);
         $this->verify();
-        $this->insertLog(new ModelLog( 'edge', $edge->getId(), 'insert', null, $edge->toArray()));
+        $this->insertLog(new ModelLog( "edge", $edge->getId(), "insert", null, $edge->toArray()));
         if ($this->database->insertEdge($edge->getId(), $edge->getSource(), $edge->getTarget(), $edge->getData())) {
-            $this->logger->info('edge inserted', ['edge' => $edge->toArray()]);
+            $this->logger->info("edge inserted", ["edge" => $edge->toArray()]);
             return true;
         }
-        throw new RuntimeException('unexpected error on Service::insertEdge');
+        throw new RuntimeException("unexpected error on Service::insertEdge");
     }
 
     public function updateEdge(ModelEdge $edge): bool
     {
-        $this->logger->debug('updating edge', ['edge' => $edge->toArray()]);
+        $this->logger->debug("updating edge", ["edge" => $edge->toArray()]);
         $this->verify();
         $exists = $this->database->getEdge($edge->getSource(), $edge->getTarget());
         if (is_null($exists)) {
-            $this->logger->error('edge not found', ['edge' => $edge->toArray()]);
+            $this->logger->error("edge not found", ["edge" => $edge->toArray()]);
             return false;
         }
 
         $old = $this->getEdge($edge->getSource(), $edge->getTarget());
-        $this->insertLog(new ModelLog('edge', $edge->getId(), 'update', $old->toArray(), $edge->toArray()));
+        $this->insertLog(new ModelLog("edge", $edge->getId(), "update", $old->toArray(), $edge->toArray()));
         if ($this->database->updateEdge($edge->getId(), $edge->getSource(), $edge->getTarget(), $edge->getData())) {
-            $this->logger->info('edge updated', ['edge' => $edge->toArray()]);
+            $this->logger->info("edge updated", ["edge" => $edge->toArray()]);
             return true;
         }
-        throw new RuntimeException('unexpected error on Service::updateEdge');
+        throw new RuntimeException("unexpected error on Service::updateEdge");
     }
 
     public function deleteEdge(ModelEdge $edge): bool
     {
-        $this->logger->debug('deleting edge', ['edge' => $edge->toArray()]);
+        $this->logger->debug("deleting edge", ["edge" => $edge->toArray()]);
         $this->verify();
         $exists = $this->database->getEdge($edge->getSource(), $edge->getTarget());
         if (is_null($exists)) {
-            $this->logger->error('edge not found', ['edge' => $edge->toArray()]);
+            $this->logger->error("edge not found", ["edge" => $edge->toArray()]);
             return false;
         }
         $old = $this->getEdge($edge->getSource(), $edge->getTarget());
-        $this->insertLog(new ModelLog('edge', $edge->getId(), 'delete', $old->toArray(), null));
+        $this->insertLog(new ModelLog("edge", $edge->getId(), "delete", $old->toArray(), null));
         if ($this->database->deleteEdge($edge->getId())) {
-            $this->logger->info('edge deleted', ['edge' => $edge->toArray()]);
+            $this->logger->info("edge deleted", ["edge" => $edge->toArray()]);
             return true;
         }
-        throw new RuntimeException('unexpected error on Service::deleteEdge');
+        throw new RuntimeException("unexpected error on Service::deleteEdge");
     }
 
     public function getStatus(): array
     {
-        $this->logger->debug('getting status');
+        $this->logger->debug("getting status");
         $this->verify();
         $statusesData = $this->database->getStatus();
         $nodeStatuses = [];
         foreach ($statusesData as $status) {
-            $status = new ModelStatus($status['id'], $status['status'] ?? 'unknown');
+            $status = new ModelStatus($status[ModelStatus::STATUS_KEYNAME_NODE_ID], $status[ModelStatus::STATUS_KEYNAME_STATUS] ?? "unknown");
             $nodeStatuses[] = $status;
         }
-        $this->logger->info('status found', ['status' => $nodeStatuses]);
+        $this->logger->info("status found", ["status" => $nodeStatuses]);
         return $nodeStatuses;
     }
 
     public function getNodeStatus(string $id): ?ModelStatus
     {
-        $this->logger->debug('getting node status', ['id' => $id]);
+        $this->logger->debug("getting node status", ["id" => $id]);
         $this->verify();
         $statusData = $this->database->getNodeStatus($id);
         if (! is_null($statusData)) {
-            $this->logger->info('status found', $statusData);
-            return new ModelStatus($id, $statusData['status'] ?? 'unknown');
+            $this->logger->info("status found", $statusData);
+            return new ModelStatus($id, $statusData[ModelStatus::STATUS_KEYNAME_STATUS] ?? "unknown");
         }
-        $this->logger->error('status not found', ['id' => $id]);
+        $this->logger->error("status not found", ["id" => $id]);
         return null;
     }
 
     public function updateNodeStatus(ModelStatus $status): bool
     {
-        $this->logger->debug('updating node status', ['status' => $status->toArray()]);
+        $this->logger->debug("updating node status", ["status" => $status->toArray()]);
         $this->verify();
         $data = $status->toArray();
         if ($this->database->updateNodeStatus($status->getNodeId(), $status->getStatus())) {
-            $this->logger->info('node status updated', $data);
+            $this->logger->info("node status updated", $data);
             return true;
         }
-        throw new RuntimeException('unexpected error on Service::updateNodeStatus');
+        throw new RuntimeException("unexpected error on Service::updateNodeStatus");
     }
 
     public function getLogs(int $limit): array
     {
-        $this->logger->debug('getting logs', ['limit' => $limit]);
+        $this->logger->debug("getting logs", ["limit" => $limit]);
         $this->verify();
         $logs = [];
         $rows = $this->database->getLogs($limit);
         foreach ($rows as $row) {
-            $oldData = $row['old_data'] ? json_decode($row['old_data'], true) : [];
-            $newData = $row['new_data'] ? json_decode($row['new_data'], true) : [];
+            $oldData = $row["old_data"] ? json_decode($row["old_data"], true) : [];
+            $newData = $row["new_data"] ? json_decode($row["new_data"], true) : [];
             $log = new ModelLog(
-                $row['entity_type'],
-                $row['entity_id'],
-                $row['action'],
+                $row["entity_type"],
+                $row["entity_id"],
+                $row["action"],
                 $oldData,
                 $newData,
             );
-            $log->userId    = $row['user_id'];
-            $log->ipAddress = $row['ip_address'];
-            $log->createdAt = $row['created_at'];
+            $log->userId    = $row["user_id"];
+            $log->ipAddress = $row["ip_address"];
+            $log->createdAt = $row["created_at"];
             $logs[] = $log;
         }
         return $logs;
@@ -1025,7 +1031,7 @@ final class Service implements ServiceInterface
 
     private function insertLog(ModelLog $log): void
     {
-        $this->logger->debug('insert log', ['log' => $log]);
+        $this->logger->debug("insert log", ["log" => $log]);
         $userId   = HelperContext::getUser();
         $ipAddress = HelperContext::getClientIP();
         $this->database->insertLog($log->entityType, $log->entityId, $log->action, $log->oldData, $log->newData, $userId, $ipAddress);
@@ -1037,38 +1043,48 @@ final class Service implements ServiceInterface
         $action = "{$trace[1]['class']}::{$trace[1]['function']}";
         $group  = HelperContext::getGroup();
 
-        $this->logger->debug('verify', ['action' => $action, 'group' => $group]);
+        $this->logger->debug("verify", ["action" => $action, "group" => $group]);
 
         if (! array_key_exists($action, self::SECURE_ACTIONS)) {
-            $this->logger->error('action not found in SECURE_ACTIONS', ['action' => $action]);
-            throw new RuntimeException('action not found in SECURE_ACTIONS: ' . $action);
+            $this->logger->error("action not found in SECURE_ACTIONS", ["action" => $action]);
+            throw new RuntimeException("action not found in SECURE_ACTIONS: " . $action);
         }
 
-        if (in_array($action, self::ADMIN_ACTIONS, true) && $group !== 'admin') {
-            $this->logger->info('only admin allowed', ['action' => $action, 'group' => $group]);
-            throw new RuntimeException('action only allowed for admin: ' . $action);
+        if (in_array($action, self::ADMIN_ACTIONS, true) && $group !== "admin") {
+            $this->logger->info("only admin allowed", ["action" => $action, "group" => $group]);
+            throw new RuntimeException("action only allowed for admin: " . $action);
         }
 
         // if action is in the SECURE_ACTIONS, allow all
         if (self::SECURE_ACTIONS[$action]) {
-            $this->logger->info('allow safe action', ['action' => $action, 'group' => $group]);
+            $this->logger->info("allow safe action", ["action" => $action, "group" => $group]);
             return;
         }
 
         // if action is restricted, only allow contributor
-        if (self::SECURE_ACTIONS[$action] === false && in_array($group, ['admin', 'contributor'], true)) {
-            $this->logger->info('contributor and admin are allowed', ['action' => $action, 'group' => $group]);
+        if (self::SECURE_ACTIONS[$action] === false && in_array($group, ["admin", "contributor"], true)) {
+            $this->logger->info("contributor and admin are allowed", ["action" => $action, "group" => $group]);
             return;
         }
 
-        $this->logger->info('not authorized', ['action' => $action, 'group' => $group]);
-        throw new RuntimeException('action not allowed: ' . $action);
+        $this->logger->info("not authorized", ["action" => $action, "group" => $group]);
+        throw new RuntimeException("action not allowed: " . $action);
     }
 }
 #####################################
 
 final class ModelLog
 {
+
+    public const LOG_KEYNAME_ENTITY_TYPE = "entityType";
+    public const LOG_KEYNAME_ENTITY_ID   = "entityId";
+    public const LOG_KEYNAME_ACTION      = "action";
+    public const LOG_KEYNAME_OLD_DATA    = "oldData";
+    public const LOG_KEYNAME_NEW_DATA    = "newData";
+    public const LOG_KEYNAME_USER_ID     = "userId";
+    public const LOG_KEYNAME_IP_ADDRESS  = "ipAddress";
+    public const LOG_KEYNAME_CREATED_AT  = "createdAt";
+
     public string $entityType;
     public string $entityId;
     public string $action;
@@ -1090,14 +1106,14 @@ final class ModelLog
     public function toArray(): array
     {
         return [
-            'entityType' => $this->entityType,
-            'entityId'   => $this->entityId,
-            'action'     => $this->action,
-            'oldData'    => $this->oldData,
-            'newData'    => $this->newData,
-            'userId'     => $this->userId,
-            'ipAddress'  => $this->ipAddress,
-            'createdAt'  => $this->createdAt,
+            self::LOG_KEYNAME_ENTITY_TYPE => $this->entityType,
+            self::LOG_KEYNAME_ENTITY_ID   => $this->entityId,
+            self::LOG_KEYNAME_ACTION      => $this->action,
+            self::LOG_KEYNAME_OLD_DATA    => $this->oldData,
+            self::LOG_KEYNAME_NEW_DATA    => $this->newData,
+            self::LOG_KEYNAME_USER_ID     => $this->userId,
+            self::LOG_KEYNAME_IP_ADDRESS  => $this->ipAddress,
+            self::LOG_KEYNAME_CREATED_AT  => $this->createdAt,
         ];
     }
 }
@@ -1118,7 +1134,7 @@ final class Database implements DatabaseInterface
     public function getUser(string $id): ?array
     {
         $this->logger->debug("getting user id", ['id' => $id]);
-        $sql = 'SELECT * FROM users WHERE id = :id';
+        $sql = "SELECT id, user_group as \"group\" FROM users WHERE id = :id";
         $params = [':id' => $id];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
@@ -1382,7 +1398,7 @@ final class Database implements DatabaseInterface
     public function getStatus(): array
     {
         $this->logger->debug("fetching statuses");
-        $sql = "SELECT n.id, s.status FROM nodes n LEFT JOIN status s ON n.id = s.node_id";
+        $sql = "SELECT n.id as node_id, s.status FROM nodes n LEFT JOIN status s ON n.id = s.node_id";
         $stmt   = $this->pdo->query($sql);
         $rows = $stmt->fetchAll();
         $this->logger->info("statuses fetched", ['rows' => $rows]);
@@ -1536,20 +1552,24 @@ final class Database implements DatabaseInterface
 
 final class Logger implements LoggerInterface
 {
+    public const LOGGER_LEVEL_INFO = "INFO";
+    public const LOGGER_LEVEL_DEBUG = "DEBUG";
+    public const LOGGER_LEVEL_ERROR = "ERROR";
+
     public function info(string $message, array $data = []): void
     {
-        $this->log('INFO', $message, $data);
+        $this->log(self::LOGGER_LEVEL_INFO, $message, $data);
         
     }
 
     public function debug(string $message, array $data = []): void
     {
-        $this->log('DEBUG', $message, $data);
+        $this->log(self::LOGGER_LEVEL_DEBUG, $message, $data);
     }
 
     public function error(string $message, array $data = []): void
     {
-        $this->log('ERROR', $message, $data);
+        $this->log(self::LOGGER_LEVEL_ERROR, $message, $data);
     }
 
     private function log(string $type, $message, $data = [])
@@ -1819,8 +1839,8 @@ final class ModelStatus
     public function toArray(): array
     {
         return [
-            'node_id' => $this->nodeId,
-            'status'  => $this->status,
+            self::STATUS_KEYNAME_NODE_ID => $this->nodeId,
+            self::STATUS_KEYNAME_STATUS  => $this->status,
         ];
     }
 }
@@ -1828,6 +1848,13 @@ final class ModelStatus
 
 final class ModelCategory
 {
+
+    public const CATEGORY_KEYNAME_ID     = "id";
+    public const CATEGORY_KEYNAME_NAME   = "name";
+    public const CATEGORY_KEYNAME_SHAPE  = "shape";
+    public const CATEGORY_KEYNAME_WIDTH  = "width";
+    public const CATEGORY_KEYNAME_HEIGHT = "height";
+
     public string $id;
     public string $name;
     public string $shape;
@@ -1846,11 +1873,11 @@ final class ModelCategory
     public function toArray(): array
     {
         return [
-            'id' => $this->id,
-            'name' => $this->name,
-            'shape' => $this->shape,
-            'width' => $this->width,
-            'height' => $this->height,
+            self::CATEGORY_KEYNAME_ID     => $this->id,
+            self::CATEGORY_KEYNAME_NAME   => $this->name,
+            self::CATEGORY_KEYNAME_SHAPE  => $this->shape,
+            self::CATEGORY_KEYNAME_WIDTH  => $this->width,
+            self::CATEGORY_KEYNAME_HEIGHT => $this->height,
         ];
     }
 }
@@ -1926,8 +1953,8 @@ final class ModelUser
     public function toArray(): array
     {
         return [
-            'id'    => $this->id,
-            'group' => $this->group->toArray(),
+            self::USER_KEYNAME_ID    => $this->id,
+            self::USER_KEYNAME_GROUP => $this->group->toArray(),
         ];
     }
 }
@@ -1937,24 +1964,24 @@ final class ModelUser
 final class HTTPRequestRouter
 {
     private $routes = [
-        ['method' => 'GET',    'path' => '/getUser',          'class_method' => 'getUser'],
-        ['method' => 'POST',   'path' => '/insertUser',       'class_method' => 'insertUser'],
-        ['method' => 'PUT',    'path' => '/updateUser',       'class_method' => 'updateUser'],
-        ['method' => 'GET',    'path' => '/getGraph',         'class_method' => 'getGraph'],
-        ['method' => 'GET',    'path' => '/getNode',          'class_method' => 'getNode'],
-        ['method' => 'GET',    'path' => '/getNodes',         'class_method' => 'getNodes'],
-        ['method' => 'POST',   'path' => '/insertNode',       'class_method' => 'insertNode'],
-        ['method' => 'PUT',    'path' => '/updateNode',       'class_method' => 'updateNode'],
-        ['method' => 'DELETE', 'path' => '/deleteNode',       'class_method' => 'deleteNode'],
-        ['method' => 'GET',    'path' => '/getEdge',          'class_method' => 'getEdge'],
-        ['method' => 'GET',    'path' => '/getEdges',         'class_method' => 'getEdges'],
-        ['method' => 'POST',   'path' => '/insertEdge',       'class_method' => 'insertEdge'],
-        ['method' => 'PUT',    'path' => '/updateEdge',       'class_method' => 'updateEdge'],
-        ['method' => 'DELETE', 'path' => '/deleteEdge',       'class_method' => 'deleteEdge'],
-        ['method' => 'GET',    'path' => '/getStatuses',      'class_method' => 'getStatuses'],
-        ['method' => 'GET',    'path' => '/getNodeStatus',    'class_method' => 'getNodeStatus'],
-        ['method' => 'PUT',    'path' => '/updateNodeStatus', 'class_method' => 'updateNodeStatus'],
-        ['method' => 'GET',    'path' => '/getLogs',          'class_method' => 'getLogs'],
+        ["method" => HTTPRequest::METHOD_GET,    "path" => "/getUser",          "class_method" => "getUser"],
+        ["method" => HTTPRequest::METHOD_POST,   "path" => "/insertUser",       "class_method" => "insertUser"],
+        ["method" => HTTPRequest::METHOD_PUT,    "path" => "/updateUser",       "class_method" => "updateUser"],
+        ["method" => HTTPRequest::METHOD_GET,    "path" => "/getGraph",         "class_method" => "getGraph"],
+        ["method" => HTTPRequest::METHOD_GET,    "path" => "/getNode",          "class_method" => "getNode"],
+        ["method" => HTTPRequest::METHOD_GET,    "path" => "/getNodes",         "class_method" => "getNodes"],
+        ["method" => HTTPRequest::METHOD_POST,   "path" => "/insertNode",       "class_method" => "insertNode"],
+        ["method" => HTTPRequest::METHOD_PUT,    "path" => "/updateNode",       "class_method" => "updateNode"],
+        ["method" => HTTPRequest::METHOD_DELETE, "path" => "/deleteNode",       "class_method" => "deleteNode"],
+        ["method" => HTTPRequest::METHOD_GET,    "path" => "/getEdge",          "class_method" => "getEdge"],
+        ["method" => HTTPRequest::METHOD_GET,    "path" => "/getEdges",         "class_method" => "getEdges"],
+        ["method" => HTTPRequest::METHOD_POST,   "path" => "/insertEdge",       "class_method" => "insertEdge"],
+        ["method" => HTTPRequest::METHOD_PUT,    "path" => "/updateEdge",       "class_method" => "updateEdge"],
+        ["method" => HTTPRequest::METHOD_DELETE, "path" => "/deleteEdge",       "class_method" => "deleteEdge"],
+        ["method" => HTTPRequest::METHOD_GET,    "path" => "/getStatuses",      "class_method" => "getStatuses"],
+        ["method" => HTTPRequest::METHOD_GET,    "path" => "/getNodeStatus",    "class_method" => "getNodeStatus"],
+        ["method" => HTTPRequest::METHOD_PUT,    "path" => "/updateNodeStatus", "class_method" => "updateNodeStatus"],
+        ["method" => HTTPRequest::METHOD_GET,    "path" => "/getLogs",          "class_method" => "getLogs"],
     ];
 
     public HTTPController $controller;
@@ -1968,18 +1995,18 @@ final class HTTPRequestRouter
     {
         foreach($this->routes as $route)
         {
-            if ($route['method'] == $req->method && $route['path'] == $req->path)
+            if ($route["method"] == $req->method && $route["path"] == $req->path)
             {
-                $method = $route['class_method'];
+                $method = $route["class_method"];
                 try {
                     $resp = $this->controller->$method($req);
                     return $resp;
                 } catch (Exception $e) {
-                    return new HTTPInternalServerErrorResponse("internal server error", ['exception_message' => $e->getMessage()]);
+                    return new HTTPInternalServerErrorResponse("internal server error", ["exception_message" => $e->getMessage()]);
                 }
             }
         }
-        return new HTTPInternalServerErrorResponse("method not found in list", ['method' => $req->method, 'path' => $req->path]);
+        return new HTTPInternalServerErrorResponse("method not found in list", ["method" => $req->method, "path" => $req->path]);
     }
 }
 #####################################
@@ -2025,10 +2052,10 @@ final class ModelEdge
     public function toArray(): array
     {
         return [
-            'id'     => $this->getId(),
-            'source' => $this->source,
-            'target' => $this->target,
-            'data'   => $this->data
+            self::EDGE_KEYNAME_ID     => $this->getId(),
+            self::EDGE_KEYNAME_SOURCE => $this->source,
+            self::EDGE_KEYNAME_TARGET => $this->target,
+            self::EDGE_KEYNAME_DATA   => $this->data
         ];
     }
 }
@@ -2091,16 +2118,16 @@ final class HelperCytoscape
             $shape = $this->getNodeShape($index);
             $node = array_merge($node, $shape);
             $nodes[] = [
-                'data' => array_merge([
-                    'id' => $node['id'],
-                    'label' => $node['label'],
-                    'category' => $node['category'],
-                    'type' => $node['type'],
-                    'shape' => $node['shape'],
-                    'width' => $node['width'],
-                    'height' => $node['height'],
-                ], $node['data']),
-                'classes' => ["unknown-status-node"],
+                "data" => array_merge([
+                    ModelNode::NODE_KEYNAME_ID => $node[ModelNode::NODE_KEYNAME_ID],
+                    ModelNode::NODE_KEYNAME_LABEL => $node[ModelNode::NODE_KEYNAME_LABEL],
+                    ModelNode::NODE_KEYNAME_CATEGORY => $node[ModelNode::NODE_KEYNAME_CATEGORY],
+                    ModelNode::NODE_KEYNAME_TYPE => $node[ModelNode::NODE_KEYNAME_TYPE],
+                    ModelCategory::CATEGORY_KEYNAME_SHAPE => $node[ModelCategory::CATEGORY_KEYNAME_SHAPE],
+                    ModelCategory::CATEGORY_KEYNAME_WIDTH => $node[ModelCategory::CATEGORY_KEYNAME_WIDTH],
+                    ModelCategory::CATEGORY_KEYNAME_HEIGHT => $node[ModelCategory::CATEGORY_KEYNAME_HEIGHT],
+                ], $node["data"]),
+                "classes" => ["unknown-status-node"],
             ];
         }
         return $nodes;
@@ -2113,10 +2140,11 @@ final class HelperCytoscape
         foreach ($edgesArr[ModelGraph::KEYNAME_EDGES] as $edge) {
             $edge = $edge->toArray();
             $edges[] = [
-                'data' => [
-                    'id' => $edge['id'],
-                    'source' => $edge['source'],
-                    'target' => $edge['target'],
+                "data" => [
+                    ModelEdge::EDGE_KEYNAME_ID     => $edge[ModelEdge::EDGE_KEYNAME_ID],
+                    ModelEdge::EDGE_KEYNAME_SOURCE => $edge[ModelEdge::EDGE_KEYNAME_SOURCE],
+                    ModelEdge::EDGE_KEYNAME_TARGET => $edge[ModelEdge::EDGE_KEYNAME_TARGET],
+                    ModelEdge::EDGE_KEYNAME_DATA   => $edge[ModelEdge::EDGE_KEYNAME_DATA],
                 ]
             ];
         }
@@ -2127,26 +2155,26 @@ final class HelperCytoscape
     {
         $baseStyle = [
             [
-                'selector' => 'node',
-                'style' => [
-                    'background-color' => '#61bffc',
-                    'label' => 'data(label)',
-                    'text-valign' => 'center',
-                    'color' => '#000000',
-                    'text-outline-width' => 0,
-                    'width' => 'data(width)',
-                    'height' => 'data(height)',
-                    'shape' => 'data(shape)',
+                "selector" => "node",
+                "style" => [
+                    "background-color" => "#61bffc",
+                    "label" => "data(label)",
+                    "text-valign" => "center",
+                    "color" => "#000000",
+                    "text-outline-width" => 0,
+                    "width" => "data(width)",
+                    "height" => "data(height)",
+                    "shape" => "data(shape)",
                 ],
             ],
             [
-                'selector' => 'edge',
-                'style' => [
-                    'width' => 2,
-                    'line-color' => '#ccc',
-                    'target-arrow-color' => '#ccc',
-                    'target-arrow-shape' => 'triangle',
-                    'curve-style' => 'bezier',
+                "selector" => "edge",
+                "style" => [
+                    "width" => 2,
+                    "line-color" => "#ccc",
+                    "target-arrow-color" => "#ccc",
+                    "target-arrow-shape" => "triangle",
+                    "curve-style" => "bezier",
                 ],
             ]
         ];
@@ -2166,46 +2194,46 @@ final class HelperCytoscape
         $style = [];
 
         $style[] = [
-            'selector' => 'node.unknown-status-node',
-            'style' => [
-                'line-color' => '#ccc',
-                'background-color' => '#f0f0f0',
-                'color' => '#000000',
+            "selector" => "node.unknown-status-node",
+            "style" => [
+                "line-color" => "#ccc",
+                "background-color" => "#f0f0f0",
+                "color" => "#000000",
             ],
         ];
         
         $style[] = [
-            'selector' => 'node.healthy-status-node',
-            'style' => [
-                'line-color' => '#4CAF50',
-                'background-color' => '#A5D6A7',
-                'color' => '#000000',
+            "selector" => "node.healthy-status-node",
+            "style" => [
+                "line-color" => "#4CAF50",
+                "background-color" => "#A5D6A7",
+                "color" => "#000000",
             ],
         ];
 
         $style[] = [
-            'selector' => 'node.unhealthy-status-node',
-            'style' => [
-                'line-color' => '#F44336',
-                'background-color' => '#EF9A9A',
-                'color' => '#000000',
+            "selector" => "node.unhealthy-status-node",
+            "style" => [
+                "line-color" => "#F44336",
+                "background-color" => "#EF9A9A",
+                "color" => "#000000",
             ],
         ];
         
         $style[] = [
-            'selector' => 'node.maintenance-status-node',
-            'style' => [
-                'line-color' => '#FF9800',
-                'background-color' => '#FFCC80',
-                'color' => '#000000',
+            "selector" => "node.maintenance-status-node",
+            "style" => [
+                "line-color" => "#FF9800",
+                "background-color" => "#FFCC80",
+                "color" => "#000000",
             ],
         ];
 
         $style[] = [
-            'selector' => 'node:selected',
-            'style' => [
-                'border-width' => 4,
-                'border-color' => '#FFD700',
+            "selector" => "node:selected",
+            "style" => [
+                "border-width" => 4,
+                "border-color" => "#FFD700",
             ],
         ];
 
@@ -2215,8 +2243,8 @@ final class HelperCytoscape
     private function getLayout(): array
     {
         return [
-            'name' => 'grid',
-            'rows' => 5,
+            "name" => "grid",
+            "rows" => 5,
         ];
     }
 

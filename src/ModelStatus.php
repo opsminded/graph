@@ -33,8 +33,8 @@ final class ModelStatus
     public function toArray(): array
     {
         return [
-            'node_id' => $this->nodeId,
-            'status'  => $this->status,
+            self::STATUS_KEYNAME_NODE_ID => $this->nodeId,
+            self::STATUS_KEYNAME_STATUS  => $this->status,
         ];
     }
 }

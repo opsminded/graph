@@ -59,16 +59,16 @@ final class HelperCytoscape
             $shape = $this->getNodeShape($index);
             $node = array_merge($node, $shape);
             $nodes[] = [
-                'data' => array_merge([
-                    'id' => $node['id'],
-                    'label' => $node['label'],
-                    'category' => $node['category'],
-                    'type' => $node['type'],
-                    'shape' => $node['shape'],
-                    'width' => $node['width'],
-                    'height' => $node['height'],
-                ], $node['data']),
-                'classes' => ["unknown-status-node"],
+                "data" => array_merge([
+                    ModelNode::NODE_KEYNAME_ID => $node[ModelNode::NODE_KEYNAME_ID],
+                    ModelNode::NODE_KEYNAME_LABEL => $node[ModelNode::NODE_KEYNAME_LABEL],
+                    ModelNode::NODE_KEYNAME_CATEGORY => $node[ModelNode::NODE_KEYNAME_CATEGORY],
+                    ModelNode::NODE_KEYNAME_TYPE => $node[ModelNode::NODE_KEYNAME_TYPE],
+                    ModelCategory::CATEGORY_KEYNAME_SHAPE => $node[ModelCategory::CATEGORY_KEYNAME_SHAPE],
+                    ModelCategory::CATEGORY_KEYNAME_WIDTH => $node[ModelCategory::CATEGORY_KEYNAME_WIDTH],
+                    ModelCategory::CATEGORY_KEYNAME_HEIGHT => $node[ModelCategory::CATEGORY_KEYNAME_HEIGHT],
+                ], $node["data"]),
+                "classes" => ["unknown-status-node"],
             ];
         }
         return $nodes;
@@ -81,10 +81,11 @@ final class HelperCytoscape
         foreach ($edgesArr[ModelGraph::KEYNAME_EDGES] as $edge) {
             $edge = $edge->toArray();
             $edges[] = [
-                'data' => [
-                    'id' => $edge['id'],
-                    'source' => $edge['source'],
-                    'target' => $edge['target'],
+                "data" => [
+                    ModelEdge::EDGE_KEYNAME_ID     => $edge[ModelEdge::EDGE_KEYNAME_ID],
+                    ModelEdge::EDGE_KEYNAME_SOURCE => $edge[ModelEdge::EDGE_KEYNAME_SOURCE],
+                    ModelEdge::EDGE_KEYNAME_TARGET => $edge[ModelEdge::EDGE_KEYNAME_TARGET],
+                    ModelEdge::EDGE_KEYNAME_DATA   => $edge[ModelEdge::EDGE_KEYNAME_DATA],
                 ]
             ];
         }
@@ -95,26 +96,26 @@ final class HelperCytoscape
     {
         $baseStyle = [
             [
-                'selector' => 'node',
-                'style' => [
-                    'background-color' => '#61bffc',
-                    'label' => 'data(label)',
-                    'text-valign' => 'center',
-                    'color' => '#000000',
-                    'text-outline-width' => 0,
-                    'width' => 'data(width)',
-                    'height' => 'data(height)',
-                    'shape' => 'data(shape)',
+                "selector" => "node",
+                "style" => [
+                    "background-color" => "#61bffc",
+                    "label" => "data(label)",
+                    "text-valign" => "center",
+                    "color" => "#000000",
+                    "text-outline-width" => 0,
+                    "width" => "data(width)",
+                    "height" => "data(height)",
+                    "shape" => "data(shape)",
                 ],
             ],
             [
-                'selector' => 'edge',
-                'style' => [
-                    'width' => 2,
-                    'line-color' => '#ccc',
-                    'target-arrow-color' => '#ccc',
-                    'target-arrow-shape' => 'triangle',
-                    'curve-style' => 'bezier',
+                "selector" => "edge",
+                "style" => [
+                    "width" => 2,
+                    "line-color" => "#ccc",
+                    "target-arrow-color" => "#ccc",
+                    "target-arrow-shape" => "triangle",
+                    "curve-style" => "bezier",
                 ],
             ]
         ];
@@ -134,46 +135,46 @@ final class HelperCytoscape
         $style = [];
 
         $style[] = [
-            'selector' => 'node.unknown-status-node',
-            'style' => [
-                'line-color' => '#ccc',
-                'background-color' => '#f0f0f0',
-                'color' => '#000000',
+            "selector" => "node.unknown-status-node",
+            "style" => [
+                "line-color" => "#ccc",
+                "background-color" => "#f0f0f0",
+                "color" => "#000000",
             ],
         ];
         
         $style[] = [
-            'selector' => 'node.healthy-status-node',
-            'style' => [
-                'line-color' => '#4CAF50',
-                'background-color' => '#A5D6A7',
-                'color' => '#000000',
+            "selector" => "node.healthy-status-node",
+            "style" => [
+                "line-color" => "#4CAF50",
+                "background-color" => "#A5D6A7",
+                "color" => "#000000",
             ],
         ];
 
         $style[] = [
-            'selector' => 'node.unhealthy-status-node',
-            'style' => [
-                'line-color' => '#F44336',
-                'background-color' => '#EF9A9A',
-                'color' => '#000000',
+            "selector" => "node.unhealthy-status-node",
+            "style" => [
+                "line-color" => "#F44336",
+                "background-color" => "#EF9A9A",
+                "color" => "#000000",
             ],
         ];
         
         $style[] = [
-            'selector' => 'node.maintenance-status-node',
-            'style' => [
-                'line-color' => '#FF9800',
-                'background-color' => '#FFCC80',
-                'color' => '#000000',
+            "selector" => "node.maintenance-status-node",
+            "style" => [
+                "line-color" => "#FF9800",
+                "background-color" => "#FFCC80",
+                "color" => "#000000",
             ],
         ];
 
         $style[] = [
-            'selector' => 'node:selected',
-            'style' => [
-                'border-width' => 4,
-                'border-color' => '#FFD700',
+            "selector" => "node:selected",
+            "style" => [
+                "border-width" => 4,
+                "border-color" => "#FFD700",
             ],
         ];
 
@@ -183,8 +184,8 @@ final class HelperCytoscape
     private function getLayout(): array
     {
         return [
-            'name' => 'grid',
-            'rows' => 5,
+            "name" => "grid",
+            "rows" => 5,
         ];
     }
 

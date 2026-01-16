@@ -4,20 +4,24 @@ declare(strict_types=1);
 
 final class Logger implements LoggerInterface
 {
+    public const LOGGER_LEVEL_INFO = "INFO";
+    public const LOGGER_LEVEL_DEBUG = "DEBUG";
+    public const LOGGER_LEVEL_ERROR = "ERROR";
+
     public function info(string $message, array $data = []): void
     {
-        $this->log('INFO', $message, $data);
+        $this->log(self::LOGGER_LEVEL_INFO, $message, $data);
         
     }
 
     public function debug(string $message, array $data = []): void
     {
-        $this->log('DEBUG', $message, $data);
+        $this->log(self::LOGGER_LEVEL_DEBUG, $message, $data);
     }
 
     public function error(string $message, array $data = []): void
     {
-        $this->log('ERROR', $message, $data);
+        $this->log(self::LOGGER_LEVEL_ERROR, $message, $data);
     }
 
     private function log(string $type, $message, $data = [])

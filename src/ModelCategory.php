@@ -4,6 +4,13 @@ declare(strict_types=1);
 
 final class ModelCategory
 {
+
+    public const CATEGORY_KEYNAME_ID     = "id";
+    public const CATEGORY_KEYNAME_NAME   = "name";
+    public const CATEGORY_KEYNAME_SHAPE  = "shape";
+    public const CATEGORY_KEYNAME_WIDTH  = "width";
+    public const CATEGORY_KEYNAME_HEIGHT = "height";
+
     public string $id;
     public string $name;
     public string $shape;
@@ -22,11 +29,11 @@ final class ModelCategory
     public function toArray(): array
     {
         return [
-            'id' => $this->id,
-            'name' => $this->name,
-            'shape' => $this->shape,
-            'width' => $this->width,
-            'height' => $this->height,
+            self::CATEGORY_KEYNAME_ID     => $this->id,
+            self::CATEGORY_KEYNAME_NAME   => $this->name,
+            self::CATEGORY_KEYNAME_SHAPE  => $this->shape,
+            self::CATEGORY_KEYNAME_WIDTH  => $this->width,
+            self::CATEGORY_KEYNAME_HEIGHT => $this->height,
         ];
     }
 }

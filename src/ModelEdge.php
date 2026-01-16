@@ -43,10 +43,10 @@ final class ModelEdge
     public function toArray(): array
     {
         return [
-            'id'     => $this->getId(),
-            'source' => $this->source,
-            'target' => $this->target,
-            'data'   => $this->data
+            self::EDGE_KEYNAME_ID     => $this->getId(),
+            self::EDGE_KEYNAME_SOURCE => $this->source,
+            self::EDGE_KEYNAME_TARGET => $this->target,
+            self::EDGE_KEYNAME_DATA   => $this->data
         ];
     }
 }

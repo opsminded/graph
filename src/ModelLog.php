@@ -4,6 +4,16 @@ declare(strict_types=1);
 
 final class ModelLog
 {
+
+    public const LOG_KEYNAME_ENTITY_TYPE = "entityType";
+    public const LOG_KEYNAME_ENTITY_ID   = "entityId";
+    public const LOG_KEYNAME_ACTION      = "action";
+    public const LOG_KEYNAME_OLD_DATA    = "oldData";
+    public const LOG_KEYNAME_NEW_DATA    = "newData";
+    public const LOG_KEYNAME_USER_ID     = "userId";
+    public const LOG_KEYNAME_IP_ADDRESS  = "ipAddress";
+    public const LOG_KEYNAME_CREATED_AT  = "createdAt";
+
     public string $entityType;
     public string $entityId;
     public string $action;
@@ -25,14 +35,14 @@ final class ModelLog
     public function toArray(): array
     {
         return [
-            'entityType' => $this->entityType,
-            'entityId'   => $this->entityId,
-            'action'     => $this->action,
-            'oldData'    => $this->oldData,
-            'newData'    => $this->newData,
-            'userId'     => $this->userId,
-            'ipAddress'  => $this->ipAddress,
-            'createdAt'  => $this->createdAt,
+            self::LOG_KEYNAME_ENTITY_TYPE => $this->entityType,
+            self::LOG_KEYNAME_ENTITY_ID   => $this->entityId,
+            self::LOG_KEYNAME_ACTION      => $this->action,
+            self::LOG_KEYNAME_OLD_DATA    => $this->oldData,
+            self::LOG_KEYNAME_NEW_DATA    => $this->newData,
+            self::LOG_KEYNAME_USER_ID     => $this->userId,
+            self::LOG_KEYNAME_IP_ADDRESS  => $this->ipAddress,
+            self::LOG_KEYNAME_CREATED_AT  => $this->createdAt,
         ];
     }
 }

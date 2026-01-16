@@ -17,7 +17,7 @@ final class Database implements DatabaseInterface
     public function getUser(string $id): ?array
     {
         $this->logger->debug("getting user id", ['id' => $id]);
-        $sql = 'SELECT * FROM users WHERE id = :id';
+        $sql = "SELECT id, user_group as \"group\" FROM users WHERE id = :id";
         $params = [':id' => $id];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
@@ -281,7 +281,7 @@ final class Database implements DatabaseInterface
     public function getStatus(): array
     {
         $this->logger->debug("fetching statuses");
-        $sql = "SELECT n.id, s.status FROM nodes n LEFT JOIN status s ON n.id = s.node_id";
+        $sql = "SELECT n.id as node_id, s.status FROM nodes n LEFT JOIN status s ON n.id = s.node_id";
         $stmt   = $this->pdo->query($sql);
         $rows = $stmt->fetchAll();
         $this->logger->info("statuses fetched", ['rows' => $rows]);

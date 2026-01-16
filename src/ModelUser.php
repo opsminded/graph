@@ -29,8 +29,8 @@ final class ModelUser
     public function toArray(): array
     {
         return [
-            'id'    => $this->id,
-            'group' => $this->group->toArray(),
+            self::USER_KEYNAME_ID    => $this->id,
+            self::USER_KEYNAME_GROUP => $this->group->toArray(),
         ];
     }
 }
