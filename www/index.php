@@ -21,7 +21,11 @@ $controllerLogger = new Logger();
 
 $database   = new Database($pdo, $databaseLogger);
 $service    = new Service($database, $serviceLogger);
-$controller = new HTTPController($service, $serviceLogger);
+
+$imageHelper = new HelperImages();
+$cytoscapeHelper = new HelperCytoscape($imageHelper);
+
+$controller = new HTTPController($service, $cytoscapeHelper, $serviceLogger);
 $router     = new HTTPRequestRouter($controller);
 
 $request    = new HTTPRequest();
