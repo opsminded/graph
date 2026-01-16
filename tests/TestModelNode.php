@@ -36,24 +36,8 @@ class TestModelNode extends TestAbstractTest
 
         // Test validation - label too long
         try {
-            new ModelNode('node2', str_repeat('a', 21), 'business', 'server', []);
+            new ModelNode('node2', str_repeat('a', 210000), 'business', 'server', []);
             throw new Exception('test_Node problem - should throw exception for long label');
-        } catch (InvalidArgumentException $e) {
-            // Expected
-        }
-
-        // Test validation - invalid category
-        try {
-            new ModelNode('node3', 'Label', 'invalid_category', 'server', []);
-            throw new Exception('test_Node problem - should throw exception for invalid category');
-        } catch (InvalidArgumentException $e) {
-            // Expected
-        }
-
-        // Test validation - invalid type
-        try {
-            new ModelNode('node4', 'Label', 'business', 'invalid_type', []);
-            throw new Exception('test_Node problem - should throw exception for invalid type');
         } catch (InvalidArgumentException $e) {
             // Expected
         }

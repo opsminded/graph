@@ -78,12 +78,76 @@ class TestService extends TestAbstractTest
             throw new Exception('error on testUpdateUser');
         }
     }
+
+    public function testGetCategories(): void
+    {
+        HelperContext::update('admin', 'admin', '127.0.0.1');
+        $categories = $this->service->getCategories();
+        if (count($categories) === 0) {
+            throw new Exception('error on testGetCategories - should not be empty');
+        }
+        $foundBusiness = false;
+        foreach ($categories as $category) {
+            if ($category->id === 'business') {
+                $foundBusiness = true;
+                break;
+            }
+        }
+        if (!$foundBusiness) {
+            throw new Exception('error on testGetCategories - business category not found');
+        }
+
+        $this->service->insertCategory(new ModelCategory('custom', 'Custom Category', 'circle', 100, 100));
+        $categories = $this->service->getCategories();
+        $foundCustom = false;
+        foreach ($categories as $category) {
+            if ($category->id === 'custom' && $category->name === 'Custom Category') {
+                $foundCustom = true;
+                break;
+            }
+        }
+        if (!$foundCustom) {
+            throw new Exception('error on testGetCategories - custom category not found after insertion');
+        }
+    }
+
+    public function testGetTypes(): void
+    {
+        HelperContext::update('admin', 'admin', '127.0.0.1');
+        $types = $this->service->getTypes();
+        if (count($types) === 0) {
+            throw new Exception('error on testGetTypes - should not be empty');
+        }
+        $foundServer = false;
+        foreach ($types as $type) {
+            if ($type->id === 'server') {
+                $foundServer = true;
+                break;
+            }
+        }
+        if (!$foundServer) {
+            throw new Exception('error on testGetTypes - server type not found');
+        }
+
+        $this->service->insertType(new ModelType('customType', 'Custom Type'));
+        $types = $this->service->getTypes();
+        $foundCustomType = false;
+        foreach ($types as $type) {
+            if ($type->id === 'customType' && $type->name === 'Custom Type') {
+                $foundCustomType = true;
+                break;
+            }
+        }
+        if (!$foundCustomType) {
+            throw new Exception('error on testGetTypes - custom type not found after insertion');
+        }
+    }
     
     public function testGetGraph(): void
     {
         HelperContext::update('admin', 'admin', '127.0.0.1');
         $node1 = new ModelNode('n1', 'Node 01', 'business', 'server', ['key' => 'value1']);
-        $node2 = new ModelNode('n2', 'Node 02', 'application', 'database', ['key' => 'value2']);
+        $node2 = new ModelNode('n2', 'Node 02', 'business', 'server', ['key' => 'value2']);
         $this->service->insertNode($node1);
         $this->service->insertNode($node2);
         $edge1 = new ModelEdge('n1', 'n2', ['weight' => '10']);
@@ -124,7 +188,7 @@ class TestService extends TestAbstractTest
             throw new Exception('error on testGetNodes - should be empty');
         }
         $node1 = new ModelNode('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
-        $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
+        $node2 = new ModelNode('node2', 'Node 02', 'business', 'database', ['key' => 'value2']);
         $this->service->insertNode($node1);
         $this->service->insertNode($node2);
         $nodes = $this->service->getNodes();
@@ -143,8 +207,8 @@ class TestService extends TestAbstractTest
     {
         HelperContext::update('admin', 'admin', '127.0.0.1');
         $nodeA = new ModelNode('nodeA', 'Node A', 'business', 'server', ['key' => 'valueA']);
-        $nodeB = new ModelNode('nodeB', 'Node B', 'application', 'database', ['key' => 'valueB']);
-        $nodeC = new ModelNode('nodeC', 'Node C', 'network', 'server', ['key' => 'valueC']);
+        $nodeB = new ModelNode('nodeB', 'Node B', 'business', 'database', ['key' => 'valueB']);
+        $nodeC = new ModelNode('nodeC', 'Node C', 'business', 'server', ['key' => 'valueC']);
         $this->service->insertNode($nodeA);
         $this->service->insertNode($nodeB);
         $this->service->insertNode($nodeC);
@@ -168,8 +232,8 @@ class TestService extends TestAbstractTest
     {
         HelperContext::update('admin', 'admin', '127.0.0.1');
         $nodeA = new ModelNode('nodeA', 'Node A', 'business', 'server', ['key' => 'valueA']);
-        $nodeB = new ModelNode('nodeB', 'Node B', 'application', 'database', ['key' => 'valueB']);
-        $nodeC = new ModelNode('nodeC', 'Node C', 'network', 'server', ['key' => 'valueC']);
+        $nodeB = new ModelNode('nodeB', 'Node B', 'business', 'database', ['key' => 'valueB']);
+        $nodeC = new ModelNode('nodeC', 'Node C', 'business', 'server', ['key' => 'valueC']);
         $this->service->insertNode($nodeA);
         $this->service->insertNode($nodeB);
         $this->service->insertNode($nodeC);

@@ -8,6 +8,12 @@ interface ServiceInterface
     public function insertUser(ModelUser $user): bool;
     public function updateUser(ModelUser $user): bool;
 
+    public function getCategories(): array;
+    public function insertCategory(ModelCategory $category): bool;
+    
+    public function getTypes(): array;
+    public function insertType(ModelType $type): bool;
+
     public function getGraph(): ModelGraph;
 
     public function getNode(string $id): ?ModelNode;

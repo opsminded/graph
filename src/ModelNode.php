@@ -4,26 +4,24 @@ declare(strict_types=1);
 
 final class ModelNode
 {
-    public const ALLOWED_CATEGORIES  = ['business', 'application', 'network', 'infrastructure'];
-    public const ALLOWED_TYPES       = ['server', 'database', 'application'];
     public const ID_VALIDATION_REGEX = '/^[a-zA-Z0-9\-_]+$/';
-    public const LABEL_MAX_LENGTH    = 20;
+    public const LABEL_MAX_LENGTH    = 120;
     
     private string $id;
     private string $label;
-    private string $category;
-    private string $type;
+    private string $categoryID;
+    private string $typeID;
 
     private array $data = [];
 
-    public function __construct(string $id, string $label, string $category, string $type, array $data)
+    public function __construct(string $id, string $label, string $categoryID, string $typeID, array $data)
     {
-        $this->validate($id, $label, $category, $type);
-        $this->id       = $id;
-        $this->label    = $label;
-        $this->category = $category;
-        $this->type     = $type;
-        $this->data     = $data;
+        $this->validate($id, $label);
+        $this->id         = $id;
+        $this->label      = $label;
+        $this->categoryID = $categoryID;
+        $this->typeID     = $typeID;
+        $this->data       = $data;
     }
 
     public function getId(): string
@@ -38,12 +36,12 @@ final class ModelNode
 
     public function getCategory(): string
     {
-        return $this->category;
+        return $this->categoryID;
     }
 
     public function getType(): string
     {
-        return $this->type;
+        return $this->typeID;
     }
 
     public function getData(): array
@@ -51,7 +49,7 @@ final class ModelNode
         return $this->data;
     }
 
-    private function validate(string $id, string $label, string $category, string $type): void
+    private function validate(string $id, string $label): void
     {
         if (!preg_match(self::ID_VALIDATION_REGEX, $id)) {
             throw new InvalidArgumentException("Invalid node ID: {$id}");
@@ -60,14 +58,6 @@ final class ModelNode
         if (strlen($label) > self::LABEL_MAX_LENGTH) {
             throw new InvalidArgumentException("Node label exceeds maximum length of " . self::LABEL_MAX_LENGTH);
         }
-
-        if (!in_array($category, self::ALLOWED_CATEGORIES, true)) {
-            throw new InvalidArgumentException("Invalid node category: {$category}");
-        }
-
-        if (!in_array($type, self::ALLOWED_TYPES, true)) {
-            throw new InvalidArgumentException("Invalid node type: {$type}");
-        }
     }
 
     public function toArray(): array
@@ -75,8 +65,8 @@ final class ModelNode
         return [
             'id'       => $this->id,
             'label'    => $this->label,
-            'category' => $this->category,
-            'type'     => $this->type,
+            'category' => $this->categoryID,
+            'type'     => $this->typeID,
             'data'     => $this->data
         ];
     }

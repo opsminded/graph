@@ -8,6 +8,12 @@ interface DatabaseInterface
     public function insertUser(string $id, string $group): bool;
     public function updateUser(string $id, string $group): bool;
 
+    public function getCategories(): array;
+    public function insertCategory(string $id, string $name, string $shape, int $width, int $height): bool;
+    
+    public function getTypes(): array;
+    public function insertType(string $id, string $name): bool;
+
     public function getNode(string $id): ?array;
     public function getNodes(): array;
     public function getNodeParentOf(string $id): ?array;

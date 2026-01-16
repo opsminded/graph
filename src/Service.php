@@ -6,6 +6,8 @@ final class Service implements ServiceInterface
 {
     private const SECURE_ACTIONS = [
         'Service::getUser'             => true,
+        'Service::getCategories'       => true,
+        'Service::getTypes'            => true,
         'Service::getGraph'            => true,
         'Service::getNode'             => true,
         'Service::getNodes'            => true,
@@ -19,6 +21,8 @@ final class Service implements ServiceInterface
         'Service::getLogs'             => true,
         'Service::insertUser'          => false,
         'Service::updateUser'          => false,
+        'Service::insertCategory'      => false,
+        'Service::insertType'          => false,
         'Service::insertNode'          => false,
         'Service::updateNode'          => false,
         'Service::deleteNode'          => false,
@@ -26,6 +30,13 @@ final class Service implements ServiceInterface
         'Service::updateEdge'          => false,
         'Service::deleteEdge'          => false,
         'Service::insertLog'           => false,
+    ];
+
+    private const ADMIN_ACTIONS = [
+        'Service::insertUser',
+        'Service::updateUser',
+        'Service::insertCategory',
+        'Service::insertType',
     ];
 
     private DatabaseInterface $database;
@@ -72,6 +83,62 @@ final class Service implements ServiceInterface
         return false;
     }
 
+    public function getCategories(): array
+    {
+        $this->logger->debug('getting categories');
+        $this->verify();
+        $categoriesData = $this->database->getCategories();
+        $categories     = [];
+        foreach ($categoriesData as $data) {
+            $category = new ModelCategory(
+                $data['id'],
+                $data['name'],
+                $data['shape'],
+                $data['width'],
+                $data['height'],
+            );
+            $categories[] = $category;
+        }
+        return $categories;
+    }
+
+    public function insertCategory(ModelCategory $category): bool
+    {
+        $this->logger->debug('inserting category', $category->toArray());
+        $this->verify();
+        if ($this->database->insertCategory($category->id, $category->name, $category->shape, $category->width, $category->height)) {
+            $this->logger->info('category inserted', $category->toArray());
+            return true;
+        }
+        throw new RuntimeException('unexpected error on Service::insertCategory');
+    }
+    
+    public function getTypes(): array
+    {
+        $this->logger->debug('getting types');
+        $this->verify();
+        $typesData = $this->database->getTypes();
+        $types     = [];
+        foreach ($typesData as $data) {
+            $type = new ModelType(
+                $data['id'],
+                $data['name'],
+            );
+            $types[] = $type;
+        }
+        return $types;
+    }
+    public function insertType(ModelType $type): bool
+    {
+        $this->logger->debug('inserting type', $type->toArray());
+        $this->verify();
+        if ($this->database->insertType($type->id, $type->name)) {
+            $this->logger->info('type inserted', $type->toArray());
+            return true;
+        }
+        return false;
+    }
+
     public function getGraph(): ModelGraph
     {
         $this->logger->debug('getting graph');
@@ -107,6 +174,7 @@ final class Service implements ServiceInterface
         $nodesData = $this->database->getNodes();
         $nodes     = [];
         foreach ($nodesData as $data) {
+            
             $node = new ModelNode(
                 $data['id'],
                 $data['label'],
@@ -368,10 +436,14 @@ final class Service implements ServiceInterface
 
         $this->logger->debug('verify', ['action' => $action, 'group' => $group]);
 
-        // if is admin, allow all
-        if ($group === 'admin') {
-            $this->logger->info('allow admin', ['action' => $action, 'group' => $group]);
-            return;
+        if (! array_key_exists($action, self::SECURE_ACTIONS)) {
+            $this->logger->error('action not found in SECURE_ACTIONS', ['action' => $action]);
+            throw new RuntimeException('action not found in SECURE_ACTIONS: ' . $action);
+        }
+
+        if (in_array($action, self::ADMIN_ACTIONS, true) && $group !== 'admin') {
+            $this->logger->info('only admin allowed', ['action' => $action, 'group' => $group]);
+            throw new RuntimeException('action only allowed for admin: ' . $action);
         }
 
         // if action is in the SECURE_ACTIONS, allow all
@@ -381,8 +453,8 @@ final class Service implements ServiceInterface
         }
 
         // if action is restricted, only allow contributor
-        if (self::SECURE_ACTIONS[$action] === false && $group === 'contributor') {
-            $this->logger->info('contributor is allowed', ['action' => $action, 'group' => $group]);
+        if (self::SECURE_ACTIONS[$action] === false && in_array($group, ['admin', 'contributor'], true)) {
+            $this->logger->info('contributor and admin are allowed', ['action' => $action, 'group' => $group]);
             return;
         }
 

@@ -69,26 +69,24 @@ final class ModelGraph
 
 final class ModelNode
 {
-    public const ALLOWED_CATEGORIES  = ['business', 'application', 'network', 'infrastructure'];
-    public const ALLOWED_TYPES       = ['server', 'database', 'application'];
     public const ID_VALIDATION_REGEX = '/^[a-zA-Z0-9\-_]+$/';
-    public const LABEL_MAX_LENGTH    = 20;
+    public const LABEL_MAX_LENGTH    = 120;
     
     private string $id;
     private string $label;
-    private string $category;
-    private string $type;
+    private string $categoryID;
+    private string $typeID;
 
     private array $data = [];
 
-    public function __construct(string $id, string $label, string $category, string $type, array $data)
+    public function __construct(string $id, string $label, string $categoryID, string $typeID, array $data)
     {
-        $this->validate($id, $label, $category, $type);
-        $this->id       = $id;
-        $this->label    = $label;
-        $this->category = $category;
-        $this->type     = $type;
-        $this->data     = $data;
+        $this->validate($id, $label);
+        $this->id         = $id;
+        $this->label      = $label;
+        $this->categoryID = $categoryID;
+        $this->typeID     = $typeID;
+        $this->data       = $data;
     }
 
     public function getId(): string
@@ -103,12 +101,12 @@ final class ModelNode
 
     public function getCategory(): string
     {
-        return $this->category;
+        return $this->categoryID;
     }
 
     public function getType(): string
     {
-        return $this->type;
+        return $this->typeID;
     }
 
     public function getData(): array
@@ -116,7 +114,7 @@ final class ModelNode
         return $this->data;
     }
 
-    private function validate(string $id, string $label, string $category, string $type): void
+    private function validate(string $id, string $label): void
     {
         if (!preg_match(self::ID_VALIDATION_REGEX, $id)) {
             throw new InvalidArgumentException("Invalid node ID: {$id}");
@@ -125,14 +123,6 @@ final class ModelNode
         if (strlen($label) > self::LABEL_MAX_LENGTH) {
             throw new InvalidArgumentException("Node label exceeds maximum length of " . self::LABEL_MAX_LENGTH);
         }
-
-        if (!in_array($category, self::ALLOWED_CATEGORIES, true)) {
-            throw new InvalidArgumentException("Invalid node category: {$category}");
-        }
-
-        if (!in_array($type, self::ALLOWED_TYPES, true)) {
-            throw new InvalidArgumentException("Invalid node type: {$type}");
-        }
     }
 
     public function toArray(): array
@@ -140,8 +130,8 @@ final class ModelNode
         return [
             'id'       => $this->id,
             'label'    => $this->label,
-            'category' => $this->category,
-            'type'     => $this->type,
+            'category' => $this->categoryID,
+            'type'     => $this->typeID,
             'data'     => $this->data
         ];
     }
@@ -180,6 +170,27 @@ final class ModelGroup
     {
         return [
             'id' => $this->id
+        ];
+    }
+}
+#####################################
+
+final class ModelType
+{
+    public string $id;
+    public string $name;
+
+    public function __construct(string $id, string $name)
+    {
+        $this->id = $id;
+        $this->name = $name;
+    }
+
+    public function toArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
         ];
     }
 }
@@ -523,6 +534,8 @@ final class Service implements ServiceInterface
 {
     private const SECURE_ACTIONS = [
         'Service::getUser'             => true,
+        'Service::getCategories'       => true,
+        'Service::getTypes'            => true,
         'Service::getGraph'            => true,
         'Service::getNode'             => true,
         'Service::getNodes'            => true,
@@ -536,6 +549,8 @@ final class Service implements ServiceInterface
         'Service::getLogs'             => true,
         'Service::insertUser'          => false,
         'Service::updateUser'          => false,
+        'Service::insertCategory'      => false,
+        'Service::insertType'          => false,
         'Service::insertNode'          => false,
         'Service::updateNode'          => false,
         'Service::deleteNode'          => false,
@@ -543,6 +558,13 @@ final class Service implements ServiceInterface
         'Service::updateEdge'          => false,
         'Service::deleteEdge'          => false,
         'Service::insertLog'           => false,
+    ];
+
+    private const ADMIN_ACTIONS = [
+        'Service::insertUser',
+        'Service::updateUser',
+        'Service::insertCategory',
+        'Service::insertType',
     ];
 
     private DatabaseInterface $database;
@@ -589,6 +611,62 @@ final class Service implements ServiceInterface
         return false;
     }
 
+    public function getCategories(): array
+    {
+        $this->logger->debug('getting categories');
+        $this->verify();
+        $categoriesData = $this->database->getCategories();
+        $categories     = [];
+        foreach ($categoriesData as $data) {
+            $category = new ModelCategory(
+                $data['id'],
+                $data['name'],
+                $data['shape'],
+                $data['width'],
+                $data['height'],
+            );
+            $categories[] = $category;
+        }
+        return $categories;
+    }
+
+    public function insertCategory(ModelCategory $category): bool
+    {
+        $this->logger->debug('inserting category', $category->toArray());
+        $this->verify();
+        if ($this->database->insertCategory($category->id, $category->name, $category->shape, $category->width, $category->height)) {
+            $this->logger->info('category inserted', $category->toArray());
+            return true;
+        }
+        throw new RuntimeException('unexpected error on Service::insertCategory');
+    }
+    
+    public function getTypes(): array
+    {
+        $this->logger->debug('getting types');
+        $this->verify();
+        $typesData = $this->database->getTypes();
+        $types     = [];
+        foreach ($typesData as $data) {
+            $type = new ModelType(
+                $data['id'],
+                $data['name'],
+            );
+            $types[] = $type;
+        }
+        return $types;
+    }
+    public function insertType(ModelType $type): bool
+    {
+        $this->logger->debug('inserting type', $type->toArray());
+        $this->verify();
+        if ($this->database->insertType($type->id, $type->name)) {
+            $this->logger->info('type inserted', $type->toArray());
+            return true;
+        }
+        return false;
+    }
+
     public function getGraph(): ModelGraph
     {
         $this->logger->debug('getting graph');
@@ -624,6 +702,7 @@ final class Service implements ServiceInterface
         $nodesData = $this->database->getNodes();
         $nodes     = [];
         foreach ($nodesData as $data) {
+            
             $node = new ModelNode(
                 $data['id'],
                 $data['label'],
@@ -885,10 +964,14 @@ final class Service implements ServiceInterface
 
         $this->logger->debug('verify', ['action' => $action, 'group' => $group]);
 
-        // if is admin, allow all
-        if ($group === 'admin') {
-            $this->logger->info('allow admin', ['action' => $action, 'group' => $group]);
-            return;
+        if (! array_key_exists($action, self::SECURE_ACTIONS)) {
+            $this->logger->error('action not found in SECURE_ACTIONS', ['action' => $action]);
+            throw new RuntimeException('action not found in SECURE_ACTIONS: ' . $action);
+        }
+
+        if (in_array($action, self::ADMIN_ACTIONS, true) && $group !== 'admin') {
+            $this->logger->info('only admin allowed', ['action' => $action, 'group' => $group]);
+            throw new RuntimeException('action only allowed for admin: ' . $action);
         }
 
         // if action is in the SECURE_ACTIONS, allow all
@@ -898,8 +981,8 @@ final class Service implements ServiceInterface
         }
 
         // if action is restricted, only allow contributor
-        if (self::SECURE_ACTIONS[$action] === false && $group === 'contributor') {
-            $this->logger->info('contributor is allowed', ['action' => $action, 'group' => $group]);
+        if (self::SECURE_ACTIONS[$action] === false && in_array($group, ['admin', 'contributor'], true)) {
+            $this->logger->info('contributor and admin are allowed', ['action' => $action, 'group' => $group]);
             return;
         }
 
@@ -996,6 +1079,48 @@ final class Database implements DatabaseInterface
         }
         $this->logger->info('user not updated', ['params' => $params]);
         return false;
+    }
+
+    public function getCategories(): array
+    {
+        $this->logger->debug('fetching categories');
+        $sql = 'SELECT * FROM categories';
+        $stmt  = $this->pdo->query($sql);
+        $rows  = $stmt->fetchAll();
+        $this->logger->info('categories fetched', ['rows' => $rows]);
+        return $rows;
+    }
+
+    public function insertCategory(string $id, string $name, string $shape, int $width, int $height): bool
+    {
+        $this->logger->debug('inserting new category', ['id' => $id, 'name' => $name]);
+        $sql = 'INSERT INTO categories (id, name, shape, width, height) VALUES (:id, :name, :shape, :width, :height)';
+        $params = [':id' => $id, ':name' => $name, ':shape' => $shape, ':width' => $width, ':height' => $height];
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $this->logger->info('category inserted', ['params' => $params]);
+        return true;
+    }
+    
+    public function getTypes(): array
+    {
+        $this->logger->debug('fetching types');
+        $sql = 'SELECT * FROM types';
+        $stmt  = $this->pdo->query($sql);
+        $rows  = $stmt->fetchAll();
+        $this->logger->info('types fetched', ['rows' => $rows]);
+        return $rows;
+    }
+
+    public function insertType(string $id, string $name): bool
+    {
+        $this->logger->debug('inserting new type', ['id' => $id, 'name' => $name]);
+        $sql = 'INSERT INTO types (id, name) VALUES (:id, :name)';
+        $params = [':id' => $id, ':name' => $name];
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $this->logger->info('type inserted', ['params' => $params]);
+        return true;
     }
 
     public function getNode(string $id): ?array
@@ -1144,7 +1269,7 @@ final class Database implements DatabaseInterface
         $params = [':id' => $id, ':source' => $source, ':target' => $target, ':data' => $data];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
-        $this->logger->error('edge inserted', ['params' => $params]);
+        $this->logger->info('edge inserted', ['params' => $params]);
         return true;
     }
 
@@ -1251,12 +1376,40 @@ final class Database implements DatabaseInterface
         $this->pdo->exec('INSERT OR IGNORE INTO users VALUES(\'admin\', \'admin\')');
 
         $this->pdo->exec('
+            CREATE TABLE IF NOT EXISTS categories (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                shape TEXT NOT NULL,
+                width INTEGER NOT NULL,
+                height INTEGER NOT NULL
+            )');
+        
+        $this->pdo->exec("INSERT OR IGNORE INTO categories VALUES
+            ('business', 'Business', 'box', 100, 50),
+            ('application', 'Application', 'ellipse', 80, 80),
+            ('network', 'Network', 'diamond', 90, 60),
+            ('infrastructure', 'Infrastructure', 'hexagon', 110, 70)");
+        
+        $this->pdo->exec('
+            CREATE TABLE IF NOT EXISTS types (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL
+            )');
+
+        $this->pdo->exec("INSERT OR IGNORE INTO types VALUES
+            ('server', 'Server'),
+            ('service', 'Service'),
+            ('database', 'Database')");
+
+        $this->pdo->exec('
             CREATE TABLE IF NOT EXISTS nodes (
                 id TEXT PRIMARY KEY,
                 label TEXT NOT NULL,
                 category TEXT NOT NULL,
                 type TEXT NOT NULL,
-                data TEXT NOT NULL
+                data TEXT NOT NULL,
+                FOREIGN KEY (category) REFERENCES categories(id),
+                FOREIGN KEY (type) REFERENCES types(id)
             )');
 
         $this->pdo->exec('
@@ -1350,6 +1503,12 @@ interface ServiceInterface
     public function insertUser(ModelUser $user): bool;
     public function updateUser(ModelUser $user): bool;
 
+    public function getCategories(): array;
+    public function insertCategory(ModelCategory $category): bool;
+    
+    public function getTypes(): array;
+    public function insertType(ModelType $type): bool;
+
     public function getGraph(): ModelGraph;
 
     public function getNode(string $id): ?ModelNode;
@@ -1440,6 +1599,12 @@ interface DatabaseInterface
     public function getUser(string $id): ?array;
     public function insertUser(string $id, string $group): bool;
     public function updateUser(string $id, string $group): bool;
+
+    public function getCategories(): array;
+    public function insertCategory(string $id, string $name, string $shape, int $width, int $height): bool;
+    
+    public function getTypes(): array;
+    public function insertType(string $id, string $name): bool;
 
     public function getNode(string $id): ?array;
     public function getNodes(): array;
@@ -1577,6 +1742,36 @@ final class ModelStatus
 }
 #####################################
 
+final class ModelCategory
+{
+    public string $id;
+    public string $name;
+    public string $shape;
+    public int $width;
+    public int $height;
+
+    public function __construct(string $id, string $name, string $shape, int $width, int $height)
+    {
+        $this->id = $id;
+        $this->name = $name;
+        $this->shape = $shape;
+        $this->width = $width;
+        $this->height = $height;
+    }
+
+    public function toArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'shape' => $this->shape,
+            'width' => $this->width,
+            'height' => $this->height,
+        ];
+    }
+}
+#####################################
+
 abstract class TestAbstractTest
 {
     protected function up(): void
@@ -1608,11 +1803,11 @@ abstract class TestAbstractTest
 
         try
         {
-            //print("{$class} {$testName}\n");
             $this->up();
             $this->$testName();
             $this->down();
         } catch(Exception $e) {
+            print("{$class} {$testName}\n");
             throw new Exception("Exception found in test '{$testName}'. ({$e->getMessage()})\n");
         }
     }

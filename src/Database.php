@@ -55,6 +55,48 @@ final class Database implements DatabaseInterface
         return false;
     }
 
+    public function getCategories(): array
+    {
+        $this->logger->debug('fetching categories');
+        $sql = 'SELECT * FROM categories';
+        $stmt  = $this->pdo->query($sql);
+        $rows  = $stmt->fetchAll();
+        $this->logger->info('categories fetched', ['rows' => $rows]);
+        return $rows;
+    }
+
+    public function insertCategory(string $id, string $name, string $shape, int $width, int $height): bool
+    {
+        $this->logger->debug('inserting new category', ['id' => $id, 'name' => $name]);
+        $sql = 'INSERT INTO categories (id, name, shape, width, height) VALUES (:id, :name, :shape, :width, :height)';
+        $params = [':id' => $id, ':name' => $name, ':shape' => $shape, ':width' => $width, ':height' => $height];
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $this->logger->info('category inserted', ['params' => $params]);
+        return true;
+    }
+    
+    public function getTypes(): array
+    {
+        $this->logger->debug('fetching types');
+        $sql = 'SELECT * FROM types';
+        $stmt  = $this->pdo->query($sql);
+        $rows  = $stmt->fetchAll();
+        $this->logger->info('types fetched', ['rows' => $rows]);
+        return $rows;
+    }
+
+    public function insertType(string $id, string $name): bool
+    {
+        $this->logger->debug('inserting new type', ['id' => $id, 'name' => $name]);
+        $sql = 'INSERT INTO types (id, name) VALUES (:id, :name)';
+        $params = [':id' => $id, ':name' => $name];
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $this->logger->info('type inserted', ['params' => $params]);
+        return true;
+    }
+
     public function getNode(string $id): ?array
     {
         $this->logger->debug('fetching node', ['id' => $id]);
@@ -201,7 +243,7 @@ final class Database implements DatabaseInterface
         $params = [':id' => $id, ':source' => $source, ':target' => $target, ':data' => $data];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
-        $this->logger->error('edge inserted', ['params' => $params]);
+        $this->logger->info('edge inserted', ['params' => $params]);
         return true;
     }
 
@@ -308,12 +350,40 @@ final class Database implements DatabaseInterface
         $this->pdo->exec('INSERT OR IGNORE INTO users VALUES(\'admin\', \'admin\')');
 
         $this->pdo->exec('
+            CREATE TABLE IF NOT EXISTS categories (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                shape TEXT NOT NULL,
+                width INTEGER NOT NULL,
+                height INTEGER NOT NULL
+            )');
+        
+        $this->pdo->exec("INSERT OR IGNORE INTO categories VALUES
+            ('business', 'Business', 'box', 100, 50),
+            ('application', 'Application', 'ellipse', 80, 80),
+            ('network', 'Network', 'diamond', 90, 60),
+            ('infrastructure', 'Infrastructure', 'hexagon', 110, 70)");
+        
+        $this->pdo->exec('
+            CREATE TABLE IF NOT EXISTS types (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL
+            )');
+
+        $this->pdo->exec("INSERT OR IGNORE INTO types VALUES
+            ('server', 'Server'),
+            ('service', 'Service'),
+            ('database', 'Database')");
+
+        $this->pdo->exec('
             CREATE TABLE IF NOT EXISTS nodes (
                 id TEXT PRIMARY KEY,
                 label TEXT NOT NULL,
                 category TEXT NOT NULL,
                 type TEXT NOT NULL,
-                data TEXT NOT NULL
+                data TEXT NOT NULL,
+                FOREIGN KEY (category) REFERENCES categories(id),
+                FOREIGN KEY (type) REFERENCES types(id)
             )');
 
         $this->pdo->exec('
