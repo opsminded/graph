@@ -196,6 +196,38 @@ final class ModelType
 }
 #####################################
 
+final class HelperImages
+{
+    private $images;
+
+    public function __construct()
+    {
+        $this->images = include_once __DIR__ . '/www/images/compiled_images.php';
+    }
+
+    public function send(string $imageName): void
+    {
+        if (!isset($this->images[$imageName])) {
+            http_response_code(404);
+            exit;
+        }
+
+        $imageData = base64_decode($this->images[$imageName]['data']);
+        $imageETag = md5($imageData);
+
+        header("Content-Type: image/png");
+        header('Content-Length: ' . strlen($imageData));
+
+        header("Cache-Control: public, max-age=86400");// cache for 1 day
+        header("Expires: " . gmdate("D, d M Y H:i:s", time() + 86400) . " GMT");
+        header("ETag: \"" . $imageETag . "\"");
+
+        echo $imageData;
+        exit;
+    }
+}
+#####################################
+
 class HTTPUnauthorizedResponse extends HTTPResponse
 {
     public function __construct(string $message = '', array $data)
@@ -232,11 +264,13 @@ interface LoggerInterface
 final class HTTPController implements HTTPControllerInterface
 {
     private ServiceInterface $service;
+    private HelperCytoscape $cytoscapeHelper;
     private Logger $logger;
 
-    public function __construct(ServiceInterface $service, Logger $logger)
+    public function __construct(ServiceInterface $service, HelperCytoscape $cytoscapeHelper, Logger $logger)
     {
         $this->service = $service;
+        $this->cytoscapeHelper = $cytoscapeHelper;
         $this->logger = $logger;
     }
 
@@ -293,7 +327,8 @@ final class HTTPController implements HTTPControllerInterface
         if($req->method !== 'GET') {
             return new HTTPMethodNotAllowedResponse($req->method, 'getGraph');
         }
-        $data = $this->service->getGraph()->toArray();
+        $g = $this->service->getGraph();
+        $data = $this->cytoscapeHelper->toArray($g);
         return new HTTPOKResponse('get graph', $data);
     }
 
@@ -1937,6 +1972,58 @@ final class ModelEdge
             'target' => $this->target,
             'data'   => $this->data
         ];
+    }
+}
+#####################################
+
+final class HelperCytoscape
+{
+    private HelperImages $imagesHelper;
+
+    private const SHAPES = [
+        ['shape' => 'ellipse',   'width' => 80, 'height' => 80],
+        ['shape' => 'rectangle', 'width' => 80, 'height' => 80],
+        ['shape' => 'diamond',   'width' => 80, 'height' => 80],
+        ['shape' => 'pentagon',  'width' => 80, 'height' => 80],
+        ['shape' => 'hexagon',   'width' => 80, 'height' => 80],
+        ['shape' => 'heptagon',  'width' => 80, 'height' => 80],
+        ['shape' => 'octagon',   'width' => 80, 'height' => 80],
+    ];
+
+    public function __construct(HelperImages $imagesHelper)
+    {
+        $this->imagesHelper = $imagesHelper;
+    }
+
+    public function toArray(ModelGraph $graph): array
+    {
+        return [
+            'elements' => [
+                'nodes' => [],
+                'edges' => [],
+            ],
+
+            'style' => [],
+
+            'layout' => [
+                'name' => 'grid',
+            ],
+
+            'zoom' => 1,
+
+            'pan' => [
+                'x' => 0,
+                'y' => 0,
+            ],
+
+            'userZoomingEnabled' => true,
+            'userPanningEnabled' => true,
+        ];
+    }
+
+    private function getNodeShape(int $index): array
+    {
+        return self::SHAPES[$index % count(self::SHAPES)];
     }
 }
 #####################################

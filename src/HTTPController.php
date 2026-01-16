@@ -5,11 +5,13 @@ declare(strict_types=1);
 final class HTTPController implements HTTPControllerInterface
 {
     private ServiceInterface $service;
+    private HelperCytoscape $cytoscapeHelper;
     private Logger $logger;
 
-    public function __construct(ServiceInterface $service, Logger $logger)
+    public function __construct(ServiceInterface $service, HelperCytoscape $cytoscapeHelper, Logger $logger)
     {
         $this->service = $service;
+        $this->cytoscapeHelper = $cytoscapeHelper;
         $this->logger = $logger;
     }
 
@@ -66,7 +68,8 @@ final class HTTPController implements HTTPControllerInterface
         if($req->method !== 'GET') {
             return new HTTPMethodNotAllowedResponse($req->method, 'getGraph');
         }
-        $data = $this->service->getGraph()->toArray();
+        $g = $this->service->getGraph();
+        $data = $this->cytoscapeHelper->toArray($g);
         return new HTTPOKResponse('get graph', $data);
     }
 

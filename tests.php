@@ -611,6 +611,10 @@ class TestHTTPRequestRouter extends TestAbstractTest
     private ?DatabaseInterface $database;
     private ?ServiceInterface $service;
     private ?HTTPControllerInterface $controller;
+
+    private ?HelperImages $imagesHelper;
+    private ?HelperCytoscape $cytoscapeHelper;
+
     private ?HTTPRequestRouter $router;
 
     public function up(): void
@@ -624,9 +628,12 @@ class TestHTTPRequestRouter extends TestAbstractTest
         $this->serviceLogger = new Logger();
         $this->controllerLogger = new Logger();
 
+        $this->imagesHelper = new HelperImages('/tmp');
+        $this->cytoscapeHelper = new HelperCytoscape($this->imagesHelper);
+
         $this->database = new Database($this->pdo, $this->databaseLogger);
         $this->service = new Service($this->database, $this->serviceLogger);
-        $this->controller = new HTTPController($this->service, $this->controllerLogger);
+        $this->controller = new HTTPController($this->service, $this->cytoscapeHelper, $this->controllerLogger);
         $this->router = new HTTPRequestRouter($this->controller);
     }
 
@@ -634,6 +641,8 @@ class TestHTTPRequestRouter extends TestAbstractTest
     {
         $this->router = null;
         $this->controller = null;
+        $this->cytoscapeHelper = null;
+        $this->imagesHelper = null;
         $this->service = null;
         $this->database = null;
 
@@ -943,6 +952,10 @@ final class TestHTTPController extends TestAbstractTest
     private ?ServiceInterface $service;
     private ?HTTPControllerInterface $controller;
 
+    private ?HelperImages $imagesHelper;
+    private ?HelperCytoscape $cytoscapeHelper;
+    
+
     public function up(): void
     {
         $this->pdo = Database::createConnection('sqlite::memory:');
@@ -950,14 +963,19 @@ final class TestHTTPController extends TestAbstractTest
         $this->serviceLogger = new Logger();
         $this->controllerLogger = new Logger();
 
+        $this->imagesHelper = new HelperImages('/tmp');
+        $this->cytoscapeHelper = new HelperCytoscape($this->imagesHelper);
+
         $this->database = new Database($this->pdo, $this->databaseLogger);
         $this->service = new Service($this->database, $this->serviceLogger);
-        $this->controller = new HTTPController($this->service, $this->controllerLogger);
+        $this->controller = new HTTPController($this->service, $this->cytoscapeHelper, $this->controllerLogger);
     }
 
     public function down(): void
     {
         $this->controller = null;
+        $this->cytoscapeHelper = null;
+        $this->imagesHelper = null;
         $this->service = null;
         $this->database = null;
 

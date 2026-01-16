@@ -1,0 +1,34 @@
+<?php
+
+declare(strict_types=1);
+
+final class HelperImages
+{
+    private $images;
+
+    public function __construct()
+    {
+        $this->images = include_once __DIR__ . '/www/images/compiled_images.php';
+    }
+
+    public function send(string $imageName): void
+    {
+        if (!isset($this->images[$imageName])) {
+            http_response_code(404);
+            exit;
+        }
+
+        $imageData = base64_decode($this->images[$imageName]['data']);
+        $imageETag = md5($imageData);
+
+        header("Content-Type: image/png");
+        header('Content-Length: ' . strlen($imageData));
+
+        header("Cache-Control: public, max-age=86400");
+        header("Expires: " . gmdate("D, d M Y H:i:s", time() + 86400) . " GMT");
+        header("ETag: \"" . $imageETag . "\"");
+
+        echo $imageData;
+        exit;
+    }
+}
