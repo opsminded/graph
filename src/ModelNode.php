@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 final class ModelNode
 {
-    public const ID_VALIDATION_REGEX = '/^[a-zA-Z0-9\-_]+$/';
+    public const ID_VALIDATION_REGEX = "/^[a-zA-Z0-9\-_]+$/";
     public const LABEL_MAX_LENGTH    = 120;
     
     private string $id;
@@ -13,6 +13,12 @@ final class ModelNode
     private string $typeID;
 
     private array $data = [];
+
+    public const NODE_KEYNAME_ID = "id";
+    public const NODE_KEYNAME_LABEL = "label";
+    public const NODE_KEYNAME_CATEGORY = "category";
+    public const NODE_KEYNAME_TYPE = "type";
+    public const NODE_KEYNAME_DATA = "data";
 
     public function __construct(string $id, string $label, string $categoryID, string $typeID, array $data)
     {
@@ -63,11 +69,11 @@ final class ModelNode
     public function toArray(): array
     {
         return [
-            'id'       => $this->id,
-            'label'    => $this->label,
-            'category' => $this->categoryID,
-            'type'     => $this->typeID,
-            'data'     => $this->data
+            self::NODE_KEYNAME_ID       => $this->id,
+            self::NODE_KEYNAME_LABEL    => $this->label,
+            self::NODE_KEYNAME_CATEGORY => $this->categoryID,
+            self::NODE_KEYNAME_TYPE     => $this->typeID,
+            self::NODE_KEYNAME_DATA     => $this->data
         ];
     }
 }

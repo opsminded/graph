@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 interface DatabaseInterface
 {
+    public const DATABASE_KEYWORD_LIMIT = "limit";
+
     public function getUser(string $id): ?array;
     public function insertUser(string $id, string $group): bool;
     public function updateUser(string $id, string $group): bool;

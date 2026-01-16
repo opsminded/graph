@@ -7,6 +7,9 @@ final class ModelUser
     private string $id;
     private ModelGroup $group;
 
+    public const USER_KEYNAME_ID = "id";
+    public const USER_KEYNAME_GROUP = "group";
+
     public function __construct(string $id, ModelGroup $group)
     {
         $this->id = $id;

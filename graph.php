@@ -9,7 +9,7 @@ class HTTPResponse implements HTTPResponseInterface
     public string $message;
     public array $data;
 
-    public function __construct(int $code, string $status, string $message = '', array $data)
+    public function __construct(int $code, string $status, string $message = "", array $data)
     {
         $this->code = $code;
         $this->status = $status;
@@ -19,9 +19,9 @@ class HTTPResponse implements HTTPResponseInterface
 
     public function send(): void
     {
-        header('Content-Type: application/json; charset=utf-8');
+        header(HTTPResponseInterface::JSON_RESPONSE_CONTENT_TYPE);
         http_response_code($this->code);
-        $this->data = ['code' => $this->code, 'status' => $this->status, 'message' => $this->message, 'data' => $this->data];
+        $this->data = [HTTPResponseInterface::KEYNAME_CODE => $this->code, HTTPResponseInterface::KEYNAME_STATUS => $this->status, HTTPResponseInterface::KEYNAME_MESSAGE => $this->message, HTTPResponseInterface::KEYNAME_DATA => $this->data];
         echo json_encode($this->data, JSON_UNESCAPED_UNICODE |  JSON_UNESCAPED_SLASHES |  JSON_PRETTY_PRINT);
     }
 }
@@ -29,9 +29,9 @@ class HTTPResponse implements HTTPResponseInterface
 
 class HTTPInternalServerErrorResponse extends HTTPResponse
 {
-    public function __construct(string $message = '', array $data)
+    public function __construct(string $message = "", array $data)
     {
-        return parent::__construct(500, 'error', $message, $data);
+        return parent::__construct(500, HTTPResponseInterface::VALUE_STATUS_ERROR, $message, $data);
     }
 }
 #####################################
@@ -40,6 +40,9 @@ final class ModelGraph
 {
     private array $nodes = [];
     private array $edges = [];
+
+    public const KEYNAME_NODES = "nodes";
+    public const KEYNAME_EDGES = "edges";
 
     public function __construct(array $nodes, array $edges)
     {
@@ -60,8 +63,8 @@ final class ModelGraph
     public function toArray(): array
     {
         return [
-            'nodes' => $this->nodes,
-            'edges' => $this->edges,
+            self::KEYNAME_NODES => $this->nodes,
+            self::KEYNAME_EDGES => $this->edges,
         ];
     }
 }
@@ -69,7 +72,7 @@ final class ModelGraph
 
 final class ModelNode
 {
-    public const ID_VALIDATION_REGEX = '/^[a-zA-Z0-9\-_]+$/';
+    public const ID_VALIDATION_REGEX = "/^[a-zA-Z0-9\-_]+$/";
     public const LABEL_MAX_LENGTH    = 120;
     
     private string $id;
@@ -78,6 +81,12 @@ final class ModelNode
     private string $typeID;
 
     private array $data = [];
+
+    public const NODE_KEYNAME_ID = "id";
+    public const NODE_KEYNAME_LABEL = "label";
+    public const NODE_KEYNAME_CATEGORY = "category";
+    public const NODE_KEYNAME_TYPE = "type";
+    public const NODE_KEYNAME_DATA = "data";
 
     public function __construct(string $id, string $label, string $categoryID, string $typeID, array $data)
     {
@@ -128,11 +137,11 @@ final class ModelNode
     public function toArray(): array
     {
         return [
-            'id'       => $this->id,
-            'label'    => $this->label,
-            'category' => $this->categoryID,
-            'type'     => $this->typeID,
-            'data'     => $this->data
+            self::NODE_KEYNAME_ID       => $this->id,
+            self::NODE_KEYNAME_LABEL    => $this->label,
+            self::NODE_KEYNAME_CATEGORY => $this->categoryID,
+            self::NODE_KEYNAME_TYPE     => $this->typeID,
+            self::NODE_KEYNAME_DATA     => $this->data
         ];
     }
 }
@@ -140,16 +149,28 @@ final class ModelNode
 
 class HTTPNoContentResponse extends HTTPResponse
 {
-    public function __construct(string $message = '', array $data)
+    public function __construct(string $message = "", array $data)
     {
-        return parent::__construct(204, 'success', $message, $data);
+        return parent::__construct(204, HTTPResponseInterface::VALUE_STATUS_SUCCESS, $message, $data);
     }
 }
 #####################################
 
 final class ModelGroup
 {
-    private const ALLOWED_GROUPS = ['anonymous', 'consumer', 'contributor', 'admin'];
+    private const GROUP_KEYNAME_ID = "id";
+
+    private const VALUE_ANONYMOUS   = "anonymous";
+    private const VALUE_CONSUMER    = "consumer";
+    private const VALUE_CONTRIBUTOR = "contributor";
+    private const VALUE_ADMIN       = "admin";
+
+    private const ALLOWED_GROUPS = [
+        self::VALUE_ANONYMOUS,
+        self::VALUE_CONSUMER,
+        self::VALUE_CONTRIBUTOR,
+        self::VALUE_ADMIN,
+    ];
     
     private string $id;
     
@@ -169,7 +190,7 @@ final class ModelGroup
     public function toArray(): array
     {
         return [
-            'id' => $this->id
+            self::GROUP_KEYNAME_ID => $this->id
         ];
     }
 }
@@ -180,6 +201,9 @@ final class ModelType
     public string $id;
     public string $name;
 
+    public const TYPE_KEYNAME_ID = "id";
+    public const TYPE_KEYNAME_NAME = "name";
+
     public function __construct(string $id, string $name)
     {
         $this->id = $id;
@@ -189,8 +213,8 @@ final class ModelType
     public function toArray(): array
     {
         return [
-            'id' => $this->id,
-            'name' => $this->name,
+            self::TYPE_KEYNAME_ID => $this->id,
+            self::TYPE_KEYNAME_NAME => $this->name,
         ];
     }
 }
@@ -198,11 +222,11 @@ final class ModelType
 
 final class HelperImages
 {
-    private $images;
+    private array $images;
 
-    public function __construct()
+    public function __construct(array $images)
     {
-        $this->images = include_once __DIR__ . '/www/images/compiled_images.php';
+        $this->images = $images;
     }
 
     public function send(string $imageName): void
@@ -230,24 +254,34 @@ final class HelperImages
 
 class HTTPUnauthorizedResponse extends HTTPResponse
 {
-    public function __construct(string $message = '', array $data)
+    public function __construct(string $message = "", array $data)
     {
-        return parent::__construct(401, 'error', $message, $data);
+        return parent::__construct(401, HTTPResponseInterface::VALUE_STATUS_ERROR, $message, $data);
     }
 }
 #####################################
 
 class HTTPBadRequestResponse extends HTTPResponse
 {
-    public function __construct(string $message = '', array $data)
+    public function __construct(string $message = "", array $data)
     {
-        return parent::__construct(400, 'error', $message, $data);
+        return parent::__construct(400, HTTPResponseInterface::VALUE_STATUS_ERROR, $message, $data);
     }
 }
 #####################################
 
 interface HTTPResponseInterface
 {
+    public const KEYNAME_CODE    = "code";
+    public const KEYNAME_STATUS  = "status";
+    public const KEYNAME_MESSAGE = "message";
+    public const KEYNAME_DATA    = "data";
+
+    public const VALUE_STATUS_SUCCESS = "success";
+    public const VALUE_STATUS_ERROR   = "error";
+
+    public const JSON_RESPONSE_CONTENT_TYPE = "Content-Type: application/json; charset=utf-8";
+
     public function send(): void;
 }
 
@@ -276,118 +310,118 @@ final class HTTPController implements HTTPControllerInterface
 
     public function getUser(HTTPRequest $req): HTTPResponseInterface
     {
-        if($req->method !== 'GET') {
-            return new HTTPMethodNotAllowedResponse($req->method, 'getUser');
+        if($req->method !== HTTPRequest::METHOD_GET) {
+            return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
         try {
-            $id = $req->getParam('id');
+            $id = $req->getParam(ModelUser::USER_KEYNAME_ID);
         } catch(HTTPRequestException $e) {
             return new HTTPBadRequestResponse($e->getMessage(), []);
         }
         $user = $this->service->getUser($id);
         if(is_null($user)) {
-            return new HTTPNotFoundResponse('user not found', ['id' => $id]);
+            return new HTTPNotFoundResponse("user not found", [ModelUser::USER_KEYNAME_ID => $id]);
         }
         $data = $user->toArray();
-        return new HTTPOKResponse('user found', $data);
+        return new HTTPOKResponse("user found", $data);
     }
 
     public function insertUser(HTTPRequest $req): HTTPResponseInterface
     {
-        if($req->method !== 'POST') {
-            return new HTTPMethodNotAllowedResponse($req->method, 'insertUser');
+        if($req->method !== HTTPRequest::METHOD_POST) {
+            return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
-        if(! array_key_exists('id', $req->data)) {
-            return new HTTPBadRequestResponse('key id not found in data', $req->data);
+        if(! array_key_exists(ModelUser::USER_KEYNAME_ID, $req->data)) {
+            return new HTTPBadRequestResponse("key " . ModelUser::USER_KEYNAME_ID . " not found in data", $req->data);
         }
-        if(! array_key_exists('user_group', $req->data)) {
-            return new HTTPBadRequestResponse('key user_group not found in data', $req->data);
+        if(! array_key_exists(ModelUser::USER_KEYNAME_GROUP, $req->data)) {
+            return new HTTPBadRequestResponse("key " . ModelUser::USER_KEYNAME_GROUP . " not found in data", $req->data);
         }
-        $user = new ModelUser($req->data['id'], new ModelGroup($req->data['user_group']));
+        $user = new ModelUser($req->data[ModelUser::USER_KEYNAME_ID], new ModelGroup($req->data[ModelUser::USER_KEYNAME_GROUP]));
         $this->service->insertUser($user);
         $data = $user->toArray();
-        return new HTTPCreatedResponse('user created', $data);
+        return new HTTPCreatedResponse("user created", $data);
     }
 
     public function updateUser(HTTPRequest $req): HTTPResponseInterface
     {
-        if($req->method !== 'PUT') {
-            return new HTTPMethodNotAllowedResponse($req->method, 'updateUser');
+        if($req->method !== HTTPRequest::METHOD_PUT) {
+            return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
-        $user = new ModelUser($req->data['id'], new ModelGroup($req->data['user_group']));
+        $user = new ModelUser($req->data[ModelUser::USER_KEYNAME_ID], new ModelGroup($req->data[ModelUser::USER_KEYNAME_GROUP]));
         if($this->service->updateUser($user)) {
-            return new HTTPOKResponse('user updated', $req->data);
+            return new HTTPOKResponse("user updated", $req->data);
         }
         $data = $user->toArray();
-        return new HTTPNotFoundResponse('user not found', $data);
+        return new HTTPNotFoundResponse("user not found", $data);
     }
 
     public function getGraph(HTTPRequest $req): HTTPResponseInterface
     {
-        if($req->method !== 'GET') {
-            return new HTTPMethodNotAllowedResponse($req->method, 'getGraph');
+        if($req->method !== HTTPRequest::METHOD_GET) {
+            return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
         $g = $this->service->getGraph();
         $data = $this->cytoscapeHelper->toArray($g);
-        return new HTTPOKResponse('get graph', $data);
+        return new HTTPOKResponse("get graph", $data);
     }
 
     public function getNode(HTTPRequest $req): HTTPResponseInterface
     {
-        if($req->method !== 'GET') {
-            return new HTTPMethodNotAllowedResponse($req->method, 'getNode');
+        if($req->method !== HTTPRequest::METHOD_GET) {
+            return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
         try {
-            $id = $req->getParam('id');
+            $id = $req->getParam(ModelNode::NODE_KEYNAME_ID);
         } catch(HTTPRequestException $e) {
             return new HTTPBadRequestResponse($e->getMessage(), []);
         }
         $node = $this->service->getNode($id);
         if(is_null($node)) {
-            return new HTTPNotFoundResponse('node not found', ['id' => $id]);
+            return new HTTPNotFoundResponse("node not found", [ModelNode::NODE_KEYNAME_ID => $id]);
         }
         $data = $node->toArray();
-        return new HTTPOKResponse('node found', $data);
+        return new HTTPOKResponse("node found", $data);
     }
 
     public function getNodes(HTTPRequest $req): HTTPResponseInterface
     {
-        if($req->method !== 'GET') {
-            return new HTTPMethodNotAllowedResponse($req->method, 'getNodes');
+        if($req->method !== HTTPRequest::METHOD_GET) {
+            return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
         $nodesArr = $this->service->getNodes();
         $data = [];
         foreach($nodesArr as $node) {
             $data[] = $node->toArray();
         }
-        return new HTTPOKResponse('nodes found', $data);
+        return new HTTPOKResponse("nodes found", $data);
     }
 
     public function getNodeParentOf(HTTPRequest $req): HTTPResponseInterface
     {
-        if ($req->method !== 'GET') {
-            return new HTTPMethodNotAllowedResponse($req->method, 'getNodeParentOf');
+        if ($req->method !== HTTPRequest::METHOD_GET) {
+            return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
         try {
-            $id = $req->getParam('id');
+            $id = $req->getParam(ModelNode::NODE_KEYNAME_ID);
         } catch(HTTPRequestException $e) {
             return new HTTPBadRequestResponse($e->getMessage(), []);
         }
         $parent = $this->service->getNodeParentOf($id);
         if(is_null($parent)) {
-            return new HTTPNotFoundResponse('parent node not found', ['id' => $id]);
+            return new HTTPNotFoundResponse("parent node not found", [ModelNode::NODE_KEYNAME_ID => $id]);
         }
         $data = $parent->toArray();
-        return new HTTPOKResponse('parent node found', $data);
+        return new HTTPOKResponse("parent node found", $data);
     }
 
     public function getDependentNodesOf(HTTPRequest $req): HTTPResponseInterface
     {
-        if ($req->method !== 'GET') {
-            return new HTTPMethodNotAllowedResponse($req->method, 'getDependentNodesOf');
+        if ($req->method !== HTTPRequest::METHOD_GET) {
+            return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
         try {
-            $id = $req->getParam('id');
+            $id = $req->getParam(ModelNode::NODE_KEYNAME_ID);
         } catch(HTTPRequestException $e) {
             return new HTTPBadRequestResponse($e->getMessage(), []);
         }
@@ -396,161 +430,167 @@ final class HTTPController implements HTTPControllerInterface
         foreach($dependents as $dependent) {
             $data[] = $dependent->toArray();
         }
-        return new HTTPOKResponse('dependent nodes found', $data);
+        return new HTTPOKResponse("dependent nodes found", $data);
     }
 
     public function insertNode(HTTPRequest $req): HTTPResponseInterface
     {
-        if($req->method !== 'POST') {
-            return new HTTPMethodNotAllowedResponse($req->method, 'insertNode');
+        if($req->method !== HTTPRequest::METHOD_POST) {
+            return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
         $node = new ModelNode($req->data['id'], $req->data['label'], $req->data['category'], $req->data['type'], $req->data['data']);
         $this->service->insertNode($node);
-        $this->logger->info('node inserted', $req->data);
-        return new HTTPCreatedResponse('node inserted', $req->data);
+        $this->logger->info("node inserted", $req->data);
+        return new HTTPCreatedResponse("node inserted", $req->data);
     }
     
     public function updateNode(HTTPRequest $req): HTTPResponseInterface
     {
-        if($req->method !== 'PUT') {
-            return new HTTPMethodNotAllowedResponse($req->method, 'updateNode');
+        if($req->method !== HTTPRequest::METHOD_PUT) {
+            return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
-        $this->logger->debug('updating node', $req->data);
-        $node = new ModelNode($req->data['id'], $req->data['label'], $req->data['category'], $req->data['type'], $req->data['data']);
+        $this->logger->debug("updating node", $req->data);
+        $node = new ModelNode(
+            $req->data[ModelNode::NODE_KEYNAME_ID],
+            $req->data[ModelNode::NODE_KEYNAME_LABEL],
+            $req->data[ModelNode::NODE_KEYNAME_CATEGORY],
+            $req->data[ModelNode::NODE_KEYNAME_TYPE],
+            $req->data[ModelNode::NODE_KEYNAME_DATA]
+        );
         $this->service->updateNode($node);
-        $this->logger->info('node updated', $req->data);
-        $resp = new HTTPCreatedResponse('node updated', $req->data);
+        $this->logger->info("node updated", $req->data);
+        $resp = new HTTPCreatedResponse("node updated", $req->data);
         return $resp;
     }
     
     public function deleteNode(HTTPRequest $req): HTTPResponseInterface
     {
-        if($req->method !== 'DELETE') {
-            return new HTTPMethodNotAllowedResponse($req->method, 'deleteNode');
+        if($req->method !== HTTPRequest::METHOD_DELETE) {
+            return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
-        $node = new ModelNode($req->data['id'], 'label', 'application', 'database', []);
+        $node = new ModelNode($req->data[ModelNode::NODE_KEYNAME_ID], "label", "application", "database", []);
         if($this->service->deleteNode($node)) {
-            return new HTTPNoContentResponse('node deleted', ['id' => $req->data['id']]);
+            return new HTTPNoContentResponse("node deleted", [ModelNode::NODE_KEYNAME_ID => $req->data[ModelNode::NODE_KEYNAME_ID]]);
         }
-        return new HTTPNotFoundResponse('node not found',['id' => $req->data['id']]);
+        return new HTTPNotFoundResponse("node not found",[ModelNode::NODE_KEYNAME_ID => $req->data[ModelNode::NODE_KEYNAME_ID]]);
     }
 
     public function getEdge(HTTPRequest $req): HTTPResponseInterface
     {
-        if($req->method !== 'GET') {
-            return new HTTPMethodNotAllowedResponse($req->method, 'getEdge');
+        if($req->method !== HTTPRequest::METHOD_GET) {
+            return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
         try {
-            $source = $req->getParam('source');
+            $source = $req->getParam(ModelEdge::EDGE_KEYNAME_SOURCE);
         } catch(HTTPRequestException $e) {
             return new HTTPBadRequestResponse($e->getMessage(), []);
         }
         try {
-            $target = $req->getParam('target');
+            $target = $req->getParam(ModelEdge::EDGE_KEYNAME_TARGET);
         } catch(HTTPRequestException $e) {
             return new HTTPBadRequestResponse($e->getMessage(), []);
         }
         $edge = $this->service->getEdge($source, $target);
         if(is_null($edge)) {
-            return new HTTPNotFoundResponse('edge not found', ['source' => $source, 'target' => $target]);
+            return new HTTPNotFoundResponse("edge not found", [ModelEdge::EDGE_KEYNAME_SOURCE => $source, ModelEdge::EDGE_KEYNAME_TARGET => $target]);
         }
         $data = $edge->toArray();
-        return new HTTPOKResponse('edge found', $data);
+        return new HTTPOKResponse("edge found", $data);
     }
     
     public function getEdges(HTTPRequest $req): HTTPResponseInterface
     {
-        if($req->method !== 'GET') {
-            return new HTTPMethodNotAllowedResponse($req->method, 'getEdges');
+        if($req->method !== HTTPRequest::METHOD_GET) {
+            return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
         $edges = $this->service->getEdges();
-        return new HTTPOKResponse('node found', []);
+        return new HTTPOKResponse("edges found", []);
     }
     
     public function insertEdge(HTTPRequest $req): HTTPResponseInterface
     {
-        if($req->method !== 'POST') {
-            return new HTTPMethodNotAllowedResponse($req->method, 'insertEdge');
+        if($req->method !== HTTPRequest::METHOD_POST) {
+            return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
-        $edge = new ModelEdge($req->data['source'], $req->data['target']);
+        $edge = new ModelEdge($req->data[ModelEdge::EDGE_KEYNAME_SOURCE], $req->data[ModelEdge::EDGE_KEYNAME_TARGET]);
         $this->service->insertEdge($edge);
         $data = $edge->toArray();
-        return new HTTPOKResponse('node found', $data);
+        return new HTTPOKResponse("node found", $data);
     }
     
     public function updateEdge(HTTPRequest $req): HTTPResponseInterface
     {
-        if($req->method !== 'PUT') {
-            return new HTTPMethodNotAllowedResponse($req->method, 'updateEdge');
+        if($req->method !== HTTPRequest::METHOD_PUT) {
+            return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
-        $edge = new ModelEdge($req->data['source'], $req->data['target'], $req->data['data']);
+        $edge = new ModelEdge($req->data[ModelEdge::EDGE_KEYNAME_SOURCE], $req->data[ModelEdge::EDGE_KEYNAME_TARGET], $req->data[ModelEdge::EDGE_KEYNAME_DATA]);
         $this->service->updateEdge($edge);
         $data = $edge->toArray();
-        return new HTTPOKResponse('edge updated', $data);
+        return new HTTPOKResponse("edge updated", $data);
     }
     
     public function deleteEdge(HTTPRequest $req): HTTPResponseInterface
     {
-        if($req->method !== 'DELETE') {
-            return new HTTPMethodNotAllowedResponse($req->method, 'deleteEdge');
+        if($req->method !== HTTPRequest::METHOD_DELETE) {
+            return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
-        $source = $req->data['source'];
-        $target = $req->data['target'];
+        $source = $req->data[ModelEdge::EDGE_KEYNAME_SOURCE];
+        $target = $req->data[ModelEdge::EDGE_KEYNAME_TARGET];
         $edge = new ModelEdge($source, $target, []);
         $this->service->deleteEdge($edge);
         $data = $req->data;
-        return new HTTPNoContentResponse('edge deleted', $data);
+        return new HTTPNoContentResponse("edge deleted", $data);
     }
 
     public function getStatus(HTTPRequest $req): HTTPResponseInterface
     {
-        if($req->method !== 'GET') {
-            return new HTTPMethodNotAllowedResponse($req->method, 'getStatus');
+        if($req->method !== HTTPRequest::METHOD_GET) {
+            return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
         $statusData = $this->service->getStatus();
         $data = [];
         foreach($statusData as $status) {
             $data[] = $status->toArray();
         }
-        return new HTTPOKResponse('nodes found', $data);
+        return new HTTPOKResponse("nodes found", $data);
     }
     
     public function getNodeStatus(HTTPRequest $req): HTTPResponseInterface
     {
-        if($req->method !== 'GET') {
-            return new HTTPMethodNotAllowedResponse($req->method, 'getNodeStatus');
+        if($req->method !== HTTPRequest::METHOD_GET) {
+            return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
         try {
-            $id = $req->getParam('id');
+            $id = $req->getParam(ModelStatus::STATUS_KEYNAME_NODE_ID);
         } catch(HTTPRequestException $e) {
             return new HTTPBadRequestResponse($e->getMessage(), []);
         }
         $status = $this->service->getNodeStatus($id);
         if(!is_null($status)) {
             $data = $status->toArray();
-            return new HTTPOKResponse('node found', $data);
+            return new HTTPOKResponse("node found", $data);
         }
-        return new HTTPNotFoundResponse('node not found', ['id' => $id]);
+        return new HTTPNotFoundResponse("node not found", [ModelStatus::STATUS_KEYNAME_NODE_ID => $id]);
     }
     
     public function updateNodeStatus(HTTPRequest $req): HTTPResponseInterface
     {
-        if($req->method !== 'PUT') {
-            return new HTTPMethodNotAllowedResponse($req->method, 'updateNodeStatus');
+        if($req->method !== HTTPRequest::METHOD_PUT) {
+            return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
-        $status = new ModelStatus($req->data['node_id'], $req->data['status']);
+        $status = new ModelStatus($req->data[ModelStatus::STATUS_KEYNAME_NODE_ID], $req->data[ModelStatus::STATUS_KEYNAME_STATUS]);
         $this->service->updateNodeStatus($status);
         $data = $status->toArray();
-        return new HTTPOKResponse('node found', $data);
+        return new HTTPOKResponse("node found", $data);
     }
 
     public function getLogs(HTTPRequest $req): HTTPResponseInterface
     {
-        if($req->method !== 'GET') {
-            return new HTTPMethodNotAllowedResponse($req->method, 'getLogs');
+        if($req->method !== HTTPRequest::METHOD_GET) {
+            return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
         try {
-            $limit = $req->getParam('limit');
+            $limit = $req->getParam(DatabaseInterface::DATABASE_KEYWORD_LIMIT);
         } catch(HTTPRequestException $e) {
             return new HTTPBadRequestResponse($e->getMessage(), []);
         }
@@ -559,7 +599,7 @@ final class HTTPController implements HTTPControllerInterface
         foreach($logsData as $log) {
             $data[] = $log->toArray();
         }
-        return new HTTPOKResponse('logs found', $data);
+        return new HTTPOKResponse("logs found", $data);
     }
 }
 
@@ -1077,24 +1117,24 @@ final class Database implements DatabaseInterface
 
     public function getUser(string $id): ?array
     {
-        $this->logger->debug('getting user id', ['id' => $id]);
+        $this->logger->debug("getting user id", ['id' => $id]);
         $sql = 'SELECT * FROM users WHERE id = :id';
         $params = [':id' => $id];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         $row = $stmt->fetch();
         if ($row) {
-            $this->logger->info('user found', ['params' => $params, 'row' => $row]);
+            $this->logger->info("user found", ['params' => $params, 'row' => $row]);
             return $row;
         }
-        $this->logger->error('user not found', ['params' => $params]);
+        $this->logger->error("user not found", ['params' => $params]);
         return null;
     }
 
     public function insertUser(string $id, string $group): bool
     {
-        $this->logger->debug('inserting new user', ['id' => $id, 'group' => $group]);
-        $sql = 'INSERT INTO users (id, user_group) VALUES (:id, :group)';
+        $this->logger->debug("inserting new user", ['id' => $id, 'group' => $group]);
+        $sql = "INSERT INTO users (id, user_group) VALUES (:id, :group)";
         $params = [':id' => $id, ':group' => $group];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
@@ -1103,262 +1143,262 @@ final class Database implements DatabaseInterface
 
     public function updateUser(string $id, string $group): bool
     {
-        $this->logger->debug('updating new user', ['id' => $id, 'group' => $group]);
-        $sql = 'UPDATE users SET user_group = :group WHERE id = :id';
+        $this->logger->debug("updating new user", ['id' => $id, 'group' => $group]);
+        $sql = "UPDATE users SET user_group = :group WHERE id = :id";
         $params = [':id' => $id, ':group' => $group];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         if($stmt->rowCount() > 0) {
-            $this->logger->info('user updated', ['params' => $params]);
+            $this->logger->info("user updated", ['params' => $params]);
             return true;
         }
-        $this->logger->info('user not updated', ['params' => $params]);
+        $this->logger->info("user not updated", ['params' => $params]);
         return false;
     }
 
     public function getCategories(): array
     {
-        $this->logger->debug('fetching categories');
-        $sql = 'SELECT * FROM categories';
+        $this->logger->debug("fetching categories");
+        $sql = "SELECT * FROM categories";
         $stmt  = $this->pdo->query($sql);
         $rows  = $stmt->fetchAll();
-        $this->logger->info('categories fetched', ['rows' => $rows]);
+        $this->logger->info("categories fetched", ['rows' => $rows]);
         return $rows;
     }
 
     public function insertCategory(string $id, string $name, string $shape, int $width, int $height): bool
     {
-        $this->logger->debug('inserting new category', ['id' => $id, 'name' => $name]);
-        $sql = 'INSERT INTO categories (id, name, shape, width, height) VALUES (:id, :name, :shape, :width, :height)';
+        $this->logger->debug("inserting new category", ['id' => $id, 'name' => $name]);
+        $sql = "INSERT INTO categories (id, name, shape, width, height) VALUES (:id, :name, :shape, :width, :height)";
         $params = [':id' => $id, ':name' => $name, ':shape' => $shape, ':width' => $width, ':height' => $height];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
-        $this->logger->info('category inserted', ['params' => $params]);
+        $this->logger->info("category inserted", ['params' => $params]);
         return true;
     }
     
     public function getTypes(): array
     {
-        $this->logger->debug('fetching types');
-        $sql = 'SELECT * FROM types';
+        $this->logger->debug("fetching types");
+        $sql = "SELECT * FROM types";
         $stmt  = $this->pdo->query($sql);
         $rows  = $stmt->fetchAll();
-        $this->logger->info('types fetched', ['rows' => $rows]);
+        $this->logger->info("types fetched", ['rows' => $rows]);
         return $rows;
     }
 
     public function insertType(string $id, string $name): bool
     {
-        $this->logger->debug('inserting new type', ['id' => $id, 'name' => $name]);
-        $sql = 'INSERT INTO types (id, name) VALUES (:id, :name)';
+        $this->logger->debug("inserting new type", ['id' => $id, 'name' => $name]);
+        $sql = "INSERT INTO types (id, name) VALUES (:id, :name)";
         $params = [':id' => $id, ':name' => $name];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
-        $this->logger->info('type inserted', ['params' => $params]);
+        $this->logger->info("type inserted", ['params' => $params]);
         return true;
     }
 
     public function getNode(string $id): ?array
     {
-        $this->logger->debug('fetching node', ['id' => $id]);
-        $sql = 'SELECT * FROM nodes WHERE id = :id';
+        $this->logger->debug("fetching node", ['id' => $id]);
+        $sql = "SELECT * FROM nodes WHERE id = :id";
         $params = [':id' => $id];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         $row = $stmt->fetch();
         if ($row) {
             $row['data'] = json_decode($row['data'], true);
-            $this->logger->info('node fetched', ['params' => $params, 'row' => $row]);
+            $this->logger->info("node fetched", ['params' => $params, 'row' => $row]);
             return $row;
         }
-        $this->logger->error('node not found', ['params' => $params]);
+        $this->logger->error("node not found", ['params' => $params]);
         return null;
     }
 
     public function getNodes(): array
     {
-        $this->logger->debug('fetching nodes');
-        $sql = 'SELECT * FROM nodes';
+        $this->logger->debug("fetching nodes");
+        $sql = "SELECT * FROM nodes";
         $stmt = $this->pdo->query($sql);
         $rows = $stmt->fetchAll();
         foreach($rows as &$row) {
             $row['data'] = json_decode($row['data'], true);
         }
-        $this->logger->info('nodes fetched', ['rows' => $rows]);
+        $this->logger->info("nodes fetched", ['rows' => $rows]);
         return $rows;
     }
 
     public function getNodeParentOf(string $id): ?array
     {
-        $this->logger->debug('fetching parent node');
-        $sql = 'SELECT n.* FROM nodes n INNER JOIN edges e ON n.id = e.source WHERE e.target = :id';
+        $this->logger->debug("fetching parent node");
+        $sql = "SELECT n.* FROM nodes n INNER JOIN edges e ON n.id = e.source WHERE e.target = :id";
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([':id' => $id]);
         $row = $stmt->fetch();
         if ($row) {
             $row['data'] = json_decode($row['data'], true);
-            $this->logger->info('parent node fetched', ['row' => $row]);
+            $this->logger->info("parent node fetched", ['row' => $row]);
             return $row;
         }
-        $this->logger->error('parent node not found', ['id' => $id]);
+        $this->logger->error("parent node not found", ['id' => $id]);
         return null;
     }
 
     public function getDependentNodesOf(string $id): array
     {
-        $this->logger->debug('fetching dependent nodes');
-        $sql = 'SELECT n.* FROM nodes n INNER JOIN edges e ON n.id = e.target WHERE e.source = :id';
+        $this->logger->debug("fetching dependent nodes");
+        $sql = "SELECT n.* FROM nodes n INNER JOIN edges e ON n.id = e.target WHERE e.source = :id";
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([':id' => $id]);
         $rows = $stmt->fetchAll();
         foreach($rows as &$row) {
             $row['data'] = json_decode($row['data'], true);
         }
-        $this->logger->info('dependent nodes fetched', ['rows' => $rows]);
+        $this->logger->info("dependent nodes fetched", ['rows' => $rows]);
         return $rows;
     }
 
     public function insertNode(string $id, string $label, string $category, string $type, array $data = []): bool
     {
-        $this->logger->debug('inserting new node', ['id' => $id, 'label' => $label, 'category' => $category, 'type' => $type, 'data' => $data]);
-        $sql = 'INSERT INTO nodes (id, label, category, type, data) VALUES (:id, :label, :category, :type, :data)';
+        $this->logger->debug("inserting new node", ['id' => $id, 'label' => $label, 'category' => $category, 'type' => $type, 'data' => $data]);
+        $sql = "INSERT INTO nodes (id, label, category, type, data) VALUES (:id, :label, :category, :type, :data)";
         $data = json_encode($data, JSON_UNESCAPED_UNICODE);
         $params = [':id' => $id, ':label' => $label, ':category' => $category, ':type' => $type, ':data' => $data];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
-        $this->logger->info('node inserted', ['params' => $params]);
+        $this->logger->info("node inserted", ['params' => $params]);
         return true;
     }
 
     public function updateNode(string $id, string $label, string $category, string $type, array $data = []): bool
     {
-        $this->logger->debug('updating node', ['id' => $id, 'label' => $label, 'category' => $category, 'type' => $type, 'data' => $data]);
-        $sql = 'UPDATE nodes SET label = :label, category = :category, type = :type, data = :data WHERE id = :id';
+        $this->logger->debug("updating node", ['id' => $id, 'label' => $label, 'category' => $category, 'type' => $type, 'data' => $data]);
+        $sql = "UPDATE nodes SET label = :label, category = :category, type = :type, data = :data WHERE id = :id";
         $data = json_encode($data, JSON_UNESCAPED_UNICODE);
         $params = [':id' => $id, ':label' => $label, ':category' => $category, ':type' => $type, ':data' => $data];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         if ($stmt->rowCount() > 0) {
-            $this->logger->info('node updated', ['params' => $params]);
+            $this->logger->info("node updated", ['params' => $params]);
             return true;
         }
-        $this->logger->error('node not updated', ['params' => $params]);
+        $this->logger->error("node not updated", ['params' => $params]);
         return false;
     }
 
     public function deleteNode(string $id): bool
     {
-        $this->logger->debug('deleting node', ['id' => $id]);
-        $sql = 'DELETE FROM nodes WHERE id = :id';
+        $this->logger->debug("deleting node", ['id' => $id]);
+        $sql = "DELETE FROM nodes WHERE id = :id";
         $params = [':id' => $id];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         if($stmt->rowCount() > 0) {
-            $this->logger->debug('node deleted', ['params' => $params]);
+            $this->logger->debug("node deleted", ['params' => $params]);
             return true;
         }
-        $this->logger->error('node not deleted', ['params' => $params]);
+        $this->logger->error("node not deleted", ['params' => $params]);
         return false;
     }
 
     public function getEdge(string $source, string $target): ?array
     {
-        $this->logger->debug('getting edge', ['source' => $source, 'target' => $target]);
-        $sql = 'SELECT * FROM edges WHERE source = :source AND target = :target';
+        $this->logger->debug("getting edge", ['source' => $source, 'target' => $target]);
+        $sql = "SELECT * FROM edges WHERE source = :source AND target = :target";
         $params = [':source' => $source, ':target' => $target];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         $row = $stmt->fetch();
         if ($row) {
             $row['data'] = json_decode($row['data'], true);
-            $this->logger->info('edge found', ['params' => $params, 'row' => $row]);
+            $this->logger->info("edge found", ['params' => $params, 'row' => $row]);
             return $row;
         }
-        $this->logger->error('edge not found', ['params' => $params]);
+        $this->logger->error("edge not found", ['params' => $params]);
         return null;
     }
 
     public function getEdges(): array
     {
-        $this->logger->debug('fetching edges');
-        $sql = 'SELECT * FROM edges';
+        $this->logger->debug("fetching edges");
+        $sql = "SELECT * FROM edges";
         $stmt  = $this->pdo->query($sql);
         $rows  = $stmt->fetchAll();
         foreach($rows as &$row) {
             $row['data'] = json_decode($row['data'], true);
         }
-        $this->logger->info('edges fetched', ['rows' => $rows]);
+        $this->logger->info("edges fetched", ['rows' => $rows]);
         return $rows;
     }
 
     public function insertEdge(string $id, string $source, string $target, array $data = []): bool
     {
-        $this->logger->debug('inserting edge', ['id' => $id, 'source' => $source, 'target' => $target, 'data' => $data]);
+        $this->logger->debug("inserting edge", ['id' => $id, 'source' => $source, 'target' => $target, 'data' => $data]);
         $edgeData = $this->getEdge($target, $source);
         if (! is_null($edgeData)) {
-            $this->logger->error('cicle detected', $edgeData);
+            $this->logger->error("cicle detected", $edgeData);
             return false;
         }
-        $sql = 'INSERT INTO edges(id, source, target, data) VALUES (:id, :source, :target, :data)';
+        $sql = "INSERT INTO edges(id, source, target, data) VALUES (:id, :source, :target, :data)";
         $data = json_encode($data, JSON_UNESCAPED_UNICODE);
         $params = [':id' => $id, ':source' => $source, ':target' => $target, ':data' => $data];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
-        $this->logger->info('edge inserted', ['params' => $params]);
+        $this->logger->info("edge inserted", ['params' => $params]);
         return true;
     }
 
     public function updateEdge(string $id, string $source, string $target, array $data = []): bool
     {
-        $this->logger->debug('updating edge', ['id' => $id, 'source' => $source, 'target' => $target, 'data' => $data]);
-        $sql = 'UPDATE edges SET source = :source, target = :target, data = :data WHERE id = :id';
+        $this->logger->debug("updating edge", ['id' => $id, 'source' => $source, 'target' => $target, 'data' => $data]);
+        $sql = "UPDATE edges SET source = :source, target = :target, data = :data WHERE id = :id";
         $data = json_encode($data, JSON_UNESCAPED_UNICODE);
         $params = [':id' => $id, ':source' => $source, ':target' => $target, ':data' => $data];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         if($stmt->rowCount() > 0) {
-            $this->logger->info('edge updated', ['params' => $params]);
+            $this->logger->info("edge updated", ['params' => $params]);
             return true;
         }
-        $this->logger->error('edge not updated', ['params' => $params]);
+        $this->logger->error("edge not updated", ['params' => $params]);
         return false;
     }
 
     public function deleteEdge(string $id): bool
     {
-        $this->logger->debug('deleting edge', ['id' => $id]);
-        $sql = 'DELETE FROM edges WHERE id = :id';
+        $this->logger->debug("deleting edge", ['id' => $id]);
+        $sql = "DELETE FROM edges WHERE id = :id";
         $params = [':id' => $id];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         if ($stmt->rowCount() > 0) {
-            $this->logger->info('edge deleted', ['params' => $params]);
+            $this->logger->info("edge deleted", ['params' => $params]);
             return true;
         }
-        $this->logger->error('edge not deleted', ['params' => $params]);
+        $this->logger->error("edge not deleted", ['params' => $params]);
         return false;
     }
 
     public function getStatus(): array
     {
-        $this->logger->debug('fetching statuses');
-        $sql = 'SELECT n.id, s.status FROM nodes n LEFT JOIN status s ON n.id = s.node_id';
+        $this->logger->debug("fetching statuses");
+        $sql = "SELECT n.id, s.status FROM nodes n LEFT JOIN status s ON n.id = s.node_id";
         $stmt   = $this->pdo->query($sql);
         $rows = $stmt->fetchAll();
-        $this->logger->info('statuses fetched', ['rows' => $rows]);
+        $this->logger->info("statuses fetched", ['rows' => $rows]);
         return $rows;
     }
 
     public function getNodeStatus(string $id): ?array
     {
-        $this->logger->debug('fetching node status', ['id' => $id]);
-        $sql = 'SELECT n.id, s.status FROM nodes n LEFT JOIN status s ON n.id = s.node_id WHERE n.id = :id';
+        $this->logger->debug("fetching node status", ['id' => $id]);
+        $sql = "SELECT n.id, s.status FROM nodes n LEFT JOIN status s ON n.id = s.node_id WHERE n.id = :id";
         $params = [':id' => $id];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         $row = $stmt->fetch();
         if($row) {
-            $this->logger->info('node status fetched', ['params' => $params, 'row' => $row]);
+            $this->logger->info("node status fetched", ['params' => $params, 'row' => $row]);
             return $row;
         }
         return null;
@@ -1366,37 +1406,37 @@ final class Database implements DatabaseInterface
 
     public function updateNodeStatus(string $id, string $status): bool
     {
-        $this->logger->debug('updating node status', ['id' => $id, 'status' => $status]);
-        $sql = 'REPLACE INTO status (node_id, status) VALUES (:node_id, :status)';
+        $this->logger->debug("updating node status", ['id' => $id, 'status' => $status]);
+        $sql = "REPLACE INTO status (node_id, status) VALUES (:node_id, :status)";
         $params = [':node_id' => $id, ':status' => $status];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
-        $this->logger->info('node status updated', ['params' => $params]);
+        $this->logger->info("node status updated", ['params' => $params]);
         return true;
     }
 
     public function getLogs(int $limit): array
     {
-        $this->logger->debug('fetching logs', ['limit' => $limit]);
-        $sql = 'SELECT * FROM audit ORDER BY created_at DESC LIMIT :limit';
+        $this->logger->debug("fetching logs", ['limit' => $limit]);
+        $sql = "SELECT * FROM audit ORDER BY created_at DESC LIMIT :limit";
         $params = [':limit' => $limit];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         $rows = $stmt->fetchAll();
-        $this->logger->info('logs fetched', ['params' => $params, 'rows' => $rows]);
+        $this->logger->info("logs fetched", ['params' => $params, 'rows' => $rows]);
         return $rows;
     }
 
     public function insertLog(string $entity_type, string $entity_id, string $action, ?array $old_data = null, ?array $new_data = null, string $user_id, string $ip_address): bool
     {
-        $this->logger->debug('inserting audit log', ['entity_type' => $entity_type, 'entity_id' => $entity_id, 'action' => $action, 'old_data' => $old_data, 'new_data' => $new_data, 'user_id' => $user_id, 'ip_address' => $ip_address]);
-        $sql = 'INSERT INTO audit (entity_type, entity_id, action, old_data, new_data, user_id, ip_address) VALUES (:entity_type, :entity_id, :action, :old_data, :new_data, :user_id, :ip_address)';
+        $this->logger->debug("inserting audit log", ['entity_type' => $entity_type, 'entity_id' => $entity_id, 'action' => $action, 'old_data' => $old_data, 'new_data' => $new_data, 'user_id' => $user_id, 'ip_address' => $ip_address]);
+        $sql = "INSERT INTO audit (entity_type, entity_id, action, old_data, new_data, user_id, ip_address) VALUES (:entity_type, :entity_id, :action, :old_data, :new_data, :user_id, :ip_address)";
         $old_data = $old_data !== null ? json_encode($old_data, JSON_UNESCAPED_UNICODE) : null;
         $new_data = $new_data !== null ? json_encode($new_data, JSON_UNESCAPED_UNICODE) : null;
         $params = [':entity_type' => $entity_type, ':entity_id' => $entity_id, ':action' => $action, ':old_data' => $old_data, ':new_data' => $new_data, ':user_id' => $user_id, ':ip_address' => $ip_address];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
-        $this->logger->info('audit log inserted', ['params' => $params]);
+        $this->logger->info("audit log inserted", ['params' => $params]);
         return true;
     }
 
@@ -1527,7 +1567,7 @@ class HTTPMethodNotAllowedResponse extends HTTPResponse
 {
     public function __construct(string $method, string $classMethod)
     {
-        return parent::__construct(405, 'error', "method '{$method}' not allowed in '{$classMethod}'", ['method' => $method, 'location' => $classMethod]);
+        return parent::__construct(405, HTTPResponseInterface::VALUE_STATUS_ERROR, "method '{$method}' not allowed in '{$classMethod}'", ['method' => $method, 'location' => $classMethod]);
     }
 }
 #####################################
@@ -1631,6 +1671,8 @@ final class HTTPRequestException extends RuntimeException
 
 interface DatabaseInterface
 {
+    public const DATABASE_KEYWORD_LIMIT = "limit";
+
     public function getUser(string $id): ?array;
     public function insertUser(string $id, string $group): bool;
     public function updateUser(string $id, string $group): bool;
@@ -1666,9 +1708,9 @@ interface DatabaseInterface
 
 class HTTPNotFoundResponse extends HTTPResponse
 {
-    public function __construct(string $message = '', array $data)
+    public function __construct(string $message = "", array $data)
     {
-        return parent::__construct(404, 'error', $message, $data);
+        return parent::__construct(404, HTTPResponseInterface::VALUE_STATUS_ERROR, $message, $data);
     }
 }
 #####################################
@@ -1677,7 +1719,7 @@ class HTTPOKResponse extends HTTPResponse
 {
     public function __construct(string $message, array $data)
     {
-        return parent::__construct(200, 'success', $message, $data);
+        return parent::__construct(200, HTTPResponseInterface::VALUE_STATUS_SUCCESS, $message, $data);
     }
 }
 
@@ -1685,9 +1727,9 @@ class HTTPOKResponse extends HTTPResponse
 
 class HTTPForbiddenResponse extends HTTPResponse
 {
-    public function __construct(string $message = '', array $data)
+    public function __construct(string $message = "", array $data)
     {
-        return parent::__construct(403, 'error', $message, $data);
+        return parent::__construct(403, HTTPResponseInterface::VALUE_STATUS_ERROR, $message, $data);
     }
 }
 #####################################
@@ -1699,20 +1741,25 @@ final class HTTPRequest
     public string $path;
     public string $method;
 
+    public const METHOD_GET    = "GET";
+    public const METHOD_POST   = "POST";
+    public const METHOD_PUT    = "PUT";
+    public const METHOD_DELETE = "DELETE";
+
     public function __construct()
     {
         $this->params = $_GET;
 
-        $this->method = $_SERVER['REQUEST_METHOD'];
+        $this->method = $_SERVER["REQUEST_METHOD"];
 
-        $scriptName = $_SERVER['SCRIPT_NAME'];
-        $requestUri = $_SERVER['REQUEST_URI'];
-        $requestUri = strtok($requestUri, '?');
-        $path = str_replace($scriptName, '', $requestUri);
+        $scriptName = $_SERVER["SCRIPT_NAME"];
+        $requestUri = $_SERVER["REQUEST_URI"];
+        $requestUri = strtok($requestUri, "?");
+        $path = str_replace($scriptName, "", $requestUri);
         $this->path = $path;
 
-        if ($this->method === 'POST' || $this->method === 'PUT') {
-            $jsonData = file_get_contents('php://input');
+        if ($this->method === self::METHOD_POST || $this->method === self::METHOD_PUT) {
+            $jsonData = file_get_contents("php://input");
             if ($jsonData) {
                 $this->data = json_decode($jsonData, true); 
             } else {
@@ -1733,9 +1780,9 @@ final class HTTPRequest
 
 class HTTPCreatedResponse extends HTTPResponse
 {
-    public function __construct(string $message = '', array $data)
+    public function __construct(string $message = "", array $data)
     {
-        return parent::__construct(201, 'success', $message, $data);
+        return parent::__construct(201, HTTPResponseInterface::VALUE_STATUS_SUCCESS, $message, $data);
     }
 }
 
@@ -1743,7 +1790,9 @@ class HTTPCreatedResponse extends HTTPResponse
 
 final class ModelStatus
 {
-    private const ALLOWED_NODE_STATUSES = ['unknown', 'healthy', 'unhealthy', 'maintenance'];
+    public const STATUS_KEYNAME_NODE_ID = "node_id";
+    public const STATUS_KEYNAME_STATUS = "status";
+    private const ALLOWED_NODE_STATUSES = ["unknown", "healthy", "unhealthy", "maintenance"];
 
     private string $nodeId;
     private string $status;
@@ -1855,6 +1904,9 @@ final class ModelUser
     private string $id;
     private ModelGroup $group;
 
+    public const USER_KEYNAME_ID = "id";
+    public const USER_KEYNAME_GROUP = "group";
+
     public function __construct(string $id, ModelGroup $group)
     {
         $this->id = $id;
@@ -1938,6 +1990,11 @@ final class ModelEdge
     private string $target;
     private array  $data;
 
+    public const EDGE_KEYNAME_ID     = "id";
+    public const EDGE_KEYNAME_SOURCE = "source";
+    public const EDGE_KEYNAME_TARGET = "target";
+    public const EDGE_KEYNAME_DATA   = "data";
+
     public function __construct(string $source, string $target, array $data = [])
     {
         $this->source = $source;
@@ -1981,14 +2038,22 @@ final class HelperCytoscape
 {
     private HelperImages $imagesHelper;
 
+    private const KEYNAME_ELEMENTS = "elements";
+    private const KEYNAME_STYLES = "style";
+    private const KEYNAME_LAYOUT = "layout";
+    private const KEYNAME_ZOOM = "zoom";
+    private const KEYNAME_PAN = "pan";
+    private const KEYNAME_PANX = "x";
+    private const KEYNAME_PANY = "y";
+
     private const SHAPES = [
-        ['shape' => 'ellipse',   'width' => 80, 'height' => 80],
-        ['shape' => 'rectangle', 'width' => 80, 'height' => 80],
-        ['shape' => 'diamond',   'width' => 80, 'height' => 80],
-        ['shape' => 'pentagon',  'width' => 80, 'height' => 80],
-        ['shape' => 'hexagon',   'width' => 80, 'height' => 80],
-        ['shape' => 'heptagon',  'width' => 80, 'height' => 80],
-        ['shape' => 'octagon',   'width' => 80, 'height' => 80],
+        ["shape" => "ellipse",   "width" => 80, "height" => 80],
+        ["shape" => "rectangle", "width" => 80, "height" => 80],
+        ["shape" => "diamond",   "width" => 80, "height" => 80],
+        ["shape" => "pentagon",  "width" => 80, "height" => 80],
+        ["shape" => "hexagon",   "width" => 80, "height" => 80],
+        ["shape" => "heptagon",  "width" => 80, "height" => 80],
+        ["shape" => "octagon",   "width" => 80, "height" => 80],
     ];
 
     public function __construct(HelperImages $imagesHelper)
@@ -1999,20 +2064,20 @@ final class HelperCytoscape
     public function toArray(ModelGraph $graph): array
     {
         return [
-            'elements' => [
-                'nodes' => $this->getNodes($graph),
-                'edges' => $this->getEdges($graph),
+            self::KEYNAME_ELEMENTS => [
+                ModelGraph::KEYNAME_NODES => $this->getNodes($graph),
+                ModelGraph::KEYNAME_EDGES => $this->getEdges($graph),
             ],
 
-            'style' => $this->getStyle(),
+            self::KEYNAME_STYLES => $this->getStyle(),
 
-            'layout' => $this->getLayout(),
+            self::KEYNAME_LAYOUT => $this->getLayout(),
 
-            'zoom' => 1,
+            self::KEYNAME_ZOOM => 1,
 
-            'pan' => [
-                'x' => 0,
-                'y' => 0,
+            self::KEYNAME_PAN => [
+                self::KEYNAME_PANX => 0,
+                self::KEYNAME_PANY => 0,
             ],
         ];
     }
@@ -2021,7 +2086,7 @@ final class HelperCytoscape
     {
         $graphArr = $graph->toArray();
         $nodes = [];
-        foreach ($graphArr['nodes'] as $index => $node) {
+        foreach ($graphArr[ModelGraph::KEYNAME_NODES] as $index => $node) {
             $node = $node->toArray();
             $shape = $this->getNodeShape($index);
             $node = array_merge($node, $shape);
@@ -2045,7 +2110,7 @@ final class HelperCytoscape
     {
         $edgesArr = $graph->toArray();
         $edges = [];
-        foreach ($edgesArr['edges'] as $edge) {
+        foreach ($edgesArr[ModelGraph::KEYNAME_EDGES] as $edge) {
             $edge = $edge->toArray();
             $edges[] = [
                 'data' => [

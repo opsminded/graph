@@ -6,14 +6,22 @@ final class HelperCytoscape
 {
     private HelperImages $imagesHelper;
 
+    private const KEYNAME_ELEMENTS = "elements";
+    private const KEYNAME_STYLES = "style";
+    private const KEYNAME_LAYOUT = "layout";
+    private const KEYNAME_ZOOM = "zoom";
+    private const KEYNAME_PAN = "pan";
+    private const KEYNAME_PANX = "x";
+    private const KEYNAME_PANY = "y";
+
     private const SHAPES = [
-        ['shape' => 'ellipse',   'width' => 80, 'height' => 80],
-        ['shape' => 'rectangle', 'width' => 80, 'height' => 80],
-        ['shape' => 'diamond',   'width' => 80, 'height' => 80],
-        ['shape' => 'pentagon',  'width' => 80, 'height' => 80],
-        ['shape' => 'hexagon',   'width' => 80, 'height' => 80],
-        ['shape' => 'heptagon',  'width' => 80, 'height' => 80],
-        ['shape' => 'octagon',   'width' => 80, 'height' => 80],
+        ["shape" => "ellipse",   "width" => 80, "height" => 80],
+        ["shape" => "rectangle", "width" => 80, "height" => 80],
+        ["shape" => "diamond",   "width" => 80, "height" => 80],
+        ["shape" => "pentagon",  "width" => 80, "height" => 80],
+        ["shape" => "hexagon",   "width" => 80, "height" => 80],
+        ["shape" => "heptagon",  "width" => 80, "height" => 80],
+        ["shape" => "octagon",   "width" => 80, "height" => 80],
     ];
 
     public function __construct(HelperImages $imagesHelper)
@@ -24,20 +32,20 @@ final class HelperCytoscape
     public function toArray(ModelGraph $graph): array
     {
         return [
-            'elements' => [
-                'nodes' => $this->getNodes($graph),
-                'edges' => $this->getEdges($graph),
+            self::KEYNAME_ELEMENTS => [
+                ModelGraph::KEYNAME_NODES => $this->getNodes($graph),
+                ModelGraph::KEYNAME_EDGES => $this->getEdges($graph),
             ],
 
-            'style' => $this->getStyle(),
+            self::KEYNAME_STYLES => $this->getStyle(),
 
-            'layout' => $this->getLayout(),
+            self::KEYNAME_LAYOUT => $this->getLayout(),
 
-            'zoom' => 1,
+            self::KEYNAME_ZOOM => 1,
 
-            'pan' => [
-                'x' => 0,
-                'y' => 0,
+            self::KEYNAME_PAN => [
+                self::KEYNAME_PANX => 0,
+                self::KEYNAME_PANY => 0,
             ],
         ];
     }
@@ -46,7 +54,7 @@ final class HelperCytoscape
     {
         $graphArr = $graph->toArray();
         $nodes = [];
-        foreach ($graphArr['nodes'] as $index => $node) {
+        foreach ($graphArr[ModelGraph::KEYNAME_NODES] as $index => $node) {
             $node = $node->toArray();
             $shape = $this->getNodeShape($index);
             $node = array_merge($node, $shape);
@@ -70,7 +78,7 @@ final class HelperCytoscape
     {
         $edgesArr = $graph->toArray();
         $edges = [];
-        foreach ($edgesArr['edges'] as $edge) {
+        foreach ($edgesArr[ModelGraph::KEYNAME_EDGES] as $edge) {
             $edge = $edge->toArray();
             $edges[] = [
                 'data' => [

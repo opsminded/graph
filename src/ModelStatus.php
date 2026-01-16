@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 final class ModelStatus
 {
-    private const ALLOWED_NODE_STATUSES = ['unknown', 'healthy', 'unhealthy', 'maintenance'];
+    public const STATUS_KEYNAME_NODE_ID = "node_id";
+    public const STATUS_KEYNAME_STATUS = "status";
+    private const ALLOWED_NODE_STATUSES = ["unknown", "healthy", "unhealthy", "maintenance"];
 
     private string $nodeId;
     private string $status;

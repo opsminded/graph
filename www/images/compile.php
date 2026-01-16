@@ -3,8 +3,8 @@
 $files = glob(__DIR__ . "/*.png");
 
 $content = "<?php\n";
-$content .= "// Auto-generated list of PNG files\n";
-$content .= "return [\n";
+
+$content .= "\$images = [\n";
 
 foreach ($files as $file) {
     $base64 = base64_encode(file_get_contents($file));

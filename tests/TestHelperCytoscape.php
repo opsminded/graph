@@ -6,7 +6,9 @@ class TestHelperCytoscape extends TestAbstractTest
 {
     public function testHelperCytoscape(): void
     {
-        $img = new HelperImages();
+        include __DIR__ . "/www/images/compiled_images.php";
+
+        $img = new HelperImages($images);
         $cy = new HelperCytoscape($img);
 
         $nodes = [
@@ -22,7 +24,5 @@ class TestHelperCytoscape extends TestAbstractTest
 
         $graph = new ModelGraph($nodes, $edges);
         $data = $cy->toArray($graph);
-        print_r($data);
-        exit();
     }
 }

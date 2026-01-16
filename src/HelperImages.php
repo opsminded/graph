@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 final class HelperImages
 {
-    private $images;
+    private array $images;
 
-    public function __construct()
+    public function __construct(array $images)
     {
-        $this->images = include_once __DIR__ . '/www/images/compiled_images.php';
+        $this->images = $images;
     }
 
     public function send(string $imageName): void

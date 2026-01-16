@@ -21,6 +21,8 @@ class TestHTTPRequestRouter extends TestAbstractTest
 
     public function up(): void
     {
+        include __DIR__ . "/www/images/compiled_images.php";
+
         $_GET = [];
         $_SERVER = [];
 
@@ -30,7 +32,7 @@ class TestHTTPRequestRouter extends TestAbstractTest
         $this->serviceLogger = new Logger();
         $this->controllerLogger = new Logger();
 
-        $this->imagesHelper = new HelperImages('/tmp');
+        $this->imagesHelper = new HelperImages($images);
         $this->cytoscapeHelper = new HelperCytoscape($this->imagesHelper);
 
         $this->database = new Database($this->pdo, $this->databaseLogger);
@@ -65,10 +67,11 @@ class TestHTTPRequestRouter extends TestAbstractTest
         $_SERVER['SCRIPT_NAME'] = 'api.php';
         $_SERVER['REQUEST_URI'] = 'api.php/insertUser';
         $req = new HTTPRequest();
-        $req->data['id'] = 'joao';
-        $req->data['user_group'] = 'contributor';
+        $req->data[ModelUser::USER_KEYNAME_ID] = 'joao';
+        $req->data[ModelUser::USER_KEYNAME_GROUP] = 'contributor';
         $resp = $this->router->handle($req);
         if($resp->code !== 201 || $resp->message !== 'user created' || $resp->data['id'] !== 'joao' || $resp->data['group']['id'] !== 'contributor') {
+            print_r($resp);
             throw new Exception('error on testHTTPRequestRouter');
         }
     }
@@ -80,8 +83,8 @@ class TestHTTPRequestRouter extends TestAbstractTest
         $_SERVER['SCRIPT_NAME'] = 'api.php';
         $_SERVER['REQUEST_URI'] = 'api.php/updataUser';
         $req = new HTTPRequest();
-        $req->data['id'] = 'joao';
-        $req->data['user_group'] = 'contributor';
+        $req->data[ModelUser::USER_KEYNAME_ID] = 'joao';
+        $req->data[ModelUser::USER_KEYNAME_GROUP] = 'contributor';
         $resp = $this->router->handle($req);
         if($resp->code !== 500 || $resp->message !== 'method not found in list') {
             throw new Exception('error on testHTTPRequestRouterException');

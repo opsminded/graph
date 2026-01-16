@@ -7,6 +7,9 @@ final class ModelType
     public string $id;
     public string $name;
 
+    public const TYPE_KEYNAME_ID = "id";
+    public const TYPE_KEYNAME_NAME = "name";
+
     public function __construct(string $id, string $name)
     {
         $this->id = $id;
@@ -16,8 +19,8 @@ final class ModelType
     public function toArray(): array
     {
         return [
-            'id' => $this->id,
-            'name' => $this->name,
+            self::TYPE_KEYNAME_ID => $this->id,
+            self::TYPE_KEYNAME_NAME => $this->name,
         ];
     }
 }

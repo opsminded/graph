@@ -20,12 +20,14 @@ final class TestHTTPController extends TestAbstractTest
 
     public function up(): void
     {
+        include __DIR__ . "/www/images/compiled_images.php";
+
         $this->pdo = Database::createConnection('sqlite::memory:');
         $this->databaseLogger = new Logger();
         $this->serviceLogger = new Logger();
         $this->controllerLogger = new Logger();
 
-        $this->imagesHelper = new HelperImages('/tmp');
+        $this->imagesHelper = new HelperImages($images);
         $this->cytoscapeHelper = new HelperCytoscape($this->imagesHelper);
 
         $this->database = new Database($this->pdo, $this->databaseLogger);
@@ -58,8 +60,9 @@ final class TestHTTPController extends TestAbstractTest
         $_SERVER['REQUEST_URI'] = 'api.php/getUser';
         $req = new HTTPRequest();
         $resp = $this->controller->getUser($req);
-        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'getUser\'') {
-            throw new Exception('error on testGetUser');
+        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'HTTPController::getUser\'') {
+            print_r($resp);
+            throw new Exception('error on testGetUser 1');
         }
         
         $_GET['id'] = 'maria';
@@ -70,7 +73,7 @@ final class TestHTTPController extends TestAbstractTest
         $req = new HTTPRequest();
         $resp = $this->controller->getUser($req);
         if ($resp->code !== 404 || $resp->status !== 'error' || $resp->message !== 'user not found') {
-            throw new Exception('error on testGetUser');
+            throw new Exception('error on testGetUser 2');
         }
 
         $this->database->insertUser('maria', 'contributor');
@@ -78,14 +81,14 @@ final class TestHTTPController extends TestAbstractTest
         $req = new HTTPRequest();
         $resp = $this->controller->getUser($req);
         if ($resp->code !== 200 || $resp->status !== 'success' || $resp->message !== 'user found' || $resp->data['id'] !== 'maria') {
-            throw new Exception('error on testGetUser');
+            throw new Exception('error on testGetUser 3');
         }
 
         unset($_GET['id']);
         $req = new HTTPRequest();
         $resp = $this->controller->getUser($req);
         if ($resp->code !== 400 || $resp->status !== 'error' || $resp->message !== 'param \'id\' is missing') {
-            throw new Exception('error on testGetUser');
+            throw new Exception('error on testGetUser 4');
         }
     }
 
@@ -96,8 +99,8 @@ final class TestHTTPController extends TestAbstractTest
         $_SERVER['REQUEST_URI'] = 'api.php/insertUser';
         $req = new HTTPRequest();
         $resp = $this->controller->insertUser($req);
-        if ($resp->code != 405 || $resp->message != 'method \'GET\' not allowed in \'insertUser\'') {
-            throw new Exception('error on testInsertUser');
+        if ($resp->code != 405 || $resp->message != 'method \'GET\' not allowed in \'HTTPController::insertUser\'') {
+            throw new Exception('error on testInsertUser 1');
         }
 
         $_SERVER['REQUEST_METHOD'] = 'POST';
@@ -106,23 +109,25 @@ final class TestHTTPController extends TestAbstractTest
         
         $req = new HTTPRequest();
         $req->data['id'] = 'maria';
-        $req->data['user_group'] = 'admin';
+        $req->data['group'] = 'admin';
 
         $resp = $this->controller->insertUser($req);
         if ($resp->code !== 201 || $resp->status !== 'success' || $resp->message !== 'user created' || $resp->data['id'] !== 'maria' || $resp->data['group']['id'] !== 'admin') {
-            throw new Exception('error on testInsertUser');
+            print_r($resp);
+            throw new Exception('error on testInsertUser 2');
         }
 
         $req->data = [];
         $resp = $this->controller->insertUser($req);
         if ($resp->code !== 400 || $resp->message !== 'key id not found in data') {
-            throw new Exception('error on testInsertUser');
+            throw new Exception('error on testInsertUser 3');
         }
         
         $req->data['id'] = 'maria';
         $resp = $this->controller->insertUser($req);
-        if ($resp->code !== 400 || $resp->message !== 'key user_group not found in data') {
-            throw new Exception('error on testInsertUser');
+        if ($resp->code !== 400 || $resp->message !== 'key group not found in data') {
+            print_r($resp);
+            throw new Exception('error on testInsertUser 4');
         }
     }
 
@@ -133,7 +138,7 @@ final class TestHTTPController extends TestAbstractTest
         $_SERVER['REQUEST_URI'] = 'api.php/updateUser';
         $req = new HTTPRequest();
         $resp = $this->controller->updateUser($req);
-        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'updateUser\'') {
+        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'HTTPController::updateUser\'') {
             throw new Exception('error on testUpdateUser');
         }
 
@@ -143,7 +148,7 @@ final class TestHTTPController extends TestAbstractTest
 
         $req = new HTTPRequest();
         $req->data['id'] = 'maria';
-        $req->data['user_group'] = 'admin';
+        $req->data['group'] = 'admin';
 
         $resp = $this->controller->updateUser($req);
         if ($resp->code !== 404 || $resp->status !== 'error' || $resp->data['id'] !== 'maria') {
@@ -165,7 +170,7 @@ final class TestHTTPController extends TestAbstractTest
         $_SERVER['REQUEST_URI'] = 'api.php/getGraph';
         $req = new HTTPRequest();
         $resp = $this->controller->getGraph($req);
-        if ($resp->code != 405 || $resp->message != 'method \'PUT\' not allowed in \'getGraph\'') {
+        if ($resp->code != 405 || $resp->message != 'method \'PUT\' not allowed in \'HTTPController::getGraph\'') {
             throw new Exception('error on testGetGraph');
         }
 
@@ -185,7 +190,7 @@ final class TestHTTPController extends TestAbstractTest
         $_SERVER['REQUEST_URI'] = 'api.php/getNode';
         $req = new HTTPRequest();
         $resp = $this->controller->getNode($req);
-        if ($resp->code != 405 || $resp->message != 'method \'DELETE\' not allowed in \'getNode\'') {
+        if ($resp->code != 405 || $resp->message != 'method \'DELETE\' not allowed in \'HTTPController::getNode\'') {
             throw new Exception('error on testGetNode 1');
         }
 
@@ -222,7 +227,7 @@ final class TestHTTPController extends TestAbstractTest
         $_SERVER['REQUEST_URI'] = 'api.php/getNodes';
         $req = new HTTPRequest();
         $resp = $this->controller->getNodes($req);
-        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'getNodes\'') {
+        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'HTTPController::getNodes\'') {
             throw new Exception('error on testGetNodes');
         }
 
@@ -255,7 +260,7 @@ final class TestHTTPController extends TestAbstractTest
         $_SERVER['REQUEST_URI'] = 'api.php/getNodeParentOf';
         $req = new HTTPRequest();
         $resp = $this->controller->getNodeParentOf($req);
-        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'getNodeParentOf\'') {
+        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'HTTPController::getNodeParentOf\'') {
             print_r($resp);
             throw new Exception('error on testGetNodeParentOf');
         }
@@ -301,7 +306,7 @@ final class TestHTTPController extends TestAbstractTest
         $req = new HTTPRequest();
 
         $resp = $this->controller->getDependentNodesOf($req);
-        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'getDependentNodesOf\'') {
+        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'HTTPController::getDependentNodesOf\'') {
             print_r($resp);
             throw new Exception('error on testGetDependentNodesOf');
         }
@@ -352,7 +357,7 @@ final class TestHTTPController extends TestAbstractTest
 
         $req = new HTTPRequest();
         $resp = $this->controller->insertNode($req);
-        if ($resp->code != 405 || $resp->message != 'method \'PUT\' not allowed in \'insertNode\'') {
+        if ($resp->code != 405 || $resp->message != 'method \'PUT\' not allowed in \'HTTPController::insertNode\'') {
             throw new Exception('error on testInsertNode');
         }
 
@@ -376,7 +381,7 @@ final class TestHTTPController extends TestAbstractTest
         $_SERVER['REQUEST_URI'] = 'api.php/updateNode';
         $req = new HTTPRequest();
         $resp = $this->controller->updateNode($req);
-        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'updateNode\'') {
+        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'HTTPController::updateNode\'') {
             throw new Exception('error on testUpdateNode');
         }
 
@@ -400,7 +405,7 @@ final class TestHTTPController extends TestAbstractTest
         $_SERVER['REQUEST_URI'] = 'api.php/deleteNode';
         $req = new HTTPRequest();
         $resp = $this->controller->deleteNode($req);
-        if ($resp->code != 405 || $resp->message != 'method \'GET\' not allowed in \'deleteNode\'') {
+        if ($resp->code != 405 || $resp->message != 'method \'GET\' not allowed in \'HTTPController::deleteNode\'') {
             throw new Exception('error on testDeleteNode');
         }
 
@@ -434,7 +439,7 @@ final class TestHTTPController extends TestAbstractTest
         $_SERVER['REQUEST_URI'] = 'api.php/getEdge';
         $req = new HTTPRequest();
         $resp = $this->controller->getEdge($req);
-        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'getEdge\'') {
+        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'HTTPController::getEdge\'') {
             throw new Exception('error on testGetEdge 1');
         }
 
@@ -470,7 +475,7 @@ final class TestHTTPController extends TestAbstractTest
         $_SERVER['REQUEST_URI'] = 'api.php/getEdges';
         $req = new HTTPRequest();
         $resp = $this->controller->getEdges($req);
-        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'getEdges\'') {
+        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'HTTPController::getEdges\'') {
             throw new Exception('error on testGetEdges');
         }
 
@@ -489,7 +494,7 @@ final class TestHTTPController extends TestAbstractTest
         $_SERVER['REQUEST_URI'] = 'api.php/insertEdge';
         $req = new HTTPRequest();
         $resp = $this->controller->insertEdge($req);
-        if ($resp->code != 405 || $resp->message != 'method \'GET\' not allowed in \'insertEdge\'') {
+        if ($resp->code != 405 || $resp->message != 'method \'GET\' not allowed in \'HTTPController::insertEdge\'') {
             throw new Exception('error on testInsertEdge');
         }
 
@@ -515,7 +520,7 @@ final class TestHTTPController extends TestAbstractTest
         $_SERVER['REQUEST_URI'] = 'api.php/updateEdge';
         $req = new HTTPRequest();
         $resp = $this->controller->updateEdge($req);
-        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'updateEdge\'') {
+        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'HTTPController::updateEdge\'') {
             throw new Exception('error on testUpdateEdge');
         }
 
@@ -536,7 +541,7 @@ final class TestHTTPController extends TestAbstractTest
         $_SERVER['REQUEST_URI'] = 'api.php/deleteEdge';
         $req = new HTTPRequest();
         $resp = $this->controller->deleteEdge($req);
-        if ($resp->code != 405 || $resp->message != 'method \'PUT\' not allowed in \'deleteEdge\'') {
+        if ($resp->code != 405 || $resp->message != 'method \'PUT\' not allowed in \'HTTPController::deleteEdge\'') {
             throw new Exception('error on testDeleteEdge');
         }
 
@@ -556,7 +561,7 @@ final class TestHTTPController extends TestAbstractTest
         $_SERVER['REQUEST_URI'] = 'api.php/getStatus';
         $req = new HTTPRequest();
         $resp = $this->controller->getStatus($req);
-        if ($resp->code != 405 || $resp->message != 'method \'PUT\' not allowed in \'getStatus\'') {
+        if ($resp->code != 405 || $resp->message != 'method \'PUT\' not allowed in \'HTTPController::getStatus\'') {
             throw new Exception('error on testGetStatus');
         }
 
@@ -588,7 +593,8 @@ final class TestHTTPController extends TestAbstractTest
         $_SERVER['REQUEST_URI'] = 'api.php/getNodeStatus';
         $req = new HTTPRequest();
         $resp = $this->controller->getNodeStatus($req);
-        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'getNodeStatus\'') {
+        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'HTTPController::getNodeStatus\'') {
+            print_r($resp);
             throw new Exception('error on testGetNodeStatus 1');
         }
 
@@ -597,22 +603,24 @@ final class TestHTTPController extends TestAbstractTest
         $_SERVER['REQUEST_URI'] = 'api.php/getNodeStatus';
         $req = new HTTPRequest();
         $resp = $this->controller->getNodeStatus($req);
-        if ($resp->code !== 400 || $resp->status !== 'error' || $resp->message !== 'param \'id\' is missing') {
+        if ($resp->code !== 400 || $resp->status !== 'error' || $resp->message !== 'param \'node_id\' is missing') {
+            print_r($resp);
             throw new Exception('error on testGetNodeStatus 2');
         }
 
-        $_GET['id'] = 'node1';
+        $_GET[ModelStatus::STATUS_KEYNAME_NODE_ID] = 'node1';
         $req = new HTTPRequest();
         $resp = $this->controller->getNodeStatus($req);
-        if ($resp->code !== 404 || $resp->message !== 'node not found' || $resp->data['id'] !== 'node1') {
+        if ($resp->code !== 404 || $resp->message !== 'node not found' || $resp->data[ModelStatus::STATUS_KEYNAME_NODE_ID] !== 'node1') {
+            print_r($resp);
             throw new Exception('error on testGetNodeStatus 3');
         }
 
         $this->database->insertNode('node1', 'label 1', 'business', 'database');
-        $_GET['id'] = 'node1';
+        $_GET[ModelStatus::STATUS_KEYNAME_NODE_ID] = 'node1';
         $req = new HTTPRequest();
         $resp = $this->controller->getNodeStatus($req);
-        if ($resp->code !== 200 || $resp->message !== 'node found' || $resp->data['node_id'] !== 'node1' || $resp->data['status'] !== 'unknown') {
+        if ($resp->code !== 200 || $resp->message !== 'node found' || $resp->data[ModelStatus::STATUS_KEYNAME_NODE_ID] !== 'node1' || $resp->data['status'] !== 'unknown') {
             throw new Exception('error on testGetNodeStatus');
         }
     }
@@ -624,7 +632,7 @@ final class TestHTTPController extends TestAbstractTest
         $_SERVER['REQUEST_URI'] = 'api.php/updateNodeStatus';
         $req = new HTTPRequest();
         $resp = $this->controller->updateNodeStatus($req);
-        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'updateNodeStatus\'') {
+        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'HTTPController::updateNodeStatus\'') {
             throw new Exception('error on testUpdateNodeStatus');
         }
 
@@ -645,7 +653,7 @@ final class TestHTTPController extends TestAbstractTest
         $_SERVER['REQUEST_URI'] = 'api.php/getLogs';
         $req = new HTTPRequest();
         $resp = $this->controller->getLogs($req);
-        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'getLogs\'') {
+        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'HTTPController::getLogs\'') {
             throw new Exception('error on testGetLogs 1');
         }
 

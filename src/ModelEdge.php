@@ -8,6 +8,11 @@ final class ModelEdge
     private string $target;
     private array  $data;
 
+    public const EDGE_KEYNAME_ID     = "id";
+    public const EDGE_KEYNAME_SOURCE = "source";
+    public const EDGE_KEYNAME_TARGET = "target";
+    public const EDGE_KEYNAME_DATA   = "data";
+
     public function __construct(string $source, string $target, array $data = [])
     {
         $this->source = $source;

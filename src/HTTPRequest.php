@@ -9,20 +9,25 @@ final class HTTPRequest
     public string $path;
     public string $method;
 
+    public const METHOD_GET    = "GET";
+    public const METHOD_POST   = "POST";
+    public const METHOD_PUT    = "PUT";
+    public const METHOD_DELETE = "DELETE";
+
     public function __construct()
     {
         $this->params = $_GET;
 
-        $this->method = $_SERVER['REQUEST_METHOD'];
+        $this->method = $_SERVER["REQUEST_METHOD"];
 
-        $scriptName = $_SERVER['SCRIPT_NAME'];
-        $requestUri = $_SERVER['REQUEST_URI'];
-        $requestUri = strtok($requestUri, '?');
-        $path = str_replace($scriptName, '', $requestUri);
+        $scriptName = $_SERVER["SCRIPT_NAME"];
+        $requestUri = $_SERVER["REQUEST_URI"];
+        $requestUri = strtok($requestUri, "?");
+        $path = str_replace($scriptName, "", $requestUri);
         $this->path = $path;
 
-        if ($this->method === 'POST' || $this->method === 'PUT') {
-            $jsonData = file_get_contents('php://input');
+        if ($this->method === self::METHOD_POST || $this->method === self::METHOD_PUT) {
+            $jsonData = file_get_contents("php://input");
             if ($jsonData) {
                 $this->data = json_decode($jsonData, true); 
             } else {

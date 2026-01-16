@@ -7,6 +7,9 @@ final class ModelGraph
     private array $nodes = [];
     private array $edges = [];
 
+    public const KEYNAME_NODES = "nodes";
+    public const KEYNAME_EDGES = "edges";
+
     public function __construct(array $nodes, array $edges)
     {
         $this->nodes = $nodes;
@@ -26,8 +29,8 @@ final class ModelGraph
     public function toArray(): array
     {
         return [
-            'nodes' => $this->nodes,
-            'edges' => $this->edges,
+            self::KEYNAME_NODES => $this->nodes,
+            self::KEYNAME_EDGES => $this->edges,
         ];
     }
 }
