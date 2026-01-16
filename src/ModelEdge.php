@@ -38,6 +38,7 @@ final class ModelEdge
     public function toArray(): array
     {
         return [
+            'id'     => $this->getId(),
             'source' => $this->source,
             'target' => $this->target,
             'data'   => $this->data

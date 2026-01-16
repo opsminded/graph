@@ -35,6 +35,7 @@ $tests = [
     new TestService(),
     new TestHelperContext(),
     new TestHelperLogger(),
+    new TestHelperCytoscape(),
     new TestHTTPController(),
     new TestHTTPOKResponse(),
     new TestHTTPBadRequestResponse(),
