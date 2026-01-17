@@ -291,7 +291,7 @@ final class TestHTTPController extends TestAbstractTest
         $_GET['id'] = 'node2';
         $this->database->insertNode('node1', 'label1', 'application', 'service');
         $this->database->insertNode('node2', 'label2', 'application', 'service');
-        $this->database->insertEdge('node1-node2', 'node1', 'node2');
+        $this->database->insertEdge('node1-node2', 'node1', 'node2', 'label');
         $req = new HTTPRequest();
         $resp = $this->controller->getNodeParentOf($req);
         if ($resp->code !== 200 || $resp->status !== 'success' || $resp->data['id'] !== 'node1') {
@@ -336,8 +336,8 @@ final class TestHTTPController extends TestAbstractTest
         $this->database->insertNode('node1', 'label1', 'application', 'service');
         $this->database->insertNode('node2', 'label2', 'application', 'service');
         $this->database->insertNode('node3', 'label3', 'application', 'service');
-        $this->database->insertEdge('node1-node2', 'node1', 'node2');
-        $this->database->insertEdge('node1-node3', 'node1', 'node3');
+        $this->database->insertEdge('node1-node2', 'node1', 'node2', 'label');
+        $this->database->insertEdge('node1-node3', 'node1', 'node3', 'label');
 
         $_GET['id'] = 'node1';
         $req = new HTTPRequest();
@@ -459,7 +459,7 @@ final class TestHTTPController extends TestAbstractTest
 
         $this->database->insertNode('node1', 'label1', 'application', 'service');
         $this->database->insertNode('node2', 'label2', 'application', 'service');
-        $this->database->insertEdge('node1-node2', 'node1', 'node2');
+        $this->database->insertEdge('node1-node2', 'node1', 'node2', 'label');
         
         $req = new HTTPRequest();
         $req->data['source'] = 'node1';
@@ -509,6 +509,8 @@ final class TestHTTPController extends TestAbstractTest
         $req = new HTTPRequest();
         $req->data['source'] = 'node1';
         $req->data['target'] = 'node2';
+        $req->data['label'] = 'edge from node1 to node2';
+        $req->data['data'] = ['a' => 'b'];
         $resp = $this->controller->insertEdge($req);
         if ($resp->code !== 200 || $resp->status !== 'success' || $resp->data['source'] !== 'node1') {
             throw new Exception('error on testInsertEdge');
@@ -532,6 +534,7 @@ final class TestHTTPController extends TestAbstractTest
         $req = new HTTPRequest();
         $req->data['source'] = 'node1';
         $req->data['target'] = 'node2';
+        $req->data['label'] = 'edge from node1 to node2';
         $req->data['data'] = ['a' => 'b'];
         $resp = $this->controller->updateEdge($req);
     }

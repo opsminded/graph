@@ -9,7 +9,7 @@ class TestModelGraph extends TestAbstractTest
         $node1 = new ModelNode('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
         $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
         
-        $edge1 = new ModelEdge('node1', 'node2', ['weight' => '10']);
+        $edge1 = new ModelEdge('node1', 'node2', 'lbl node1', ['weight' => '10']);
 
         $graph = new ModelGraph([$node1, $node2], [$edge1]);
         

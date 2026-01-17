@@ -246,8 +246,8 @@ class TestDatabase extends TestAbstractTest
         $this->database->insertNode('node2', 'Node 02', 'cat2', 'db', ['running_on' => 'SRV011P']);
         $this->database->insertNode('node3', 'Node 03', 'cat1', 'app', ['running_on' => 'SRV012P']);
 
-        $this->database->insertEdge('edge1', 'node1', 'node2', ['a' => 'b']);
-        $this->database->insertEdge('edge2', 'node2', 'node3', ['b' => 'c']);
+        $this->database->insertEdge('edge1', 'node1', 'node2', 'label', ['a' => 'b']);
+        $this->database->insertEdge('edge2', 'node2', 'node3', 'label', ['b' => 'c']);
 
         $node = $this->database->getNodeParentOf('node2');
 
@@ -277,8 +277,8 @@ class TestDatabase extends TestAbstractTest
         $this->database->insertNode('node2', 'Node 02', 'cat2', 'db', ['running_on' => 'SRV011P']);
         $this->database->insertNode('node3', 'Node 03', 'cat1', 'app', ['running_on' => 'SRV012P']);
 
-        $this->database->insertEdge('edge1', 'node1', 'node2', ['a' => 'b']);
-        $this->database->insertEdge('edge2', 'node2', 'node3', ['b' => 'c']);
+        $this->database->insertEdge('edge1', 'node1', 'node2', 'label', ['a' => 'b']);
+        $this->database->insertEdge('edge2', 'node2', 'node3', 'label', ['b' => 'c']);
 
         $nodes = $this->database->getDependentNodesOf('node2');
 
@@ -366,7 +366,7 @@ class TestDatabase extends TestAbstractTest
         
         $this->database->insertNode('node2', 'Node 02', 'business', 'database', ['running_on' => 'SRV011P']);
         
-        $this->database->insertEdge('edge1', 'node1', 'node2', ['a' => 'b']);
+        $this->database->insertEdge('edge1', 'node1', 'node2', 'label', ['a' => 'b']);
         
         $edge = $this->database->getEdge('node1', 'node2');
         
@@ -393,8 +393,8 @@ class TestDatabase extends TestAbstractTest
         $this->database->insertNode('node2', 'Node 02', 'application', 'database', ['running_on' => 'SRV011P']);
         $this->database->insertNode('node3', 'Node 03', 'application', 'service', ['running_on' => 'SRV012P']);
 
-        $this->database->insertEdge('edge1', 'node1', 'node2', ['a' => 'b']);
-        $this->database->insertEdge('edge2', 'node2', 'node3', ['b' => 'c']);
+        $this->database->insertEdge('edge1', 'node1', 'node2', 'label', ['a' => 'b']);
+        $this->database->insertEdge('edge2', 'node2', 'node3', 'label', ['b' => 'c']);
 
         $edges = $this->database->getEdges();
         if (count($edges) !== 2) {
@@ -419,7 +419,7 @@ class TestDatabase extends TestAbstractTest
         $this->database->insertNode('node1', 'Node 01', 'application', 'service', ['running_on' => 'SRV01OP']);
         $this->database->insertNode('node2', 'Node 02', 'business', 'database', ['running_on' => 'SRV011P']);
 
-        $this->database->insertEdge('edge1', 'node1', 'node2', ['a' => 'b']);
+        $this->database->insertEdge('edge1', 'node1', 'node2', 'label', ['a' => 'b']);
 
         $edge = $this->database->getEdge('node1', 'node2');
 
@@ -431,7 +431,7 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('error on testInsertEdge');
         }
 
-        $this->database->insertEdge('edge2', 'node2', 'node1', ['a' => 'b']);
+        $this->database->insertEdge('edge2', 'node2', 'node1', 'label', ['a' => 'b']);
         $edge = $this->database->getEdge('node2', 'node1');
 
         if ($edge !== null) {
@@ -439,7 +439,7 @@ class TestDatabase extends TestAbstractTest
         }
 
         try {
-            $this->database->insertEdge('edge1', 'node1', 'node2', ['a' => 'b']);
+            $this->database->insertEdge('edge1', 'node1', 'node2', 'label', ['a' => 'b']);
         } catch (Exception $e) {
             return;
         }
@@ -455,9 +455,9 @@ class TestDatabase extends TestAbstractTest
         $this->database->insertNode('node1', 'Node 01', 'business', 'service', ['running_on' => 'SRV01OP']);
         $this->database->insertNode('node2', 'Node 02', 'application', 'database', ['running_on' => 'SRV011P']);
         $this->database->insertNode('node3', 'Node 03', 'application', 'service', ['running_on' => 'SRV012P']);
-        $this->database->insertEdge('edge1', 'node1', 'node2', ['a' => 'b']);
+        $this->database->insertEdge('edge1', 'node1', 'node2', 'label', ['a' => 'b']);
 
-        $this->database->updateEdge('edge1', 'node2', 'node3', ['x' => 'y']);
+        $this->database->updateEdge('edge1', 'node2', 'node3', 'label', ['x' => 'y']);
 
         $edge = $this->database->getEdge('node2', 'node3');
 
@@ -469,7 +469,7 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('error on testUpdateEdge');
         }
 
-        if ($this->database->updateEdge('edge3', 'node2', 'node3', ['x' => 'y'])) {
+        if ($this->database->updateEdge('edge3', 'node2', 'node3', 'label', ['x' => 'y'])) {
             throw new Exception('error on testUpdateEdge');
         }
     }
@@ -478,8 +478,8 @@ class TestDatabase extends TestAbstractTest
         $this->database->insertNode('node1', 'Node 01', 'business', 'service', ['running_on' => 'SRV01OP']);
         $this->database->insertNode('node2', 'Node 02', 'application', 'database', ['running_on' => 'SRV011P']);
         $this->database->insertNode('node3', 'Node 03', 'application', 'service', ['running_on' => 'SRV012P']);
-        $this->database->insertEdge('edge1', 'node1', 'node2', ['a' => 'b']);
-        $this->database->insertEdge('edge2', 'node2', 'node3', ['b' => 'c']);
+        $this->database->insertEdge('edge1', 'node1', 'node2', 'label', ['a' => 'b']);
+        $this->database->insertEdge('edge2', 'node2', 'node3', 'label', ['b' => 'c']);
 
         if (count($this->database->getEdges()) !== 2) {
             throw new Exception('error on testDeleteEdge');
@@ -796,7 +796,7 @@ class TestModelGraph extends TestAbstractTest
         $node1 = new ModelNode('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
         $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
         
-        $edge1 = new ModelEdge('node1', 'node2', ['weight' => '10']);
+        $edge1 = new ModelEdge('node1', 'node2', 'lbl node1', ['weight' => '10']);
 
         $graph = new ModelGraph([$node1, $node2], [$edge1]);
         
@@ -860,7 +860,7 @@ class TestModelEdge extends TestAbstractTest
 {
     public function testEdgeConstruct(): void
     {
-        $edge = new ModelEdge('node1', 'node2', ['weight' => '10']);
+        $edge = new ModelEdge('node1', 'node2', 'label', ['weight' => '10']);
 
         if ($edge->getId() != 'node1-node2' || $edge->getSource() != 'node1' || $edge->getTarget() != 'node2') {
             throw new Exception('testEdgeConstruct');
@@ -881,7 +881,7 @@ class TestModelEdge extends TestAbstractTest
         }
 
         // Test with empty data
-        $edge3 = new ModelEdge('node5', 'node6');
+        $edge3 = new ModelEdge('node5', 'node6', 'label');
         if (count($edge3->getData()) != 0) {
             throw new Exception('testEdgeConstruct');
         }
@@ -1234,7 +1234,7 @@ final class TestHTTPController extends TestAbstractTest
         $_GET['id'] = 'node2';
         $this->database->insertNode('node1', 'label1', 'application', 'service');
         $this->database->insertNode('node2', 'label2', 'application', 'service');
-        $this->database->insertEdge('node1-node2', 'node1', 'node2');
+        $this->database->insertEdge('node1-node2', 'node1', 'node2', 'label');
         $req = new HTTPRequest();
         $resp = $this->controller->getNodeParentOf($req);
         if ($resp->code !== 200 || $resp->status !== 'success' || $resp->data['id'] !== 'node1') {
@@ -1279,8 +1279,8 @@ final class TestHTTPController extends TestAbstractTest
         $this->database->insertNode('node1', 'label1', 'application', 'service');
         $this->database->insertNode('node2', 'label2', 'application', 'service');
         $this->database->insertNode('node3', 'label3', 'application', 'service');
-        $this->database->insertEdge('node1-node2', 'node1', 'node2');
-        $this->database->insertEdge('node1-node3', 'node1', 'node3');
+        $this->database->insertEdge('node1-node2', 'node1', 'node2', 'label');
+        $this->database->insertEdge('node1-node3', 'node1', 'node3', 'label');
 
         $_GET['id'] = 'node1';
         $req = new HTTPRequest();
@@ -1402,7 +1402,7 @@ final class TestHTTPController extends TestAbstractTest
 
         $this->database->insertNode('node1', 'label1', 'application', 'service');
         $this->database->insertNode('node2', 'label2', 'application', 'service');
-        $this->database->insertEdge('node1-node2', 'node1', 'node2');
+        $this->database->insertEdge('node1-node2', 'node1', 'node2', 'label');
         
         $req = new HTTPRequest();
         $req->data['source'] = 'node1';
@@ -1452,6 +1452,8 @@ final class TestHTTPController extends TestAbstractTest
         $req = new HTTPRequest();
         $req->data['source'] = 'node1';
         $req->data['target'] = 'node2';
+        $req->data['label'] = 'edge from node1 to node2';
+        $req->data['data'] = ['a' => 'b'];
         $resp = $this->controller->insertEdge($req);
         if ($resp->code !== 200 || $resp->status !== 'success' || $resp->data['source'] !== 'node1') {
             throw new Exception('error on testInsertEdge');
@@ -1475,6 +1477,7 @@ final class TestHTTPController extends TestAbstractTest
         $req = new HTTPRequest();
         $req->data['source'] = 'node1';
         $req->data['target'] = 'node2';
+        $req->data['label'] = 'edge from node1 to node2';
         $req->data['data'] = ['a' => 'b'];
         $resp = $this->controller->updateEdge($req);
     }
@@ -1729,8 +1732,8 @@ class TestHelperCytoscape extends TestAbstractTest
         ];
 
         $edges = [
-            new ModelEdge('n1', 'n2'),
-            new ModelEdge('n2', 'n3'),
+            new ModelEdge('n1', 'n2', 'label1'),
+            new ModelEdge('n2', 'n3', 'label2'),
         ];
 
         $graph = new ModelGraph($nodes, $edges);
@@ -1967,7 +1970,7 @@ class TestService extends TestAbstractTest
         $node2 = new ModelNode('n2', 'Node 02', 'business', 'service', ['key' => 'value2']);
         $this->service->insertNode($node1);
         $this->service->insertNode($node2);
-        $edge1 = new ModelEdge('n1', 'n2', ['weight' => '10']);
+        $edge1 = new ModelEdge('n1', 'n2', 'label', ['weight' => '10']);
         $this->service->insertEdge($edge1);
         $graph = $this->service->getGraph();
         if (count($graph->getNodes()) !== 2) {
@@ -2029,8 +2032,8 @@ class TestService extends TestAbstractTest
         $this->service->insertNode($nodeA);
         $this->service->insertNode($nodeB);
         $this->service->insertNode($nodeC);
-        $edgeAB = new ModelEdge('nodeA', 'nodeB', ['relation' => 'parent']);
-        $edgeAC = new ModelEdge('nodeA', 'nodeC', ['relation' => 'parent']);
+        $edgeAB = new ModelEdge('nodeA', 'nodeB', 'label', ['relation' => 'parent']);
+        $edgeAC = new ModelEdge('nodeA', 'nodeC', 'label', ['relation' => 'parent']);
         $this->service->insertEdge($edgeAB);
         $this->service->insertEdge($edgeAC);
         $parentOfB = $this->service->getNodeParentOf('nodeB');
@@ -2054,8 +2057,8 @@ class TestService extends TestAbstractTest
         $this->service->insertNode($nodeA);
         $this->service->insertNode($nodeB);
         $this->service->insertNode($nodeC);
-        $edgeAB = new ModelEdge('nodeA', 'nodeB', ['relation' => 'parent']);
-        $edgeAC = new ModelEdge('nodeA', 'nodeC', ['relation' => 'parent']);
+        $edgeAB = new ModelEdge('nodeA', 'nodeB', 'label', ['relation' => 'parent']);
+        $edgeAC = new ModelEdge('nodeA', 'nodeC', 'label', ['relation' => 'parent']);
         $this->service->insertEdge($edgeAB);
         $this->service->insertEdge($edgeAC);
         $dependentsOfA = $this->service->getDependentNodesOf('nodeA');
@@ -2146,7 +2149,7 @@ class TestService extends TestAbstractTest
         if ($edge !== null) {
             throw new Exception('error on testGetEdge - should be null');
         }
-        $newEdge = new ModelEdge('node1', 'node2', ['weight' => '10']);
+        $newEdge = new ModelEdge('node1', 'node2', 'label', ['weight' => '10']);
         $this->service->insertEdge($newEdge);
         $edge = $this->service->getEdge('node1', 'node2');
         if ($edge->getId() !== 'node1-node2' || $edge->getSource() !== 'node1' || $edge->getTarget() !== 'node2') {
@@ -2170,8 +2173,8 @@ class TestService extends TestAbstractTest
         $this->service->insertNode($node1);
         $this->service->insertNode($node2);
         $this->service->insertNode($node3);
-        $edge1 = new ModelEdge('node1', 'node2', ['weight' => '10']);
-        $edge2 = new ModelEdge('node2', 'node3', ['weight' => '20']);
+        $edge1 = new ModelEdge('node1', 'node2', 'label', ['weight' => '10']);
+        $edge2 = new ModelEdge('node2', 'node3', 'label', ['weight' => '20']);
         $this->service->insertEdge($edge1);
         $this->service->insertEdge($edge2);
         $edges = $this->service->getEdges();
@@ -2192,7 +2195,7 @@ class TestService extends TestAbstractTest
         $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
         $this->service->insertNode($node1);
         $this->service->insertNode($node2);
-        $edge = new ModelEdge('node1', 'node2', ['weight' => '10']);
+        $edge = new ModelEdge('node1', 'node2', 'label', ['weight' => '10']);
         $this->service->insertEdge($edge);
         $retrievedEdge = $this->service->getEdge('node1', 'node2');
         if ($retrievedEdge->getId() !== 'node1-node2' || $retrievedEdge->getSource() !== 'node1' || $retrievedEdge->getTarget() !== 'node2') {
@@ -2211,10 +2214,10 @@ class TestService extends TestAbstractTest
         $this->service->insertNode($node2);
         $this->service->insertNode($node3);
 
-        $edge = new ModelEdge('node1', 'node2', ['weight' => '10']);
+        $edge = new ModelEdge('node1', 'node2', 'label', ['weight' => '10']);
         $this->service->insertEdge($edge);
         
-        $updatedEdge = new ModelEdge('node1', 'node2', ['weight' => '30']);
+        $updatedEdge = new ModelEdge('node1', 'node2', 'label', ['weight' => '30']);
         $this->service->updateEdge($updatedEdge);
         $retrievedEdge = $this->service->getEdge('node1', 'node2');
 
@@ -2227,7 +2230,7 @@ class TestService extends TestAbstractTest
         }
 
         // Test updating non-existent edge
-        $nonExistentEdge = new ModelEdge('node1', 'node3', ['weight' => '50']);
+        $nonExistentEdge = new ModelEdge('node1', 'node3', 'label', ['weight' => '50']);
         if ($this->service->updateEdge($nonExistentEdge)) {
             throw new Exception('error on testUpdateEdge - should return false for non-existent edge');
         }
@@ -2240,20 +2243,20 @@ class TestService extends TestAbstractTest
         $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
         $this->service->insertNode($node1);
         $this->service->insertNode($node2);
-        $edge = new ModelEdge('node1', 'node2', ['weight' => '10']);
+        $edge = new ModelEdge('node1', 'node2', 'label', ['weight' => '10']);
         $this->service->insertEdge($edge);
         $retrievedEdge = $this->service->getEdge('node1', 'node2');
         if ($retrievedEdge === null) {
             throw new Exception('error on testDeleteEdge - edge not inserted');
         }
-        $this->service->deleteEdge(new ModelEdge('node1', 'node2'));
+        $this->service->deleteEdge(new ModelEdge('node1', 'node2', 'label'));
         $edges = $this->service->getEdges();
         if (count($edges) !== 0) {
             throw new Exception('error on testDeleteEdge - edge not deleted');
         }
 
         // Test deleting non-existent edge
-        if ($this->service->deleteEdge(new ModelEdge('node1', 'node2'))) {
+        if ($this->service->deleteEdge(new ModelEdge('node1', 'node2', 'label'))) {
             throw new Exception('error on testDeleteEdge - should return false for non-existent edge');
         }
     }

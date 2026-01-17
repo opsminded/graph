@@ -36,8 +36,8 @@ class TestHelperCytoscape extends TestAbstractTest
         ];
 
         $edges = [
-            new ModelEdge('n1', 'n2'),
-            new ModelEdge('n2', 'n3'),
+            new ModelEdge('n1', 'n2', 'label1'),
+            new ModelEdge('n2', 'n3', 'label2'),
         ];
 
         $graph = new ModelGraph($nodes, $edges);

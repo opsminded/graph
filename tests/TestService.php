@@ -150,7 +150,7 @@ class TestService extends TestAbstractTest
         $node2 = new ModelNode('n2', 'Node 02', 'business', 'service', ['key' => 'value2']);
         $this->service->insertNode($node1);
         $this->service->insertNode($node2);
-        $edge1 = new ModelEdge('n1', 'n2', ['weight' => '10']);
+        $edge1 = new ModelEdge('n1', 'n2', 'label', ['weight' => '10']);
         $this->service->insertEdge($edge1);
         $graph = $this->service->getGraph();
         if (count($graph->getNodes()) !== 2) {
@@ -212,8 +212,8 @@ class TestService extends TestAbstractTest
         $this->service->insertNode($nodeA);
         $this->service->insertNode($nodeB);
         $this->service->insertNode($nodeC);
-        $edgeAB = new ModelEdge('nodeA', 'nodeB', ['relation' => 'parent']);
-        $edgeAC = new ModelEdge('nodeA', 'nodeC', ['relation' => 'parent']);
+        $edgeAB = new ModelEdge('nodeA', 'nodeB', 'label', ['relation' => 'parent']);
+        $edgeAC = new ModelEdge('nodeA', 'nodeC', 'label', ['relation' => 'parent']);
         $this->service->insertEdge($edgeAB);
         $this->service->insertEdge($edgeAC);
         $parentOfB = $this->service->getNodeParentOf('nodeB');
@@ -237,8 +237,8 @@ class TestService extends TestAbstractTest
         $this->service->insertNode($nodeA);
         $this->service->insertNode($nodeB);
         $this->service->insertNode($nodeC);
-        $edgeAB = new ModelEdge('nodeA', 'nodeB', ['relation' => 'parent']);
-        $edgeAC = new ModelEdge('nodeA', 'nodeC', ['relation' => 'parent']);
+        $edgeAB = new ModelEdge('nodeA', 'nodeB', 'label', ['relation' => 'parent']);
+        $edgeAC = new ModelEdge('nodeA', 'nodeC', 'label', ['relation' => 'parent']);
         $this->service->insertEdge($edgeAB);
         $this->service->insertEdge($edgeAC);
         $dependentsOfA = $this->service->getDependentNodesOf('nodeA');
@@ -329,7 +329,7 @@ class TestService extends TestAbstractTest
         if ($edge !== null) {
             throw new Exception('error on testGetEdge - should be null');
         }
-        $newEdge = new ModelEdge('node1', 'node2', ['weight' => '10']);
+        $newEdge = new ModelEdge('node1', 'node2', 'label', ['weight' => '10']);
         $this->service->insertEdge($newEdge);
         $edge = $this->service->getEdge('node1', 'node2');
         if ($edge->getId() !== 'node1-node2' || $edge->getSource() !== 'node1' || $edge->getTarget() !== 'node2') {
@@ -353,8 +353,8 @@ class TestService extends TestAbstractTest
         $this->service->insertNode($node1);
         $this->service->insertNode($node2);
         $this->service->insertNode($node3);
-        $edge1 = new ModelEdge('node1', 'node2', ['weight' => '10']);
-        $edge2 = new ModelEdge('node2', 'node3', ['weight' => '20']);
+        $edge1 = new ModelEdge('node1', 'node2', 'label', ['weight' => '10']);
+        $edge2 = new ModelEdge('node2', 'node3', 'label', ['weight' => '20']);
         $this->service->insertEdge($edge1);
         $this->service->insertEdge($edge2);
         $edges = $this->service->getEdges();
@@ -375,7 +375,7 @@ class TestService extends TestAbstractTest
         $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
         $this->service->insertNode($node1);
         $this->service->insertNode($node2);
-        $edge = new ModelEdge('node1', 'node2', ['weight' => '10']);
+        $edge = new ModelEdge('node1', 'node2', 'label', ['weight' => '10']);
         $this->service->insertEdge($edge);
         $retrievedEdge = $this->service->getEdge('node1', 'node2');
         if ($retrievedEdge->getId() !== 'node1-node2' || $retrievedEdge->getSource() !== 'node1' || $retrievedEdge->getTarget() !== 'node2') {
@@ -394,10 +394,10 @@ class TestService extends TestAbstractTest
         $this->service->insertNode($node2);
         $this->service->insertNode($node3);
 
-        $edge = new ModelEdge('node1', 'node2', ['weight' => '10']);
+        $edge = new ModelEdge('node1', 'node2', 'label', ['weight' => '10']);
         $this->service->insertEdge($edge);
         
-        $updatedEdge = new ModelEdge('node1', 'node2', ['weight' => '30']);
+        $updatedEdge = new ModelEdge('node1', 'node2', 'label', ['weight' => '30']);
         $this->service->updateEdge($updatedEdge);
         $retrievedEdge = $this->service->getEdge('node1', 'node2');
 
@@ -410,7 +410,7 @@ class TestService extends TestAbstractTest
         }
 
         // Test updating non-existent edge
-        $nonExistentEdge = new ModelEdge('node1', 'node3', ['weight' => '50']);
+        $nonExistentEdge = new ModelEdge('node1', 'node3', 'label', ['weight' => '50']);
         if ($this->service->updateEdge($nonExistentEdge)) {
             throw new Exception('error on testUpdateEdge - should return false for non-existent edge');
         }
@@ -423,20 +423,20 @@ class TestService extends TestAbstractTest
         $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
         $this->service->insertNode($node1);
         $this->service->insertNode($node2);
-        $edge = new ModelEdge('node1', 'node2', ['weight' => '10']);
+        $edge = new ModelEdge('node1', 'node2', 'label', ['weight' => '10']);
         $this->service->insertEdge($edge);
         $retrievedEdge = $this->service->getEdge('node1', 'node2');
         if ($retrievedEdge === null) {
             throw new Exception('error on testDeleteEdge - edge not inserted');
         }
-        $this->service->deleteEdge(new ModelEdge('node1', 'node2'));
+        $this->service->deleteEdge(new ModelEdge('node1', 'node2', 'label'));
         $edges = $this->service->getEdges();
         if (count($edges) !== 0) {
             throw new Exception('error on testDeleteEdge - edge not deleted');
         }
 
         // Test deleting non-existent edge
-        if ($this->service->deleteEdge(new ModelEdge('node1', 'node2'))) {
+        if ($this->service->deleteEdge(new ModelEdge('node1', 'node2', 'label'))) {
             throw new Exception('error on testDeleteEdge - should return false for non-existent edge');
         }
     }

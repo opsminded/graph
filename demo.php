@@ -28,10 +28,10 @@ $service->insertNode(new ModelNode('Pagamento', 'Pagamento', 'business', 'busine
 $service->insertNode(new ModelNode('UserService', 'User Service', 'application', 'service', ['host' => 'users.example.com']));
 $service->insertNode(new ModelNode('AuthService', 'Authentication Service', 'application', 'service', ['host' => 'auth.example.com']));
 $service->insertNode(new ModelNode('UserDatabase', 'User Database', 'infrastructure', 'database', ['host' => 'users.example.com']));
-$service->insertEdge(new ModelEdge('Credito', 'Pagamento'));
-$service->insertEdge(new ModelEdge('Pagamento', 'UserService'));
-$service->insertEdge(new ModelEdge('UserService', 'AuthService', ['method' => 'OAuth2']));
-$service->insertEdge(new ModelEdge('UserService', 'UserDatabase', ['method' => 'SQL']));
+$service->insertEdge(new ModelEdge('Credito', 'Pagamento', 'Solicita'));
+$service->insertEdge(new ModelEdge('Pagamento', 'UserService', 'Solicita'));
+$service->insertEdge(new ModelEdge('UserService', 'AuthService', 'Solicita', ['method' => 'OAuth2']));
+$service->insertEdge(new ModelEdge('UserService', 'UserDatabase', 'Solicita', ['method' => 'SQL']));
 $service->updateNodeStatus(new ModelStatus('Credito', ModelStatus::STATUS_VALUE_UNKNOWN));
 $service->updateNodeStatus(new ModelStatus('Pagamento', ModelStatus::STATUS_VALUE_HEALTHY));
 $service->updateNodeStatus(new ModelStatus('UserService', ModelStatus::STATUS_VALUE_IMPACTED));
@@ -43,10 +43,10 @@ $service->insertNode(new ModelNode('Pagamento2', 'Pagamento', 'business', 'busin
 $service->insertNode(new ModelNode('UserService2', 'User Service', 'application', 'service', ['host' => 'users.example.com']));
 $service->insertNode(new ModelNode('AuthService2', 'Authentication Service', 'application', 'service', ['host' => 'auth.example.com']));
 $service->insertNode(new ModelNode('UserDatabase2', 'User Database', 'infrastructure', 'database', ['host' => 'users.example.com']));
-$service->insertEdge(new ModelEdge('Credito2', 'Pagamento2'));
-$service->insertEdge(new ModelEdge('Pagamento2', 'UserService2'));
-$service->insertEdge(new ModelEdge('UserService2', 'AuthService2', ['method' => 'OAuth2']));
-$service->insertEdge(new ModelEdge('UserService2', 'UserDatabase2', ['method' => 'SQL']));
+$service->insertEdge(new ModelEdge('Credito2', 'Pagamento2', 'Solicita'));
+$service->insertEdge(new ModelEdge('Pagamento2', 'UserService2', 'Solicita'));
+$service->insertEdge(new ModelEdge('UserService2', 'AuthService2', 'Solicita', ['method' => 'OAuth2']));
+$service->insertEdge(new ModelEdge('UserService2', 'UserDatabase2', 'Solicita', ['method' => 'SQL']));
 $service->updateNodeStatus(new ModelStatus('Credito2', ModelStatus::STATUS_VALUE_UNKNOWN));
 $service->updateNodeStatus(new ModelStatus('Pagamento2', ModelStatus::STATUS_VALUE_HEALTHY));
 $service->updateNodeStatus(new ModelStatus('UserService2', ModelStatus::STATUS_VALUE_IMPACTED));
@@ -54,10 +54,11 @@ $service->updateNodeStatus(new ModelStatus('AuthService2', ModelStatus::STATUS_V
 $service->updateNodeStatus(new ModelStatus('UserDatabase2', ModelStatus::STATUS_VALUE_MAINTENANCE));
 
 $service->insertNode(new ModelNode('BaseServer', 'Base Server', 'infrastructure', 'server', ['host' => 'users.example.com']));
-$service->insertEdge(new ModelEdge('UserDatabase', 'BaseServer', ['method' => 'SSH']));
-$service->insertEdge(new ModelEdge('UserDatabase2', 'BaseServer', ['method' => 'SSH']));
+$service->insertEdge(new ModelEdge('UserDatabase', 'BaseServer', 'Conecta', ['method' => 'SSH']));
+$service->insertEdge(new ModelEdge('UserDatabase2', 'BaseServer', 'Conecta', ['method' => 'SSH']));
 
 $service->updateNodeStatus(new ModelStatus('BaseServer', ModelStatus::STATUS_VALUE_HEALTHY));
+
 
 $imageHelper = new HelperImages($images);
 $cytoscapeHelper = new HelperCytoscape($database, $imageHelper, '/image.php');

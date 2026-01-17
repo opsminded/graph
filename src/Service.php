@@ -281,7 +281,13 @@ final class Service implements ServiceInterface
         $this->verify();
         $edgeData = $this->database->getEdge($source, $target);
         if (! is_null($edgeData)) {
-            $edge = new ModelEdge($edgeData[ModelEdge::EDGE_KEYNAME_SOURCE], $edgeData[ModelEdge::EDGE_KEYNAME_TARGET], $edgeData[ModelEdge::EDGE_KEYNAME_DATA]);
+            $edge = new ModelEdge(
+                $edgeData[ModelEdge::EDGE_KEYNAME_SOURCE],
+                $edgeData[ModelEdge::EDGE_KEYNAME_TARGET],
+                $edgeData[ModelEdge::EDGE_KEYNAME_LABEL],
+                $edgeData[ModelEdge::EDGE_KEYNAME_DATA]
+            );
+            
             $data = $edge->toArray();
             $this->logger->info("edge found", $data);
             return $edge;
@@ -301,6 +307,7 @@ final class Service implements ServiceInterface
             $edge = new ModelEdge(
                 $data[ModelEdge::EDGE_KEYNAME_SOURCE],
                 $data[ModelEdge::EDGE_KEYNAME_TARGET],
+                $data[ModelEdge::EDGE_KEYNAME_LABEL],
                 $data[ModelEdge::EDGE_KEYNAME_DATA]
             );
             $edges[] = $edge;
@@ -313,7 +320,7 @@ final class Service implements ServiceInterface
         $this->logger->debug("inserting edge", ["edge" => $edge->toArray()]);
         $this->verify();
         $this->insertLog(new ModelLog( "edge", $edge->getId(), "insert", null, $edge->toArray()));
-        if ($this->database->insertEdge($edge->getId(), $edge->getSource(), $edge->getTarget(), $edge->getData())) {
+        if ($this->database->insertEdge($edge->getId(), $edge->getSource(), $edge->getTarget(), $edge->getLabel(), $edge->getData())) {
             $this->logger->info("edge inserted", ["edge" => $edge->toArray()]);
             return true;
         }
@@ -332,7 +339,7 @@ final class Service implements ServiceInterface
 
         $old = $this->getEdge($edge->getSource(), $edge->getTarget());
         $this->insertLog(new ModelLog("edge", $edge->getId(), "update", $old->toArray(), $edge->toArray()));
-        if ($this->database->updateEdge($edge->getId(), $edge->getSource(), $edge->getTarget(), $edge->getData())) {
+        if ($this->database->updateEdge($edge->getId(), $edge->getSource(), $edge->getTarget(), $edge->getLabel(), $edge->getData())) {
             $this->logger->info("edge updated", ["edge" => $edge->toArray()]);
             return true;
         }

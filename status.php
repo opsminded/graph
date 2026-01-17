@@ -28,8 +28,8 @@ $service->insertNode(new ModelNode('Pagamento', 'Pagamento', 'business', 'busine
 $service->insertNode(new ModelNode('UserService', 'User Service', 'application', 'service', ['host' => 'users.example.com']));
 $service->insertNode(new ModelNode('AuthService', 'Authentication Service', 'application', 'service', ['host' => 'auth.example.com']));
 $service->insertNode(new ModelNode('UserDatabase', 'User Database', 'infrastructure', 'database', ['host' => 'users.example.com']));
-$service->insertEdge(new ModelEdge('UserService', 'AuthService', ['method' => 'OAuth2']));
-$service->insertEdge(new ModelEdge('UserService', 'UserDatabase', ['method' => 'SQL']));
+$service->insertEdge(new ModelEdge('UserService', 'AuthService', 'label', ['method' => 'OAuth2']));
+$service->insertEdge(new ModelEdge('UserService', 'UserDatabase', 'label', ['method' => 'SQL']));
 $service->updateNodeStatus(new ModelStatus('Credito', ModelStatus::STATUS_VALUE_UNKNOWN));
 $service->updateNodeStatus(new ModelStatus('Pagamento', ModelStatus::STATUS_VALUE_HEALTHY));
 $service->updateNodeStatus(new ModelStatus('UserService', ModelStatus::STATUS_VALUE_IMPACTED));
@@ -45,7 +45,7 @@ $cytoscapeHelper = new HelperCytoscape($database, $imageHelper, '/image.php');
 $controller = new HTTPController($service, $cytoscapeHelper, $controllerLogger);
 
 $router = new HTTPRequestRouter($controller);
-
+header("Access-Control-Allow-Origin: *");
 $req = new HTTPRequest();
 $resp = $router->handle($req);
 $resp->send();

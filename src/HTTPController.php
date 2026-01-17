@@ -225,7 +225,13 @@ final class HTTPController implements HTTPControllerInterface
         if($req->method !== HTTPRequest::METHOD_POST) {
             return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
-        $edge = new ModelEdge($req->data[ModelEdge::EDGE_KEYNAME_SOURCE], $req->data[ModelEdge::EDGE_KEYNAME_TARGET]);
+        $edge = new ModelEdge(
+            $req->data[ModelEdge::EDGE_KEYNAME_SOURCE],
+            $req->data[ModelEdge::EDGE_KEYNAME_TARGET],
+            $req->data[ModelEdge::EDGE_KEYNAME_LABEL],
+            $req->data[ModelEdge::EDGE_KEYNAME_DATA],
+        );
+
         $this->service->insertEdge($edge);
         $data = $edge->toArray();
         return new HTTPOKResponse("node found", $data);
@@ -236,7 +242,13 @@ final class HTTPController implements HTTPControllerInterface
         if($req->method !== HTTPRequest::METHOD_PUT) {
             return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
-        $edge = new ModelEdge($req->data[ModelEdge::EDGE_KEYNAME_SOURCE], $req->data[ModelEdge::EDGE_KEYNAME_TARGET], $req->data[ModelEdge::EDGE_KEYNAME_DATA]);
+        $edge = new ModelEdge(
+            $req->data[ModelEdge::EDGE_KEYNAME_SOURCE], 
+            $req->data[ModelEdge::EDGE_KEYNAME_TARGET], 
+            $req->data[ModelEdge::EDGE_KEYNAME_LABEL],
+            $req->data[ModelEdge::EDGE_KEYNAME_DATA],
+        );
+        
         $this->service->updateEdge($edge);
         $data = $edge->toArray();
         return new HTTPOKResponse("edge updated", $data);
@@ -247,9 +259,14 @@ final class HTTPController implements HTTPControllerInterface
         if($req->method !== HTTPRequest::METHOD_DELETE) {
             return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
-        $source = $req->data[ModelEdge::EDGE_KEYNAME_SOURCE];
-        $target = $req->data[ModelEdge::EDGE_KEYNAME_TARGET];
-        $edge = new ModelEdge($source, $target, []);
+        
+        $edge = new ModelEdge(
+            $req->data[ModelEdge::EDGE_KEYNAME_SOURCE],
+            $req->data[ModelEdge::EDGE_KEYNAME_TARGET],
+            '',
+            [],
+        );
+
         $this->service->deleteEdge($edge);
         $data = $req->data;
         return new HTTPNoContentResponse("edge deleted", $data);

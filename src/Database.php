@@ -230,29 +230,29 @@ final class Database implements DatabaseInterface
         return $rows;
     }
 
-    public function insertEdge(string $id, string $source, string $target, array $data = []): bool
+    public function insertEdge(string $id, string $source, string $target, string $label, array $data = []): bool
     {
-        $this->logger->debug("inserting edge", ['id' => $id, 'source' => $source, 'target' => $target, 'data' => $data]);
+        $this->logger->debug("inserting edge", ['id' => $id, 'source' => $source, 'target' => $target, 'label' => $label, 'data' => $data]);
         $edgeData = $this->getEdge($target, $source);
         if (! is_null($edgeData)) {
             $this->logger->error("cicle detected", $edgeData);
             return false;
         }
-        $sql = "INSERT INTO edges(id, source, target, data) VALUES (:id, :source, :target, :data)";
+        $sql = "INSERT INTO edges(id, source, target, label, data) VALUES (:id, :source, :target, :label, :data)";
         $data = json_encode($data, JSON_UNESCAPED_UNICODE);
-        $params = [':id' => $id, ':source' => $source, ':target' => $target, ':data' => $data];
+        $params = [':id' => $id, ':source' => $source, ':target' => $target, ':label' => $label, ':data' => $data];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         $this->logger->info("edge inserted", ['params' => $params]);
         return true;
     }
 
-    public function updateEdge(string $id, string $source, string $target, array $data = []): bool
+    public function updateEdge(string $id, string $source, string $target, string $label, array $data = []): bool
     {
-        $this->logger->debug("updating edge", ['id' => $id, 'source' => $source, 'target' => $target, 'data' => $data]);
-        $sql = "UPDATE edges SET source = :source, target = :target, data = :data WHERE id = :id";
+        $this->logger->debug("updating edge", ['id' => $id, 'source' => $source, 'target' => $target, 'label' => $label, 'data' => $data]);
+        $sql = "UPDATE edges SET source = :source, target = :target, label = :label, data = :data WHERE id = :id";
         $data = json_encode($data, JSON_UNESCAPED_UNICODE);
-        $params = [':id' => $id, ':source' => $source, ':target' => $target, ':data' => $data];
+        $params = [':id' => $id, ':source' => $source, ':target' => $target, ':label' => $label, ':data' => $data];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         if($stmt->rowCount() > 0) {
@@ -390,6 +390,7 @@ final class Database implements DatabaseInterface
         $this->pdo->exec('
             CREATE TABLE IF NOT EXISTS edges (
                 id TEXT PRIMARY KEY,
+                label TEXT NOT NULL DEFAULT "not defined",
                 source TEXT NOT NULL,
                 target TEXT NOT NULL,
                 data TEXT,

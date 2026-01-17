@@ -31,7 +31,7 @@
     <script>
         container = document.getElementById('cy');
 
-        const response = await fetch('http://localhost:8090/demo.php');
+        const response = await fetch('http://192.168.7.5:8090/demo.php');
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);

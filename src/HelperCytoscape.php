@@ -83,6 +83,7 @@ final class HelperCytoscape
                     ModelEdge::EDGE_KEYNAME_ID     => $edge[ModelEdge::EDGE_KEYNAME_ID],
                     ModelEdge::EDGE_KEYNAME_SOURCE => $edge[ModelEdge::EDGE_KEYNAME_SOURCE],
                     ModelEdge::EDGE_KEYNAME_TARGET => $edge[ModelEdge::EDGE_KEYNAME_TARGET],
+                    ModelEdge::EDGE_KEYNAME_LABEL  => $edge[ModelEdge::EDGE_KEYNAME_LABEL],
                     ModelEdge::EDGE_KEYNAME_DATA   => $edge[ModelEdge::EDGE_KEYNAME_DATA],
                 ]
             ];
@@ -100,7 +101,7 @@ final class HelperCytoscape
                     "background-height" => "32px",
                     "background-width" => "32px",
                     "border-width" => 2,
-                    "color" => "#000000",
+                    "color" => "#333",
                     "font-family" => "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
                     "font-size" => 16,
                     "label" => "data(label)",
@@ -112,11 +113,17 @@ final class HelperCytoscape
             [
                 "selector" => "edge",
                 "style" => [
-                    "width" => 3,
+                    "color" => "#333",
+                    "font-family" => "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+                    "font-size" => 14,
+                    "label" => "data(label)",
                     "line-color" => "#bebebe",
                     "target-arrow-color" => "#bebebe",
                     "target-arrow-shape" => "triangle",
-                    "curve-style" => "bezier",
+                    "text-valign" => "bottom",
+                    "text-halign" => "center",
+                    "text-margin-y" => 10,
+                    "width" => 3,
                 ],
             ]
         ];

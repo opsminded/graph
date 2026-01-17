@@ -26,8 +26,8 @@ interface DatabaseInterface
 
     public function getEdge(string $source, string $target): ?array;
     public function getEdges(): array;
-    public function insertEdge(string $id, string $source, string $target, array $data = []): bool;
-    public function updateEdge(string $id, string $source, string $target, array $data = []): bool;
+    public function insertEdge(string $id, string $source, string $target, string $label, array $data = []): bool;
+    public function updateEdge(string $id, string $source, string $target, string $label, array $data = []): bool;
     public function deleteEdge(string $id): bool;
 
     public function getStatus(): array;

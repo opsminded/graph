@@ -523,7 +523,13 @@ final class HTTPController implements HTTPControllerInterface
         if($req->method !== HTTPRequest::METHOD_POST) {
             return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
-        $edge = new ModelEdge($req->data[ModelEdge::EDGE_KEYNAME_SOURCE], $req->data[ModelEdge::EDGE_KEYNAME_TARGET]);
+        $edge = new ModelEdge(
+            $req->data[ModelEdge::EDGE_KEYNAME_SOURCE],
+            $req->data[ModelEdge::EDGE_KEYNAME_TARGET],
+            $req->data[ModelEdge::EDGE_KEYNAME_LABEL],
+            $req->data[ModelEdge::EDGE_KEYNAME_DATA],
+        );
+
         $this->service->insertEdge($edge);
         $data = $edge->toArray();
         return new HTTPOKResponse("node found", $data);
@@ -534,7 +540,13 @@ final class HTTPController implements HTTPControllerInterface
         if($req->method !== HTTPRequest::METHOD_PUT) {
             return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
-        $edge = new ModelEdge($req->data[ModelEdge::EDGE_KEYNAME_SOURCE], $req->data[ModelEdge::EDGE_KEYNAME_TARGET], $req->data[ModelEdge::EDGE_KEYNAME_DATA]);
+        $edge = new ModelEdge(
+            $req->data[ModelEdge::EDGE_KEYNAME_SOURCE], 
+            $req->data[ModelEdge::EDGE_KEYNAME_TARGET], 
+            $req->data[ModelEdge::EDGE_KEYNAME_LABEL],
+            $req->data[ModelEdge::EDGE_KEYNAME_DATA],
+        );
+        
         $this->service->updateEdge($edge);
         $data = $edge->toArray();
         return new HTTPOKResponse("edge updated", $data);
@@ -545,9 +557,14 @@ final class HTTPController implements HTTPControllerInterface
         if($req->method !== HTTPRequest::METHOD_DELETE) {
             return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
-        $source = $req->data[ModelEdge::EDGE_KEYNAME_SOURCE];
-        $target = $req->data[ModelEdge::EDGE_KEYNAME_TARGET];
-        $edge = new ModelEdge($source, $target, []);
+        
+        $edge = new ModelEdge(
+            $req->data[ModelEdge::EDGE_KEYNAME_SOURCE],
+            $req->data[ModelEdge::EDGE_KEYNAME_TARGET],
+            '',
+            [],
+        );
+
         $this->service->deleteEdge($edge);
         $data = $req->data;
         return new HTTPNoContentResponse("edge deleted", $data);
@@ -895,7 +912,13 @@ final class Service implements ServiceInterface
         $this->verify();
         $edgeData = $this->database->getEdge($source, $target);
         if (! is_null($edgeData)) {
-            $edge = new ModelEdge($edgeData[ModelEdge::EDGE_KEYNAME_SOURCE], $edgeData[ModelEdge::EDGE_KEYNAME_TARGET], $edgeData[ModelEdge::EDGE_KEYNAME_DATA]);
+            $edge = new ModelEdge(
+                $edgeData[ModelEdge::EDGE_KEYNAME_SOURCE],
+                $edgeData[ModelEdge::EDGE_KEYNAME_TARGET],
+                $edgeData[ModelEdge::EDGE_KEYNAME_LABEL],
+                $edgeData[ModelEdge::EDGE_KEYNAME_DATA]
+            );
+            
             $data = $edge->toArray();
             $this->logger->info("edge found", $data);
             return $edge;
@@ -915,6 +938,7 @@ final class Service implements ServiceInterface
             $edge = new ModelEdge(
                 $data[ModelEdge::EDGE_KEYNAME_SOURCE],
                 $data[ModelEdge::EDGE_KEYNAME_TARGET],
+                $data[ModelEdge::EDGE_KEYNAME_LABEL],
                 $data[ModelEdge::EDGE_KEYNAME_DATA]
             );
             $edges[] = $edge;
@@ -927,7 +951,7 @@ final class Service implements ServiceInterface
         $this->logger->debug("inserting edge", ["edge" => $edge->toArray()]);
         $this->verify();
         $this->insertLog(new ModelLog( "edge", $edge->getId(), "insert", null, $edge->toArray()));
-        if ($this->database->insertEdge($edge->getId(), $edge->getSource(), $edge->getTarget(), $edge->getData())) {
+        if ($this->database->insertEdge($edge->getId(), $edge->getSource(), $edge->getTarget(), $edge->getLabel(), $edge->getData())) {
             $this->logger->info("edge inserted", ["edge" => $edge->toArray()]);
             return true;
         }
@@ -946,7 +970,7 @@ final class Service implements ServiceInterface
 
         $old = $this->getEdge($edge->getSource(), $edge->getTarget());
         $this->insertLog(new ModelLog("edge", $edge->getId(), "update", $old->toArray(), $edge->toArray()));
-        if ($this->database->updateEdge($edge->getId(), $edge->getSource(), $edge->getTarget(), $edge->getData())) {
+        if ($this->database->updateEdge($edge->getId(), $edge->getSource(), $edge->getTarget(), $edge->getLabel(), $edge->getData())) {
             $this->logger->info("edge updated", ["edge" => $edge->toArray()]);
             return true;
         }
@@ -1352,29 +1376,29 @@ final class Database implements DatabaseInterface
         return $rows;
     }
 
-    public function insertEdge(string $id, string $source, string $target, array $data = []): bool
+    public function insertEdge(string $id, string $source, string $target, string $label, array $data = []): bool
     {
-        $this->logger->debug("inserting edge", ['id' => $id, 'source' => $source, 'target' => $target, 'data' => $data]);
+        $this->logger->debug("inserting edge", ['id' => $id, 'source' => $source, 'target' => $target, 'label' => $label, 'data' => $data]);
         $edgeData = $this->getEdge($target, $source);
         if (! is_null($edgeData)) {
             $this->logger->error("cicle detected", $edgeData);
             return false;
         }
-        $sql = "INSERT INTO edges(id, source, target, data) VALUES (:id, :source, :target, :data)";
+        $sql = "INSERT INTO edges(id, source, target, label, data) VALUES (:id, :source, :target, :label, :data)";
         $data = json_encode($data, JSON_UNESCAPED_UNICODE);
-        $params = [':id' => $id, ':source' => $source, ':target' => $target, ':data' => $data];
+        $params = [':id' => $id, ':source' => $source, ':target' => $target, ':label' => $label, ':data' => $data];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         $this->logger->info("edge inserted", ['params' => $params]);
         return true;
     }
 
-    public function updateEdge(string $id, string $source, string $target, array $data = []): bool
+    public function updateEdge(string $id, string $source, string $target, string $label, array $data = []): bool
     {
-        $this->logger->debug("updating edge", ['id' => $id, 'source' => $source, 'target' => $target, 'data' => $data]);
-        $sql = "UPDATE edges SET source = :source, target = :target, data = :data WHERE id = :id";
+        $this->logger->debug("updating edge", ['id' => $id, 'source' => $source, 'target' => $target, 'label' => $label, 'data' => $data]);
+        $sql = "UPDATE edges SET source = :source, target = :target, label = :label, data = :data WHERE id = :id";
         $data = json_encode($data, JSON_UNESCAPED_UNICODE);
-        $params = [':id' => $id, ':source' => $source, ':target' => $target, ':data' => $data];
+        $params = [':id' => $id, ':source' => $source, ':target' => $target, ':label' => $label, ':data' => $data];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         if($stmt->rowCount() > 0) {
@@ -1512,6 +1536,7 @@ final class Database implements DatabaseInterface
         $this->pdo->exec('
             CREATE TABLE IF NOT EXISTS edges (
                 id TEXT PRIMARY KEY,
+                label TEXT NOT NULL DEFAULT "not defined",
                 source TEXT NOT NULL,
                 target TEXT NOT NULL,
                 data TEXT,
@@ -1719,8 +1744,8 @@ interface DatabaseInterface
 
     public function getEdge(string $source, string $target): ?array;
     public function getEdges(): array;
-    public function insertEdge(string $id, string $source, string $target, array $data = []): bool;
-    public function updateEdge(string $id, string $source, string $target, array $data = []): bool;
+    public function insertEdge(string $id, string $source, string $target, string $label, array $data = []): bool;
+    public function updateEdge(string $id, string $source, string $target, string $label, array $data = []): bool;
     public function deleteEdge(string $id): bool;
 
     public function getStatus(): array;
@@ -2032,25 +2057,33 @@ final class HTTPRequestRouter
 
 final class ModelEdge
 {
+    private string $label;
     private string $source;
     private string $target;
     private array  $data;
 
     public const EDGE_KEYNAME_ID     = "id";
+    public const EDGE_KEYNAME_LABEL  = "label";
     public const EDGE_KEYNAME_SOURCE = "source";
     public const EDGE_KEYNAME_TARGET = "target";
     public const EDGE_KEYNAME_DATA   = "data";
 
-    public function __construct(string $source, string $target, array $data = [])
+    public function __construct(string $source, string $target, string $label, array $data = [])
     {
         $this->source = $source;
         $this->target = $target;
+        $this->label  = $label;
         $this->data   = $data;
     }
 
     public function getId(): string
     {
         return "{$this->source}-{$this->target}";
+    }
+
+    public function getLabel(): string
+    {
+        return $this->label;
     }
 
     public function getSource(): string
@@ -2072,6 +2105,7 @@ final class ModelEdge
     {
         return [
             self::EDGE_KEYNAME_ID     => $this->getId(),
+            self::EDGE_KEYNAME_LABEL  => $this->label,
             self::EDGE_KEYNAME_SOURCE => $this->source,
             self::EDGE_KEYNAME_TARGET => $this->target,
             self::EDGE_KEYNAME_DATA   => $this->data
@@ -2161,6 +2195,7 @@ final class HelperCytoscape
                     ModelEdge::EDGE_KEYNAME_ID     => $edge[ModelEdge::EDGE_KEYNAME_ID],
                     ModelEdge::EDGE_KEYNAME_SOURCE => $edge[ModelEdge::EDGE_KEYNAME_SOURCE],
                     ModelEdge::EDGE_KEYNAME_TARGET => $edge[ModelEdge::EDGE_KEYNAME_TARGET],
+                    ModelEdge::EDGE_KEYNAME_LABEL  => $edge[ModelEdge::EDGE_KEYNAME_LABEL],
                     ModelEdge::EDGE_KEYNAME_DATA   => $edge[ModelEdge::EDGE_KEYNAME_DATA],
                 ]
             ];
@@ -2178,7 +2213,7 @@ final class HelperCytoscape
                     "background-height" => "32px",
                     "background-width" => "32px",
                     "border-width" => 2,
-                    "color" => "#000000",
+                    "color" => "#333",
                     "font-family" => "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
                     "font-size" => 16,
                     "label" => "data(label)",
@@ -2190,11 +2225,17 @@ final class HelperCytoscape
             [
                 "selector" => "edge",
                 "style" => [
-                    "width" => 3,
+                    "color" => "#333",
+                    "font-family" => "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+                    "font-size" => 14,
+                    "label" => "data(label)",
                     "line-color" => "#bebebe",
                     "target-arrow-color" => "#bebebe",
                     "target-arrow-shape" => "triangle",
-                    "curve-style" => "bezier",
+                    "text-valign" => "bottom",
+                    "text-halign" => "center",
+                    "text-margin-y" => 10,
+                    "width" => 3,
                 ],
             ]
         ];

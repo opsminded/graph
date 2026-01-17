@@ -66,7 +66,7 @@
         (async function() {
             let data = {};
             try {
-                var response = await fetch('http://localhost:8090/demo.php');
+                var response = await fetch('http://192.168.7.5:8090/demo.php');
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -77,7 +77,7 @@
 
                 /////////////////////////////////////////////////////////////////////////
 
-                var response = await fetch('http://localhost:8090/status.php/getStatus');
+                var response = await fetch('http://192.168.7.5:8090/status.php/getStatus');
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
