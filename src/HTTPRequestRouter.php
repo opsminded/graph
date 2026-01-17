@@ -19,7 +19,7 @@ final class HTTPRequestRouter
         ["method" => HTTPRequest::METHOD_POST,   "path" => "/insertEdge",       "class_method" => "insertEdge"],
         ["method" => HTTPRequest::METHOD_PUT,    "path" => "/updateEdge",       "class_method" => "updateEdge"],
         ["method" => HTTPRequest::METHOD_DELETE, "path" => "/deleteEdge",       "class_method" => "deleteEdge"],
-        ["method" => HTTPRequest::METHOD_GET,    "path" => "/getStatuses",      "class_method" => "getStatuses"],
+        ["method" => HTTPRequest::METHOD_GET,    "path" => "/getStatus",        "class_method" => "getStatus"],
         ["method" => HTTPRequest::METHOD_GET,    "path" => "/getNodeStatus",    "class_method" => "getNodeStatus"],
         ["method" => HTTPRequest::METHOD_PUT,    "path" => "/updateNodeStatus", "class_method" => "updateNodeStatus"],
         ["method" => HTTPRequest::METHOD_GET,    "path" => "/getLogs",          "class_method" => "getLogs"],

@@ -28,9 +28,11 @@ final class TestHTTPController extends TestAbstractTest
         $this->controllerLogger = new Logger();
 
         $this->imagesHelper = new HelperImages($images);
-        $this->cytoscapeHelper = new HelperCytoscape($this->imagesHelper);
-
+        
         $this->database = new Database($this->pdo, $this->databaseLogger);
+
+        $this->cytoscapeHelper = new HelperCytoscape($this->database, $this->imagesHelper, 'http://example.com/images');
+
         $this->service = new Service($this->database, $this->serviceLogger);
         $this->controller = new HTTPController($this->service, $this->cytoscapeHelper, $this->controllerLogger);
     }
@@ -205,7 +207,7 @@ final class TestHTTPController extends TestAbstractTest
             throw new Exception('error on testGetNode 2');
         }
         
-        $this->database->insertNode('node1', 'label 1', 'application', 'server');
+        $this->database->insertNode('node1', 'label 1', 'application', 'service');
         $req = new HTTPRequest();
         $resp = $this->controller->getNode($req);
         if ($resp->code !== 200 || $resp->status !== 'success' || $resp->message !== 'node found') {
@@ -241,8 +243,8 @@ final class TestHTTPController extends TestAbstractTest
             throw new Exception('error on testGetNodes');
         }
 
-        $this->database->insertNode('node1', 'label1', 'application', 'server');
-        $this->database->insertNode('node2', 'label2', 'application', 'server');
+        $this->database->insertNode('node1', 'label1', 'application', 'service');
+        $this->database->insertNode('node2', 'label2', 'application', 'service');
         $req = new HTTPRequest();
         $resp = $this->controller->getNodes($req);
         if ($resp->code !== 200 || count($resp->data) !== 2) {
@@ -287,8 +289,8 @@ final class TestHTTPController extends TestAbstractTest
         }
 
         $_GET['id'] = 'node2';
-        $this->database->insertNode('node1', 'label1', 'application', 'server');
-        $this->database->insertNode('node2', 'label2', 'application', 'server');
+        $this->database->insertNode('node1', 'label1', 'application', 'service');
+        $this->database->insertNode('node2', 'label2', 'application', 'service');
         $this->database->insertEdge('node1-node2', 'node1', 'node2');
         $req = new HTTPRequest();
         $resp = $this->controller->getNodeParentOf($req);
@@ -331,9 +333,9 @@ final class TestHTTPController extends TestAbstractTest
             throw new Exception('error on testGetDependentNodesOf');
         }
 
-        $this->database->insertNode('node1', 'label1', 'application', 'server');
-        $this->database->insertNode('node2', 'label2', 'application', 'server');
-        $this->database->insertNode('node3', 'label3', 'application', 'server');
+        $this->database->insertNode('node1', 'label1', 'application', 'service');
+        $this->database->insertNode('node2', 'label2', 'application', 'service');
+        $this->database->insertNode('node3', 'label3', 'application', 'service');
         $this->database->insertEdge('node1-node2', 'node1', 'node2');
         $this->database->insertEdge('node1-node3', 'node1', 'node3');
 
@@ -423,7 +425,7 @@ final class TestHTTPController extends TestAbstractTest
         if ($resp->code !== 404 || $resp->status !== 'error' || $resp->data['id'] !== 'node1') {
             throw new Exception('error on testDeleteNode');
         }
-        $this->database->insertNode('node1', 'label 1', 'application', 'server');
+        $this->database->insertNode('node1', 'label 1', 'application', 'service');
         $req = new HTTPRequest();
         $req->data['id'] = 'node1';
         $resp = $this->controller->deleteNode($req);
@@ -455,8 +457,8 @@ final class TestHTTPController extends TestAbstractTest
             throw new Exception('error on testGetEdge 2');
         }
 
-        $this->database->insertNode('node1', 'label1', 'application', 'server');
-        $this->database->insertNode('node2', 'label2', 'application', 'server');
+        $this->database->insertNode('node1', 'label1', 'application', 'service');
+        $this->database->insertNode('node2', 'label2', 'application', 'service');
         $this->database->insertEdge('node1-node2', 'node1', 'node2');
         
         $req = new HTTPRequest();
@@ -498,8 +500,8 @@ final class TestHTTPController extends TestAbstractTest
             throw new Exception('error on testInsertEdge');
         }
 
-        $this->database->insertNode('node1', 'label1', 'application', 'server');
-        $this->database->insertNode('node2', 'label2', 'application', 'server');
+        $this->database->insertNode('node1', 'label1', 'application', 'service');
+        $this->database->insertNode('node2', 'label2', 'application', 'service');
         $_SERVER['REQUEST_METHOD'] = 'POST';
         $_SERVER['SCRIPT_NAME'] = 'api.php';
         $_SERVER['REQUEST_URI'] = 'api.php/insertEdge';
@@ -573,8 +575,8 @@ final class TestHTTPController extends TestAbstractTest
         if ($resp->code !== 200 || $resp->status !== 'success' || count($resp->data) > 0) {
             throw new Exception('error on testGetStatus');
         }
-        $this->database->insertNode('node1', 'label1', 'application', 'server');
-        $this->database->insertNode('node2', 'label2', 'application', 'server');
+        $this->database->insertNode('node1', 'label1', 'application', 'service');
+        $this->database->insertNode('node2', 'label2', 'application', 'service');
 
         $req = new HTTPRequest();
         $resp = $this->controller->getStatus($req);
@@ -636,7 +638,7 @@ final class TestHTTPController extends TestAbstractTest
             throw new Exception('error on testUpdateNodeStatus');
         }
 
-        $this->database->insertNode('node1', 'label', 'application', 'server');
+        $this->database->insertNode('node1', 'label', 'application', 'service');
         $_SERVER['REQUEST_METHOD'] = 'PUT';
         $_SERVER['SCRIPT_NAME'] = 'api.php';
         $_SERVER['REQUEST_URI'] = 'api.php/updateNodeStatus';

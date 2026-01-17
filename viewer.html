@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualização</title>
+    <script src="www/javascript/cytoscape.min.js"></script>
+
+    <style>
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        #cy {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+    </style>
+  </head>
+  <body>
+    <div id="cy"></div>
+
+    <script>
+        (async function() {
+            let data = {};
+            try {
+                var response = await fetch('http://localhost:8090/demo.php');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                var jsonData = await response.json();
+                graphData = jsonData;
+                graphData['container'] = document.getElementById('cy');
+
+                /////////////////////////////////////////////////////////////////////////
+
+                var response = await fetch('http://localhost:8090/status.php/getStatus');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                var jsonData = await response.json();
+                statusData = jsonData['data'];
+
+                for (const k in statusData) {
+                    for(const i in graphData['elements']['nodes']) {
+                        if (graphData['elements']['nodes'][i]['data']['id'] == statusData[k]['node_id']) {
+                            
+                            graphData['elements']['nodes'][i]['classes'] = graphData['elements']['nodes'][i]['classes'].filter(function(item) {
+                                return item.indexOf('unknown') === -1
+                            });
+
+                            graphData['elements']['nodes'][i]['classes'].push('node-status-' + statusData[k]['status']);
+                        }
+                    }
+                }
+
+                console.log(graphData)
+
+                var cy = cytoscape(graphData);
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        })();
+
+    </script>
+  </body>
+</html>

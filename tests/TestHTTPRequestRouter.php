@@ -32,10 +32,11 @@ class TestHTTPRequestRouter extends TestAbstractTest
         $this->serviceLogger = new Logger();
         $this->controllerLogger = new Logger();
 
-        $this->imagesHelper = new HelperImages($images);
-        $this->cytoscapeHelper = new HelperCytoscape($this->imagesHelper);
-
         $this->database = new Database($this->pdo, $this->databaseLogger);
+
+        $this->imagesHelper = new HelperImages($images);
+        $this->cytoscapeHelper = new HelperCytoscape($this->database, $this->imagesHelper, 'http://localhost/images');
+
         $this->service = new Service($this->database, $this->serviceLogger);
         $this->controller = new HTTPController($this->service, $this->cytoscapeHelper, $this->controllerLogger);
         $this->router = new HTTPRequestRouter($this->controller);

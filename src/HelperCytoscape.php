@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 final class HelperCytoscape
 {
+    private DatabaseInterface $database;
     private HelperImages $imagesHelper;
 
     private const KEYNAME_ELEMENTS = "elements";
@@ -14,19 +15,16 @@ final class HelperCytoscape
     private const KEYNAME_PANX = "x";
     private const KEYNAME_PANY = "y";
 
-    private const SHAPES = [
-        ["shape" => "ellipse",   "width" => 80, "height" => 80],
-        ["shape" => "rectangle", "width" => 80, "height" => 80],
-        ["shape" => "diamond",   "width" => 80, "height" => 80],
-        ["shape" => "pentagon",  "width" => 80, "height" => 80],
-        ["shape" => "hexagon",   "width" => 80, "height" => 80],
-        ["shape" => "heptagon",  "width" => 80, "height" => 80],
-        ["shape" => "octagon",   "width" => 80, "height" => 80],
-    ];
+    private string $imageBaseUrl = "";
 
-    public function __construct(HelperImages $imagesHelper)
+    private array $categories;
+
+    public function __construct(DatabaseInterface $database, HelperImages $imagesHelper, string $imageBaseUrl)
     {
+        $this->database = $database;
+        $this->categories = $this->database->getCategories();
         $this->imagesHelper = $imagesHelper;
+        $this->imageBaseUrl = $imageBaseUrl;
     }
 
     public function toArray(ModelGraph $graph): array
@@ -56,8 +54,6 @@ final class HelperCytoscape
         $nodes = [];
         foreach ($graphArr[ModelGraph::KEYNAME_NODES] as $index => $node) {
             $node = $node->toArray();
-            $shape = $this->getNodeShape($index);
-            $node = array_merge($node);
             $nodes[] = [
                 "data" => array_merge([
                     ModelNode::NODE_KEYNAME_ID => $node[ModelNode::NODE_KEYNAME_ID],
@@ -65,9 +61,14 @@ final class HelperCytoscape
                     ModelNode::NODE_KEYNAME_CATEGORY => $node[ModelNode::NODE_KEYNAME_CATEGORY],
                     ModelNode::NODE_KEYNAME_TYPE => $node[ModelNode::NODE_KEYNAME_TYPE],
                 ], $node["data"]),
-                "classes" => ["unknown-status-node"],
+                "classes" => [
+                    "node-category-".$node[ModelNode::NODE_KEYNAME_CATEGORY],
+                    "node-type-".$node[ModelNode::NODE_KEYNAME_TYPE],
+                    "node-status-unknown",
+                ],
             ];
         }
+
         return $nodes;
     }
 
@@ -95,22 +96,22 @@ final class HelperCytoscape
             [
                 "selector" => "node",
                 "style" => [
-                    "background-color" => "#61bffc",
+                    "border-width" => 2,
                     "label" => "data(label)",
-                    "text-valign" => "center",
+                    "text-valign" => "bottom",
+                    "text-halign" => "center",
                     "color" => "#000000",
-                    "text-outline-width" => 0,
-                    "width" => "data(width)",
-                    "height" => "data(height)",
-                    "shape" => "data(shape)",
+                    "background-width" => "32px",
+                    "background-height" => "32px",
+                    "background-clip" => "none",
                 ],
             ],
             [
                 "selector" => "edge",
                 "style" => [
-                    "width" => 2,
-                    "line-color" => "#ccc",
-                    "target-arrow-color" => "#ccc",
+                    "width" => 3,
+                    "line-color" => "#bebebe",
+                    "target-arrow-color" => "#bebebe",
                     "target-arrow-shape" => "triangle",
                     "curve-style" => "bezier",
                 ],
@@ -129,8 +130,8 @@ final class HelperCytoscape
         $style[] = [
             "selector" => "node.node-status-unknown",
             "style" => [
-                "line-color" => "#ccc",
-                "background-color" => "#f0f0f0",
+                "border-color" => "#939393",
+                "background-color" => "#cbcbcb",
                 "color" => "#000000",
             ],
         ];
@@ -138,8 +139,8 @@ final class HelperCytoscape
         $style[] = [
             "selector" => "node.node-status-healthy",
             "style" => [
-                "line-color" => "#4CAF50",
-                "background-color" => "#A5D6A7",
+                "border-color" => "#4CAF50",
+                "background-color" => "#d0edd1",
                 "color" => "#000000",
             ],
         ];
@@ -147,8 +148,8 @@ final class HelperCytoscape
         $style[] = [
             "selector" => "node.node-status-unhealthy",
             "style" => [
-                "line-color" => "#F44336",
-                "background-color" => "#EF9A9A",
+                "border-color" => "#ff8178",
+                "background-color" => "#ffe2e2",
                 "color" => "#000000",
             ],
         ];
@@ -156,8 +157,17 @@ final class HelperCytoscape
         $style[] = [
             "selector" => "node.node-status-maintenance",
             "style" => [
-                "line-color" => "#FF9800",
-                "background-color" => "#FFCC80",
+                "border-color" => "#FF9800",
+                "background-color" => "#fff8c3",
+                "color" => "#000000",
+            ],
+        ];
+
+        $style[] = [
+            "selector" => "node.node-status-impacted",
+            "style" => [
+                "border-color" => "#ae6ec0",
+                "background-color" => "#ece5ee",
                 "color" => "#000000",
             ],
         ];
@@ -167,17 +177,26 @@ final class HelperCytoscape
             $style[] = [
                 "selector" => "node.node-type-{$type}",
                 "style" => [
-                    "background-image" => $type,
-                    "background-fit" => "contain",
-                    "background-clip" => "none",
+                    "background-image" => "{$this->imageBaseUrl}?img={$type}",
                 ],
             ];
         }
         
+        foreach($this->categories as $category) {
+            $style[] = [
+                "selector" => "node.node-category-" . $category['id'],
+                "style" => [
+                    "shape" => $category['shape'],
+                    "width" => $category['width'],
+                    "height" => $category['height'],
+                ],
+            ];
+        }
+
         $style[] = [
             "selector" => "node:selected",
             "style" => [
-                "border-width" => 4,
+                "border-width" => 2,
                 "border-color" => "#FFD700",
             ],
         ];
@@ -188,13 +207,14 @@ final class HelperCytoscape
     private function getLayout(): array
     {
         return [
-            "name" => "grid",
-            "rows" => 5,
+            "fit"               => false,
+            "name"              => "breadthfirst",
+            "directed"          => true,
+            "direction"         => "downward",
+            "padding"           => 100,
+            "avoidOverlap"      => true,
+            "animate"           => true,
+            "animationDuration" => 500,
         ];
-    }
-
-    private function getNodeShape(int $index): array
-    {
-        return self::SHAPES[$index % count(self::SHAPES)];
     }
 }

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 require_once __DIR__ . 'graph.php';
 
+include __DIR__ . '/www/images/compiled_images.php';
+
 foreach (glob(__DIR__ . "/tests/*.php") as $arquivo) {
     require_once $arquivo;
 }
@@ -22,8 +24,8 @@ $controllerLogger = new Logger();
 $database   = new Database($pdo, $databaseLogger);
 $service    = new Service($database, $serviceLogger);
 
-$imageHelper = new HelperImages();
-$cytoscapeHelper = new HelperCytoscape($imageHelper);
+$imageHelper = new HelperImages($images);
+$cytoscapeHelper = new HelperCytoscape($database, $imageHelper);
 
 $controller = new HTTPController($service, $cytoscapeHelper, $serviceLogger);
 $router     = new HTTPRequestRouter($controller);

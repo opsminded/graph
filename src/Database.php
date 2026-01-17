@@ -359,10 +359,9 @@ final class Database implements DatabaseInterface
             )');
         
         $this->pdo->exec("INSERT OR IGNORE INTO categories VALUES
-            ('business', 'Business', 'box', 100, 50),
-            ('application', 'Application', 'ellipse', 80, 80),
-            ('network', 'Network', 'diamond', 90, 60),
-            ('infrastructure', 'Infrastructure', 'hexagon', 110, 70)");
+            ('business',       'Business',       'round-rectangle', 50, 50),
+            ('application',    'Application',    'ellipse', 60, 60),
+            ('infrastructure', 'Infrastructure', 'round-hexagon', 60, 53)");
         
         $this->pdo->exec('
             CREATE TABLE IF NOT EXISTS types (
@@ -371,8 +370,10 @@ final class Database implements DatabaseInterface
             )');
 
         $this->pdo->exec("INSERT OR IGNORE INTO types VALUES
-            ('server', 'Server'),
+            ('business', 'Business'),
+            ('business_case', 'Business Case'),
             ('service', 'Service'),
+            ('server', 'Server'),
             ('database', 'Database')");
 
         $this->pdo->exec('
