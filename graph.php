@@ -2174,14 +2174,17 @@ final class HelperCytoscape
             [
                 "selector" => "node",
                 "style" => [
+                    "background-clip" => "none",
+                    "background-height" => "32px",
+                    "background-width" => "32px",
                     "border-width" => 2,
+                    "color" => "#000000",
+                    "font-family" => "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+                    "font-size" => 16,
                     "label" => "data(label)",
                     "text-valign" => "bottom",
                     "text-halign" => "center",
-                    "color" => "#000000",
-                    "background-width" => "32px",
-                    "background-height" => "32px",
-                    "background-clip" => "none",
+                    "text-margin-y" => 8,
                 ],
             ],
             [
@@ -2235,8 +2238,8 @@ final class HelperCytoscape
         $style[] = [
             "selector" => "node.node-status-maintenance",
             "style" => [
-                "border-color" => "#FF9800",
-                "background-color" => "#fff8c3",
+                "border-color" => "#43aeff",
+                "background-color" => "#cde9ff",
                 "color" => "#000000",
             ],
         ];
@@ -2288,7 +2291,7 @@ final class HelperCytoscape
             "fit"               => false,
             "name"              => "breadthfirst",
             "directed"          => true,
-            "direction"         => "downward",
+            "direction"         => "rightward",
             "padding"           => 100,
             "avoidOverlap"      => true,
             "animate"           => true,
