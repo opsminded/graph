@@ -444,20 +444,22 @@ class TestService extends TestAbstractTest
     public function testGetStatus(): void
     {
         HelperContext::update('admin', 'admin', '127.0.0.1');
-        $statuses = $this->service->getStatus();
+        $status = $this->service->getStatus();
 
-        if (count($statuses) !== 0) {
+        if (count($status) !== 0) {
             throw new Exception('error on testGetStatus - should be empty');
         }
+        
         $node1 = new ModelNode('node1', 'Node 01', 'business', 'service', ['key' => 'value1']);
         $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
         $this->service->insertNode($node1);
         $this->service->insertNode($node2);
         $this->service->updateNodeStatus(new ModelStatus('node1', 'healthy'));
         $this->service->updateNodeStatus(new ModelStatus('node2', 'unhealthy'));
-        $statuses = $this->service->getStatus();
-        if (count($statuses) !== 2) {
-            throw new Exception('error on testGetStatus - expected 2 statuses');
+        
+        $status = $this->service->getStatus();
+        if (count($status) !== 2) {
+            throw new Exception('error on testGetStatus - expected 2 status');
         }
     }
     

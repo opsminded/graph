@@ -25,10 +25,58 @@
             bottom: 0;
             right: 0;
         }
+        
+        /* Reset básico da lista */
+        ul {
+            font-size: 11px;
+            font-family: Tahoma, Geneva, Verdana, sans-serif;
+            list-style: none;       /* remove os marcadores */
+            margin: 0;              /* remove margens */
+            padding: 0;             /* remove espaçamento interno */
+            display: flex;          /* coloca os itens em linha */
+            gap: 30px;              /* espaço entre os itens */
+            z-index: 1000;         /* garante que fique acima do conteúdo */
+            position: absolute;     /* posiciona a lista */
+            top: 10px;              /* distância do topo */
+            left: 10px;             /* distância da esquerda */
+            flex-direction: column;
+            /* background-color: aqua; */
+        }
+
+        /* Estilo dos itens */
+        ul li {
+            margin: 0;              /* garante que não haja margens extras */
+            padding: 0;
+        }
+
+        /* Estilo dos links como botões */
+        ul a {
+            display: inline-block;
+            padding: 4px 6px;
+            text-decoration: none;  /* remove sublinhado */
+            background-color: #f0f0f0;
+            color: #333;
+            border: 1px solid #ccc;
+            border-radius: 4px;     /* cantos arredondados */
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Efeito hover */
+        ul a:hover {
+            background-color: #ddd;
+            color: #000;
+        }
+
+        
         :focus { outline: none; }
     </style>
   </head>
   <body>
+    <ul id="menu">
+        <li><a href="index.html">Início</a></li>
+        <li><a href="editor.html">Editor</a></li>
+        <li><a href="viewer.html">Visualização</a></li>
+    </ul>
     <div id="cy" style="width: 100%; height: 100%; position: absolute; left: 0; top: 0; bottom: 0; right: 0;"></div>
 
     <script>

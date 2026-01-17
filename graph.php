@@ -999,14 +999,14 @@ final class Service implements ServiceInterface
     {
         $this->logger->debug("getting status");
         $this->verify();
-        $statusesData = $this->database->getStatus();
-        $nodeStatuses = [];
-        foreach ($statusesData as $status) {
+        $statusData = $this->database->getStatus();
+        $nodeStatus = [];
+        foreach ($statusData as $status) {
             $status = new ModelStatus($status[ModelStatus::STATUS_KEYNAME_NODE_ID], $status[ModelStatus::STATUS_KEYNAME_STATUS] ?? "unknown");
-            $nodeStatuses[] = $status;
+            $nodeStatus[] = $status;
         }
-        $this->logger->info("status found", ["status" => $nodeStatuses]);
-        return $nodeStatuses;
+        $this->logger->info("status found", ["status" => $nodeStatus]);
+        return $nodeStatus;
     }
 
     public function getNodeStatus(string $id): ?ModelStatus
@@ -1426,11 +1426,11 @@ final class Database implements DatabaseInterface
 
     public function getStatus(): array
     {
-        $this->logger->debug("fetching statuses");
+        $this->logger->debug("fetching status");
         $sql = "SELECT n.id as node_id, s.status FROM nodes n LEFT JOIN status s ON n.id = s.node_id";
         $stmt   = $this->pdo->query($sql);
         $rows = $stmt->fetchAll();
-        $this->logger->info("statuses fetched", ['rows' => $rows]);
+        $this->logger->info("status fetched", ['rows' => $rows]);
         return $rows;
     }
 
@@ -1850,7 +1850,7 @@ final class ModelStatus
     public const STATUS_KEYNAME_NODE_ID = "node_id";
     public const STATUS_KEYNAME_STATUS = "status";
     
-    private const ALLOWED_NODE_STATUSES = [
+    private const ALLOWED_NODE_STATUS = [
         self::STATUS_VALUE_UNKNOWN,
         self::STATUS_VALUE_HEALTHY,
         self::STATUS_VALUE_UNHEALTHY,
@@ -1863,7 +1863,7 @@ final class ModelStatus
 
     public function __construct(string $nodeId, string $status)
     {
-        if (!in_array($status, self::ALLOWED_NODE_STATUSES, true)) {
+        if (!in_array($status, self::ALLOWED_NODE_STATUS, true)) {
             throw new InvalidArgumentException("Invalid node status: {$status}");
         }
         $this->nodeId = $nodeId;

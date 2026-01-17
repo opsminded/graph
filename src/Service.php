@@ -368,14 +368,14 @@ final class Service implements ServiceInterface
     {
         $this->logger->debug("getting status");
         $this->verify();
-        $statusesData = $this->database->getStatus();
-        $nodeStatuses = [];
-        foreach ($statusesData as $status) {
+        $statusData = $this->database->getStatus();
+        $nodeStatus = [];
+        foreach ($statusData as $status) {
             $status = new ModelStatus($status[ModelStatus::STATUS_KEYNAME_NODE_ID], $status[ModelStatus::STATUS_KEYNAME_STATUS] ?? "unknown");
-            $nodeStatuses[] = $status;
+            $nodeStatus[] = $status;
         }
-        $this->logger->info("status found", ["status" => $nodeStatuses]);
-        return $nodeStatuses;
+        $this->logger->info("status found", ["status" => $nodeStatus]);
+        return $nodeStatus;
     }
 
     public function getNodeStatus(string $id): ?ModelStatus
