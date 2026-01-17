@@ -2214,7 +2214,7 @@ final class HelperCytoscape
                     "background-width" => "32px",
                     "border-width" => 2,
                     "color" => "#333",
-                    "font-family" => "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+                    "font-family" => "Tahoma, Geneva, Verdana, sans-serif",
                     "font-size" => 16,
                     "label" => "data(label)",
                     "text-valign" => "bottom",
@@ -2226,16 +2226,26 @@ final class HelperCytoscape
                 "selector" => "edge",
                 "style" => [
                     "color" => "#333",
-                    "font-family" => "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+                    "font-family" => "Tahoma, Geneva, Verdana, sans-serif",
                     "font-size" => 14,
                     "label" => "data(label)",
                     "line-color" => "#bebebe",
-                    "target-arrow-color" => "#bebebe",
-                    "target-arrow-shape" => "triangle",
+                    "source-arrow-color" => "#7d7d7d",
+                    "source-arrow-shape" => "triangle",
+                    "source-arrow-fill" => "filled",
+                    "source-arrow-width" => 6,
+                    "source-endpoint" => "outside-to-node-or-label",
+                    "source-distance-from-node" => 5,
                     "text-valign" => "bottom",
                     "text-halign" => "center",
                     "text-margin-y" => 10,
                     "width" => 3,
+                    'curve-style' => 'bezier',
+
+                    "line-style" => 'dashed',
+                    'line-dash-pattern'  => [6, 3],
+                    //'line-color' => '#00ff00',
+                    //'animation' => 'pulse 1s infinite'
                 ],
             ]
         ];
@@ -2316,10 +2326,19 @@ final class HelperCytoscape
         }
 
         $style[] = [
-            "selector" => "node:selected",
+            "selector" => "node:active",
             "style" => [
-                "border-width" => 2,
-                "border-color" => "#FFD700",
+                "border-width" => 4,
+                "border-color" => "#ffec7f",
+
+                "overlay-color" => "#FFF",
+                "overlay-opacity" => 0,
+
+                "outline-width"   => "5",
+                "outline-style"   => "solid",
+                "outline-color"   => "rgb(255, 255, 229)",
+                "outline-opacity" => "1",
+                "outline-offset"  => "5",
             ],
         ];
 
@@ -2332,7 +2351,7 @@ final class HelperCytoscape
             "fit"               => false,
             "name"              => "breadthfirst",
             "directed"          => true,
-            "direction"         => "rightward",
+            "direction"         => "downward",
             "padding"           => 100,
             "avoidOverlap"      => true,
             "animate"           => true,

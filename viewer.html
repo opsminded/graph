@@ -25,6 +25,7 @@
             bottom: 0;
             right: 0;
         }
+        :focus { outline: none; }
     </style>
   </head>
   <body>
@@ -69,37 +70,42 @@
                 console.log(graphData)
 
                 var cy = cytoscape(graphData);
-                cy.add({
-                    group: 'nodes',
-                    data: { id: 'node-new', label: "Este item exemplifica uma \nobservação longa. um Post-it para comentários" },
-                    position: { x: 200, y: 100 },
-                    style: {
-                        "background-clip" : "none",
-                        "background-height" : "32px",
-                        "background-width" : "32px",
-                        "border-color" : "#e8e543",
-                        "background-color" : "#fffdcf",
-                        "color": "#000000",
-                        "border-width" : 2,
-                        "font-family" : "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-                        "font-size" : 16,
-                        "label" : "data(label)",
-                        "text-valign" : "center",
-                        "text-halign" : "center",
-                        "text-margin-y" : 8,
-                        "text-wrap": "wrap",
-                        "shape" : "round-rectangle",
-                        "width" : "250",
-                        "height" : "120",
-                        "text-max-width": 200
-                    },
-                    selected: false,
-                    selectable: false,
-                    locked: false,
-                    grabbable: false,
-                    pannable: false,
-                });
-                cy.layout().run();
+                // cy.add({
+                //     group: 'nodes',
+                //     data: { id: 'node-new', label: "Este item exemplifica uma \nobservação longa. um Post-it para comentários" },
+                //     position: { x: 200, y: 100 },
+                //     style: {
+                //         "background-clip" : "none",
+                //         "background-height" : "32px",
+                //         "background-width" : "32px",
+                //         "border-color" : "#e8e543",
+                //         "background-color" : "#fffdcf",
+                //         "color": "#000000",
+                //         "border-width" : 2,
+                //         "font-family" : "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+                //         "font-size" : 16,
+                //         "label" : "data(label)",
+                //         "text-valign" : "center",
+                //         "text-halign" : "center",
+                //         "text-margin-y" : 8,
+                //         "text-wrap": "wrap",
+                //         "shape" : "round-rectangle",
+                //         "width" : "250",
+                //         "height" : "120",
+                //         "text-max-width": 200
+                //     },
+                //     selected: false,
+                //     selectable: false,
+                //     locked: false,
+                //     grabbable: false,
+                //     pannable: false,
+                // });
+
+                let offset = 0;
+                setInterval(() => {
+                    offset = (offset + 1) % 10;
+                    cy.edges().style('line-dash-offset', offset);
+                }, 100);
             } catch (error) {
                 console.error('Error:', error);
             }
