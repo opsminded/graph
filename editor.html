@@ -7,27 +7,51 @@
     <title>Visualização</title>
     <script src="www/javascript/cytoscape.min.js"></script>
     <style>
-        * {
+        html, body {
+            width: 100%;
+            height: 100%;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
+            overflow: hidden;
         }
 
-        body {
-            display: flex;
-            min-height: 100vh;
-        }
-
-        #menu {
-            width: 200px;
-            background-color: #f0f0f0;
+        #menubar {
+            border-left: 10px solid #b62b2b;
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 10px;
             padding: 20px;
             text-align: center;
         }
 
-        #content {
-            flex: 1;
+        #menu {
+            border-right: 10px solid #b62b2b;
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 200px;
+            background-color: #f0f0f0;
             padding: 20px;
+            text-align: center;
+            display: none;
+            z-index: 100;
+        }
+
+        #menu.show {
+            display: block;
+        }
+
+        #content {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            right: 0;
         }
 
         h1{
@@ -38,10 +62,11 @@
     </style>
 </head>
 <body>
+    <div id="menubar"></div>
     <aside id="menu">
+        <img src="www/images/logo.png" alt="Logo" width="32" height="32">
         <h1><span style="color: rgb(182, 43, 43);">Brades</span>ketch</h1>
-
-        <p style="padding-top: 100px;"><button id="addNode">Adicionar Nó</button></p>
+        <p style="padding-top: 10px;"><button id="addNode">Adicionar Nó</button></p>
     </aside>
 
     <main id="content"></main>
@@ -49,11 +74,20 @@
     <script>
         let cy = null;
 
+        var menu = document.getElementById('menu');
+        document.addEventListener('mousemove', function(e) {
+            if (e.clientX <= 200) {
+                menu.classList.add('show');
+            } else {
+                menu.classList.remove('show');
+            }
+        });
+
         document.getElementById('addNode').addEventListener('click', function() {
             cy.add({
                 group: 'nodes',
                 data: { id: 'n' + (cy.nodes().length + 1), 'label': 'hello' },
-                position: { x: 100, y: 100 }
+                position: { x: 500, y: 100 }
             });
         });
 

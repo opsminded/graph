@@ -67,8 +67,24 @@
             color: #000;
         }
 
-        
         :focus { outline: none; }
+
+        #modal {
+            background: #FFF;
+            border-left: 2px solid #CCC;
+            width: 25%;
+            height: 100%;
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            display: none;
+            z-index: 1000;
+        }
+
+        #modal.show {
+            display: block;
+        }
     </style>
   </head>
   <body>
@@ -78,7 +94,9 @@
         <li><a href="viewer.html">Visualização</a></li>
     </ul>
     <div id="cy" style="width: 100%; height: 100%; position: absolute; left: 0; top: 0; bottom: 0; right: 0;"></div>
-
+    <div id="modal">
+        <h1 id="modalTitle" style="text-align: center;">Modal</h1>
+    </div>
     <script>
         (async function() {
             let data = {};
@@ -148,6 +166,28 @@
                 //     grabbable: false,
                 //     pannable: false,
                 // });
+
+                var modal = document.getElementById('modal');
+                
+                cy.on('tap', 'node', function(evt){
+                    var node = evt.target;
+                    modal.classList.add('show');
+                    document.getElementById('modalTitle').innerText = node.data('label');
+                });
+
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') {
+                        modal.classList.remove('show');
+                    }
+                });
+
+                document.addEventListener('mousemove', function(e) {
+                    if (e.clientX <= 50) {
+                        document.getElementById('modal').classList.add('show');
+                    } else {
+                        modal.classList.remove('show');
+                    }
+                });
 
                 let offset = 0;
                 setInterval(() => {
