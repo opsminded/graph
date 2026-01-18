@@ -17,7 +17,7 @@ final class Service implements ServiceInterface
         "Service::getEdges"            => true,
         "Service::getStatus"           => true,
         "Service::getNodeStatus"       => true,
-        "Service::updateNodeStatus"    => true,
+        "Service::getSaves"            => true,
         "Service::getLogs"             => true,
         "Service::insertUser"          => false,
         "Service::updateUser"          => false,
@@ -29,6 +29,10 @@ final class Service implements ServiceInterface
         "Service::insertEdge"          => false,
         "Service::updateEdge"          => false,
         "Service::deleteEdge"          => false,
+        "Service::updateNodeStatus"    => false,
+        "Service::insertSave"          => false,
+        "Service::updateSave"          => false,
+        "Service::deleteSave"          => false,
         "Service::insertLog"           => false,
     ];
 
@@ -339,7 +343,7 @@ final class Service implements ServiceInterface
 
         $old = $this->getEdge($edge->getSource(), $edge->getTarget());
         $this->insertLog(new ModelLog("edge", $edge->getId(), "update", $old->toArray(), $edge->toArray()));
-        if ($this->database->updateEdge($edge->getId(), $edge->getSource(), $edge->getTarget(), $edge->getLabel(), $edge->getData())) {
+        if ($this->database->updateEdge($edge->getId(), $edge->getLabel(), $edge->getData())) {
             $this->logger->info("edge updated", ["edge" => $edge->toArray()]);
             return true;
         }
@@ -401,6 +405,47 @@ final class Service implements ServiceInterface
             return true;
         }
         throw new RuntimeException("unexpected error on Service::updateNodeStatus");
+    }
+
+    public function getSaves(): array
+    {
+        $this->logger->debug("getting saves");
+        $this->verify();
+        $savesData = $this->database->getSaves();
+        $saves     = [];
+        foreach ($savesData as $data) {
+            $save = new ModelSave(
+                $data[ModelSave::SAVE_KEYNAME_ID],
+                $data[ModelSave::SAVE_KEYNAME_NAME],
+                $data[ModelSave::SAVE_KEYNAME_CREATOR],
+                new DateTimeImmutable($data[ModelSave::SAVE_KEYNAME_CREATED_AT]),
+                new DateTimeImmutable($data[ModelSave::SAVE_KEYNAME_UPDATED_AT]),
+                $data[ModelSave::SAVE_KEYNAME_DATA]
+            );
+            $saves[] = $save;
+        }
+        return $saves;
+    }
+
+    public function insertSave(ModelSave $save): bool
+    {
+        $this->logger->debug("inserting save", ["save" => $save]);
+        $this->verify();
+        return $this->database->insertSave($save->id, $save->name, $save->creator, $save->data);
+    }
+
+    public function updateSave(ModelSave $save): bool
+    {
+        $this->logger->debug("updating save", ["save" => $save]);
+        $this->verify();
+        return $this->database->updateSave($save->id, $save->name, $save->creator, $save->data);
+    }
+
+    public function deleteSave(string $id): bool
+    {
+        $this->logger->debug("deleting save", ["id" => $id]);
+        $this->verify();
+        return $this->database->deleteSave($id);
     }
 
     public function getLogs(int $limit): array

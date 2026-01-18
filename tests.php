@@ -457,11 +457,11 @@ class TestDatabase extends TestAbstractTest
         $this->database->insertNode('node3', 'Node 03', 'application', 'service', ['running_on' => 'SRV012P']);
         $this->database->insertEdge('edge1', 'node1', 'node2', 'label', ['a' => 'b']);
 
-        $this->database->updateEdge('edge1', 'node2', 'node3', 'label', ['x' => 'y']);
+        $this->database->updateEdge('edge1', 'label', ['x' => 'y']);
 
-        $edge = $this->database->getEdge('node2', 'node3');
+        $edge = $this->database->getEdge('node1', 'node2');
 
-        if ($edge['id'] !== 'edge1' || $edge['source'] !== 'node2' || $edge['target'] !== 'node3') {
+        if ($edge['id'] !== 'edge1' || $edge['source'] !== 'node1' || $edge['target'] !== 'node2') {
             throw new Exception('error on testUpdateEdge');
         }
 
@@ -469,7 +469,7 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('error on testUpdateEdge');
         }
 
-        if ($this->database->updateEdge('edge3', 'node2', 'node3', 'label', ['x' => 'y'])) {
+        if ($this->database->updateEdge('edge3', 'label', ['x' => 'y'])) {
             throw new Exception('error on testUpdateEdge');
         }
     }
@@ -2404,6 +2404,72 @@ class TestService extends TestAbstractTest
             return;
         }
         throw new Exception('error on testUpdateNodeStatus');
+    }
+
+    public function testGetSaves(): void
+    {
+        $saves = $this->service->getSaves();
+        if (count($saves) !== 0) {
+            throw new Exception('error on getSaves - should be empty');
+        }
+
+        $this->service->insertSave(new ModelSave('save1', 'First Save', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), []));
+
+        $saves = $this->service->getSaves();
+        if (count($saves) !== 1) {
+            throw new Exception('error on getSaves - should have 1 save');
+        }
+    }
+
+    public function testInsertSave(): void
+    {
+        HelperContext::update('admin', 'admin', '127.0.0.1');
+        $this->service->insertSave(new ModelSave('save1', 'First Save', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), []));
+        $saves = $this->service->getSaves();
+        if (count($saves) !== 1) {
+            throw new Exception('error on testInsertSave - should have 1 save');
+        }
+
+        if($saves[0]->id !== 'save1' || $saves[0]->name !== 'First Save') {
+            throw new Exception('error on testInsertSave - save data mismatch');
+        }
+
+        try {
+            $this->service->insertSave(new ModelSave('save1', 'Duplicate Save', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), []));
+        } catch (Exception $e) {
+            return;
+        }
+        throw new Exception('error on testInsertSave - should not allow duplicate save IDs');
+    }
+
+    public function testUpdateSave(): void
+    {
+        HelperContext::update('admin', 'admin', '127.0.0.1');
+        $this->service->insertSave(new ModelSave('save1', 'First Save', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), []));
+        $this->service->updateSave(new ModelSave('save1', 'Updated Save Name', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), []));
+        $saves = $this->service->getSaves();
+        if (count($saves) !== 1) {
+            throw new Exception('error on testUpdateSave - should have 1 save');
+        }
+
+        if($saves[0]->name !== 'Updated Save Name') {
+            throw new Exception('error on testUpdateSave - save name not updated');
+        }
+        
+        if($this->service->updateSave(new ModelSave('save2', 'Non-existent Save', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), []))) {
+            throw new Exception('error on testUpdateSave - should return false for non-existent save');
+        }
+    }
+
+    public function testDeleteSave(): void
+    {
+        HelperContext::update('admin', 'admin', '127.0.0.1');
+        $this->service->insertSave(new ModelSave('save1', 'First Save', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), []));
+        $this->service->deleteSave('save1');
+        $saves = $this->service->getSaves();
+        if (count($saves) !== 0) {
+            throw new Exception('error on testDeleteSave - should have 0 saves after deletion');
+        }
     }
     
     public function testGetLogs(): void

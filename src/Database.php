@@ -247,12 +247,12 @@ final class Database implements DatabaseInterface
         return true;
     }
 
-    public function updateEdge(string $id, string $source, string $target, string $label, array $data = []): bool
+    public function updateEdge(string $id, string $label, array $data = []): bool
     {
-        $this->logger->debug("updating edge", ['id' => $id, 'source' => $source, 'target' => $target, 'label' => $label, 'data' => $data]);
-        $sql = "UPDATE edges SET source = :source, target = :target, label = :label, data = :data WHERE id = :id";
+        $this->logger->debug("updating edge", ['id' => $id, 'label' => $label, 'data' => $data]);
+        $sql = "UPDATE edges SET label = :label, data = :data WHERE id = :id";
         $data = json_encode($data, JSON_UNESCAPED_UNICODE);
-        $params = [':id' => $id, ':source' => $source, ':target' => $target, ':label' => $label, ':data' => $data];
+        $params = [':id' => $id, ':label' => $label, ':data' => $data];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         if($stmt->rowCount() > 0) {

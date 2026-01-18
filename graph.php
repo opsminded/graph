@@ -648,7 +648,7 @@ final class Service implements ServiceInterface
         "Service::getEdges"            => true,
         "Service::getStatus"           => true,
         "Service::getNodeStatus"       => true,
-        "Service::updateNodeStatus"    => true,
+        "Service::getSaves"            => true,
         "Service::getLogs"             => true,
         "Service::insertUser"          => false,
         "Service::updateUser"          => false,
@@ -660,6 +660,10 @@ final class Service implements ServiceInterface
         "Service::insertEdge"          => false,
         "Service::updateEdge"          => false,
         "Service::deleteEdge"          => false,
+        "Service::updateNodeStatus"    => false,
+        "Service::insertSave"          => false,
+        "Service::updateSave"          => false,
+        "Service::deleteSave"          => false,
         "Service::insertLog"           => false,
     ];
 
@@ -970,7 +974,7 @@ final class Service implements ServiceInterface
 
         $old = $this->getEdge($edge->getSource(), $edge->getTarget());
         $this->insertLog(new ModelLog("edge", $edge->getId(), "update", $old->toArray(), $edge->toArray()));
-        if ($this->database->updateEdge($edge->getId(), $edge->getSource(), $edge->getTarget(), $edge->getLabel(), $edge->getData())) {
+        if ($this->database->updateEdge($edge->getId(), $edge->getLabel(), $edge->getData())) {
             $this->logger->info("edge updated", ["edge" => $edge->toArray()]);
             return true;
         }
@@ -1032,6 +1036,47 @@ final class Service implements ServiceInterface
             return true;
         }
         throw new RuntimeException("unexpected error on Service::updateNodeStatus");
+    }
+
+    public function getSaves(): array
+    {
+        $this->logger->debug("getting saves");
+        $this->verify();
+        $savesData = $this->database->getSaves();
+        $saves     = [];
+        foreach ($savesData as $data) {
+            $save = new ModelSave(
+                $data[ModelSave::SAVE_KEYNAME_ID],
+                $data[ModelSave::SAVE_KEYNAME_NAME],
+                $data[ModelSave::SAVE_KEYNAME_CREATOR],
+                new DateTimeImmutable($data[ModelSave::SAVE_KEYNAME_CREATED_AT]),
+                new DateTimeImmutable($data[ModelSave::SAVE_KEYNAME_UPDATED_AT]),
+                $data[ModelSave::SAVE_KEYNAME_DATA]
+            );
+            $saves[] = $save;
+        }
+        return $saves;
+    }
+
+    public function insertSave(ModelSave $save): bool
+    {
+        $this->logger->debug("inserting save", ["save" => $save]);
+        $this->verify();
+        return $this->database->insertSave($save->id, $save->name, $save->creator, $save->data);
+    }
+
+    public function updateSave(ModelSave $save): bool
+    {
+        $this->logger->debug("updating save", ["save" => $save]);
+        $this->verify();
+        return $this->database->updateSave($save->id, $save->name, $save->creator, $save->data);
+    }
+
+    public function deleteSave(string $id): bool
+    {
+        $this->logger->debug("deleting save", ["id" => $id]);
+        $this->verify();
+        return $this->database->deleteSave($id);
     }
 
     public function getLogs(int $limit): array
@@ -1393,12 +1438,12 @@ final class Database implements DatabaseInterface
         return true;
     }
 
-    public function updateEdge(string $id, string $source, string $target, string $label, array $data = []): bool
+    public function updateEdge(string $id, string $label, array $data = []): bool
     {
-        $this->logger->debug("updating edge", ['id' => $id, 'source' => $source, 'target' => $target, 'label' => $label, 'data' => $data]);
-        $sql = "UPDATE edges SET source = :source, target = :target, label = :label, data = :data WHERE id = :id";
+        $this->logger->debug("updating edge", ['id' => $id, 'label' => $label, 'data' => $data]);
+        $sql = "UPDATE edges SET label = :label, data = :data WHERE id = :id";
         $data = json_encode($data, JSON_UNESCAPED_UNICODE);
-        $params = [':id' => $id, ':source' => $source, ':target' => $target, ':label' => $label, ':data' => $data];
+        $params = [':id' => $id, ':label' => $label, ':data' => $data];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         if($stmt->rowCount() > 0) {
@@ -1721,6 +1766,11 @@ interface ServiceInterface
     public function getNodeStatus(string $id): ?ModelStatus;
     public function updateNodeStatus(ModelStatus $status): bool;
 
+    public function getSaves(): array;
+    public function insertSave(ModelSave $save): bool;
+    public function updateSave(ModelSave $save): bool;
+    public function deleteSave(string $id): bool;
+
     public function getLogs(int $limit): array;
 }
 #####################################
@@ -1811,7 +1861,7 @@ interface DatabaseInterface
     public function getEdge(string $source, string $target): ?array;
     public function getEdges(): array;
     public function insertEdge(string $id, string $source, string $target, string $label, array $data = []): bool;
-    public function updateEdge(string $id, string $source, string $target, string $label, array $data = []): bool;
+    public function updateEdge(string $id, string $label, array $data = []): bool;
     public function deleteEdge(string $id): bool;
 
     public function getStatus(): array;
@@ -1833,6 +1883,41 @@ class HTTPNotFoundResponse extends HTTPResponse
     public function __construct(string $message = "", array $data)
     {
         return parent::__construct(404, HTTPResponseInterface::VALUE_STATUS_ERROR, $message, $data);
+    }
+}
+#####################################
+
+final class ModelSave
+{
+    const SAVE_KEYNAME_ID = "id";
+    const SAVE_KEYNAME_NAME = "name";
+    const SAVE_KEYNAME_CREATOR = "creator";
+    const SAVE_KEYNAME_CREATED_AT = "created_at";
+    const SAVE_KEYNAME_UPDATED_AT = "updated_at";
+    const SAVE_KEYNAME_DATA = "data";
+    
+    public string $id;
+    public string $name;
+    public string $creator;
+    public DateTimeImmutable $createdAt;
+    public DateTimeImmutable $updatedAt;
+    
+    public array $data;
+
+    public function __construct(
+        string $id,
+        string $name,
+        string $creator,
+        DateTimeImmutable $createdAt,
+        DateTimeImmutable $updatedAt,
+        array $data
+    ) {
+        $this->id = $id;
+        $this->name = $name;
+        $this->creator = $creator;
+        $this->createdAt = $createdAt;
+        $this->updatedAt = $updatedAt;
+        $this->data = $data;
     }
 }
 #####################################

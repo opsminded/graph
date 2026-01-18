@@ -437,11 +437,11 @@ class TestDatabase extends TestAbstractTest
         $this->database->insertNode('node3', 'Node 03', 'application', 'service', ['running_on' => 'SRV012P']);
         $this->database->insertEdge('edge1', 'node1', 'node2', 'label', ['a' => 'b']);
 
-        $this->database->updateEdge('edge1', 'node2', 'node3', 'label', ['x' => 'y']);
+        $this->database->updateEdge('edge1', 'label', ['x' => 'y']);
 
-        $edge = $this->database->getEdge('node2', 'node3');
+        $edge = $this->database->getEdge('node1', 'node2');
 
-        if ($edge['id'] !== 'edge1' || $edge['source'] !== 'node2' || $edge['target'] !== 'node3') {
+        if ($edge['id'] !== 'edge1' || $edge['source'] !== 'node1' || $edge['target'] !== 'node2') {
             throw new Exception('error on testUpdateEdge');
         }
 
@@ -449,7 +449,7 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('error on testUpdateEdge');
         }
 
-        if ($this->database->updateEdge('edge3', 'node2', 'node3', 'label', ['x' => 'y'])) {
+        if ($this->database->updateEdge('edge3', 'label', ['x' => 'y'])) {
             throw new Exception('error on testUpdateEdge');
         }
     }

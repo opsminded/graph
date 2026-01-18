@@ -34,5 +34,10 @@ interface ServiceInterface
     public function getNodeStatus(string $id): ?ModelStatus;
     public function updateNodeStatus(ModelStatus $status): bool;
 
+    public function getSaves(): array;
+    public function insertSave(ModelSave $save): bool;
+    public function updateSave(ModelSave $save): bool;
+    public function deleteSave(string $id): bool;
+
     public function getLogs(int $limit): array;
 }
