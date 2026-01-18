@@ -1548,10 +1548,19 @@ final class Database implements DatabaseInterface
 
         $this->pdo->exec('
             CREATE TABLE IF NOT EXISTS status (
-                node_id TEXT PRIMARY KEY NOT NULL,
-                status TEXT NOT NULL,
+                node_id    TEXT PRIMARY KEY NOT NULL,
+                status     TEXT NOT NULL,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (node_id) REFERENCES nodes(id) ON DELETE CASCADE
+            )');
+        
+        $this->pdo->exec('
+            CREATE TABLE IF NOT EXISTS saves (
+                name TEXT PRIMARY KEY NOT NULL,
+                creator    TEXT NOT NULL,
+                data       TEXT NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )');
 
         $this->pdo->exec('CREATE INDEX IF NOT EXISTS idx_node_status_node_id ON status (node_id)');
