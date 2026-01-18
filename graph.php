@@ -1460,6 +1460,62 @@ final class Database implements DatabaseInterface
         return true;
     }
 
+    public function getSaves(): array
+    {
+        $this->logger->debug("fetching saves");
+        $sql = "SELECT * FROM saves";
+        $stmt  = $this->pdo->query($sql);
+        $rows  = $stmt->fetchAll();
+        foreach($rows as &$row) {
+            $row['data'] = json_decode($row['data'], true);
+        }
+        $this->logger->info("saves fetched", ['rows' => $rows]);
+        return $rows;
+    }
+
+    public function insertSave(string $id, string $name, string $creator, array $data): bool
+    {
+        $this->logger->debug("inserting new save", ['id' => $id, 'name' => $name, 'creator' => $creator, 'data' => $data]);
+        $sql = "INSERT INTO saves (id, name, creator, data) VALUES (:id, :name, :creator, :data)";
+        $data = json_encode($data, JSON_UNESCAPED_UNICODE);
+        $params = [':id' => $id, ':name' => $name, ':creator' => $creator, ':data' => $data];
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $this->logger->info("save inserted", ['params' => $params]);
+        return true;
+    }
+
+    public function updateSave(string $id, string $name, string $creator, array $data): bool
+    {
+        $this->logger->debug("updating save", ['id' => $id, 'name' => $name, 'creator' => $creator, 'data' => $data]);
+        $sql = "UPDATE saves SET name = :name, creator = :creator, data = :data, updated_at = CURRENT_TIMESTAMP WHERE id = :id";
+        $data = json_encode($data, JSON_UNESCAPED_UNICODE);
+        $params = [':id' => $id, ':name' => $name, ':creator' => $creator, ':data' => $data];
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        if ($stmt->rowCount() > 0) {
+            $this->logger->info("save updated", ['params' => $params]);
+            return true;
+        }
+        $this->logger->error("save not updated", ['params' => $params]);
+        return false;
+    }
+
+    public function deleteSave(string $id): bool
+    {
+        $this->logger->debug("deleting save", ['id' => $id]);
+        $sql = "DELETE FROM saves WHERE id = :id";
+        $params = [':id' => $id];
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        if ($stmt->rowCount() > 0) {
+            $this->logger->info("save deleted", ['params' => $params]);
+            return true;
+        }
+        $this->logger->error("save not deleted", ['params' => $params]);
+        return false;
+    }
+
     public function getLogs(int $limit): array
     {
         $this->logger->debug("fetching logs", ['limit' => $limit]);
@@ -1556,7 +1612,8 @@ final class Database implements DatabaseInterface
         
         $this->pdo->exec('
             CREATE TABLE IF NOT EXISTS saves (
-                name TEXT PRIMARY KEY NOT NULL,
+                id         TEXT PRIMARY KEY NOT NULL,
+                name       TEXT NOT NULL,
                 creator    TEXT NOT NULL,
                 data       TEXT NOT NULL,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -1760,6 +1817,11 @@ interface DatabaseInterface
     public function getStatus(): array;
     public function getNodeStatus(string $id): ?array;
     public function updateNodeStatus(string $id, string $status): bool;
+
+    public function getSaves(): array;
+    public function insertSave(string $id, string $name, string $creator, array $data): bool;
+    public function updateSave(string $id, string $name, string $creator, array $data): bool;
+    public function deleteSave(string $id): bool;
 
     public function getLogs(int $limit): array;
     public function insertLog(string $entity_type, string $entity_id, string $action, ?array $old_data = null, ?array $new_data = null, string $user_id, string $ip_address): bool;

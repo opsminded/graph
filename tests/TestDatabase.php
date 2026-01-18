@@ -542,6 +542,89 @@ class TestDatabase extends TestAbstractTest
         throw new Exception('error on testUpdateNodeStatus');
     }
 
+    public function testGetSaves(): void
+    {
+        $saves = $this->database->getSaves();
+        if (count($saves) !== 0) {
+            throw new Exception('error on testGetSaves');
+        }
+
+        $this->database->insertSave('initial', 'Initial Save', 'admin', ['nodes' => ['a', 'b']]);
+
+        $saves = $this->database->getSaves();
+        if (count($saves) !== 1) {
+            throw new Exception('error on testGetSaves');
+        }
+
+        if ($saves[0]['id'] !== 'initial' || $saves[0]['name'] !== 'Initial Save' || $saves[0]['creator'] !== 'admin') {
+            throw new Exception('error on testGetSaves');
+        }
+    }
+
+    public function testInsertSave(): void
+    {
+        $this->database->insertSave('initial', 'Initial Save', 'admin', ['nodes' => ['a', 'b']]);
+
+        $saves = $this->database->getSaves();
+        if (count($saves) !== 1) {
+            throw new Exception('error on testInsertSave');
+        }
+
+        if ($saves[0]['id'] !== 'initial' || $saves[0]['name'] !== 'Initial Save' || $saves[0]['creator'] !== 'admin') {
+            throw new Exception('error on testInsertSave');
+        }
+
+        try {
+            $this->database->insertSave('initial', 'Initial Save', 'admin', ['nodes' => ['a', 'b']]);
+        } catch(Exception $e) {
+            return;
+        }
+        throw new Exception('error on testInsertSave');
+    }
+
+    public function testUpdateSave(): void
+    {
+        $this->database->insertSave('initial', 'Initial Save', 'admin', ['nodes' => ['a', 'b']]);
+
+        $this->database->updateSave('initial', 'Updated Save', 'admin', ['nodes' => ['c', 'd']]);
+
+        $saves = $this->database->getSaves();
+        if (count($saves) !== 1) {
+            throw new Exception('error on testUpdateSave 1');
+        }
+
+        if ($saves[0]['id'] !== 'initial' || $saves[0]['name'] !== 'Updated Save' || $saves[0]['creator'] !== 'admin') {
+            throw new Exception('error on testUpdateSave 2');
+        }
+
+        if ($this->database->updateSave('nonexistent', 'Name', 'admin', ['nodes' => []])) {
+            throw new Exception('error on testUpdateSave 3');
+        }
+    }
+
+    public function testDeleteSave(): void
+    {
+        $this->database->insertSave('initial', 'Initial Save', 'admin', ['nodes' => ['a', 'b']]);
+
+        $saves = $this->database->getSaves();
+        if (count($saves) !== 1) {
+            throw new Exception('error on testDeleteSave 1');
+        }
+
+        if (! $this->database->deleteSave('initial')) {
+            throw new Exception('error on testDeleteSave 1');
+        }
+
+        $saves = $this->database->getSaves();
+        if (count($saves) !== 0) {
+            throw new Exception('error on testDeleteSave 2');
+        }
+
+        if ($this->database->deleteSave('nonexistent')) {
+            throw new Exception('error on testDeleteSave 3');
+        }
+    }
+
     public function testGetLogs(): void {
         $logs = $this->database->getLogs(2);
         if (count($logs) > 0) {

@@ -34,6 +34,11 @@ interface DatabaseInterface
     public function getNodeStatus(string $id): ?array;
     public function updateNodeStatus(string $id, string $status): bool;
 
+    public function getSaves(): array;
+    public function insertSave(string $id, string $name, string $creator, array $data): bool;
+    public function updateSave(string $id, string $name, string $creator, array $data): bool;
+    public function deleteSave(string $id): bool;
+
     public function getLogs(int $limit): array;
     public function insertLog(string $entity_type, string $entity_id, string $action, ?array $old_data = null, ?array $new_data = null, string $user_id, string $ip_address): bool;
 }
