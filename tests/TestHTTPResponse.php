@@ -6,7 +6,7 @@ class TestHTTPResponse extends TestAbstractTest
 {
     public function testHTTPResponse(): void
     {
-        $resp = new HTTPResponse(200, 'success', 'node created', ['key' => 'val'], ['Content-Type' => 'application/json'], 'template');
+        $resp = new HTTPResponse(200, 'success', 'node created', ['key' => 'val'], 'text/plain', 'dGVzdGU=', ['Content-Type' => 'application/json'], 'template');
         if($resp->code != 200) {
             throw new Exception('problem on testHTTPResponse');
         }
@@ -23,7 +23,15 @@ class TestHTTPResponse extends TestAbstractTest
             throw new Exception('problem on testHTTPResponse');
         }
 
+        if ($resp->contentType != 'text/plain') {
+            throw new Exception('problem on testHTTPResponse');
+        }
+
         if ($resp->headers['Content-Type'] != 'application/json') {
+            throw new Exception('problem on testHTTPResponse');
+        }
+
+        if ($resp->binaryContent != 'dGVzdGU=') {
             throw new Exception('problem on testHTTPResponse');
         }
 

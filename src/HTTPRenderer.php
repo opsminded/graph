@@ -20,6 +20,12 @@ final class HTTPRenderer
             header("$header: $value");
         }
 
+        if ($response->binaryContent !== null) {
+            header($response->contentType);
+            echo base64_decode($response->binaryContent);
+            exit();
+        }
+
         if($response->template === null) {
             header('Content-Type: application/json; charset=utf-8');
             $data = [
@@ -35,6 +41,8 @@ final class HTTPRenderer
             if (!array_key_exists($response->template, $this->templates)) {
                 throw new Exception("template not found: " . $response->template);
             }
+            echo base64_decode($this->templates[$response->template]['data']);
+            exit();
         }
     }
 }

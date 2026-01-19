@@ -17,13 +17,15 @@ final class HTTPRequest
     public function __construct()
     {
         $this->params = $_GET;
-
         $this->method = $_SERVER["REQUEST_METHOD"];
 
         $scriptName = $_SERVER["SCRIPT_NAME"];
         $requestUri = $_SERVER["REQUEST_URI"];
         $requestUri = strtok($requestUri, "?");
+
+        
         $path = str_replace($scriptName, "", $requestUri);
+
         $this->path = $path;
 
         if ($this->method === self::METHOD_POST || $this->method === self::METHOD_PUT) {

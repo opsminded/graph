@@ -1,7 +1,8 @@
 
 # Pré-compilação
 compile:
-	php bin/compile.php
+	php bin/compile_images.php
+	php bin/compile_templates.php
 
 # Empacotamento (depende de compile)
 build: compile
@@ -17,7 +18,7 @@ coverage: test
 
 # Servidor de testes
 serve: build
-	php -S 0.0.0.0:8090
+	php -S 0.0.0.0:8090 index.php
 
 # Atalho para rodar tudo até coverage
 all: coverage

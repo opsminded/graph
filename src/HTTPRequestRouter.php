@@ -34,10 +34,20 @@ final class HTTPRequestRouter
 
     public function handle(HTTPRequest $req): HTTPResponse
     {
+        global $DATA_CYTOSCAPE;
+
         if($req->method == HTTPRequest::METHOD_GET && $req->path == "/")
         {
             $resp = new HTTPOKResponse("welcome to the API", []);
-            $resp->template = 'index.html';
+            $resp->template = 'viewer';
+            return $resp;
+        }
+
+        if ($req->method == HTTPRequest::METHOD_GET && $req->path == "/cytoscape.js")
+        {
+            $resp = new HTTPOKResponse("cytoscape.js", []);
+            $resp->contentType = 'Content-Type: text/javascript; charset=UTF-8';
+            $resp->binaryContent = $DATA_CYTOSCAPE;
             return $resp;
         }
 

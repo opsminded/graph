@@ -24,9 +24,8 @@ class TestHelperCytoscape extends TestAbstractTest
 
     public function testHelperCytoscape(): void
     {
-        include __DIR__ . "/compiled_images.php";
-
-        $img = new HelperImages($images);
+        global $DATA_IMAGES;
+        $img = new HelperImages($DATA_IMAGES);
         $cy = new HelperCytoscape($this->database, $img, 'http://example.com/images');
 
         $nodes = [

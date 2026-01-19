@@ -4,10 +4,6 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/compiled/graph.php';
 
-require_once __DIR__ . '/compiled/compiled_images.php';
-
-$imageHelper = new HelperImages($images);
-
 $username = 'admin';
 $usergroup = 'admin';
 $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
@@ -20,11 +16,11 @@ $logger           = new Logger();
 $controllerLogger = new Logger();
 $database         = new Database($pdo, $logger);
 $service          = new Service($database, $logger);
-$imageHelper      = new HelperImages($images);
+$imageHelper      = new HelperImages($DATA_IMAGES);
 $cytoscapeHelper  = new HelperCytoscape($database, $imageHelper, '/index.php');
 $controller       = new HttpController($service, $cytoscapeHelper, $logger);
 $router           = new HTTPRequestRouter($controller);
-$renderer         = new HTTPRenderer([]);
+$renderer         = new HTTPRenderer($DATA_TEMPLATES);
 
 $service->insertNode(new ModelNode('Credito', 'Crédito', 'business', 'business', false, ['host' => 'users.example.com']));
 $service->insertNode(new ModelNode('Pagamento', 'Pagamento', 'business', 'business_case', false, ['host' => 'payments.example.com']));

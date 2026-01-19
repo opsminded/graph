@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 require_once __DIR__ . 'graph.php';
 
-include __DIR__ . '/www/images/compiled_images.php';
-
 foreach (glob(__DIR__ . "/tests/*.php") as $arquivo) {
     require_once $arquivo;
 }

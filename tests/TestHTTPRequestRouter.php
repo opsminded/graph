@@ -21,7 +21,7 @@ class TestHTTPRequestRouter extends TestAbstractTest
 
     public function up(): void
     {
-        include __DIR__ . "/compiled_images.php";
+        global $DATA_IMAGES;
 
         $_GET = [];
         $_SERVER = [];
@@ -34,7 +34,7 @@ class TestHTTPRequestRouter extends TestAbstractTest
 
         $this->database = new Database($this->pdo, $this->databaseLogger);
 
-        $this->imagesHelper = new HelperImages($images);
+        $this->imagesHelper = new HelperImages($DATA_IMAGES);
         $this->cytoscapeHelper = new HelperCytoscape($this->database, $this->imagesHelper, 'http://localhost/images');
 
         $this->service = new Service($this->database, $this->serviceLogger);
