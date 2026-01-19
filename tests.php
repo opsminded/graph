@@ -242,9 +242,9 @@ class TestDatabase extends TestAbstractTest
         
         $stmt = $this->pdo->prepare('insert into nodes (id, label, category, type, data) values (:id, :label, :category, :type, :data)');
 
-        $this->database->insertNode('node1', 'Node 01', 'cat1', 'app', ['running_on' => 'SRV01OP']);
-        $this->database->insertNode('node2', 'Node 02', 'cat2', 'db', ['running_on' => 'SRV011P']);
-        $this->database->insertNode('node3', 'Node 03', 'cat1', 'app', ['running_on' => 'SRV012P']);
+        $this->database->insertNode('node1', 'Node 01', 'cat1', 'app', false, ['running_on' => 'SRV01OP']);
+        $this->database->insertNode('node2', 'Node 02', 'cat2', 'db', false, ['running_on' => 'SRV011P']);
+        $this->database->insertNode('node3', 'Node 03', 'cat1', 'app', false, ['running_on' => 'SRV012P']);
 
         $this->database->insertEdge('edge1', 'node1', 'node2', 'label', ['a' => 'b']);
         $this->database->insertEdge('edge2', 'node2', 'node3', 'label', ['b' => 'c']);
@@ -273,9 +273,9 @@ class TestDatabase extends TestAbstractTest
 
         $stmt = $this->pdo->prepare('insert into nodes (id, label, category, type, data) values (:id, :label, :category, :type, :data)');
 
-        $this->database->insertNode('node1', 'Node 01', 'cat1', 'app', ['running_on' => 'SRV01OP']);
-        $this->database->insertNode('node2', 'Node 02', 'cat2', 'db', ['running_on' => 'SRV011P']);
-        $this->database->insertNode('node3', 'Node 03', 'cat1', 'app', ['running_on' => 'SRV012P']);
+        $this->database->insertNode('node1', 'Node 01', 'cat1', 'app', false, ['running_on' => 'SRV01OP']);
+        $this->database->insertNode('node2', 'Node 02', 'cat2', 'db', false, ['running_on' => 'SRV011P']);
+        $this->database->insertNode('node3', 'Node 03', 'cat1', 'app', false, ['running_on' => 'SRV012P']);
 
         $this->database->insertEdge('edge1', 'node1', 'node2', 'label', ['a' => 'b']);
         $this->database->insertEdge('edge2', 'node2', 'node3', 'label', ['b' => 'c']);
@@ -296,7 +296,7 @@ class TestDatabase extends TestAbstractTest
     }
 
     public function testInsertNode(): void {
-        $this->database->insertNode('node1', 'Node 01', 'business', 'service', ['running_on' => 'SRV01OP']);
+        $this->database->insertNode('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']);
         $node = $this->database->getNode('node1');
         if ($node['id'] !== 'node1' || $node['label'] !== 'Node 01' || $node['category'] !== 'business' || $node['type'] !== 'service') {
             throw new Exception('error on testInsertNode');
@@ -305,7 +305,7 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('error on testInsertNode');
         }
         try {
-            $this->database->insertNode('node1', 'Node 01', 'business', 'service', ['running_on' => 'SRV01OP']);
+            $this->database->insertNode('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']);
         } catch(Exception $e) {
             return;
         }
@@ -313,7 +313,7 @@ class TestDatabase extends TestAbstractTest
     }
 
     public function testUpdateNode(): void {
-        $this->database->insertNode('node1', 'Node 01', 'business', 'service', ['running_on' => 'SRV01OP']);
+        $this->database->insertNode('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']);
         $this->database->updateNode('node1', 'Novo Label', 'application', 'database', ['other' => 'diff']);
         $node = $this->database->getNode('node1');
         if ($node['id'] !== 'node1' || $node['label'] !== 'Novo Label' || $node['category'] !== 'application' || $node['type'] !== 'database') {
@@ -333,7 +333,7 @@ class TestDatabase extends TestAbstractTest
         if ($node !== null) {
             throw new Exception('error on testDeleteNode');
         }
-        $this->database->insertNode('node1', 'Node 01', 'business', 'service', ['running_on' => 'SRV01OP']);
+        $this->database->insertNode('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']);
         $node = $this->database->getNode('node1');
         if ($node['id'] !== 'node1' || $node['label'] !== 'Node 01' || $node['category'] !== 'business' || $node['type'] !== 'service') {
             throw new Exception('error on testDeleteNode');
@@ -362,9 +362,9 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('error on testGetEdge');
         }
 
-        $this->database->insertNode('node1', 'Node 01', 'application', 'service', ['running_on' => 'SRV01OP']);
+        $this->database->insertNode('node1', 'Node 01', 'application', 'service', false, ['running_on' => 'SRV01OP']);
         
-        $this->database->insertNode('node2', 'Node 02', 'business', 'database', ['running_on' => 'SRV011P']);
+        $this->database->insertNode('node2', 'Node 02', 'business', 'database', false, ['running_on' => 'SRV011P']);
         
         $this->database->insertEdge('edge1', 'node1', 'node2', 'label', ['a' => 'b']);
         
@@ -389,9 +389,9 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('error on testGetEdges');
         }
 
-        $this->database->insertNode('node1', 'Node 01', 'business', 'service', ['running_on' => 'SRV01OP']);
-        $this->database->insertNode('node2', 'Node 02', 'application', 'database', ['running_on' => 'SRV011P']);
-        $this->database->insertNode('node3', 'Node 03', 'application', 'service', ['running_on' => 'SRV012P']);
+        $this->database->insertNode('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']);
+        $this->database->insertNode('node2', 'Node 02', 'application', 'database', false, ['running_on' => 'SRV011P']);
+        $this->database->insertNode('node3', 'Node 03', 'application', 'service', false, ['running_on' => 'SRV012P']);
 
         $this->database->insertEdge('edge1', 'node1', 'node2', 'label', ['a' => 'b']);
         $this->database->insertEdge('edge2', 'node2', 'node3', 'label', ['b' => 'c']);
@@ -416,8 +416,8 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('error on testInsertEdge');
         }
 
-        $this->database->insertNode('node1', 'Node 01', 'application', 'service', ['running_on' => 'SRV01OP']);
-        $this->database->insertNode('node2', 'Node 02', 'business', 'database', ['running_on' => 'SRV011P']);
+        $this->database->insertNode('node1', 'Node 01', 'application', 'service', false, ['running_on' => 'SRV01OP']);
+        $this->database->insertNode('node2', 'Node 02', 'business', 'database', false, ['running_on' => 'SRV011P']);
 
         $this->database->insertEdge('edge1', 'node1', 'node2', 'label', ['a' => 'b']);
 
@@ -452,9 +452,9 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('error on testUpdateEdge');
         }
 
-        $this->database->insertNode('node1', 'Node 01', 'business', 'service', ['running_on' => 'SRV01OP']);
-        $this->database->insertNode('node2', 'Node 02', 'application', 'database', ['running_on' => 'SRV011P']);
-        $this->database->insertNode('node3', 'Node 03', 'application', 'service', ['running_on' => 'SRV012P']);
+        $this->database->insertNode('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']);
+        $this->database->insertNode('node2', 'Node 02', 'application', 'database', false, ['running_on' => 'SRV011P']);
+        $this->database->insertNode('node3', 'Node 03', 'application', 'service', false, ['running_on' => 'SRV012P']);
         $this->database->insertEdge('edge1', 'node1', 'node2', 'label', ['a' => 'b']);
 
         $this->database->updateEdge('edge1', 'label', ['x' => 'y']);
@@ -475,9 +475,9 @@ class TestDatabase extends TestAbstractTest
     }
 
     public function testDeleteEdge(): void {
-        $this->database->insertNode('node1', 'Node 01', 'business', 'service', ['running_on' => 'SRV01OP']);
-        $this->database->insertNode('node2', 'Node 02', 'application', 'database', ['running_on' => 'SRV011P']);
-        $this->database->insertNode('node3', 'Node 03', 'application', 'service', ['running_on' => 'SRV012P']);
+        $this->database->insertNode('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']);
+        $this->database->insertNode('node2', 'Node 02', 'application', 'database', false, ['running_on' => 'SRV011P']);
+        $this->database->insertNode('node3', 'Node 03', 'application', 'service', false, ['running_on' => 'SRV012P']);
         $this->database->insertEdge('edge1', 'node1', 'node2', 'label', ['a' => 'b']);
         $this->database->insertEdge('edge2', 'node2', 'node3', 'label', ['b' => 'c']);
 
@@ -504,7 +504,7 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('error on testGetStatus');
         }
 
-        $this->database->insertNode('node1', 'Node 01', 'business', 'service', ['running_on' => 'SRV01OP']);
+        $this->database->insertNode('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']);
 
         $s = $this->database->getStatus();
 
@@ -524,7 +524,7 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('error on testGetStatus');
         }
 
-        $this->database->insertNode('node1', 'Node 01', 'business', 'service', ['running_on' => 'SRV01OP']);
+        $this->database->insertNode('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']);
 
         $s = $this->database->getNodeStatus('node1');
 
@@ -544,7 +544,7 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('error on testUpdateNodeStatus');
         }
 
-        $this->database->insertNode('node1', 'Node 01', 'business', 'service', ['running_on' => 'SRV01OP']);
+        $this->database->insertNode('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']);
 
         $this->database->updateNodeStatus('node1', 'healthy');
 
@@ -876,8 +876,8 @@ class TestModelGraph extends TestAbstractTest
 {
     public function testGraphConstructor(): void
     {
-        $node1 = new ModelNode('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
-        $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
+        $node1 = new ModelNode('node1', 'Node 01', 'business', 'server', false,  ['key' => 'value1']);
+        $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', false, ['key' => 'value2']);
         
         $edge1 = new ModelEdge('node1', 'node2', 'lbl node1', ['weight' => '10']);
 
@@ -1398,6 +1398,7 @@ final class TestHTTPController extends TestAbstractTest
         $req->data['label'] = 'node1';
         $req->data['category'] = 'application';
         $req->data['type'] = 'database';
+        $req->data['user_created'] = true;
         $req->data['data'] = ['a' => 'b'];
         $resp = $this->controller->insertNode($req);
     }
@@ -1885,9 +1886,9 @@ class TestModelNode extends TestAbstractTest
 {
     public function testNodeConstructor(): void
     {
-        $node = new ModelNode('node1', 'Node 01', 'business', 'server', ['key' => 'value']);
+        $node = new ModelNode('node1', 'Node 01', 'business', 'server', true, ['key' => 'value']);
 
-        if ($node->getId() != 'node1' || $node->getLabel() != 'Node 01' || $node->getCategory() != 'business' || $node->getType() != 'server') {
+        if ($node->getId() != 'node1' || $node->getLabel() != 'Node 01' || $node->getCategory() != 'business' || $node->getType() != 'server' || $node->getUserCreated() !== true) {
             throw new Exception('test_Node problem - property mismatch');
         }
 
@@ -1897,7 +1898,7 @@ class TestModelNode extends TestAbstractTest
         }
 
         $data = $node->toArray();
-        if ($data['id'] != 'node1' || $data['label'] != 'Node 01' || $data['category'] != 'business' || $data['type'] != 'server') {
+        if ($data['id'] != 'node1' || $data['label'] != 'Node 01' || $data['category'] != 'business' || $data['type'] != 'server' || $data['user_created'] !== true) {
             throw new Exception('test_Node problem - toArray mismatch');
         }
 
@@ -1907,7 +1908,7 @@ class TestModelNode extends TestAbstractTest
 
         // Test validation - invalid ID
         try {
-            new ModelNode('invalid@id', 'Label', 'business', 'server', []);
+            new ModelNode('invalid@id', 'Label', 'business', 'server', true, []);
             throw new Exception('test_Node problem - should throw exception for invalid ID');
         } catch (InvalidArgumentException $e) {
             // Expected
@@ -1915,7 +1916,7 @@ class TestModelNode extends TestAbstractTest
 
         // Test validation - label too long
         try {
-            new ModelNode('node2', str_repeat('a', 210000), 'business', 'server', []);
+            new ModelNode('node2', str_repeat('a', 210000), 'business', 'server', true, []);
             throw new Exception('test_Node problem - should throw exception for long label');
         } catch (InvalidArgumentException $e) {
             // Expected
@@ -1953,9 +1954,9 @@ class TestHelperCytoscape extends TestAbstractTest
         $cy = new HelperCytoscape($this->database, $img, 'http://example.com/images');
 
         $nodes = [
-            new ModelNode('n1', 'Node 1', 'business', 'server', ['a' => 1]),
-            new ModelNode('n2', 'Node 2', 'business', 'server', ['b' => 2]),
-            new ModelNode('n3', 'Node 3', 'business', 'server', ['c' => 3]),
+            new ModelNode('n1', 'Node 1', 'business', 'server',  false, ['a' => 1]),
+            new ModelNode('n2', 'Node 2', 'business', 'server', false, ['b' => 2]),
+            new ModelNode('n3', 'Node 3', 'business', 'server', false, ['c' => 3]),
         ];
 
         $edges = [
@@ -2193,8 +2194,8 @@ class TestService extends TestAbstractTest
     public function testGetGraph(): void
     {
         HelperContext::update('admin', 'admin', '127.0.0.1');
-        $node1 = new ModelNode('n1', 'Node 01', 'business', 'service', ['key' => 'value1']);
-        $node2 = new ModelNode('n2', 'Node 02', 'business', 'service', ['key' => 'value2']);
+        $node1 = new ModelNode('n1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
+        $node2 = new ModelNode('n2', 'Node 02', 'business', 'service', false, ['key' => 'value2']);
         $this->service->insertNode($node1);
         $this->service->insertNode($node2);
         $edge1 = new ModelEdge('n1', 'n2', 'label', ['weight' => '10']);
@@ -2215,7 +2216,7 @@ class TestService extends TestAbstractTest
         if ($node !== null) {
             throw new Exception('error on testGetNode - should be null');
         }
-        $newNode = new ModelNode('node1', 'Node 01', 'business', 'service', ['key' => 'value']);
+        $newNode = new ModelNode('node1', 'Node 01', 'business', 'service', false, ['key' => 'value']);
         $this->service->insertNode($newNode);
         $node = $this->service->getNode('node1');
         if ($node->getId() !== 'node1' || $node->getLabel() !== 'Node 01' || $node->getCategory() !== 'business' || $node->getType() !== 'service') {
@@ -2234,8 +2235,8 @@ class TestService extends TestAbstractTest
         if (count($nodes) !== 0) {
             throw new Exception('error on testGetNodes - should be empty');
         }
-        $node1 = new ModelNode('node1', 'Node 01', 'business', 'service', ['key' => 'value1']);
-        $node2 = new ModelNode('node2', 'Node 02', 'business', 'database', ['key' => 'value2']);
+        $node1 = new ModelNode('node1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
+        $node2 = new ModelNode('node2', 'Node 02', 'business', 'database', false, ['key' => 'value2']);
         $this->service->insertNode($node1);
         $this->service->insertNode($node2);
         $nodes = $this->service->getNodes();
@@ -2253,9 +2254,9 @@ class TestService extends TestAbstractTest
     public function testGetNodeParentOf(): void
     {
         HelperContext::update('admin', 'admin', '127.0.0.1');
-        $nodeA = new ModelNode('nodeA', 'Node A', 'business', 'service', ['key' => 'valueA']);
-        $nodeB = new ModelNode('nodeB', 'Node B', 'business', 'database', ['key' => 'valueB']);
-        $nodeC = new ModelNode('nodeC', 'Node C', 'business', 'service', ['key' => 'valueC']);
+        $nodeA = new ModelNode('nodeA', 'Node A', 'business', 'service', false, ['key' => 'valueA']);
+        $nodeB = new ModelNode('nodeB', 'Node B', 'business', 'database', false, ['key' => 'valueB']);
+        $nodeC = new ModelNode('nodeC', 'Node C', 'business', 'service', false, ['key' => 'valueC']);
         $this->service->insertNode($nodeA);
         $this->service->insertNode($nodeB);
         $this->service->insertNode($nodeC);
@@ -2278,9 +2279,9 @@ class TestService extends TestAbstractTest
     public function testGetDependentNodesOf(): void
     {
         HelperContext::update('admin', 'admin', '127.0.0.1');
-        $nodeA = new ModelNode('nodeA', 'Node A', 'business', 'service', ['key' => 'valueA']);
-        $nodeB = new ModelNode('nodeB', 'Node B', 'business', 'database', ['key' => 'valueB']);
-        $nodeC = new ModelNode('nodeC', 'Node C', 'business', 'service', ['key' => 'valueC']);
+        $nodeA = new ModelNode('nodeA', 'Node A', 'business', 'service', false, ['key' => 'valueA']);
+        $nodeB = new ModelNode('nodeB', 'Node B', 'business', 'database', false, ['key' => 'valueB']);
+        $nodeC = new ModelNode('nodeC', 'Node C', 'business', 'service', false, ['key' => 'valueC']);
         $this->service->insertNode($nodeA);
         $this->service->insertNode($nodeB);
         $this->service->insertNode($nodeC);
@@ -2301,7 +2302,7 @@ class TestService extends TestAbstractTest
     public function testInsertNode(): void
     {
         HelperContext::update('admin', 'admin', '127.0.0.1');
-        $node = new ModelNode('node1', 'Node 01', 'business', 'service', ['key' => 'value']);
+        $node = new ModelNode('node1', 'Node 01', 'business', 'service', false, ['key' => 'value']);
         $this->service->insertNode($node);
         $retrievedNode = $this->service->getNode('node1');
         if ($retrievedNode->getId() !== 'node1' || $retrievedNode->getLabel() !== 'Node 01') {
@@ -2309,7 +2310,7 @@ class TestService extends TestAbstractTest
         }
         // Test with contributor permission
         HelperContext::update('admin', 'admin', '127.0.0.1');
-        $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
+        $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', false, ['key' => 'value2']);
         $this->service->insertNode($node2);
         $retrievedNode2 = $this->service->getNode('node2');
         if ($retrievedNode2->getId() !== 'node2') {
@@ -2320,9 +2321,9 @@ class TestService extends TestAbstractTest
     public function testUpdateNode(): void
     {
         HelperContext::update('admin', 'admin', '127.0.0.1');
-        $node = new ModelNode('node1', 'Node 01', 'business', 'service', ['key' => 'value']);
+        $node = new ModelNode('node1', 'Node 01', 'business', 'service', false, ['key' => 'value']);
         $this->service->insertNode($node);
-        $updatedNode = new ModelNode('node1', 'Updated Node', 'application', 'database', ['key' => 'newvalue']);
+        $updatedNode = new ModelNode('node1', 'Updated Node', 'application', 'database', false, ['key' => 'newvalue']);
         
         $this->service->updateNode($updatedNode);
         $retrievedNode = $this->service->getNode('node1');
@@ -2337,7 +2338,7 @@ class TestService extends TestAbstractTest
         }
         
         // try to update node not found
-        $updatedNode = new ModelNode('node5', 'Updated Node', 'application', 'database', ['key' => 'newvalue']);
+        $updatedNode = new ModelNode('node5', 'Updated Node', 'application', 'database', false, ['key' => 'newvalue']);
         if ($this->service->updateNode($updatedNode)) {
             throw new Exception('error on testUpdateNode - should be false');
         }
@@ -2347,9 +2348,9 @@ class TestService extends TestAbstractTest
     {
         HelperContext::update('admin', 'admin', '127.0.0.1');
 
-        $this->service->deleteNode(new ModelNode('id', 'one node', 'application', 'database', []));
+        $this->service->deleteNode(new ModelNode('id', 'one node', 'application', 'database', false, []));
 
-        $node1 = new ModelNode('node1', 'Node 01', 'business', 'service', ['key' => 'value1']);
+        $node1 = new ModelNode('node1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
         $this->service->insertNode($node1);
 
         $node = $this->service->getNode('node1');
@@ -2368,8 +2369,8 @@ class TestService extends TestAbstractTest
     public function testGetEdge(): void
     {
         HelperContext::update('admin', 'admin', '127.0.0.1');
-        $node1 = new ModelNode('node1', 'Node 01', 'business', 'service', ['key' => 'value1']);
-        $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
+        $node1 = new ModelNode('node1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
+        $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', false, ['key' => 'value2']);
         $this->service->insertNode($node1);
         $this->service->insertNode($node2);
         $edge = $this->service->getEdge('node1', 'node2');
@@ -2394,9 +2395,9 @@ class TestService extends TestAbstractTest
         if (count($edges) !== 0) {
             throw new Exception('error on testGetEdges - should be empty');
         }
-        $node1 = new ModelNode('node1', 'Node 01', 'business', 'service', ['key' => 'value1']);
-        $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
-        $node3 = new ModelNode('node3', 'Node 03', 'application', 'service', ['key' => 'value3']);
+        $node1 = new ModelNode('node1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
+        $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', false, ['key' => 'value2']);
+        $node3 = new ModelNode('node3', 'Node 03', 'application', 'service', false, ['key' => 'value3']);
         $this->service->insertNode($node1);
         $this->service->insertNode($node2);
         $this->service->insertNode($node3);
@@ -2418,8 +2419,8 @@ class TestService extends TestAbstractTest
     
     public function testInsertEdge(): void {
         HelperContext::update('admin', 'admin', '127.0.0.1');
-        $node1 = new ModelNode('node1', 'Node 01', 'business', 'service', ['key' => 'value1']);
-        $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
+        $node1 = new ModelNode('node1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
+        $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', false, ['key' => 'value2']);
         $this->service->insertNode($node1);
         $this->service->insertNode($node2);
         $edge = new ModelEdge('node1', 'node2', 'label', ['weight' => '10']);
@@ -2434,9 +2435,9 @@ class TestService extends TestAbstractTest
     {
         HelperContext::update('admin', 'admin', '127.0.0.1');
 
-        $node1 = new ModelNode('node1', 'Node 01', 'business', 'service', ['key' => 'value1']);
-        $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
-        $node3 = new ModelNode('node3', 'Node 03', 'application', 'service', ['key' => 'value3']);
+        $node1 = new ModelNode('node1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
+        $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', false, ['key' => 'value2']);
+        $node3 = new ModelNode('node3', 'Node 03', 'application', 'service', false, ['key' => 'value3']);
         $this->service->insertNode($node1);
         $this->service->insertNode($node2);
         $this->service->insertNode($node3);
@@ -2466,8 +2467,8 @@ class TestService extends TestAbstractTest
     public function testDeleteEdge(): void
     {
         HelperContext::update('admin', 'admin', '127.0.0.1');
-        $node1 = new ModelNode('node1', 'Node 01', 'business', 'service', ['key' => 'value1']);
-        $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
+        $node1 = new ModelNode('node1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
+        $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', false, ['key' => 'value2']);
         $this->service->insertNode($node1);
         $this->service->insertNode($node2);
         $edge = new ModelEdge('node1', 'node2', 'label', ['weight' => '10']);
@@ -2497,8 +2498,8 @@ class TestService extends TestAbstractTest
             throw new Exception('error on testGetStatus - should be empty');
         }
         
-        $node1 = new ModelNode('node1', 'Node 01', 'business', 'service', ['key' => 'value1']);
-        $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
+        $node1 = new ModelNode('node1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
+        $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', false, ['key' => 'value2']);
         $this->service->insertNode($node1);
         $this->service->insertNode($node2);
         $this->service->updateNodeStatus(new ModelStatus('node1', 'healthy'));
@@ -2513,7 +2514,7 @@ class TestService extends TestAbstractTest
     public function testGetNodeStatus(): void
     {
         HelperContext::update('admin', 'admin', '127.0.0.1');
-        $node1 = new ModelNode('node1', 'Node 01', 'business', 'service', ['key' => 'value1']);
+        $node1 = new ModelNode('node1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
         $this->service->insertNode($node1);
         $status = $this->service->getNodeStatus('node1');
         if ($status->getNodeId() !== 'node1' || $status->getStatus() !== 'unknown') {
@@ -2529,7 +2530,7 @@ class TestService extends TestAbstractTest
     public function testUpdateNodeStatus(): void
     {
         HelperContext::update('admin', 'admin', '127.0.0.1');
-        $node1 = new ModelNode('node1', 'Node 01', 'business', 'service', ['key' => 'value1']);
+        $node1 = new ModelNode('node1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
         $this->service->insertNode($node1);
         $this->service->updateNodeStatus(new ModelStatus('node1', 'healthy'));
         $status = $this->service->getNodeStatus('node1');
@@ -2624,10 +2625,10 @@ class TestService extends TestAbstractTest
             throw new Exception('error on testGetLogs - should be empty');
         }
 
-        $node1 = new ModelNode('node1', 'Node 01', 'business', 'service', ['key' => 'value1']);
+        $node1 = new ModelNode('node1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
         $this->service->insertNode($node1);
         sleep(1);
-        $updatedNode = new ModelNode('node1', 'Updated Node', 'application', 'database', ['key' => 'newvalue']);
+        $updatedNode = new ModelNode('node1', 'Updated Node', 'application', 'database', false, ['key' => 'newvalue']);
         $this->service->updateNode($updatedNode);
         sleep(1);
         $this->service->deleteNode($node1);

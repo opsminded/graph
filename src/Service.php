@@ -165,6 +165,7 @@ final class Service implements ServiceInterface
                 $data[ModelNode::NODE_KEYNAME_LABEL],
                 $data[ModelNode::NODE_KEYNAME_CATEGORY],
                 $data[ModelNode::NODE_KEYNAME_TYPE],
+                $data[ModelNode::NODE_KEYNAME_USERCREATED],
                 $data[ModelNode::NODE_KEYNAME_DATA]
             );
         }
@@ -184,6 +185,7 @@ final class Service implements ServiceInterface
                 $data[ModelNode::NODE_KEYNAME_LABEL],
                 $data[ModelNode::NODE_KEYNAME_CATEGORY],
                 $data[ModelNode::NODE_KEYNAME_TYPE],
+                $data[ModelNode::NODE_KEYNAME_USERCREATED],
                 $data[ModelNode::NODE_KEYNAME_DATA]
             );
             $nodes[] = $node;
@@ -202,6 +204,7 @@ final class Service implements ServiceInterface
                 $parentData[ModelNode::NODE_KEYNAME_LABEL],
                 $parentData[ModelNode::NODE_KEYNAME_CATEGORY],
                 $parentData[ModelNode::NODE_KEYNAME_TYPE],
+                $parentData[ModelNode::NODE_KEYNAME_USERCREATED],
                 $parentData[ModelNode::NODE_KEYNAME_DATA]
             );
             $this->logger->info("parent node found", $parentNode->toArray());
@@ -222,6 +225,7 @@ final class Service implements ServiceInterface
                 $data[ModelNode::NODE_KEYNAME_LABEL],
                 $data[ModelNode::NODE_KEYNAME_CATEGORY],
                 $data[ModelNode::NODE_KEYNAME_TYPE],
+                $data[ModelNode::NODE_KEYNAME_USERCREATED],
                 $data[ModelNode::NODE_KEYNAME_DATA]
             );
             $dependentNodes[] = $node;
@@ -236,7 +240,7 @@ final class Service implements ServiceInterface
         $this->verify();
         $this->logger->debug("permission allowed", $node->toArray());
         $this->insertLog(new ModelLog("node", $node->getId(), "insert", null, $node->toArray()));
-        if ($this->database->insertNode($node->getId(), $node->getLabel(), $node->getCategory(), $node->getType(), $node->getData())) {
+        if ($this->database->insertNode($node->getId(), $node->getLabel(), $node->getCategory(), $node->getType(), $node->getUserCreated(), $node->getData())) {
             $this->logger->info("node inserted", $node->toArray());
             return true;
         }

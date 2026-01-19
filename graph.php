@@ -8,13 +8,15 @@ class HTTPResponse implements HTTPResponseInterface
     public string $status;
     public string $message;
     public array $data;
+    public ?string $template;
 
-    public function __construct(int $code, string $status, string $message = "", array $data)
+    public function __construct(int $code, string $status, string $message = "", array $data, ?string $template = null)
     {
         $this->code = $code;
         $this->status = $status;
         $this->message = $message;
         $this->data = $data;
+        $this->template = $template;
     }
 
     public function send(): void
@@ -94,6 +96,7 @@ final class ModelNode
     private string $label;
     private string $categoryID;
     private string $typeID;
+    private bool $userCreated;
 
     private array $data = [];
 
@@ -101,15 +104,17 @@ final class ModelNode
     public const NODE_KEYNAME_LABEL = "label";
     public const NODE_KEYNAME_CATEGORY = "category";
     public const NODE_KEYNAME_TYPE = "type";
+    public const NODE_KEYNAME_USERCREATED = "user_created";
     public const NODE_KEYNAME_DATA = "data";
 
-    public function __construct(string $id, string $label, string $categoryID, string $typeID, array $data)
+    public function __construct(string $id, string $label, string $categoryID, string $typeID, bool $userCreated, array $data)
     {
         $this->validate($id, $label);
         $this->id         = $id;
         $this->label      = $label;
         $this->categoryID = $categoryID;
         $this->typeID     = $typeID;
+        $this->userCreated = $userCreated;
         $this->data       = $data;
     }
 
@@ -131,6 +136,11 @@ final class ModelNode
     public function getType(): string
     {
         return $this->typeID;
+    }
+
+    public function getUserCreated(): bool
+    {
+        return $this->userCreated;
     }
 
     public function getData(): array
@@ -156,6 +166,7 @@ final class ModelNode
             self::NODE_KEYNAME_LABEL    => $this->label,
             self::NODE_KEYNAME_CATEGORY => $this->categoryID,
             self::NODE_KEYNAME_TYPE     => $this->typeID,
+            self::NODE_KEYNAME_USERCREATED => $this->userCreated,
             self::NODE_KEYNAME_DATA     => $this->data
         ];
     }
@@ -474,6 +485,7 @@ final class HTTPController implements HTTPControllerInterface
             $req->data[ModelNode::NODE_KEYNAME_LABEL], 
             $req->data[ModelNode::NODE_KEYNAME_CATEGORY], 
             $req->data[ModelNode::NODE_KEYNAME_TYPE], 
+            $req->data[ModelNode::NODE_KEYNAME_USERCREATED],
             $req->data[ModelNode::NODE_KEYNAME_DATA]
         );
         $this->service->insertNode($node);
@@ -492,6 +504,7 @@ final class HTTPController implements HTTPControllerInterface
             $req->data[ModelNode::NODE_KEYNAME_LABEL],
             $req->data[ModelNode::NODE_KEYNAME_CATEGORY],
             $req->data[ModelNode::NODE_KEYNAME_TYPE],
+            false,
             $req->data[ModelNode::NODE_KEYNAME_DATA]
         );
         $this->service->updateNode($node);
@@ -505,7 +518,7 @@ final class HTTPController implements HTTPControllerInterface
         if($req->method !== HTTPRequest::METHOD_DELETE) {
             return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
-        $node = new ModelNode($req->data[ModelNode::NODE_KEYNAME_ID], "label", "application", "database", []);
+        $node = new ModelNode($req->data[ModelNode::NODE_KEYNAME_ID], "label", "application", "database", false, []);
         if($this->service->deleteNode($node)) {
             return new HTTPNoContentResponse("node deleted", [ModelNode::NODE_KEYNAME_ID => $req->data[ModelNode::NODE_KEYNAME_ID]]);
         }
@@ -731,6 +744,22 @@ final class HTTPController implements HTTPControllerInterface
         }
         return new HTTPOKResponse("logs found", $data);
     }
+
+    public function homePage(HTTPRequest $req): HTTPResponseInterface
+    {
+        if($req->method !== HTTPRequest::METHOD_GET) {
+            return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
+        }
+        return new HTTPOKResponse("home page", []);
+    }
+
+    public function sandboxPage(HTTPRequest $req): HTTPResponseInterface
+    {
+        if($req->method !== HTTPRequest::METHOD_GET) {
+            return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
+        }
+        return new HTTPOKResponse("sandbox page", []);
+    }
 }
 
 #####################################
@@ -898,6 +927,7 @@ final class Service implements ServiceInterface
                 $data[ModelNode::NODE_KEYNAME_LABEL],
                 $data[ModelNode::NODE_KEYNAME_CATEGORY],
                 $data[ModelNode::NODE_KEYNAME_TYPE],
+                $data[ModelNode::NODE_KEYNAME_USERCREATED],
                 $data[ModelNode::NODE_KEYNAME_DATA]
             );
         }
@@ -917,6 +947,7 @@ final class Service implements ServiceInterface
                 $data[ModelNode::NODE_KEYNAME_LABEL],
                 $data[ModelNode::NODE_KEYNAME_CATEGORY],
                 $data[ModelNode::NODE_KEYNAME_TYPE],
+                $data[ModelNode::NODE_KEYNAME_USERCREATED],
                 $data[ModelNode::NODE_KEYNAME_DATA]
             );
             $nodes[] = $node;
@@ -935,6 +966,7 @@ final class Service implements ServiceInterface
                 $parentData[ModelNode::NODE_KEYNAME_LABEL],
                 $parentData[ModelNode::NODE_KEYNAME_CATEGORY],
                 $parentData[ModelNode::NODE_KEYNAME_TYPE],
+                $parentData[ModelNode::NODE_KEYNAME_USERCREATED],
                 $parentData[ModelNode::NODE_KEYNAME_DATA]
             );
             $this->logger->info("parent node found", $parentNode->toArray());
@@ -955,6 +987,7 @@ final class Service implements ServiceInterface
                 $data[ModelNode::NODE_KEYNAME_LABEL],
                 $data[ModelNode::NODE_KEYNAME_CATEGORY],
                 $data[ModelNode::NODE_KEYNAME_TYPE],
+                $data[ModelNode::NODE_KEYNAME_USERCREATED],
                 $data[ModelNode::NODE_KEYNAME_DATA]
             );
             $dependentNodes[] = $node;
@@ -969,7 +1002,7 @@ final class Service implements ServiceInterface
         $this->verify();
         $this->logger->debug("permission allowed", $node->toArray());
         $this->insertLog(new ModelLog("node", $node->getId(), "insert", null, $node->toArray()));
-        if ($this->database->insertNode($node->getId(), $node->getLabel(), $node->getCategory(), $node->getType(), $node->getData())) {
+        if ($this->database->insertNode($node->getId(), $node->getLabel(), $node->getCategory(), $node->getType(), $node->getUserCreated(), $node->getData())) {
             $this->logger->info("node inserted", $node->toArray());
             return true;
         }
@@ -1399,6 +1432,7 @@ final class Database implements DatabaseInterface
         $stmt->execute($params);
         $row = $stmt->fetch();
         if ($row) {
+            $row[ModelNode::NODE_KEYNAME_USERCREATED] = (bool)$row[ModelNode::NODE_KEYNAME_USERCREATED];
             $row['data'] = json_decode($row['data'], true);
             $this->logger->info("node fetched", ['params' => $params, 'row' => $row]);
             return $row;
@@ -1414,6 +1448,7 @@ final class Database implements DatabaseInterface
         $stmt = $this->pdo->query($sql);
         $rows = $stmt->fetchAll();
         foreach($rows as &$row) {
+            $row[ModelNode::NODE_KEYNAME_USERCREATED] = (bool)$row[ModelNode::NODE_KEYNAME_USERCREATED];
             $row['data'] = json_decode($row['data'], true);
         }
         $this->logger->info("nodes fetched", ['rows' => $rows]);
@@ -1428,6 +1463,7 @@ final class Database implements DatabaseInterface
         $stmt->execute([':id' => $id]);
         $row = $stmt->fetch();
         if ($row) {
+            $row[ModelNode::NODE_KEYNAME_USERCREATED] = (bool)$row[ModelNode::NODE_KEYNAME_USERCREATED];
             $row['data'] = json_decode($row['data'], true);
             $this->logger->info("parent node fetched", ['row' => $row]);
             return $row;
@@ -1444,18 +1480,19 @@ final class Database implements DatabaseInterface
         $stmt->execute([':id' => $id]);
         $rows = $stmt->fetchAll();
         foreach($rows as &$row) {
+            $row[ModelNode::NODE_KEYNAME_USERCREATED] = (bool)$row[ModelNode::NODE_KEYNAME_USERCREATED];
             $row['data'] = json_decode($row['data'], true);
         }
         $this->logger->info("dependent nodes fetched", ['rows' => $rows]);
         return $rows;
     }
 
-    public function insertNode(string $id, string $label, string $category, string $type, array $data = []): bool
+    public function insertNode(string $id, string $label, string $category, string $type, bool $userCreated = false, array $data = []): bool
     {
-        $this->logger->debug("inserting new node", ['id' => $id, 'label' => $label, 'category' => $category, 'type' => $type, 'data' => $data]);
-        $sql = "INSERT INTO nodes (id, label, category, type, data) VALUES (:id, :label, :category, :type, :data)";
+        $this->logger->debug("inserting new node", ['id' => $id, 'label' => $label, 'category' => $category, 'type' => $type, 'userCreated' => $userCreated, 'data' => $data]);
+        $sql = "INSERT INTO nodes (id, label, category, type, user_created, data) VALUES (:id, :label, :category, :type, :user_created, :data)";
         $data = json_encode($data, JSON_UNESCAPED_UNICODE);
-        $params = [':id' => $id, ':label' => $label, ':category' => $category, ':type' => $type, ':data' => $data];
+        $params = [':id' => $id, ':label' => $label, ':category' => $category, ':type' => $type, ':user_created' => $userCreated, ':data' => $data];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         $this->logger->info("node inserted", ['params' => $params]);
@@ -1731,6 +1768,7 @@ final class Database implements DatabaseInterface
                 label TEXT NOT NULL,
                 category TEXT NOT NULL,
                 type TEXT NOT NULL,
+                user_created BOOLEAN NOT NULL DEFAULT 0,
                 data TEXT NOT NULL,
                 FOREIGN KEY (category) REFERENCES categories(id),
                 FOREIGN KEY (type) REFERENCES types(id)
@@ -1909,6 +1947,10 @@ interface HTTPControllerInterface
     public function deleteSave(HTTPRequest $req): HTTPResponseInterface;
 
     public function getLogs(HTTPRequest $req): HTTPResponseInterface;
+
+    // public interface for the editors
+    public function homePage(HTTPRequest $req): HTTPResponseInterface;
+    public function sandboxPage(HTTPRequest $req): HTTPResponseInterface;
 }
 #####################################
 
@@ -1961,7 +2003,7 @@ interface DatabaseInterface
     public function getNodes(): array;
     public function getNodeParentOf(string $id): ?array;
     public function getDependentNodesOf(string $id): array;
-    public function insertNode(string $id, string $label, string $category, string $type, array $data = []): bool;
+    public function insertNode(string $id, string $label, string $category, string $type, bool $userCreated = false, array $data = []): bool;
     public function updateNode(string $id, string $label, string $category, string $type, array $data = []): bool;
     public function deleteNode(string $id): bool;
 

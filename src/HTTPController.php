@@ -150,6 +150,7 @@ final class HTTPController implements HTTPControllerInterface
             $req->data[ModelNode::NODE_KEYNAME_LABEL], 
             $req->data[ModelNode::NODE_KEYNAME_CATEGORY], 
             $req->data[ModelNode::NODE_KEYNAME_TYPE], 
+            $req->data[ModelNode::NODE_KEYNAME_USERCREATED],
             $req->data[ModelNode::NODE_KEYNAME_DATA]
         );
         $this->service->insertNode($node);
@@ -168,6 +169,7 @@ final class HTTPController implements HTTPControllerInterface
             $req->data[ModelNode::NODE_KEYNAME_LABEL],
             $req->data[ModelNode::NODE_KEYNAME_CATEGORY],
             $req->data[ModelNode::NODE_KEYNAME_TYPE],
+            false,
             $req->data[ModelNode::NODE_KEYNAME_DATA]
         );
         $this->service->updateNode($node);
@@ -181,7 +183,7 @@ final class HTTPController implements HTTPControllerInterface
         if($req->method !== HTTPRequest::METHOD_DELETE) {
             return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
-        $node = new ModelNode($req->data[ModelNode::NODE_KEYNAME_ID], "label", "application", "database", []);
+        $node = new ModelNode($req->data[ModelNode::NODE_KEYNAME_ID], "label", "application", "database", false, []);
         if($this->service->deleteNode($node)) {
             return new HTTPNoContentResponse("node deleted", [ModelNode::NODE_KEYNAME_ID => $req->data[ModelNode::NODE_KEYNAME_ID]]);
         }

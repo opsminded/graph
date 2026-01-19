@@ -222,9 +222,9 @@ class TestDatabase extends TestAbstractTest
         
         $stmt = $this->pdo->prepare('insert into nodes (id, label, category, type, data) values (:id, :label, :category, :type, :data)');
 
-        $this->database->insertNode('node1', 'Node 01', 'cat1', 'app', ['running_on' => 'SRV01OP']);
-        $this->database->insertNode('node2', 'Node 02', 'cat2', 'db', ['running_on' => 'SRV011P']);
-        $this->database->insertNode('node3', 'Node 03', 'cat1', 'app', ['running_on' => 'SRV012P']);
+        $this->database->insertNode('node1', 'Node 01', 'cat1', 'app', false, ['running_on' => 'SRV01OP']);
+        $this->database->insertNode('node2', 'Node 02', 'cat2', 'db', false, ['running_on' => 'SRV011P']);
+        $this->database->insertNode('node3', 'Node 03', 'cat1', 'app', false, ['running_on' => 'SRV012P']);
 
         $this->database->insertEdge('edge1', 'node1', 'node2', 'label', ['a' => 'b']);
         $this->database->insertEdge('edge2', 'node2', 'node3', 'label', ['b' => 'c']);
@@ -253,9 +253,9 @@ class TestDatabase extends TestAbstractTest
 
         $stmt = $this->pdo->prepare('insert into nodes (id, label, category, type, data) values (:id, :label, :category, :type, :data)');
 
-        $this->database->insertNode('node1', 'Node 01', 'cat1', 'app', ['running_on' => 'SRV01OP']);
-        $this->database->insertNode('node2', 'Node 02', 'cat2', 'db', ['running_on' => 'SRV011P']);
-        $this->database->insertNode('node3', 'Node 03', 'cat1', 'app', ['running_on' => 'SRV012P']);
+        $this->database->insertNode('node1', 'Node 01', 'cat1', 'app', false, ['running_on' => 'SRV01OP']);
+        $this->database->insertNode('node2', 'Node 02', 'cat2', 'db', false, ['running_on' => 'SRV011P']);
+        $this->database->insertNode('node3', 'Node 03', 'cat1', 'app', false, ['running_on' => 'SRV012P']);
 
         $this->database->insertEdge('edge1', 'node1', 'node2', 'label', ['a' => 'b']);
         $this->database->insertEdge('edge2', 'node2', 'node3', 'label', ['b' => 'c']);
@@ -276,7 +276,7 @@ class TestDatabase extends TestAbstractTest
     }
 
     public function testInsertNode(): void {
-        $this->database->insertNode('node1', 'Node 01', 'business', 'service', ['running_on' => 'SRV01OP']);
+        $this->database->insertNode('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']);
         $node = $this->database->getNode('node1');
         if ($node['id'] !== 'node1' || $node['label'] !== 'Node 01' || $node['category'] !== 'business' || $node['type'] !== 'service') {
             throw new Exception('error on testInsertNode');
@@ -285,7 +285,7 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('error on testInsertNode');
         }
         try {
-            $this->database->insertNode('node1', 'Node 01', 'business', 'service', ['running_on' => 'SRV01OP']);
+            $this->database->insertNode('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']);
         } catch(Exception $e) {
             return;
         }
@@ -293,7 +293,7 @@ class TestDatabase extends TestAbstractTest
     }
 
     public function testUpdateNode(): void {
-        $this->database->insertNode('node1', 'Node 01', 'business', 'service', ['running_on' => 'SRV01OP']);
+        $this->database->insertNode('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']);
         $this->database->updateNode('node1', 'Novo Label', 'application', 'database', ['other' => 'diff']);
         $node = $this->database->getNode('node1');
         if ($node['id'] !== 'node1' || $node['label'] !== 'Novo Label' || $node['category'] !== 'application' || $node['type'] !== 'database') {
@@ -313,7 +313,7 @@ class TestDatabase extends TestAbstractTest
         if ($node !== null) {
             throw new Exception('error on testDeleteNode');
         }
-        $this->database->insertNode('node1', 'Node 01', 'business', 'service', ['running_on' => 'SRV01OP']);
+        $this->database->insertNode('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']);
         $node = $this->database->getNode('node1');
         if ($node['id'] !== 'node1' || $node['label'] !== 'Node 01' || $node['category'] !== 'business' || $node['type'] !== 'service') {
             throw new Exception('error on testDeleteNode');
@@ -342,9 +342,9 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('error on testGetEdge');
         }
 
-        $this->database->insertNode('node1', 'Node 01', 'application', 'service', ['running_on' => 'SRV01OP']);
+        $this->database->insertNode('node1', 'Node 01', 'application', 'service', false, ['running_on' => 'SRV01OP']);
         
-        $this->database->insertNode('node2', 'Node 02', 'business', 'database', ['running_on' => 'SRV011P']);
+        $this->database->insertNode('node2', 'Node 02', 'business', 'database', false, ['running_on' => 'SRV011P']);
         
         $this->database->insertEdge('edge1', 'node1', 'node2', 'label', ['a' => 'b']);
         
@@ -369,9 +369,9 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('error on testGetEdges');
         }
 
-        $this->database->insertNode('node1', 'Node 01', 'business', 'service', ['running_on' => 'SRV01OP']);
-        $this->database->insertNode('node2', 'Node 02', 'application', 'database', ['running_on' => 'SRV011P']);
-        $this->database->insertNode('node3', 'Node 03', 'application', 'service', ['running_on' => 'SRV012P']);
+        $this->database->insertNode('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']);
+        $this->database->insertNode('node2', 'Node 02', 'application', 'database', false, ['running_on' => 'SRV011P']);
+        $this->database->insertNode('node3', 'Node 03', 'application', 'service', false, ['running_on' => 'SRV012P']);
 
         $this->database->insertEdge('edge1', 'node1', 'node2', 'label', ['a' => 'b']);
         $this->database->insertEdge('edge2', 'node2', 'node3', 'label', ['b' => 'c']);
@@ -396,8 +396,8 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('error on testInsertEdge');
         }
 
-        $this->database->insertNode('node1', 'Node 01', 'application', 'service', ['running_on' => 'SRV01OP']);
-        $this->database->insertNode('node2', 'Node 02', 'business', 'database', ['running_on' => 'SRV011P']);
+        $this->database->insertNode('node1', 'Node 01', 'application', 'service', false, ['running_on' => 'SRV01OP']);
+        $this->database->insertNode('node2', 'Node 02', 'business', 'database', false, ['running_on' => 'SRV011P']);
 
         $this->database->insertEdge('edge1', 'node1', 'node2', 'label', ['a' => 'b']);
 
@@ -432,9 +432,9 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('error on testUpdateEdge');
         }
 
-        $this->database->insertNode('node1', 'Node 01', 'business', 'service', ['running_on' => 'SRV01OP']);
-        $this->database->insertNode('node2', 'Node 02', 'application', 'database', ['running_on' => 'SRV011P']);
-        $this->database->insertNode('node3', 'Node 03', 'application', 'service', ['running_on' => 'SRV012P']);
+        $this->database->insertNode('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']);
+        $this->database->insertNode('node2', 'Node 02', 'application', 'database', false, ['running_on' => 'SRV011P']);
+        $this->database->insertNode('node3', 'Node 03', 'application', 'service', false, ['running_on' => 'SRV012P']);
         $this->database->insertEdge('edge1', 'node1', 'node2', 'label', ['a' => 'b']);
 
         $this->database->updateEdge('edge1', 'label', ['x' => 'y']);
@@ -455,9 +455,9 @@ class TestDatabase extends TestAbstractTest
     }
 
     public function testDeleteEdge(): void {
-        $this->database->insertNode('node1', 'Node 01', 'business', 'service', ['running_on' => 'SRV01OP']);
-        $this->database->insertNode('node2', 'Node 02', 'application', 'database', ['running_on' => 'SRV011P']);
-        $this->database->insertNode('node3', 'Node 03', 'application', 'service', ['running_on' => 'SRV012P']);
+        $this->database->insertNode('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']);
+        $this->database->insertNode('node2', 'Node 02', 'application', 'database', false, ['running_on' => 'SRV011P']);
+        $this->database->insertNode('node3', 'Node 03', 'application', 'service', false, ['running_on' => 'SRV012P']);
         $this->database->insertEdge('edge1', 'node1', 'node2', 'label', ['a' => 'b']);
         $this->database->insertEdge('edge2', 'node2', 'node3', 'label', ['b' => 'c']);
 
@@ -484,7 +484,7 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('error on testGetStatus');
         }
 
-        $this->database->insertNode('node1', 'Node 01', 'business', 'service', ['running_on' => 'SRV01OP']);
+        $this->database->insertNode('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']);
 
         $s = $this->database->getStatus();
 
@@ -504,7 +504,7 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('error on testGetStatus');
         }
 
-        $this->database->insertNode('node1', 'Node 01', 'business', 'service', ['running_on' => 'SRV01OP']);
+        $this->database->insertNode('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']);
 
         $s = $this->database->getNodeStatus('node1');
 
@@ -524,7 +524,7 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('error on testUpdateNodeStatus');
         }
 
-        $this->database->insertNode('node1', 'Node 01', 'business', 'service', ['running_on' => 'SRV01OP']);
+        $this->database->insertNode('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']);
 
         $this->database->updateNodeStatus('node1', 'healthy');
 

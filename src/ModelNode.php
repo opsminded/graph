@@ -11,6 +11,7 @@ final class ModelNode
     private string $label;
     private string $categoryID;
     private string $typeID;
+    private bool $userCreated;
 
     private array $data = [];
 
@@ -18,15 +19,17 @@ final class ModelNode
     public const NODE_KEYNAME_LABEL = "label";
     public const NODE_KEYNAME_CATEGORY = "category";
     public const NODE_KEYNAME_TYPE = "type";
+    public const NODE_KEYNAME_USERCREATED = "user_created";
     public const NODE_KEYNAME_DATA = "data";
 
-    public function __construct(string $id, string $label, string $categoryID, string $typeID, array $data)
+    public function __construct(string $id, string $label, string $categoryID, string $typeID, bool $userCreated, array $data)
     {
         $this->validate($id, $label);
         $this->id         = $id;
         $this->label      = $label;
         $this->categoryID = $categoryID;
         $this->typeID     = $typeID;
+        $this->userCreated = $userCreated;
         $this->data       = $data;
     }
 
@@ -48,6 +51,11 @@ final class ModelNode
     public function getType(): string
     {
         return $this->typeID;
+    }
+
+    public function getUserCreated(): bool
+    {
+        return $this->userCreated;
     }
 
     public function getData(): array
@@ -73,6 +81,7 @@ final class ModelNode
             self::NODE_KEYNAME_LABEL    => $this->label,
             self::NODE_KEYNAME_CATEGORY => $this->categoryID,
             self::NODE_KEYNAME_TYPE     => $this->typeID,
+            self::NODE_KEYNAME_USERCREATED => $this->userCreated,
             self::NODE_KEYNAME_DATA     => $this->data
         ];
     }

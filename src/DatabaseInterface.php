@@ -20,7 +20,7 @@ interface DatabaseInterface
     public function getNodes(): array;
     public function getNodeParentOf(string $id): ?array;
     public function getDependentNodesOf(string $id): array;
-    public function insertNode(string $id, string $label, string $category, string $type, array $data = []): bool;
+    public function insertNode(string $id, string $label, string $category, string $type, bool $userCreated = false, array $data = []): bool;
     public function updateNode(string $id, string $label, string $category, string $type, array $data = []): bool;
     public function deleteNode(string $id): bool;
 

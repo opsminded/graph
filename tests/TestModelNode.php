@@ -6,9 +6,9 @@ class TestModelNode extends TestAbstractTest
 {
     public function testNodeConstructor(): void
     {
-        $node = new ModelNode('node1', 'Node 01', 'business', 'server', ['key' => 'value']);
+        $node = new ModelNode('node1', 'Node 01', 'business', 'server', true, ['key' => 'value']);
 
-        if ($node->getId() != 'node1' || $node->getLabel() != 'Node 01' || $node->getCategory() != 'business' || $node->getType() != 'server') {
+        if ($node->getId() != 'node1' || $node->getLabel() != 'Node 01' || $node->getCategory() != 'business' || $node->getType() != 'server' || $node->getUserCreated() !== true) {
             throw new Exception('test_Node problem - property mismatch');
         }
 
@@ -18,7 +18,7 @@ class TestModelNode extends TestAbstractTest
         }
 
         $data = $node->toArray();
-        if ($data['id'] != 'node1' || $data['label'] != 'Node 01' || $data['category'] != 'business' || $data['type'] != 'server') {
+        if ($data['id'] != 'node1' || $data['label'] != 'Node 01' || $data['category'] != 'business' || $data['type'] != 'server' || $data['user_created'] !== true) {
             throw new Exception('test_Node problem - toArray mismatch');
         }
 
@@ -28,7 +28,7 @@ class TestModelNode extends TestAbstractTest
 
         // Test validation - invalid ID
         try {
-            new ModelNode('invalid@id', 'Label', 'business', 'server', []);
+            new ModelNode('invalid@id', 'Label', 'business', 'server', true, []);
             throw new Exception('test_Node problem - should throw exception for invalid ID');
         } catch (InvalidArgumentException $e) {
             // Expected
@@ -36,7 +36,7 @@ class TestModelNode extends TestAbstractTest
 
         // Test validation - label too long
         try {
-            new ModelNode('node2', str_repeat('a', 210000), 'business', 'server', []);
+            new ModelNode('node2', str_repeat('a', 210000), 'business', 'server', true, []);
             throw new Exception('test_Node problem - should throw exception for long label');
         } catch (InvalidArgumentException $e) {
             // Expected

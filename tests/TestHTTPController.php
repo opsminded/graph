@@ -372,6 +372,7 @@ final class TestHTTPController extends TestAbstractTest
         $req->data['label'] = 'node1';
         $req->data['category'] = 'application';
         $req->data['type'] = 'database';
+        $req->data['user_created'] = true;
         $req->data['data'] = ['a' => 'b'];
         $resp = $this->controller->insertNode($req);
     }

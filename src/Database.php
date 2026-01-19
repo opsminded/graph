@@ -106,6 +106,7 @@ final class Database implements DatabaseInterface
         $stmt->execute($params);
         $row = $stmt->fetch();
         if ($row) {
+            $row[ModelNode::NODE_KEYNAME_USERCREATED] = (bool)$row[ModelNode::NODE_KEYNAME_USERCREATED];
             $row['data'] = json_decode($row['data'], true);
             $this->logger->info("node fetched", ['params' => $params, 'row' => $row]);
             return $row;
@@ -121,6 +122,7 @@ final class Database implements DatabaseInterface
         $stmt = $this->pdo->query($sql);
         $rows = $stmt->fetchAll();
         foreach($rows as &$row) {
+            $row[ModelNode::NODE_KEYNAME_USERCREATED] = (bool)$row[ModelNode::NODE_KEYNAME_USERCREATED];
             $row['data'] = json_decode($row['data'], true);
         }
         $this->logger->info("nodes fetched", ['rows' => $rows]);
@@ -135,6 +137,7 @@ final class Database implements DatabaseInterface
         $stmt->execute([':id' => $id]);
         $row = $stmt->fetch();
         if ($row) {
+            $row[ModelNode::NODE_KEYNAME_USERCREATED] = (bool)$row[ModelNode::NODE_KEYNAME_USERCREATED];
             $row['data'] = json_decode($row['data'], true);
             $this->logger->info("parent node fetched", ['row' => $row]);
             return $row;
@@ -151,18 +154,19 @@ final class Database implements DatabaseInterface
         $stmt->execute([':id' => $id]);
         $rows = $stmt->fetchAll();
         foreach($rows as &$row) {
+            $row[ModelNode::NODE_KEYNAME_USERCREATED] = (bool)$row[ModelNode::NODE_KEYNAME_USERCREATED];
             $row['data'] = json_decode($row['data'], true);
         }
         $this->logger->info("dependent nodes fetched", ['rows' => $rows]);
         return $rows;
     }
 
-    public function insertNode(string $id, string $label, string $category, string $type, array $data = []): bool
+    public function insertNode(string $id, string $label, string $category, string $type, bool $userCreated = false, array $data = []): bool
     {
-        $this->logger->debug("inserting new node", ['id' => $id, 'label' => $label, 'category' => $category, 'type' => $type, 'data' => $data]);
-        $sql = "INSERT INTO nodes (id, label, category, type, data) VALUES (:id, :label, :category, :type, :data)";
+        $this->logger->debug("inserting new node", ['id' => $id, 'label' => $label, 'category' => $category, 'type' => $type, 'userCreated' => $userCreated, 'data' => $data]);
+        $sql = "INSERT INTO nodes (id, label, category, type, user_created, data) VALUES (:id, :label, :category, :type, :user_created, :data)";
         $data = json_encode($data, JSON_UNESCAPED_UNICODE);
-        $params = [':id' => $id, ':label' => $label, ':category' => $category, ':type' => $type, ':data' => $data];
+        $params = [':id' => $id, ':label' => $label, ':category' => $category, ':type' => $type, ':user_created' => $userCreated, ':data' => $data];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         $this->logger->info("node inserted", ['params' => $params]);
@@ -438,6 +442,7 @@ final class Database implements DatabaseInterface
                 label TEXT NOT NULL,
                 category TEXT NOT NULL,
                 type TEXT NOT NULL,
+                user_created BOOLEAN NOT NULL DEFAULT 0,
                 data TEXT NOT NULL,
                 FOREIGN KEY (category) REFERENCES categories(id),
                 FOREIGN KEY (type) REFERENCES types(id)
