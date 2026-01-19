@@ -651,6 +651,150 @@ final class TestHTTPController extends TestAbstractTest
         $resp = $this->controller->updateNodeStatus($req);
     }
 
+    public function testGetSaves(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getSaves';
+        $req = new HTTPRequest();
+        $resp = $this->controller->getSaves($req);
+        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'HTTPController::getSaves\'') {
+            throw new Exception('error on testGetSaves 1');
+        }
+
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getSaves';
+        $req = new HTTPRequest();
+        $resp = $this->controller->getSaves($req);
+        if( $resp->code !== 200 || $resp->message !== 'saves found') {
+            throw new Exception('error on testGetSaves 2');
+        }
+        
+        $this->database->insertSave('meu-save', 'meu save', 'admin', ['nodes' => [], 'edges' => []]);
+        
+        $req = new HTTPRequest();
+        $resp = $this->controller->getSaves($req);
+        if( $resp->code !== 200 || $resp->message !== 'saves found' || count($resp->data) !== 1) {
+            throw new Exception('error on testGetSaves 3');
+        }
+        if($resp->data[0]['id'] !== 'meu-save' || $resp->data[0]['name'] !== 'meu save') {
+            throw new Exception('error on testGetSaves 4');
+        }
+    }
+
+    public function testInsertSave(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/insertSave';
+        $req = new HTTPRequest();
+        $resp = $this->controller->insertSave($req);
+        if ($resp->code != 405 || $resp->message != 'method \'GET\' not allowed in \'HTTPController::insertSave\'') {
+            throw new Exception('error on testInsertSave 1');
+        }
+
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/insertSave';
+        $req = new HTTPRequest();
+        $req->data['id'] = 'save1';
+        $req->data['name'] = 'My Save 1';
+        $req->data['creator'] = 'admin';
+        $req->data['data'] = ['nodes' => [], 'edges' => []];
+        $resp = $this->controller->insertSave($req);
+        if($resp->code !== 201 || $resp->message !== 'save created' || $resp->data['id'] !== 'save1') {
+            throw new Exception('error on testInsertSave 2');
+        }
+
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getSaves';
+        $req = new HTTPRequest();
+        $resp = $this->controller->getSaves($req);
+        if( $resp->code !== 200 || $resp->message !== 'saves found' || count($resp->data) !== 1) {
+            throw new Exception('error on testInsertSave 3');
+        }
+
+        if($resp->data[0]['id'] !== 'save1' || $resp->data[0]['name'] !== 'My Save 1') {
+            throw new Exception('error on testInsertSave 4');
+        }
+    }
+
+    public function testUpdateSave(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/updateSave';
+        $req = new HTTPRequest();
+        $resp = $this->controller->updateSave($req);
+        if ($resp->code != 405 || $resp->message != 'method \'GET\' not allowed in \'HTTPController::updateSave\'') {
+            throw new Exception('error on testUpdateSave 1');
+        }
+
+        $_SERVER['REQUEST_METHOD'] = 'PUT';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/updateSave';
+        $req = new HTTPRequest();
+        $req->data['id'] = 'save1';
+        $req->data['name'] = 'My Save 1 Updated';
+        $req->data['creator'] = 'admin';
+        $req->data['data'] = ['nodes' => [], 'edges' => []];
+        $resp = $this->controller->updateSave($req);
+        if ($resp->code !== 404 || $resp->message !== 'save not updated' || $resp->data['id'] !== 'save1') {
+            print_r($resp);
+            throw new Exception('error on testUpdateSave 2');
+        }
+
+        $this->database->insertSave('save1', 'My Save 1', 'admin', ['nodes' => [], 'edges' => []]);
+        $req = new HTTPRequest();
+        $req->data['id'] = 'save1';
+        $req->data['name'] = 'My Save 1 Updated';
+        $req->data['creator'] = 'admin';
+        $req->data['data'] = ['nodes' => ['node1', 'node2'], 'edges' => []];
+        $resp = $this->controller->updateSave($req);
+        if ($resp->code !== 200 || $resp->message !== 'save updated' || $resp->data['name'] !== 'My Save 1 Updated' || count($resp->data['data']['nodes']) !== 2) {
+            print_r($resp);
+            throw new Exception('error on testUpdateSave 3');
+        }
+    }
+
+    public function testDeleteSave(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/deleteSave';
+        $req = new HTTPRequest();
+        $resp = $this->controller->deleteSave($req);
+        if ($resp->code != 405 || $resp->message != 'method \'GET\' not allowed in \'HTTPController::deleteSave\'') {
+            throw new Exception('error on testDeleteSave 1');
+        }
+
+        $_SERVER['REQUEST_METHOD'] = 'DELETE';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/deleteSave';
+        $req = new HTTPRequest();
+        $req->data['id'] = 'save1';
+        $resp = $this->controller->deleteSave($req);
+        if ($resp->code !== 404 || $resp->message !== 'save not deleted' || $resp->data['id'] !== 'save1') {
+            print_r($resp);
+            throw new Exception('error on testDeleteSave 2');
+        }
+
+        $this->database->insertSave('save1', 'My Save 1', 'admin', ['nodes' => [], 'edges' => []]);
+        $req = new HTTPRequest();
+        $req->data['id'] = 'save1';
+        $resp = $this->controller->deleteSave($req);
+        if ($resp->code !== 204 || $resp->message !== 'save deleted' || $resp->data['id'] !== 'save1') {
+            throw new Exception('error on testDeleteSave 3');
+        }
+
+        $saves = $this->database->getSaves();
+        if (count($saves) !== 0) {
+            throw new Exception('error on testDeleteSave 4');
+        }
+    }
+
     public function testGetLogs(): void
     {
         $_SERVER['REQUEST_METHOD'] = 'POST';

@@ -27,6 +27,21 @@ class HTTPResponse implements HTTPResponseInterface
 }
 #####################################
 
+final class HTTPRenderer
+{
+    private array $templates;
+    
+    public function __construct(array $templates)
+    {
+        $this->templates = $templates;
+    }
+
+    public function render(HTTPResponse $response): void
+    {
+    }
+}
+#####################################
+
 class HTTPInternalServerErrorResponse extends HTTPResponse
 {
     public function __construct(string $message = "", array $data)
@@ -222,11 +237,17 @@ final class ModelType
 
 final class HelperImages
 {
-    private array $images;
+    private array $images = [];
 
     public function __construct(array $images)
     {
-        $this->images = $images;
+        foreach($images as $name => $image) {
+            $this->images[$name] = new ModelImage(
+                $name,
+                base64_decode($image["data"], true),
+                md5($image["data"])
+            );
+        }
     }
 
     public function getTypes(): array
@@ -234,26 +255,31 @@ final class HelperImages
         return array_keys($this->images);
     }
 
-    public function send(string $imageName): void
+    private function getImages(): array
     {
-        if (!isset($this->images[$imageName])) {
-            http_response_code(404);
-            exit;
-        }
-
-        $imageData = base64_decode($this->images[$imageName]["data"]);
-        $imageETag = md5($imageData);
-
-        header("Content-Type: image/png");
-        header("Content-Length: " . strlen($imageData));
-
-        header("Cache-Control: public, max-age=86400");
-        header("Expires: " . gmdate("D, d M Y H:i:s", time() + 86400) . " GMT");
-        header("ETag: \"" . $imageETag . "\"");
-
-        echo $imageData;
-        exit;
+        return $this->images;
     }
+
+    // public function send(string $imageName): void
+    // {
+    //     if (!isset($this->images[$imageName])) {
+    //         http_response_code(404);
+    //         exit;
+    //     }
+
+    //     $imageData = $this->images[$imageName]->getData();
+    //     $imageETag = $this->images[$imageName]->getEtag();
+
+    //     header("Content-Type: image/png");
+    //     header("Content-Length: " . strlen($imageData));
+
+    //     header("Cache-Control: public, max-age=86400");
+    //     header("Expires: " . gmdate("D, d M Y H:i:s", time() + 86400) . " GMT");
+    //     header("ETag: \"" . $imageETag . "\"");
+
+    //     echo $imageData;
+    //     exit;
+    // }
 }
 #####################################
 
@@ -610,6 +636,82 @@ final class HTTPController implements HTTPControllerInterface
         $this->service->updateNodeStatus($status);
         $data = $status->toArray();
         return new HTTPOKResponse("node found", $data);
+    }
+
+    public function getSaves(HTTPRequest $req): HTTPResponseInterface
+    {
+        if($req->method !== HTTPRequest::METHOD_GET) {
+            return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
+        }
+        $savesData = $this->service->getSaves();
+        $data = [];
+        foreach($savesData as $save) {
+            $data[] = $save->toArray();
+        }
+        return new HTTPOKResponse("saves found", $data);
+    }
+
+    public function insertSave(HTTPRequest $req): HTTPResponseInterface
+    {
+        if($req->method !== HTTPRequest::METHOD_POST) {
+            return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
+        }
+
+        $now = new DateTimeImmutable();
+
+        $save = new ModelSave(
+            $req->data[ModelSave::SAVE_KEYNAME_ID],
+            $req->data[ModelSave::SAVE_KEYNAME_NAME],
+            $req->data[ModelSave::SAVE_KEYNAME_CREATOR],
+            $now,
+            $now,
+            $req->data[ModelSave::SAVE_KEYNAME_DATA],
+        );
+        $this->service->insertSave($save);
+        $data = $save->toArray();
+        return new HTTPCreatedResponse("save created", $data);
+    }
+
+    public function updateSave(HTTPRequest $req): HTTPResponseInterface
+    {
+        if($req->method !== HTTPRequest::METHOD_PUT) {
+            return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
+        }
+
+        $now = new DateTimeImmutable();
+
+        $save = new ModelSave(
+            $req->data[ModelSave::SAVE_KEYNAME_ID],
+            $req->data[ModelSave::SAVE_KEYNAME_NAME],
+            $req->data[ModelSave::SAVE_KEYNAME_CREATOR],
+            $now,
+            $now,
+            $req->data[ModelSave::SAVE_KEYNAME_DATA],
+        );
+        if($this->service->updateSave($save)) {
+            $data = $save->toArray();
+            return new HTTPOKResponse("save updated", $data);
+        }
+        return new HTTPNotFoundResponse("save not updated", [ModelSave::SAVE_KEYNAME_ID => $req->data[ModelSave::SAVE_KEYNAME_ID]]);
+    }
+    public function deleteSave(HTTPRequest $req): HTTPResponseInterface
+    {
+        if($req->method !== HTTPRequest::METHOD_DELETE) {
+            return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
+        }
+
+        $save = new ModelSave(
+            $req->data[ModelSave::SAVE_KEYNAME_ID],
+            '',
+            '',
+            new DateTimeImmutable(),
+            new DateTimeImmutable(),
+            [],
+        );
+        if($this->service->deleteSave($save->id)) {
+            return new HTTPNoContentResponse("save deleted", [ModelSave::SAVE_KEYNAME_ID => $req->data[ModelSave::SAVE_KEYNAME_ID]]);
+        }
+        return new HTTPNotFoundResponse("save not deleted",[ModelSave::SAVE_KEYNAME_ID => $req->data[ModelSave::SAVE_KEYNAME_ID]]);
     }
 
     public function getLogs(HTTPRequest $req): HTTPResponseInterface
@@ -1801,6 +1903,11 @@ interface HTTPControllerInterface
     public function getNodeStatus(HTTPRequest $req): HTTPResponseInterface;
     public function updateNodeStatus(HTTPRequest $req): HTTPResponseInterface;
 
+    public function getSaves(HTTPRequest $req): HTTPResponseInterface;
+    public function insertSave(HTTPRequest $req): HTTPResponseInterface;
+    public function updateSave(HTTPRequest $req): HTTPResponseInterface;
+    public function deleteSave(HTTPRequest $req): HTTPResponseInterface;
+
     public function getLogs(HTTPRequest $req): HTTPResponseInterface;
 }
 #####################################
@@ -1918,6 +2025,18 @@ final class ModelSave
         $this->createdAt = $createdAt;
         $this->updatedAt = $updatedAt;
         $this->data = $data;
+    }
+
+    public function toArray(): array
+    {
+        return [
+            self::SAVE_KEYNAME_ID => $this->id,
+            self::SAVE_KEYNAME_NAME => $this->name,
+            self::SAVE_KEYNAME_CREATOR => $this->creator,
+            self::SAVE_KEYNAME_CREATED_AT => $this->createdAt->format(DateTime::ATOM),
+            self::SAVE_KEYNAME_UPDATED_AT => $this->updatedAt->format(DateTime::ATOM),
+            self::SAVE_KEYNAME_DATA => $this->data,
+        ];
     }
 }
 #####################################
@@ -2207,6 +2326,31 @@ final class HTTPRequestRouter
             }
         }
         return new HTTPInternalServerErrorResponse("method not found in list", ["method" => $req->method, "path" => $req->path]);
+    }
+}
+#####################################
+
+final class ModelImage
+{
+    private string $name;
+    private string $data;
+    private string $etag;
+
+    public function __construct(string $name, string $data, string $etag)
+    {
+        $this->name = $name;
+        $this->data = $data;
+        $this->etag = $etag;
+    }
+
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
+    public function getData(): string
+    {
+        return $this->data;
     }
 }
 #####################################

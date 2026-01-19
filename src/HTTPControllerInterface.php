@@ -28,5 +28,10 @@ interface HTTPControllerInterface
     public function getNodeStatus(HTTPRequest $req): HTTPResponseInterface;
     public function updateNodeStatus(HTTPRequest $req): HTTPResponseInterface;
 
+    public function getSaves(HTTPRequest $req): HTTPResponseInterface;
+    public function insertSave(HTTPRequest $req): HTTPResponseInterface;
+    public function updateSave(HTTPRequest $req): HTTPResponseInterface;
+    public function deleteSave(HTTPRequest $req): HTTPResponseInterface;
+
     public function getLogs(HTTPRequest $req): HTTPResponseInterface;
 }

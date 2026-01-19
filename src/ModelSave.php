@@ -34,4 +34,16 @@ final class ModelSave
         $this->updatedAt = $updatedAt;
         $this->data = $data;
     }
+
+    public function toArray(): array
+    {
+        return [
+            self::SAVE_KEYNAME_ID => $this->id,
+            self::SAVE_KEYNAME_NAME => $this->name,
+            self::SAVE_KEYNAME_CREATOR => $this->creator,
+            self::SAVE_KEYNAME_CREATED_AT => $this->createdAt->format(DateTime::ATOM),
+            self::SAVE_KEYNAME_UPDATED_AT => $this->updatedAt->format(DateTime::ATOM),
+            self::SAVE_KEYNAME_DATA => $this->data,
+        ];
+    }
 }

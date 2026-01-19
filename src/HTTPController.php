@@ -314,6 +314,82 @@ final class HTTPController implements HTTPControllerInterface
         return new HTTPOKResponse("node found", $data);
     }
 
+    public function getSaves(HTTPRequest $req): HTTPResponseInterface
+    {
+        if($req->method !== HTTPRequest::METHOD_GET) {
+            return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
+        }
+        $savesData = $this->service->getSaves();
+        $data = [];
+        foreach($savesData as $save) {
+            $data[] = $save->toArray();
+        }
+        return new HTTPOKResponse("saves found", $data);
+    }
+
+    public function insertSave(HTTPRequest $req): HTTPResponseInterface
+    {
+        if($req->method !== HTTPRequest::METHOD_POST) {
+            return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
+        }
+
+        $now = new DateTimeImmutable();
+
+        $save = new ModelSave(
+            $req->data[ModelSave::SAVE_KEYNAME_ID],
+            $req->data[ModelSave::SAVE_KEYNAME_NAME],
+            $req->data[ModelSave::SAVE_KEYNAME_CREATOR],
+            $now,
+            $now,
+            $req->data[ModelSave::SAVE_KEYNAME_DATA],
+        );
+        $this->service->insertSave($save);
+        $data = $save->toArray();
+        return new HTTPCreatedResponse("save created", $data);
+    }
+
+    public function updateSave(HTTPRequest $req): HTTPResponseInterface
+    {
+        if($req->method !== HTTPRequest::METHOD_PUT) {
+            return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
+        }
+
+        $now = new DateTimeImmutable();
+
+        $save = new ModelSave(
+            $req->data[ModelSave::SAVE_KEYNAME_ID],
+            $req->data[ModelSave::SAVE_KEYNAME_NAME],
+            $req->data[ModelSave::SAVE_KEYNAME_CREATOR],
+            $now,
+            $now,
+            $req->data[ModelSave::SAVE_KEYNAME_DATA],
+        );
+        if($this->service->updateSave($save)) {
+            $data = $save->toArray();
+            return new HTTPOKResponse("save updated", $data);
+        }
+        return new HTTPNotFoundResponse("save not updated", [ModelSave::SAVE_KEYNAME_ID => $req->data[ModelSave::SAVE_KEYNAME_ID]]);
+    }
+    public function deleteSave(HTTPRequest $req): HTTPResponseInterface
+    {
+        if($req->method !== HTTPRequest::METHOD_DELETE) {
+            return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
+        }
+
+        $save = new ModelSave(
+            $req->data[ModelSave::SAVE_KEYNAME_ID],
+            '',
+            '',
+            new DateTimeImmutable(),
+            new DateTimeImmutable(),
+            [],
+        );
+        if($this->service->deleteSave($save->id)) {
+            return new HTTPNoContentResponse("save deleted", [ModelSave::SAVE_KEYNAME_ID => $req->data[ModelSave::SAVE_KEYNAME_ID]]);
+        }
+        return new HTTPNotFoundResponse("save not deleted",[ModelSave::SAVE_KEYNAME_ID => $req->data[ModelSave::SAVE_KEYNAME_ID]]);
+    }
+
     public function getLogs(HTTPRequest $req): HTTPResponseInterface
     {
         if($req->method !== HTTPRequest::METHOD_GET) {

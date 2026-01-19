@@ -7,6 +7,12 @@
     <title>Visualização</title>
     <script src="www/javascript/cytoscape.min.js"></script>
 
+    <script type="module">
+        const response = await fetch('http://example.com/graph.php');
+        window.GraphData = await response.json();
+        console.log('GraphData loaded and ready');
+    </script>
+
     <style>
         html, body {
             width: 100%;
