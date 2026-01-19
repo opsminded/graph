@@ -6,19 +6,29 @@ class TestHTTPResponse extends TestAbstractTest
 {
     public function testHTTPResponse(): void
     {
-        $resp = new HTTPResponse(200, 'success', 'node created', ['key' => 'val']);
+        $resp = new HTTPResponse(200, 'success', 'node created', ['key' => 'val'], ['Content-Type' => 'application/json'], 'template');
         if($resp->code != 200) {
             throw new Exception('problem on testHTTPResponse');
         }
 
-        ob_start();
-        $resp->send();
-        $content = ob_get_clean();
-
-        $data = json_decode($content, true);
-
-        if ($data['code'] != 200) {
+        if ($resp->status != "success") {
             throw new Exception('problem on testHTTPResponse');
         }
+
+        if ($resp->message != "node created") {
+            throw new Exception('problem on testHTTPResponse');
+        }
+
+        if ($resp->data['key'] != 'val') {
+            throw new Exception('problem on testHTTPResponse');
+        }
+
+        if ($resp->headers['Content-Type'] != 'application/json') {
+            throw new Exception('problem on testHTTPResponse');
+        }
+
+        if ($resp->template != 'template') {
+            throw new Exception('problem on testHTTPResponse');
+        }   
     }
 }
