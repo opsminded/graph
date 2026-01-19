@@ -27,8 +27,8 @@ xdebug_start_code_coverage(XDEBUG_CC_UNUSED | XDEBUG_CC_DEAD_CODE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-require_once dirname(__DIR__) . '/graph.php';
-require_once dirname(__DIR__) . '/tests.php';
+require_once dirname(__DIR__) . '/compiled/graph.php';
+require_once dirname(__DIR__) . '/compiled/tests.php';
 
 $tests = [
     new TestDatabase(),

@@ -20,7 +20,7 @@ final class TestHTTPController extends TestAbstractTest
 
     public function up(): void
     {
-        include __DIR__ . "/www/images/compiled_images.php";
+        include __DIR__ . "/compiled_images.php";
 
         $this->pdo = Database::createConnection('sqlite::memory:');
         $this->databaseLogger = new Logger();

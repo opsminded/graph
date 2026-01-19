@@ -1,6 +1,6 @@
 <?php
 
-$files = glob(__DIR__ . "/*.png");
+$files = glob(dirname(__DIR__) . "/www/images/*.png");
 
 $content = "<?php\n";
 
@@ -18,6 +18,6 @@ foreach ($files as $file) {
 
 $content .= "];\n";
 
-file_put_contents(__DIR__ . "/compiled_images.php", $content);
+file_put_contents(dirname(__DIR__) . "/compiled/compiled_images.php", $content);
 
 echo "PNG file list generated successfully.\n";

@@ -13,5 +13,23 @@ final class HTTPRenderer
 
     public function render(HTTPResponse $response): void
     {
+        header("Access-Control-Allow-Origin: *");
+        http_response_code($response->code);
+
+        foreach ($response->headers as $header => $value) {
+            header("$header: $value");
+        }
+
+        if($response->template === null) {
+            header('Content-Type: application/json; charset=utf-8');
+            $data = [
+                HTTPResponseInterface::KEYNAME_CODE => $response->code,
+                HTTPResponseInterface::KEYNAME_STATUS => $response->status,
+                HTTPResponseInterface::KEYNAME_MESSAGE => $response->message,
+                HTTPResponseInterface::KEYNAME_DATA => $response->data
+            ];
+            echo json_encode($data, JSON_UNESCAPED_UNICODE |  JSON_UNESCAPED_SLASHES |  JSON_PRETTY_PRINT);
+            exit();
+        }
     }
 }

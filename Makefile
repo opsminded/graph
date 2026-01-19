@@ -1,7 +1,7 @@
 
 # Pré-compilação
 compile:
-	php www/images/compile.php
+	php bin/compile.php
 
 # Empacotamento (depende de compile)
 build: compile

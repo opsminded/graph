@@ -42,7 +42,7 @@ for file in folder.iterdir():
 
 ######################################################
 
-with open('graph.php', 'w') as outputfile:
+with open('compiled/graph.php', 'w') as outputfile:
     outputfile.write("".join(init))
     print_file(outputfile, 'src/HTTPResponse.php')
     for file in folder.iterdir():
@@ -54,7 +54,7 @@ folder = Path('tests')
 for file in folder.iterdir():
     filenames.append(str(file))
  
-with open('tests.php', 'w') as outputfile:
+with open('compiled/tests.php', 'w') as outputfile:
     outputfile.write("".join(init))
     for file in folder.iterdir():
         print_file(outputfile, str(file))

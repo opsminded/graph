@@ -20,12 +20,4 @@ class HTTPResponse implements HTTPResponseInterface
         $this->headers = $headers;
         $this->template = $template;
     }
-
-    // public function send(): void
-    // {
-    //     header(HTTPResponseInterface::JSON_RESPONSE_CONTENT_TYPE);
-    //     http_response_code($this->code);
-    //     $this->data = [HTTPResponseInterface::KEYNAME_CODE => $this->code, HTTPResponseInterface::KEYNAME_STATUS => $this->status, HTTPResponseInterface::KEYNAME_MESSAGE => $this->message, HTTPResponseInterface::KEYNAME_DATA => $this->data];
-    //     echo json_encode($this->data, JSON_UNESCAPED_UNICODE |  JSON_UNESCAPED_SLASHES |  JSON_PRETTY_PRINT);
-    // }
 }
