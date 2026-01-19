@@ -51,6 +51,11 @@ final class HTTPRenderer
             ];
             echo json_encode($data, JSON_UNESCAPED_UNICODE |  JSON_UNESCAPED_SLASHES |  JSON_PRETTY_PRINT);
             exit();
+        } else {
+            header('Content-Type: text/html; charset=utf-8');
+            if (!array_key_exists($response->template, $this->templates)) {
+                throw new Exception("template not found: " . $response->template);
+            }
         }
     }
 }
@@ -565,7 +570,11 @@ final class HTTPController implements HTTPControllerInterface
             return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
         $edges = $this->service->getEdges();
-        return new HTTPOKResponse("edges found", []);
+        $data = [];
+        foreach($edges as $edge) {
+            $data[] = $edge->toArray();
+        }
+        return new HTTPOKResponse("edges found", $data);
     }
     
     public function insertEdge(HTTPRequest $req): HTTPResponseInterface
@@ -2372,6 +2381,13 @@ final class HTTPRequestRouter
 
     public function handle(HTTPRequest $req): HTTPResponse
     {
+        if($req->method == HTTPRequest::METHOD_GET && $req->path == "/")
+        {
+            $resp = new HTTPOKResponse("welcome to the API", []);
+            $resp->template = 'index.html';
+            return $resp;
+        }
+
         foreach($this->routes as $route)
         {
             if ($route["method"] == $req->method && "/{$route["class_method"]}" == $req->path)

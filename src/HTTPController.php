@@ -219,7 +219,11 @@ final class HTTPController implements HTTPControllerInterface
             return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
         $edges = $this->service->getEdges();
-        return new HTTPOKResponse("edges found", []);
+        $data = [];
+        foreach($edges as $edge) {
+            $data[] = $edge->toArray();
+        }
+        return new HTTPOKResponse("edges found", $data);
     }
     
     public function insertEdge(HTTPRequest $req): HTTPResponseInterface

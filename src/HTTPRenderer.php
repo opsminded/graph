@@ -30,6 +30,11 @@ final class HTTPRenderer
             ];
             echo json_encode($data, JSON_UNESCAPED_UNICODE |  JSON_UNESCAPED_SLASHES |  JSON_PRETTY_PRINT);
             exit();
+        } else {
+            header('Content-Type: text/html; charset=utf-8');
+            if (!array_key_exists($response->template, $this->templates)) {
+                throw new Exception("template not found: " . $response->template);
+            }
         }
     }
 }

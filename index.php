@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/graph.php';
+require_once __DIR__ . '/compiled/graph.php';
 
-include __DIR__ . '/www/images/compiled_images.php';
+require_once __DIR__ . '/compiled/compiled_images.php';
 
 $imageHelper = new HelperImages($images);
 
@@ -65,5 +65,5 @@ $service->updateNodeStatus(new ModelStatus('BaseServer', ModelStatus::STATUS_VAL
 $request    = new HTTPRequest();
 $response   = $router->handle($request);
 $renderer->render($response);
-echo 'fim';
-exit();
+
+throw new Exception('unreachable code reached?');

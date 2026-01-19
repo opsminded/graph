@@ -34,6 +34,13 @@ final class HTTPRequestRouter
 
     public function handle(HTTPRequest $req): HTTPResponse
     {
+        if($req->method == HTTPRequest::METHOD_GET && $req->path == "/")
+        {
+            $resp = new HTTPOKResponse("welcome to the API", []);
+            $resp->template = 'index.html';
+            return $resp;
+        }
+
         foreach($this->routes as $route)
         {
             if ($route["method"] == $req->method && "/{$route["class_method"]}" == $req->path)

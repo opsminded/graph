@@ -16,7 +16,7 @@ coverage: test
 	php bin/coverage.php /tmp/coverage.json > coverage.html
 
 # Servidor de testes
-serve:
+serve: build
 	php -S 0.0.0.0:8090
 
 # Atalho para rodar tudo até coverage
