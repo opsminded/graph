@@ -63,7 +63,7 @@ final class HTTPController implements HTTPControllerInterface
         return new HTTPNotFoundResponse("user not found", $data);
     }
 
-    public function getGraph(HTTPRequest $req): HTTPResponseInterface
+    public function getCytoscapeGraph(HTTPRequest $req): HTTPResponseInterface
     {
         if($req->method !== HTTPRequest::METHOD_GET) {
             return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);

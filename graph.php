@@ -398,7 +398,7 @@ final class HTTPController implements HTTPControllerInterface
         return new HTTPNotFoundResponse("user not found", $data);
     }
 
-    public function getGraph(HTTPRequest $req): HTTPResponseInterface
+    public function getCytoscapeGraph(HTTPRequest $req): HTTPResponseInterface
     {
         if($req->method !== HTTPRequest::METHOD_GET) {
             return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
@@ -1282,6 +1282,13 @@ final class Service implements ServiceInterface
 }
 #####################################
 
+final class Config
+{
+    public static $env = 'production';
+}
+
+#####################################
+
 final class ModelLog
 {
 
@@ -1921,7 +1928,7 @@ interface HTTPControllerInterface
     public function insertUser(HTTPRequest $req): HTTPResponseInterface;
     public function updateUser(HTTPRequest $req): HTTPResponseInterface;
 
-    public function getGraph(HTTPRequest $req): HTTPResponseInterface;
+    public function getCytoscapeGraph(HTTPRequest $req): HTTPResponseInterface;
 
     public function getNode(HTTPRequest $req): HTTPResponseInterface;
     public function getNodes(HTTPRequest $req): HTTPResponseInterface;

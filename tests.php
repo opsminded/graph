@@ -1198,14 +1198,14 @@ final class TestHTTPController extends TestAbstractTest
 
     }
 
-    public function testGetGraph(): void
+    public function testgetCytoscapeGraph(): void
     {
         $_SERVER['REQUEST_METHOD'] = 'PUT';
         $_SERVER['SCRIPT_NAME'] = 'api.php';
         $_SERVER['REQUEST_URI'] = 'api.php/getGraph';
         $req = new HTTPRequest();
-        $resp = $this->controller->getGraph($req);
-        if ($resp->code != 405 || $resp->message != 'method \'PUT\' not allowed in \'HTTPController::getGraph\'') {
+        $resp = $this->controller->getCytoscapeGraph($req);
+        if ($resp->code != 405 || $resp->message != 'method \'PUT\' not allowed in \'HTTPController::getCytoscapeGraph\'') {
             throw new Exception('error on testGetGraph');
         }
 
@@ -1214,7 +1214,7 @@ final class TestHTTPController extends TestAbstractTest
         $_SERVER['REQUEST_URI'] = 'api.php/getGraph';
 
         $req = new HTTPRequest();
-        $resp = $this->controller->getGraph($req);
+        $resp = $this->controller->getCytoscapeGraph($req);
     }
 
     public function testGetNode(): void

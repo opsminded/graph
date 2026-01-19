@@ -8,7 +8,7 @@ interface HTTPControllerInterface
     public function insertUser(HTTPRequest $req): HTTPResponseInterface;
     public function updateUser(HTTPRequest $req): HTTPResponseInterface;
 
-    public function getGraph(HTTPRequest $req): HTTPResponseInterface;
+    public function getCytoscapeGraph(HTTPRequest $req): HTTPResponseInterface;
 
     public function getNode(HTTPRequest $req): HTTPResponseInterface;
     public function getNodes(HTTPRequest $req): HTTPResponseInterface;
