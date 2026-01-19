@@ -8,13 +8,15 @@ class HTTPResponse implements HTTPResponseInterface
     public string $status;
     public string $message;
     public array $data;
+    public ?string $template;
 
-    public function __construct(int $code, string $status, string $message = "", array $data)
+    public function __construct(int $code, string $status, string $message = "", array $data, ?string $template = null)
     {
         $this->code = $code;
         $this->status = $status;
         $this->message = $message;
         $this->data = $data;
+        $this->template = $template;
     }
 
     public function send(): void
