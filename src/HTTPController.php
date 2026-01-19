@@ -407,4 +407,20 @@ final class HTTPController implements HTTPControllerInterface
         }
         return new HTTPOKResponse("logs found", $data);
     }
+
+    public function homePage(HTTPRequest $req): HTTPResponseInterface
+    {
+        if($req->method !== HTTPRequest::METHOD_GET) {
+            return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
+        }
+        return new HTTPOKResponse("home page", []);
+    }
+
+    public function sandboxPage(HTTPRequest $req): HTTPResponseInterface
+    {
+        if($req->method !== HTTPRequest::METHOD_GET) {
+            return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
+        }
+        return new HTTPOKResponse("sandbox page", []);
+    }
 }

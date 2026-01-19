@@ -34,4 +34,8 @@ interface HTTPControllerInterface
     public function deleteSave(HTTPRequest $req): HTTPResponseInterface;
 
     public function getLogs(HTTPRequest $req): HTTPResponseInterface;
+
+    // public interface for the editors
+    public function homePage(HTTPRequest $req): HTTPResponseInterface;
+    public function sandboxPage(HTTPRequest $req): HTTPResponseInterface;
 }
