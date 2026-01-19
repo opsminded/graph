@@ -3,5 +3,5 @@ coverage.json
 service.log
 controller.log
 database.log
-graph.php
-tests.php
+./graph.php
+./tests.php
