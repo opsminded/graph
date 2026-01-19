@@ -284,6 +284,13 @@ class TestDatabase extends TestAbstractTest
         if ($node['data']['running_on'] !== 'SRV01OP') {
             throw new Exception('error on testInsertNode');
         }
+
+        $this->database->insertNode('user_created', 'User Created', 'application', 'database', true, ['created_by' => 'admin']);
+        $node = $this->database->getNode('user_created');
+        if ($node['id'] !== 'user_created' || $node['label'] !== 'User Created' || $node['category'] !== 'application' || $node['type'] !== 'database' || $node['user_created'] !== true) {
+            throw new Exception('error on testInsertNode');
+        }
+
         try {
             $this->database->insertNode('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']);
         } catch(Exception $e) {
