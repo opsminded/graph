@@ -26,6 +26,7 @@
                 <p>
                     <label for="add-node-form-category">Categoria:<br>
                         <select id="add-node-form-category" name="category" required>
+                            <option>Selecione</option>
                         </select>
                     </label>
                 </p>
@@ -33,6 +34,7 @@
                 <p>
                     <label for="add-node-form-type">Tipo:<br>
                         <select id="add-node-form-type" required>
+                            <option>Selecione</option>
                         </select>
                     </label>
                 </p>
@@ -47,6 +49,11 @@
 
                 <p><button id="add-node-form-submit" type="submit">Adicionar Item</button></p>
             </form>
+
+            <form id="add-edge-form" method="post">
+                <h3>Adicionar Conexão</h3>
+                <p><button id="add-edge-form-submit" type="submit">Adicionar Conexão</button></p>
+            </form>
         </div>
 
         <div id="info-panel">
@@ -54,6 +61,7 @@
         </div>
 
         <div id="modal">
+            <div><button id="close-modal-btn">x</button></div>
             <div id="modal-new-doc">
                 <div id="modal-new-doc-content">
                     <h2>Novo Projeto</h2>

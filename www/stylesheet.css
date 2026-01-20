@@ -33,6 +33,16 @@ html, body {
     padding: 0 10px;
 }
 
+#add-edge-form {
+    display: none;
+}
+
+#add-edge-form.show {
+    display: block;
+}
+
+/* Info panel on the right side */
+
 #info-panel {
     position: absolute;
 

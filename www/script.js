@@ -19,6 +19,8 @@ window.save = null;
 
 window.keepClosed = false;
 
+window.selection = [];
+
 ////////////////////////////////////////////////////////////////////////////////
 
 async function fetchGraph()
@@ -159,6 +161,37 @@ async function updateSave()
     }
 }
 
+async function insertEdge(sourceNode, targetNode)
+{
+    try {
+
+        var data = {
+            source: sourceNode,
+            target: targetNode,
+            label: '',
+            data: {}
+        }
+
+        var response = await fetch('/insertEdge', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (!response.ok) {
+            console.log('[insertEdge] response:', response);
+            alert(error);
+            throw new Error(`[insertEdge] HTTP error! status: ${response.status}`);
+        }
+        var result = await response.json();
+    } catch (error) {
+        alert(error);
+        console.error('[insertEdge] Fetch error:', error);
+    }
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 function displayModal() {
@@ -235,6 +268,34 @@ async function updateView()
     
     // console.log('Update view with data:', data);
     window.cy = cytoscape(data);
+
+    window.cy.on('select', 'node', function(evt){
+        const selectedNodes = cy.$('node:selected');
+        if (selectedNodes.length > 2) {
+            evt.target.unselect();
+            return;
+        }
+
+        var node = evt.target;
+        window.selection.push(node.id());
+
+        // console.log('Selected node:', node.id());
+        // console.log('Current selection:', window.selection);
+
+        if(window.selection.length == 2) {
+            // console.log('Two nodes selected, showing add-edge form.');
+            document.getElementById('add-edge-form').classList.add('show');
+        } else {
+            // console.log('Not two nodes selected, hiding add-edge form.');
+            document.getElementById('add-edge-form').classList.remove('show');
+        }
+    });
+
+    window.cy.on('unselect', 'node', function(evt){
+        window.cy.elements().unselect();
+        window.selection = [];
+        document.getElementById('add-edge-form').classList.remove('show');
+    });
     
     const startNodes = window.cy.nodes().filter(node => 
         window.save.nodes.includes(node.id())
@@ -287,6 +348,12 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
+document.getElementById('close-modal-btn').addEventListener('click', function(e) {
+    if (e.target === e.currentTarget) {
+        closeModal();
+    }
+});
+
 document.getElementById('close-menu-btn').addEventListener('click', function(e){
     window.keepClosed = !window.keepClosed;
 
@@ -322,7 +389,7 @@ document.getElementById('add-node-form').addEventListener('submit', async functi
     e.preventDefault();
 
     const id = document.getElementById('add-node-form-node').value;
-    console.log('Adding node with ID:', id);
+    // console.log('Adding node with ID:', id);
 
     if(window.save.nodes.includes(id)) {
         console.log('Node already in save, not adding:', id);
@@ -331,6 +398,24 @@ document.getElementById('add-node-form').addEventListener('submit', async functi
     window.save.nodes.push(id);
     await updateSave();
     await updateView();
+});
+
+document.getElementById('add-edge-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    if (window.selection.length !== 2) {
+        alert('Please select exactly two nodes to create an edge between them.');
+        window.selection = [];
+        window.cy.elements().unselect();
+        return;
+    }
+    
+    const sourceNode = window.selection[0];
+    const targetNode = window.selection[1];
+
+    // console.log('Creating edge between nodes:', sourceNode, 'and', targetNode);
+    await insertEdge(sourceNode, targetNode);
+    window.location.reload();
 });
 
 document.getElementById('new-doc-form').addEventListener('submit', async function(e) {
@@ -356,7 +441,7 @@ document.getElementById('new-doc-form').addEventListener('submit', async functio
         }
         
         const result = await response.json();
-        console.log('new document Success:', result);
+        // console.log('new document Success:', result);
         
         e.target.reset();
         window.location.href = `/?save=${result.data.id}`;
@@ -379,7 +464,3 @@ await fetchTypes();
 await fetchSaves();
 await fetchSave();
 await updateView();
-
-// console.log('Final graph:', window.graph);
-// console.log('Final saves:', window.saves);
-// console.log('Final save:', window.save);
