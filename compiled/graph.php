@@ -454,7 +454,7 @@ final class HTTPController implements HTTPControllerInterface
         $categories = $this->service->getCategories();
         $data = [];
         foreach($categories as $category) {
-            $data[] = $category;
+            $data[] = $category->toArray();
         }
         return new HTTPOKResponse("categories found", $data);
     }
@@ -468,7 +468,7 @@ final class HTTPController implements HTTPControllerInterface
         $types = $this->service->getTypes();
         $data = [];
         foreach($types as $type) {
-            $data[] = $type;
+            $data[] = $type->toArray();
         }
         return new HTTPOKResponse("types found", $data);
     }
@@ -1270,14 +1270,19 @@ final class Service implements ServiceInterface
         $this->logger->debug("getting save", ["id" => $id]);
         $this->verify();
         $data = $this->database->getSave($id);
+
         if (! is_null($data)) {
+            $nodes = [];
+            foreach($data['data']['nodes'] as $n) {
+                $nodes[] = $n;
+            }
             $save = new ModelSave(
                 $data[ModelSave::SAVE_KEYNAME_ID],
                 $data[ModelSave::SAVE_KEYNAME_NAME],
                 $data[ModelSave::SAVE_KEYNAME_CREATOR],
                 new DateTimeImmutable($data[ModelSave::SAVE_KEYNAME_CREATED_AT]),
                 new DateTimeImmutable($data[ModelSave::SAVE_KEYNAME_UPDATED_AT]),
-                $data[ModelSave::SAVE_KEYNAME_DATA]
+                $nodes
             );
             $this->logger->info("save found", ["save" => $save]);
             return $save;

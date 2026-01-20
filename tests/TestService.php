@@ -503,6 +503,20 @@ class TestService extends TestAbstractTest
         throw new Exception('error on testUpdateNodeStatus');
     }
 
+    public function testGetSave(): void
+    {
+        $save = $this->service->getSave('nonexistent');
+        if( $save !== null) {
+            throw new Exception('error on testGetSave - should be null for nonexistent save');
+        }
+
+        $this->service->insertSave(new ModelSave('save1', 'First Save', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), ['a', 'b']));
+        $save = $this->service->getSave('save1');
+        if( $save === null || $save->id !== 'save1' || $save->name !== 'First Save') {
+            throw new Exception('error on testGetSave - save data mismatch');
+        }
+    }
+
     public function testGetSaves(): void
     {
         $saves = $this->service->getSaves();

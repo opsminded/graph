@@ -72,7 +72,7 @@ final class HTTPController implements HTTPControllerInterface
         $categories = $this->service->getCategories();
         $data = [];
         foreach($categories as $category) {
-            $data[] = $category;
+            $data[] = $category->toArray();
         }
         return new HTTPOKResponse("categories found", $data);
     }
@@ -86,7 +86,7 @@ final class HTTPController implements HTTPControllerInterface
         $types = $this->service->getTypes();
         $data = [];
         foreach($types as $type) {
-            $data[] = $type;
+            $data[] = $type->toArray();
         }
         return new HTTPOKResponse("types found", $data);
     }

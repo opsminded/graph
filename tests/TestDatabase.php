@@ -549,6 +549,21 @@ class TestDatabase extends TestAbstractTest
         throw new Exception('error on testUpdateNodeStatus');
     }
 
+    public function testGetSave(): void
+    {
+        $save = $this->database->getSave('initial');
+        if ($save !== null) {
+            throw new Exception('error on testGetSave');
+        }
+
+        $this->database->insertSave('initial', 'Initial Save', 'admin', ['nodes' => ['a', 'b']]);
+
+        $save = $this->database->getSave('initial');
+        if ($save['id'] !== 'initial' || $save['name'] !== 'Initial Save' || $save['creator'] !== 'admin' || count($save['data']['nodes']) !== 2) {
+            throw new Exception('error on testGetSave');
+        }
+    }
+
     public function testGetSaves(): void
     {
         $saves = $this->database->getSaves();

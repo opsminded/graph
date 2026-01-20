@@ -569,6 +569,21 @@ class TestDatabase extends TestAbstractTest
         throw new Exception('error on testUpdateNodeStatus');
     }
 
+    public function testGetSave(): void
+    {
+        $save = $this->database->getSave('initial');
+        if ($save !== null) {
+            throw new Exception('error on testGetSave');
+        }
+
+        $this->database->insertSave('initial', 'Initial Save', 'admin', ['nodes' => ['a', 'b']]);
+
+        $save = $this->database->getSave('initial');
+        if ($save['id'] !== 'initial' || $save['name'] !== 'Initial Save' || $save['creator'] !== 'admin' || count($save['data']['nodes']) !== 2) {
+            throw new Exception('error on testGetSave');
+        }
+    }
+
     public function testGetSaves(): void
     {
         $saves = $this->database->getSaves();
@@ -1213,7 +1228,61 @@ final class TestHTTPController extends TestAbstractTest
         if ($resp->code !== 200 || $resp->status !== 'success' || $resp->message !== 'user updated' || $resp->data['id'] !== 'maria') {
             throw new Exception('error on testUpdateUser');
         }
+    }
 
+    public function testGetCategories(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'PUT';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getCategories';
+        $req = new HTTPRequest();
+
+        $resp = $this->controller->getCategories($req);
+        if ($resp->code != 405 || $resp->message != 'method \'PUT\' not allowed in \'HTTPController::getCategories\'') {
+            print_r($resp);
+            throw new Exception('error on testGetCategories 1');
+        }
+
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $req = new HTTPRequest();
+        $resp = $this->controller->getCategories($req);
+        
+        if ($resp->code !== 200 || $resp->status !== 'success' || count($resp->data) === 0) {
+            print_r($resp);
+            throw new Exception('error on testGetCategories 2');
+        }
+
+        if ($resp->data[0]['id'] !== 'business' || $resp->data[1]['id'] !== 'application' || $resp->data[2]['id'] !== 'infrastructure') {
+            print_r($resp);
+            throw new Exception('error on testGetCategories 3');
+        }
+    }
+
+    public function testGetTypes(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'DELETE';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getTypes';
+        $req = new HTTPRequest();
+
+        $resp = $this->controller->getTypes($req);
+
+        if ($resp->code != 405 || $resp->message != 'method \'DELETE\' not allowed in \'HTTPController::getTypes\'') {
+            throw new Exception('error on testGetTypes');
+        }
+
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getTypes';
+        $req = new HTTPRequest();
+        $resp = $this->controller->getTypes($req);
+        if ($resp->code !== 200 || $resp->status !== 'success' || count($resp->data) === 0) {
+            throw new Exception('error on testGetTypes');
+        }
+        
+        if ($resp->data[0]['id'] !== 'business' || $resp->data[1]['id'] !== 'business_case') {
+            throw new Exception('error on testGetTypes');
+        }
     }
 
     public function testgetCytoscapeGraph(): void
@@ -1716,6 +1785,48 @@ final class TestHTTPController extends TestAbstractTest
         $req->data['node_id'] = 'node1';
         $req->data['status'] = 'healthy';
         $resp = $this->controller->updateNodeStatus($req);
+    }
+
+    public function testGetSave(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getSave';
+        $req = new HTTPRequest();
+        $resp = $this->controller->getSave($req);
+        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'HTTPController::getSave\'') {
+            throw new Exception('error on testGetSave 1');
+        }
+
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getSave';
+        $req = new HTTPRequest();
+        $resp = $this->controller->getSave($req);
+        if ($resp->code !== 400 || $resp->message !== 'param \'id\' is missing') {
+            throw new Exception('error on testGetSave 2');
+        }
+
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getSave';
+        $_GET['id'] = 'meu-save';
+        $req = new HTTPRequest();
+        $resp = $this->controller->getSave($req);
+        if( $resp->code !== 404 || $resp->message !== 'save not found') {
+            throw new Exception('error on testGetSave 2');
+        }
+        
+        $this->database->insertSave('meu-save', 'meu save', 'admin', ['nodes' => ['a', 'b']]);
+        
+        $req = new HTTPRequest();
+        $resp = $this->controller->getSave($req);
+        if( $resp->code !== 200 || $resp->message !== 'save found') {
+            throw new Exception('error on testGetSave 3');
+        }
+        if($resp->data['id'] !== 'meu-save' || $resp->data['name'] !== 'meu save') {
+            throw new Exception('error on testGetSave 4');
+        }
     }
 
     public function testGetSaves(): void
@@ -2589,6 +2700,20 @@ class TestService extends TestAbstractTest
             return;
         }
         throw new Exception('error on testUpdateNodeStatus');
+    }
+
+    public function testGetSave(): void
+    {
+        $save = $this->service->getSave('nonexistent');
+        if( $save !== null) {
+            throw new Exception('error on testGetSave - should be null for nonexistent save');
+        }
+
+        $this->service->insertSave(new ModelSave('save1', 'First Save', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), ['a', 'b']));
+        $save = $this->service->getSave('save1');
+        if( $save === null || $save->id !== 'save1' || $save->name !== 'First Save') {
+            throw new Exception('error on testGetSave - save data mismatch');
+        }
     }
 
     public function testGetSaves(): void
