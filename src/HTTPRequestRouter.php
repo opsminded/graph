@@ -43,6 +43,21 @@ final class HTTPRequestRouter
 
     public function handle(HTTPRequest $req): HTTPResponse
     {
+        $irregularResponse = $this->tryIrregularRoutes($req);
+        if ($irregularResponse !== null) {
+            return $irregularResponse;
+        }
+
+        $regularResponse = $this->tryRegularRoutes($req);
+        if ($regularResponse !== null) {
+            return $regularResponse;
+        }
+
+        return new HTTPInternalServerErrorResponse("method not found in list", ["method" => $req->method, "path" => $req->path]);
+    }
+
+    private function tryIrregularRoutes(HTTPRequest $req): ?HTTPResponse
+    {
         global $DATA_CYTOSCAPE;
         global $DATA_STYLE_CSS;
         global $DATA_JAVASCRIPT;
@@ -98,7 +113,11 @@ final class HTTPRequestRouter
             $resp->binaryContent = HelperImages::getImageData($req->getParam('img'));
             return $resp;
         }
+        return null;
+    }
 
+    private function tryRegularRoutes(HTTPRequest $req): ?HTTPResponse
+    {
         foreach($this->routes as $route)
         {
             if ($route["method"] == $req->method && "/{$route["class_method"]}" == $req->path)
@@ -112,6 +131,6 @@ final class HTTPRequestRouter
                 }
             }
         }
-        return new HTTPInternalServerErrorResponse("method not found in list", ["method" => $req->method, "path" => $req->path]);
+        return null;
     }
 }
