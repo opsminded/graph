@@ -229,6 +229,14 @@ final class HelperCytoscape
                 "outline-offset"  => "5",
             ],
         ];
+        
+        $style[] = [
+            "selector" => "node:selected",
+            "style" => [
+                "border-width" => 4,
+                "border-color" => "#ffe658",
+            ],
+        ];
 
         return $style;
     }
@@ -236,7 +244,7 @@ final class HelperCytoscape
     private function getLayout(): array
     {
         return [
-            "fit"               => false,
+            "fit"               => true,
             "name"              => "breadthfirst",
             "directed"          => true,
             "direction"         => "downward",

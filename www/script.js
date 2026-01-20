@@ -28,7 +28,7 @@ async function fetchGraph()
             throw new Error(`[fetchGraph] HTTP error! status: ${response.status}`);
         }
         var graphData = await response.json();
-        console.log('[fetchGraph] Graph data:', graphData);
+        console.log('[fetchGraph] Graph data:', graphData.data);
         window.graph = graphData['data'];
         window.nodes = window.graph.elements.nodes;
     } catch (error) {
@@ -106,6 +106,12 @@ async function fetchSave()
 {
     const urlParams = new URLSearchParams(window.location.search);
     const saveID = urlParams.get('save');
+    console.log('[fetchSave] Fetching save with ID:', saveID);
+
+    if (!saveID) {
+        console.log('[fetchSave] No save ID provided in URL parameters.');
+        return;
+    }
 
     try {
         var response = await fetch(`/getSave?id=${encodeURIComponent(saveID)}`);
@@ -148,11 +154,68 @@ async function updateView()
 {
     var cydiv = document.getElementById('cy');
 
-    var data = window.graph;
+    var data = structuredClone(window.graph);
     data.container = cydiv;
-    data.elements = [];
     console.log('Update view with data:', data);
     window.cy = cytoscape(data);
+
+    const startNodes = window.cy.nodes().filter(node => 
+        ['UserService2'].includes(node.id())
+    );
+
+    // Get all successor nodes (all descendants)
+    const descendants = startNodes.successors();
+    
+    const nodes = startNodes.union(descendants);
+    nodes.select();
+
+    window.cy.layout(window.graph.layout).stop();
+    window.cy.elements().not(nodes).remove();
+    window.cy.layout(window.graph.layout).start();
+    console.log(window.graph.layout);
+
+    // const outgoingEdges = startNodes.outgoers('edge');
+    // const descendants = startNodes.outgoers('node');
+    // startNodes.union(descendants).union(outgoingEdges).select();
+
+    // var selected = cy.nodes().filter(function( ele ){
+    //     if (ele.isNode()) {
+    //         if (ele.data('id') === 'UserService') {
+    //             console.log('Node ele:', ele);
+    //             return true;
+    //         }
+    //     }
+    //     return false;
+    // });
+
+    // // selected.select();
+
+    // var neighborhood = selected.neighborhood();
+    // console.log('neighborhood:', neighborhood);
+    // // neighborhood.select();
+
+    // var components = selected.components();
+    // console.log('components:', components);
+    // // components.select();
+
+    // var predecessors = selected.incomers();
+    // console.log('incomers:', predecessors);
+    // // predecessors.select();
+
+    // var connectedNodes = selected.connectedNodes();
+    // console.log('connectedNodes:', connectedNodes);
+    // // connectedNodes.select();
+
+    // var roots = selected.roots();
+    // console.log('roots:', roots);
+    // // roots.select();
+
+    // var leaves = selected.leaves();
+    // console.log('leaves:', leaves);
+    // leaves.select();
+
+
+    //window.cy.fit();
 }
 
 //////////////////////////////////////////////////////////////////////////////

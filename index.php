@@ -58,11 +58,11 @@ $renderer         = new HTTPRenderer($DATA_TEMPLATES);
 
 // $service->updateNodeStatus(new ModelStatus('BaseServer', ModelStatus::STATUS_VALUE_HEALTHY));
 
-//$service->insertSave(new ModelSave('first', 'Primeiro', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), []));
+// $service->updateSave(new ModelSave('first', 'Primeiro', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), ['Credito']));
 
-$save = $service->getSave('first');
-print_r($save);
-exit();
+if($_SERVER['REQUEST_URI'] === '/favicon.ico') {
+    return false;
+}
 
 $request    = new HTTPRequest();
 $response   = $router->handle($request);
