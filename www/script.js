@@ -19,6 +19,19 @@ window.save = null;
 
 ////////////////////////////////////////////////////////////////////////////////
 
+function displayModal() {
+    var modal = document.getElementById('modal');
+    modal.classList.add('show');
+}
+
+function displayNewDocModal() {
+    displayModal();
+    var newDocModal = document.getElementById('modal-new-doc');
+    newDocModal.classList.add('show');
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 async function fetchGraph()
 {
     try {
@@ -28,7 +41,7 @@ async function fetchGraph()
             throw new Error(`[fetchGraph] HTTP error! status: ${response.status}`);
         }
         var graphData = await response.json();
-        console.log('[fetchGraph] Graph data:', graphData.data);
+        // console.log('[fetchGraph] Graph data:', graphData.data);
         window.graph = graphData['data'];
         window.nodes = window.graph.elements.nodes;
     } catch (error) {
@@ -95,7 +108,7 @@ async function fetchSaves()
         }
         var savesData = await response.json();
         window.saves = savesData['data'];
-        console.log('[fetchSaves] Saves:', saves);
+        // console.log('[fetchSaves] Saves:', saves);
     }
     catch (error) {
         console.error('[fetchSaves] Fetch error:', error);
@@ -106,7 +119,7 @@ async function fetchSave()
 {
     const urlParams = new URLSearchParams(window.location.search);
     const saveID = urlParams.get('save');
-    console.log('[fetchSave] Fetching save with ID:', saveID);
+    // console.log('[fetchSave] Fetching save with ID:', saveID);
 
     if (!saveID) {
         console.log('[fetchSave] No save ID provided in URL parameters.');
@@ -120,8 +133,9 @@ async function fetchSave()
             throw new Error(`[fetchSave] HTTP error! status: ${response.status}`);
         }
         var saveData = await response.json();
-        console.log('[fetchSave] Save data:', saveData);
+        // console.log('[fetchSave] Save data:', saveData);
         window.save = saveData['data'];
+        // console.log('[fetchSave] Loaded save:', window.save);
     } catch (error) {
         console.error('[fetchSave] Fetch error:', error);
     }
@@ -135,13 +149,13 @@ function updateNodeList()
     const nodeListSelect = document.getElementById('add-node-form-node');
     nodeListSelect.innerHTML = '';
 
-    console.log('Selected category ID:', categorySelect);
-    console.log('Selected type ID:', typeSelect);
+    // console.log('Selected category ID:', categorySelect);
+    // console.log('Selected type ID:', typeSelect);
 
     window.nodes.forEach(function(node) {
-        console.log('Checking node:', node);
+        // console.log('Checking node:', node);
         if (node.data.category === categorySelect && node.data.type === typeSelect) {
-            console.log('Node data:', node.data);
+            // console.log('Node data:', node.data);
             const option = document.createElement('option');
             option.value = node.data.id;
             option.text = node.data.label;
@@ -152,83 +166,63 @@ function updateNodeList()
 
 async function updateView()
 {
+    if(! window.save) {
+        console.log('No save loaded, cannot update view.');
+        displayNewDocModal();
+        return;
+    }
+
     var cydiv = document.getElementById('cy');
 
     var data = structuredClone(window.graph);
     data.container = cydiv;
-    console.log('Update view with data:', data);
+    
+    // console.log('Update view with data:', data);
     window.cy = cytoscape(data);
-
+    
     const startNodes = window.cy.nodes().filter(node => 
-        ['UserService2'].includes(node.id())
+        window.save.nodes.includes(node.id())
     );
-
+    
+    // console.log('Start nodes found:', startNodes.length, startNodes.map(n => n.id()));
+    
     // Get all successor nodes (all descendants)
     const descendants = startNodes.successors();
+    // console.log('Descendants found:', descendants.length);
     
-    const nodes = startNodes.union(descendants);
-    nodes.select();
+    const allNodes = startNodes.union(descendants);
+    // console.log('Total nodes to keep:', allNodes.length);
+    
+    window.cy.elements().not(allNodes).remove();
+    // console.log('Remaining elements:', window.cy.elements().length);
+    
+    // Check layout config
+    // console.log('Layout config:', window.graph.layout);
 
-    window.cy.layout(window.graph.layout).stop();
-    window.cy.elements().not(nodes).remove();
-    window.cy.layout(window.graph.layout).start();
-    console.log(window.graph.layout);
-
-    // const outgoingEdges = startNodes.outgoers('edge');
-    // const descendants = startNodes.outgoers('node');
-    // startNodes.union(descendants).union(outgoingEdges).select();
-
-    // var selected = cy.nodes().filter(function( ele ){
-    //     if (ele.isNode()) {
-    //         if (ele.data('id') === 'UserService') {
-    //             console.log('Node ele:', ele);
-    //             return true;
-    //         }
-    //     }
-    //     return false;
-    // });
-
-    // // selected.select();
-
-    // var neighborhood = selected.neighborhood();
-    // console.log('neighborhood:', neighborhood);
-    // // neighborhood.select();
-
-    // var components = selected.components();
-    // console.log('components:', components);
-    // // components.select();
-
-    // var predecessors = selected.incomers();
-    // console.log('incomers:', predecessors);
-    // // predecessors.select();
-
-    // var connectedNodes = selected.connectedNodes();
-    // console.log('connectedNodes:', connectedNodes);
-    // // connectedNodes.select();
-
-    // var roots = selected.roots();
-    // console.log('roots:', roots);
-    // // roots.select();
-
-    // var leaves = selected.leaves();
-    // console.log('leaves:', leaves);
-    // leaves.select();
-
-
-    //window.cy.fit();
+    window.cy.layout(window.graph.layout).run();
 }
 
 //////////////////////////////////////////////////////////////////////////////
 
 document.addEventListener('mousemove', function(e) {
+    const toolbar = document.getElementById('toolbar');
     const menu = document.getElementById('menu');
     const infoPanel = document.getElementById('info-panel');
 
-    if (e.clientX <= 300) {
+    if (e.clientY <= 32 || e.clientX <= 300) {
+        toolbar.classList.add('show');
         menu.classList.add('show');
     } else {
+        toolbar.classList.remove('show');
         menu.classList.remove('show');
     }
+});
+
+document.getElementById('new-doc-btn').addEventListener('click', function(){
+    displayNewDocModal();
+});
+
+document.getElementById('open-doc-btn').addEventListener('click', function(){
 });
 
 document.getElementById('add-node-form-category').addEventListener('change', function(e) {
@@ -255,11 +249,8 @@ document.getElementById('new-doc-form').addEventListener('submit', async functio
     e.preventDefault();
     
     const formData = {
-        id: document.getElementById('id').value,
-        name: document.getElementById('name').value,
-        data: {
-            'nodes': []
-        }
+        name: document.getElementById('new-doc-form-name').value,
+        nodes: []
     };
     
     try {
@@ -280,8 +271,7 @@ document.getElementById('new-doc-form').addEventListener('submit', async functio
         console.log('new document Success:', result);
         
         e.target.reset();
-
-        window.saveID = formData.id;
+        window.location.href = `/?save=${result.data.id}`;
         
     } catch (error) {
         console.error('Error:', error);
@@ -296,6 +286,6 @@ await fetchSaves();
 await fetchSave();
 await updateView();
 
-console.log('Final graph:', window.graph);
-console.log('Final saves:', window.saves);
-console.log('Final save:', window.save);
+// console.log('Final graph:', window.graph);
+// console.log('Final saves:', window.saves);
+// console.log('Final save:', window.save);

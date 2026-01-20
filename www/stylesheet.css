@@ -4,6 +4,7 @@ html, body {
     margin: 0;
     padding: 0;
     overflow: hidden;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
 }
 
 #toolbar {
@@ -14,22 +15,33 @@ html, body {
 
     width: 100%;
     height: 32px;
+    padding: 0 10px;
     
     line-height: 32px;
     background-color: #d0d0d0;
 
+    display: none;
     z-index: 200;
+}
+
+#toolbar.show {
+    display: block;
 }
 
 #menu {
     position: absolute;
+
     left: 0;
     top: 32px;
     width: 300px;
     height: calc(100% - 32px);
-    background-color: #f0f0f0;
-    display: none;
+    padding: 10px 0;
 
+    text-align: center;
+
+    background-color: #f0f0f0;
+
+    display: none;
     z-index: 200;
 }
 
@@ -47,8 +59,8 @@ html, body {
     height: calc(100% - 32px);
     
     background-color: #f0f0f0;
+    
     display: none;
-
     z-index: 200;
 }
 
@@ -72,10 +84,19 @@ html, body {
 
 #modal {
     position: absolute;
-    z-index: 200;
+
+    border: 2px solid #CCC;
+    background-color: #fff;
+
     left: 25%;
     top: 8%;
     width: 50%;
     height: 70%;
+
     display: none;
+    z-index: 200;
+}
+
+#modal.show {
+    display: block;
 }

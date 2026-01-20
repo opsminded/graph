@@ -12,11 +12,11 @@
         <div id="toolbar">
             <button id="new-doc-btn" title="Novo Documento">Novo</button>
             <button id="open-doc-btn" title="Abrir Documento">Abrir</button>
-            <button id="save-doc-btn" title="Salvar Documento">Salvar</button>
         </div>
 
         <div id="menu">
-            <h2>Menu</h2>
+            <img src="/index.php/getImage?img=logo" alt="Logo" width="32" height="32">
+            <h1><span style="color: rgb(182, 43, 43);">Brades</span>ketch</h1>
 
             <form id="add-node-form" method="post">
                 <h3>Adicionar Item</h3>
@@ -55,8 +55,7 @@
                 <div id="modal-new-doc-content">
                     <h2>Novo Documento</h2>
                     <form id="new-doc-form" method="post">
-                        <p><label for="id">id <input type="text" id="id" name="id"></label></p>
-                        <p><label for="name">nome <input type="text" id="name" name="name"></label></p>
+                        <p><label for="new-doc-form-name">Nome: <input type="text" id="new-doc-form-name" name="name"></label></p>
                         <p><button type="submit">Criar</button></p>
                     </form>
                 </div>

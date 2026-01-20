@@ -250,8 +250,8 @@ final class HelperCytoscape
             "direction"         => "downward",
             "padding"           => 100,
             "avoidOverlap"      => true,
-            "animate"           => true,
-            "animationDuration" => 500,
+            "animate"           => false,
+            //"animationDuration" => 500,
         ];
     }
 }

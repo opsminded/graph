@@ -58,7 +58,7 @@ $renderer         = new HTTPRenderer($DATA_TEMPLATES);
 
 // $service->updateNodeStatus(new ModelStatus('BaseServer', ModelStatus::STATUS_VALUE_HEALTHY));
 
-// $service->updateSave(new ModelSave('first', 'Primeiro', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), ['Credito']));
+// $service->insertSave(new ModelSave('first', 'Primeiro', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), ['Credito']));
 
 if($_SERVER['REQUEST_URI'] === '/favicon.ico') {
     return false;

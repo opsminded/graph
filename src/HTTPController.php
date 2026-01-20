@@ -393,8 +393,10 @@ final class HTTPController implements HTTPControllerInterface
 
         $now = new DateTimeImmutable();
 
+        $id = $this->createSlug($req->data[ModelSave::SAVE_KEYNAME_NAME] ?? 'save');
+
         $save = new ModelSave(
-            $req->data[ModelSave::SAVE_KEYNAME_ID],
+            $id,
             $req->data[ModelSave::SAVE_KEYNAME_NAME],
             $creator,
             $now,
@@ -468,5 +470,37 @@ final class HTTPController implements HTTPControllerInterface
             $data[] = $log->toArray();
         }
         return new HTTPOKResponse("logs found", $data);
+    }
+
+    private function createSlug(string $text): string
+    {
+        // Convert to lowercase
+        $slug = mb_strtolower($text, 'UTF-8');
+        
+        // Replace common accented characters
+        $unwanted = [
+            'á' => 'a', 'à' => 'a', 'ã' => 'a', 'â' => 'a', 'ä' => 'a',
+            'é' => 'e', 'è' => 'e', 'ê' => 'e', 'ë' => 'e',
+            'í' => 'i', 'ì' => 'i', 'î' => 'i', 'ï' => 'i',
+            'ó' => 'o', 'ò' => 'o', 'õ' => 'o', 'ô' => 'o', 'ö' => 'o',
+            'ú' => 'u', 'ù' => 'u', 'û' => 'u', 'ü' => 'u',
+            'ç' => 'c', 'ñ' => 'n',
+        ];
+        $slug = strtr($slug, $unwanted);
+        
+        // Remove any remaining non-alphanumeric characters (except hyphens)
+        $slug = preg_replace('/[^a-z0-9\-]/', '-', $slug);
+        
+        // Replace multiple hyphens with single hyphen
+        $slug = preg_replace('/-+/', '-', $slug);
+        
+        // Trim hyphens from start and end
+        $slug = trim($slug, '-');
+        
+        // Add random 5-character suffix
+        $randomSuffix = bin2hex(random_bytes(3)); // 3 bytes = 6 hex chars, take 5
+        $randomSuffix = substr($randomSuffix, 0, 5);
+        
+        return $slug . '-' . $randomSuffix;
     }
 }

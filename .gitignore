@@ -3,5 +3,6 @@ coverage.json
 service.log
 controller.log
 database.log
+database.sqlite
 ./graph.php
 ./tests.php
