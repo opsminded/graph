@@ -272,6 +272,7 @@ async function updateView()
     window.cy.on('select', 'node', function(evt){
         const selectedNodes = cy.$('node:selected');
         if (selectedNodes.length > 2) {
+            document.getElementById('add-edge-form-submit').disabled = true;
             evt.target.unselect();
             return;
         }
@@ -282,12 +283,19 @@ async function updateView()
         // console.log('Selected node:', node.id());
         // console.log('Current selection:', window.selection);
 
-        if(window.selection.length == 2) {
-            // console.log('Two nodes selected, showing add-edge form.');
+        if(window.selection.length < 2) {
+            document.getElementById('add-node-form').classList.add('hide');
             document.getElementById('add-edge-form').classList.add('show');
+        } else if(window.selection.length == 2) {
+            // console.log('Two nodes selected, showing add-edge form.');
+            document.getElementById('add-node-form').classList.add('hide');
+            document.getElementById('add-edge-form').classList.add('show');
+            document.getElementById('add-edge-form-submit').disabled = false;
         } else {
             // console.log('Not two nodes selected, hiding add-edge form.');
+            document.getElementById('add-node-form').classList.remove('hide');
             document.getElementById('add-edge-form').classList.remove('show');
+            document.getElementById('add-edge-form-submit').disabled = true;
         }
     });
 
@@ -295,6 +303,8 @@ async function updateView()
         window.cy.elements().unselect();
         window.selection = [];
         document.getElementById('add-edge-form').classList.remove('show');
+        document.getElementById('add-node-form').classList.remove('hide');
+        document.getElementById('add-edge-form-submit').disabled = true;
     });
     
     const startNodes = window.cy.nodes().filter(node => 

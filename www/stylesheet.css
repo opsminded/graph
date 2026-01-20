@@ -33,6 +33,14 @@ html, body {
     padding: 0 10px;
 }
 
+#add-node-form {
+    display: block;
+}
+
+#add-node-form.hide {
+    display: none;
+}
+
 #add-edge-form {
     display: none;
 }
