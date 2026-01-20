@@ -8,6 +8,9 @@ interface HTTPControllerInterface
     public function insertUser(HTTPRequest $req): HTTPResponseInterface;
     public function updateUser(HTTPRequest $req): HTTPResponseInterface;
 
+    public function getCategories(HTTPRequest $req): HTTPResponseInterface;
+    public function getTypes(HTTPRequest $req): HTTPResponseInterface;
+
     public function getCytoscapeGraph(HTTPRequest $req): HTTPResponseInterface;
 
     public function getNode(HTTPRequest $req): HTTPResponseInterface;
@@ -28,14 +31,11 @@ interface HTTPControllerInterface
     public function getNodeStatus(HTTPRequest $req): HTTPResponseInterface;
     public function updateNodeStatus(HTTPRequest $req): HTTPResponseInterface;
 
+    public function getSave(HTTPRequest $req): HTTPResponseInterface;
     public function getSaves(HTTPRequest $req): HTTPResponseInterface;
     public function insertSave(HTTPRequest $req): HTTPResponseInterface;
     public function updateSave(HTTPRequest $req): HTTPResponseInterface;
     public function deleteSave(HTTPRequest $req): HTTPResponseInterface;
 
     public function getLogs(HTTPRequest $req): HTTPResponseInterface;
-
-    // public interface for the editors
-    public function homePage(HTTPRequest $req): HTTPResponseInterface;
-    public function sandboxPage(HTTPRequest $req): HTTPResponseInterface;
 }

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Bradesketch</title>
+        <script src="/index.php/cytoscape.js"></script>
+        <link rel="stylesheet" href="/index.php/style.css">
+    </head>
+    <body>
+        <div id="toolbar">
+            <button id="new-doc-btn" title="Novo Documento">Novo</button>
+            <button id="open-doc-btn" title="Abrir Documento">Abrir</button>
+            <button id="save-doc-btn" title="Salvar Documento">Salvar</button>
+        </div>
+
+        <div id="menu">
+            <h2>Menu</h2>
+
+            <form id="add-node-form" method="post">
+                <h3>Adicionar Item</h3>
+                <p>
+                    <label for="add-node-form-category">Categoria:<br>
+                        <select id="add-node-form-category" name="category" required>
+                        </select>
+                    </label>
+                </p>
+
+                <p>
+                    <label for="add-node-form-type">Tipo:<br>
+                        <select id="add-node-form-type" required>
+                        </select>
+                    </label>
+                </p>
+
+                <p>
+                    <label for="add-node-form-node">Item:<br>
+                        <select id="add-node-form-node" name="node" required>
+                            <!-- Options will be populated dynamically -->
+                        </select>
+                    </label>
+                </p>
+
+                <p><button id="add-node-form-submit" type="submit">Adicionar Item</button></p>
+            </form>
+        </div>
+
+        <div id="info-panel">
+            <h2>Propriedades do Nó</h2>
+        </div>
+
+        <div id="modal">
+            <div id="modal-new-doc">
+                <div id="modal-new-doc-content">
+                    <h2>Novo Documento</h2>
+                    <form id="new-doc-form" method="post">
+                        <p><label for="id">id <input type="text" id="id" name="id"></label></p>
+                        <p><label for="name">nome <input type="text" id="name" name="name"></label></p>
+                        <p><button type="submit">Criar</button></p>
+                    </form>
+                </div>
+            </div>
+
+            <div id="modal-open-doc">
+                <div id="modal-open-doc-content">
+                    <h2>Abrir Documento</h2>
+                    <form id="open-doc-form" method="post">
+                        <p><label for="open-id">id do documento <input type="text" id="open-id" name="open-id"></label></p>
+                        <p><button type="submit">Abrir</button></p>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div id="cy"></div>
+    </body>
+    <script type="module" src="/index.php/script.js"></script>
+</html>

@@ -488,6 +488,21 @@ final class TestHTTPController extends TestAbstractTest
 
         $req = new HTTPRequest();
         $resp = $this->controller->getEdges($req);
+
+        $this->database->insertNode('node1', 'label1', 'application', 'service');
+        $this->database->insertNode('node2', 'label2', 'application', 'service');
+        $this->database->insertEdge('node1-node2', 'node1', 'node2', 'label');
+
+        $req = new HTTPRequest();
+        $resp = $this->controller->getEdges($req);
+
+        if ($resp->code !== 200 || count($resp->data) !== 1) {
+            throw new Exception('error on testGetEdges');
+        }
+        if ($resp->data[0]['source'] !== 'node1' || $resp->data[0]['target'] !== 'node2') {
+            throw new Exception('error on testGetEdges');
+        }
+        
     }
     
     public function testInsertEdge(): void
@@ -672,7 +687,7 @@ final class TestHTTPController extends TestAbstractTest
             throw new Exception('error on testGetSaves 2');
         }
         
-        $this->database->insertSave('meu-save', 'meu save', 'admin', ['nodes' => [], 'edges' => []]);
+        $this->database->insertSave('meu-save', 'meu save', 'admin', ['nodes' => ['a', 'b']]);
         
         $req = new HTTPRequest();
         $resp = $this->controller->getSaves($req);
@@ -702,9 +717,10 @@ final class TestHTTPController extends TestAbstractTest
         $req->data['id'] = 'save1';
         $req->data['name'] = 'My Save 1';
         $req->data['creator'] = 'admin';
-        $req->data['data'] = ['nodes' => [], 'edges' => []];
+        $req->data['nodes'] = ['a', 'b'];
         $resp = $this->controller->insertSave($req);
         if($resp->code !== 201 || $resp->message !== 'save created' || $resp->data['id'] !== 'save1') {
+            print_r($resp);
             throw new Exception('error on testInsertSave 2');
         }
 
@@ -740,7 +756,7 @@ final class TestHTTPController extends TestAbstractTest
         $req->data['id'] = 'save1';
         $req->data['name'] = 'My Save 1 Updated';
         $req->data['creator'] = 'admin';
-        $req->data['data'] = ['nodes' => [], 'edges' => []];
+        $req->data['nodes'] = [];
         $resp = $this->controller->updateSave($req);
         if ($resp->code !== 404 || $resp->message !== 'save not updated' || $resp->data['id'] !== 'save1') {
             print_r($resp);
@@ -752,9 +768,9 @@ final class TestHTTPController extends TestAbstractTest
         $req->data['id'] = 'save1';
         $req->data['name'] = 'My Save 1 Updated';
         $req->data['creator'] = 'admin';
-        $req->data['data'] = ['nodes' => ['node1', 'node2'], 'edges' => []];
+        $req->data['nodes'] = ['node1', 'node2'];
         $resp = $this->controller->updateSave($req);
-        if ($resp->code !== 200 || $resp->message !== 'save updated' || $resp->data['name'] !== 'My Save 1 Updated' || count($resp->data['data']['nodes']) !== 2) {
+        if ($resp->code !== 200 || $resp->message !== 'save updated' || $resp->data['name'] !== 'My Save 1 Updated' || count($resp->data['nodes']) !== 2) {
             print_r($resp);
             throw new Exception('error on testUpdateSave 3');
         }

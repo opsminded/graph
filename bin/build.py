@@ -51,9 +51,20 @@ for file in folder.iterdir():
 
 
 cytoscapejs = ''
-with open('www/javascript/cytoscape.min.js', 'r') as file:
+with open('www/cytoscape.min.js', 'r') as file:
     cytoscapejs = file.read()
     cytoscapejs = base64.b64encode(cytoscapejs.encode('utf-8')).decode('utf-8')
+
+stylesheet = ''
+with open('www/stylesheet.css', 'r') as file:
+    stylesheet = file.read()
+    stylesheet = base64.b64encode(stylesheet.encode('utf-8')).decode('utf-8')
+
+javascript = ''
+with open('www/script.js', 'r') as file:
+    javascript = file.read()
+    javascript = base64.b64encode(javascript.encode('utf-8')).decode('utf-8')
+
 
 ######################################################
 
@@ -74,6 +85,8 @@ with open('compiled/graph.php', 'w') as outputfile:
     # Write cytoscapejs third
     outputfile.write("\n")
     outputfile.write(f"$DATA_CYTOSCAPE = '{str(cytoscapejs)}';\n")
+    outputfile.write(f"$DATA_STYLE_CSS = '{str(stylesheet)}';\n")
+    outputfile.write(f"$DATA_JAVASCRIPT = '{str(javascript)}';\n")
     outputfile.write("\n")
     
     print_file(outputfile, 'src/HTTPResponse.php')
@@ -88,16 +101,6 @@ for file in folder.iterdir():
  
 with open('compiled/tests.php', 'w') as outputfile:
     outputfile.write("".join(init))
-    
-    # Write compiled images first
-    outputfile.write("\n")
-    outputfile.write("".join(compiled_images))
-    outputfile.write("\n")
-    
-    # Write compiled templates second
-    outputfile.write("\n")
-    outputfile.write("".join(compiled_templates))
-    outputfile.write("\n")
     
     for file in folder.iterdir():
         print_file(outputfile, str(file))

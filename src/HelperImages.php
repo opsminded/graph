@@ -4,47 +4,21 @@ declare(strict_types=1);
 
 final class HelperImages
 {
-    private array $images = [];
-
-    public function __construct(array $images)
+    public static function getTypes(): array
     {
-        foreach($images as $name => $image) {
-            $this->images[$name] = new ModelImage(
-                $name,
-                base64_decode($image["data"], true),
-                md5($image["data"])
-            );
-        }
+        global $DATA_IMAGES;
+        return array_keys($DATA_IMAGES);
     }
 
-    public function getTypes(): array
+    public static function getImageData(string $image): string
     {
-        return array_keys($this->images);
+        global $DATA_IMAGES;
+        return $DATA_IMAGES[$image]['data'];
     }
 
-    private function getImages(): array
+    public static function getImageEtag(string $image): string
     {
-        return $this->images;
+        global $DATA_IMAGES;
+        return $DATA_IMAGES[$image]['etag'];
     }
-
-    // public function send(string $imageName): void
-    // {
-    //     if (!isset($this->images[$imageName])) {
-    //         http_response_code(404);
-    //         exit;
-    //     }
-
-    //     $imageData = $this->images[$imageName]->getData();
-    //     $imageETag = $this->images[$imageName]->getEtag();
-
-    //     header("Content-Type: image/png");
-    //     header("Content-Length: " . strlen($imageData));
-
-    //     header("Cache-Control: public, max-age=86400");
-    //     header("Expires: " . gmdate("D, d M Y H:i:s", time() + 86400) . " GMT");
-    //     header("ETag: \"" . $imageETag . "\"");
-
-    //     echo $imageData;
-    //     exit;
-    // }
 }

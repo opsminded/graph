@@ -318,6 +318,23 @@ final class Database implements DatabaseInterface
         return true;
     }
 
+    public function getSave(string $id): ?array
+    {
+        $this->logger->debug("fetching save", ['id' => $id]);
+        $sql = "SELECT * FROM saves WHERE id = :id";
+        $params = [':id' => $id];
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $row = $stmt->fetch();
+        if ($row) {
+            $row['data'] = json_decode($row['data'], true);
+            $this->logger->info("save fetched", ['params' => $params, 'row' => $row]);
+            return $row;
+        }
+        $this->logger->error("save not found", ['params' => $params]);
+        return null;
+    }
+
     public function getSaves(): array
     {
         $this->logger->debug("fetching saves");

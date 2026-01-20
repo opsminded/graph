@@ -63,6 +63,34 @@ final class HTTPController implements HTTPControllerInterface
         return new HTTPNotFoundResponse("user not found", $data);
     }
 
+    public function getCategories(HTTPRequest $req): HTTPResponseInterface
+    {
+        if($req->method !== HTTPRequest::METHOD_GET) {
+            return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
+        }
+
+        $categories = $this->service->getCategories();
+        $data = [];
+        foreach($categories as $category) {
+            $data[] = $category;
+        }
+        return new HTTPOKResponse("categories found", $data);
+    }
+
+    public function getTypes(HTTPRequest $req): HTTPResponseInterface
+    {
+        if($req->method !== HTTPRequest::METHOD_GET) {
+            return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
+        }
+
+        $types = $this->service->getTypes();
+        $data = [];
+        foreach($types as $type) {
+            $data[] = $type;
+        }
+        return new HTTPOKResponse("types found", $data);
+    }
+
     public function getCytoscapeGraph(HTTPRequest $req): HTTPResponseInterface
     {
         if($req->method !== HTTPRequest::METHOD_GET) {
@@ -320,6 +348,24 @@ final class HTTPController implements HTTPControllerInterface
         return new HTTPOKResponse("node found", $data);
     }
 
+    public function getSave(HTTPRequest $req): HTTPResponseInterface
+    {
+        if($req->method !== HTTPRequest::METHOD_GET) {
+            return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
+        }
+        try {
+            $id = $req->getParam(ModelSave::SAVE_KEYNAME_ID);
+        } catch(HTTPRequestException $e) {
+            return new HTTPBadRequestResponse($e->getMessage(), []);
+        }
+        $save = $this->service->getSave($id);
+        if(!is_null($save)) {
+            $data = $save->toArray();
+            return new HTTPOKResponse("save found", $data);
+        }
+        return new HTTPNotFoundResponse("save not found", [ModelSave::SAVE_KEYNAME_ID => $id]);
+    }
+
     public function getSaves(HTTPRequest $req): HTTPResponseInterface
     {
         if($req->method !== HTTPRequest::METHOD_GET) {
@@ -335,8 +381,14 @@ final class HTTPController implements HTTPControllerInterface
 
     public function insertSave(HTTPRequest $req): HTTPResponseInterface
     {
+        $creator = HelperContext::getUser();
+
         if($req->method !== HTTPRequest::METHOD_POST) {
             return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
+        }
+
+        if (! array_key_exists(ModelSave::SAVE_KEYNAME_NODES, $req->data)) {
+            return new HTTPBadRequestResponse("key " . ModelSave::SAVE_KEYNAME_NODES . " not found in data", $req->data);
         }
 
         $now = new DateTimeImmutable();
@@ -344,10 +396,10 @@ final class HTTPController implements HTTPControllerInterface
         $save = new ModelSave(
             $req->data[ModelSave::SAVE_KEYNAME_ID],
             $req->data[ModelSave::SAVE_KEYNAME_NAME],
-            $req->data[ModelSave::SAVE_KEYNAME_CREATOR],
+            $creator,
             $now,
             $now,
-            $req->data[ModelSave::SAVE_KEYNAME_DATA],
+            $req->data[ModelSave::SAVE_KEYNAME_NODES],
         );
         $this->service->insertSave($save);
         $data = $save->toArray();
@@ -356,19 +408,23 @@ final class HTTPController implements HTTPControllerInterface
 
     public function updateSave(HTTPRequest $req): HTTPResponseInterface
     {
+        $creator = HelperContext::getUser();
+
         if($req->method !== HTTPRequest::METHOD_PUT) {
             return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
+
+        $nodes = $req->data[ModelSave::SAVE_KEYNAME_NODES];
 
         $now = new DateTimeImmutable();
 
         $save = new ModelSave(
             $req->data[ModelSave::SAVE_KEYNAME_ID],
             $req->data[ModelSave::SAVE_KEYNAME_NAME],
-            $req->data[ModelSave::SAVE_KEYNAME_CREATOR],
+            $creator,
             $now,
             $now,
-            $req->data[ModelSave::SAVE_KEYNAME_DATA],
+            $nodes,
         );
         if($this->service->updateSave($save)) {
             $data = $save->toArray();
@@ -412,21 +468,5 @@ final class HTTPController implements HTTPControllerInterface
             $data[] = $log->toArray();
         }
         return new HTTPOKResponse("logs found", $data);
-    }
-
-    public function homePage(HTTPRequest $req): HTTPResponseInterface
-    {
-        if($req->method !== HTTPRequest::METHOD_GET) {
-            return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
-        }
-        return new HTTPOKResponse("home page", []);
-    }
-
-    public function sandboxPage(HTTPRequest $req): HTTPResponseInterface
-    {
-        if($req->method !== HTTPRequest::METHOD_GET) {
-            return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
-        }
-        return new HTTPOKResponse("sandbox page", []);
     }
 }

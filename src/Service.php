@@ -17,6 +17,7 @@ final class Service implements ServiceInterface
         "Service::getEdges"            => true,
         "Service::getStatus"           => true,
         "Service::getNodeStatus"       => true,
+        "Service::getSave"             => true,
         "Service::getSaves"            => true,
         "Service::getLogs"             => true,
         "Service::insertUser"          => false,
@@ -411,13 +412,12 @@ final class Service implements ServiceInterface
         throw new RuntimeException("unexpected error on Service::updateNodeStatus");
     }
 
-    public function getSaves(): array
+    public function getSave(string $id): ?ModelSave
     {
-        $this->logger->debug("getting saves");
+        $this->logger->debug("getting save", ["id" => $id]);
         $this->verify();
-        $savesData = $this->database->getSaves();
-        $saves     = [];
-        foreach ($savesData as $data) {
+        $data = $this->database->getSave($id);
+        if (! is_null($data)) {
             $save = new ModelSave(
                 $data[ModelSave::SAVE_KEYNAME_ID],
                 $data[ModelSave::SAVE_KEYNAME_NAME],
@@ -425,6 +425,33 @@ final class Service implements ServiceInterface
                 new DateTimeImmutable($data[ModelSave::SAVE_KEYNAME_CREATED_AT]),
                 new DateTimeImmutable($data[ModelSave::SAVE_KEYNAME_UPDATED_AT]),
                 $data[ModelSave::SAVE_KEYNAME_DATA]
+            );
+            $this->logger->info("save found", ["save" => $save]);
+            return $save;
+        }
+        $this->logger->info("save not found", ["id" => $id]);
+        return null;
+    }
+
+    public function getSaves(): array
+    {
+        $this->logger->debug("getting saves");
+        $this->verify();
+        $savesData = $this->database->getSaves();
+        $saves     = [];
+        foreach ($savesData as $data) {
+            $nodes = [];
+            foreach($data['data']['nodes'] as $n) {
+                $nodes[] = $n;
+            }
+
+            $save = new ModelSave(
+                $data[ModelSave::SAVE_KEYNAME_ID],
+                $data[ModelSave::SAVE_KEYNAME_NAME],
+                $data[ModelSave::SAVE_KEYNAME_CREATOR],
+                new DateTimeImmutable($data[ModelSave::SAVE_KEYNAME_CREATED_AT]),
+                new DateTimeImmutable($data[ModelSave::SAVE_KEYNAME_UPDATED_AT]),
+                $nodes
             );
             $saves[] = $save;
         }
@@ -435,14 +462,32 @@ final class Service implements ServiceInterface
     {
         $this->logger->debug("inserting save", ["save" => $save]);
         $this->verify();
-        return $this->database->insertSave($save->id, $save->name, $save->creator, $save->data);
+
+        $data = [
+            'nodes' => []
+        ];
+
+        foreach($save->nodes as $node) {
+            $data['nodes'][] = $node;
+        }
+
+        return $this->database->insertSave($save->id, $save->name, $save->creator, $data);
     }
 
     public function updateSave(ModelSave $save): bool
     {
         $this->logger->debug("updating save", ["save" => $save]);
         $this->verify();
-        return $this->database->updateSave($save->id, $save->name, $save->creator, $save->data);
+
+        $data = [
+            'nodes' => []
+        ];
+
+        foreach($save->nodes as $node) {
+            $data['nodes'][] = $node;
+        }
+
+        return $this->database->updateSave($save->id, $save->name, $save->creator, $data);
     }
 
     public function deleteSave(string $id): bool

@@ -1,0 +1,81 @@
+html, body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+#toolbar {
+    position: absolute;
+
+    left: 0;
+    top: 0;
+
+    width: 100%;
+    height: 32px;
+    
+    line-height: 32px;
+    background-color: #d0d0d0;
+
+    z-index: 200;
+}
+
+#menu {
+    position: absolute;
+    left: 0;
+    top: 32px;
+    width: 300px;
+    height: calc(100% - 32px);
+    background-color: #f0f0f0;
+    display: none;
+
+    z-index: 200;
+}
+
+#menu.show {
+    display: block;
+}
+
+#info-panel {
+    position: absolute;
+
+    right: 0;
+    top: 32px;
+
+    width: 300px;
+    height: calc(100% - 32px);
+    
+    background-color: #f0f0f0;
+    display: none;
+
+    z-index: 200;
+}
+
+#info-panel.show {
+    display: block;
+}
+
+#cy {
+    position: absolute;
+
+    left: 0;
+    top: 32px;
+    bottom: 0;
+    right: 0;
+
+    width: 100%;
+    height: 100%;
+    
+    z-index: 100;
+}
+
+#modal {
+    position: absolute;
+    z-index: 200;
+    left: 25%;
+    top: 8%;
+    width: 50%;
+    height: 70%;
+    display: none;
+}

@@ -9,7 +9,7 @@ final class ModelSave
     const SAVE_KEYNAME_CREATOR = "creator";
     const SAVE_KEYNAME_CREATED_AT = "created_at";
     const SAVE_KEYNAME_UPDATED_AT = "updated_at";
-    const SAVE_KEYNAME_DATA = "data";
+    const SAVE_KEYNAME_NODES = "nodes";
     
     public string $id;
     public string $name;
@@ -17,7 +17,7 @@ final class ModelSave
     public DateTimeImmutable $createdAt;
     public DateTimeImmutable $updatedAt;
     
-    public array $data;
+    public array $nodes = [];
 
     public function __construct(
         string $id,
@@ -25,14 +25,14 @@ final class ModelSave
         string $creator,
         DateTimeImmutable $createdAt,
         DateTimeImmutable $updatedAt,
-        array $data
+        array $nodes
     ) {
         $this->id = $id;
         $this->name = $name;
         $this->creator = $creator;
         $this->createdAt = $createdAt;
         $this->updatedAt = $updatedAt;
-        $this->data = $data;
+        $this->nodes = $nodes;
     }
 
     public function toArray(): array
@@ -43,7 +43,7 @@ final class ModelSave
             self::SAVE_KEYNAME_CREATOR => $this->creator,
             self::SAVE_KEYNAME_CREATED_AT => $this->createdAt->format(DateTime::ATOM),
             self::SAVE_KEYNAME_UPDATED_AT => $this->updatedAt->format(DateTime::ATOM),
-            self::SAVE_KEYNAME_DATA => $this->data,
+            self::SAVE_KEYNAME_NODES => $this->nodes,
         ];
     }
 }

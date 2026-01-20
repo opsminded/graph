@@ -34,6 +34,7 @@ interface DatabaseInterface
     public function getNodeStatus(string $id): ?array;
     public function updateNodeStatus(string $id, string $status): bool;
 
+    public function getSave(string $id): ?array;
     public function getSaves(): array;
     public function insertSave(string $id, string $name, string $creator, array $data): bool;
     public function updateSave(string $id, string $name, string $creator, array $data): bool;
