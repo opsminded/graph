@@ -244,8 +244,8 @@ final class HelperCytoscape
     private function getLayout(): array
     {
         return [
-            "fit"               => true,
             "name"              => "breadthfirst",
+            "fit"               => true,
             "directed"          => true,
             "direction"         => "downward",
             "padding"           => 100,

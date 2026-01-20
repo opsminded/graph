@@ -395,6 +395,22 @@ document.getElementById('add-node-form-type').addEventListener('change', functio
     updateNodeList();
 });
 
+document.getElementById('export-btn').addEventListener('click', function(){
+    if(! window.save) {
+        alert('No save loaded to export.');
+        return;
+    }
+
+    const base64Image = window.cy.png({'bg' : '#ffffff'});
+    
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href",     base64Image);
+    downloadAnchorNode.setAttribute("download", `${window.save.name || 'save'}.png`);
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+});
+
 document.getElementById('add-node-form').addEventListener('submit', async function(e) {
     e.preventDefault();
 
