@@ -324,6 +324,10 @@ document.getElementById('add-node-form').addEventListener('submit', async functi
     const id = document.getElementById('add-node-form-node').value;
     console.log('Adding node with ID:', id);
 
+    if(window.save.nodes.includes(id)) {
+        console.log('Node already in save, not adding:', id);
+        return;
+    }
     window.save.nodes.push(id);
     await updateSave();
     await updateView();
