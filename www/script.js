@@ -17,45 +17,7 @@ window.saves = [];
 // contains the currently opened save
 window.save = null;
 
-var keepClosed = false;
-
-////////////////////////////////////////////////////////////////////////////////
-
-function displayModal() {
-    var modal = document.getElementById('modal');
-    modal.classList.add('show');
-}
-
-function closeModal() {
-    var modal = document.getElementById('modal');
-    modal.classList.remove('show');
-}
-
-function displayNewDocModal() {
-    displayModal();
-    closeOpenDocModal();
-
-    var newDocModal = document.getElementById('modal-new-doc');
-    newDocModal.classList.add('show');
-}
-
-function closeNewDocModal() {
-    var newDocModal = document.getElementById('modal-new-doc');
-    newDocModal.classList.remove('show');
-}
-
-function displayOpenDocModal() {
-    displayModal();
-    closeNewDocModal();
-    
-    var openDocModal = document.getElementById('modal-open-doc');
-    openDocModal.classList.add('show');
-}
-
-function closeOpenDocModal() {
-    var openDocModal = document.getElementById('modal-open-doc');
-    openDocModal.classList.remove('show');
-}
+window.keepClosed = false;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -135,7 +97,15 @@ async function fetchSaves()
         }
         var savesData = await response.json();
         window.saves = savesData['data'];
-        // console.log('[fetchSaves] Saves:', saves);
+        
+        // fill the form select with saves
+        var saveSelect = document.getElementById('open-doc-form-id');
+        window.saves.forEach(function(save) {
+            var option = document.createElement('option');
+            option.value = save.id;
+            option.text = save.name;
+            saveSelect.appendChild(option);
+        });
     }
     catch (error) {
         console.error('[fetchSaves] Fetch error:', error);
@@ -168,6 +138,65 @@ async function fetchSave()
     }
 }
 
+async function updateSave()
+{
+    try {
+        var response = await fetch('/updateSave', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(window.save)
+        });
+        
+        if (!response.ok) {
+            console.log('[updateSave] response:', response);
+            throw new Error(`[updateSave] HTTP error! status: ${response.status}`);
+        }
+        var result = await response.json();
+    } catch (error) {
+        console.error('[updateSave] Fetch error:', error);
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+function displayModal() {
+    var modal = document.getElementById('modal');
+    modal.classList.add('show');
+}
+
+function closeModal() {
+    var modal = document.getElementById('modal');
+    modal.classList.remove('show');
+}
+
+function displayNewDocModal() {
+    displayModal();
+    closeOpenDocModal();
+
+    var newDocModal = document.getElementById('modal-new-doc');
+    newDocModal.classList.add('show');
+}
+
+function closeNewDocModal() {
+    var newDocModal = document.getElementById('modal-new-doc');
+    newDocModal.classList.remove('show');
+}
+
+function displayOpenDocModal() {
+    displayModal();
+    closeNewDocModal();
+    
+    var openDocModal = document.getElementById('modal-open-doc');
+    openDocModal.classList.add('show');
+}
+
+function closeOpenDocModal() {
+    var openDocModal = document.getElementById('modal-open-doc');
+    openDocModal.classList.remove('show');
+}
+
 function updateNodeList()
 {
     const categorySelect = document.getElementById('add-node-form-category').value;
@@ -195,7 +224,7 @@ async function updateView()
 {
     if(! window.save) {
         console.log('No save loaded, cannot update view.');
-        displayNewDocModal();
+        displayOpenDocModal();
         return;
     }
 
@@ -235,7 +264,7 @@ document.addEventListener('mousemove', function(e) {
     const menu = document.getElementById('menu');
     
     if(e.clientX > 300) {
-        if (keepClosed) {
+        if (window.keepClosed) {
             menu.classList.add('hide');
         }
     }
@@ -259,16 +288,16 @@ document.addEventListener('keydown', function(e) {
 });
 
 document.getElementById('close-menu-btn').addEventListener('click', function(e){
-    keepClosed = !keepClosed;
+    window.keepClosed = !window.keepClosed;
 
 
-    if (keepClosed) {
+    if (window.keepClosed) {
         document.getElementById('close-menu-btn').textContent = 'fixar';
     } else {
         document.getElementById('close-menu-btn').textContent = 'fechar';
     }
 
-    console.log('Menu will stay closed:', keepClosed);
+    console.log('Menu will stay closed:', window.keepClosed);
 });
 
 document.getElementById('new-doc-btn').addEventListener('click', function(){
@@ -292,11 +321,12 @@ document.getElementById('add-node-form-type').addEventListener('change', functio
 document.getElementById('add-node-form').addEventListener('submit', async function(e) {
     e.preventDefault();
 
-    const formData = {
-        category: document.getElementById('add-node-form-category').value,
-        type: document.getElementById('add-node-form-type').value,
-        node: document.getElementById('add-node-form-node').value,
-    }
+    const id = document.getElementById('add-node-form-node').value;
+    console.log('Adding node with ID:', id);
+
+    window.save.nodes.push(id);
+    await updateSave();
+    await updateView();
 });
 
 document.getElementById('new-doc-form').addEventListener('submit', async function(e) {
@@ -330,6 +360,12 @@ document.getElementById('new-doc-form').addEventListener('submit', async functio
     } catch (error) {
         console.error('Error:', error);
     }
+});
+
+document.getElementById('open-doc-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const id = document.getElementById('open-doc-form-id').value;
+    window.location.href = `/?save=${id}`;
 });
 
 await fetchGraph();
