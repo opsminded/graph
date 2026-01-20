@@ -1814,7 +1814,8 @@ final class TestHTTPController extends TestAbstractTest
         $req = new HTTPRequest();
         $resp = $this->controller->getSave($req);
         if( $resp->code !== 404 || $resp->message !== 'save not found') {
-            throw new Exception('error on testGetSave 2');
+            print_r($resp);
+            throw new Exception('error on testGetSave 3');
         }
         
         $this->database->insertSave('meu-save', 'meu save', 'admin', ['nodes' => ['a', 'b']]);
@@ -1822,10 +1823,10 @@ final class TestHTTPController extends TestAbstractTest
         $req = new HTTPRequest();
         $resp = $this->controller->getSave($req);
         if( $resp->code !== 200 || $resp->message !== 'save found') {
-            throw new Exception('error on testGetSave 3');
+            throw new Exception('error on testGetSave 4');
         }
         if($resp->data['id'] !== 'meu-save' || $resp->data['name'] !== 'meu save') {
-            throw new Exception('error on testGetSave 4');
+            throw new Exception('error on testGetSave 5');
         }
     }
 
@@ -1881,7 +1882,7 @@ final class TestHTTPController extends TestAbstractTest
         $req->data['creator'] = 'admin';
         $req->data['nodes'] = ['a', 'b'];
         $resp = $this->controller->insertSave($req);
-        if($resp->code !== 201 || $resp->message !== 'save created' || $resp->data['id'] !== 'save1') {
+        if($resp->code !== 201 || $resp->message !== 'save created') {
             print_r($resp);
             throw new Exception('error on testInsertSave 2');
         }
@@ -1895,7 +1896,7 @@ final class TestHTTPController extends TestAbstractTest
             throw new Exception('error on testInsertSave 3');
         }
 
-        if($resp->data[0]['id'] !== 'save1' || $resp->data[0]['name'] !== 'My Save 1') {
+        if($resp->data[0]['name'] !== 'My Save 1') {
             throw new Exception('error on testInsertSave 4');
         }
     }

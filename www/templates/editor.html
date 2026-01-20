@@ -9,14 +9,17 @@
         <link rel="stylesheet" href="/index.php/style.css">
     </head>
     <body>
-        <div id="toolbar">
-            <button id="new-doc-btn" title="Novo Documento">Novo</button>
-            <button id="open-doc-btn" title="Abrir Documento">Abrir</button>
-        </div>
-
         <div id="menu">
+            <div><button id="close-menu-btn">x</button></div>
             <img src="/index.php/getImage?img=logo" alt="Logo" width="32" height="32">
             <h1><span style="color: rgb(182, 43, 43);">Brades</span>ketch</h1>
+
+            <div>
+                <button id="new-doc-btn" title="Novo Documento">Novo</button>
+                <button id="open-doc-btn" title="Abrir Documento">Abrir</button>
+            </div>
+
+            <hr>
 
             <form id="add-node-form" method="post">
                 <h3>Adicionar Item</h3>
@@ -53,9 +56,11 @@
         <div id="modal">
             <div id="modal-new-doc">
                 <div id="modal-new-doc-content">
-                    <h2>Novo Documento</h2>
+                    <h2>Novo Projeto</h2>
                     <form id="new-doc-form" method="post">
-                        <p><label for="new-doc-form-name">Nome: <input type="text" id="new-doc-form-name" name="name"></label></p>
+                        <p><label for="new-doc-form-name">Nome:<br>
+                            <input type="text" id="new-doc-form-name" name="name"></label>
+                        </p>
                         <p><button type="submit">Criar</button></p>
                     </form>
                 </div>

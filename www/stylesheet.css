@@ -7,56 +7,40 @@ html, body {
     font-family: Verdana, Geneva, Tahoma, sans-serif;
 }
 
-#toolbar {
-    position: absolute;
-
-    left: 0;
-    top: 0;
-
-    width: 100%;
-    height: 32px;
-    padding: 0 10px;
-    
-    line-height: 32px;
-    background-color: #d0d0d0;
-
-    display: none;
-    z-index: 200;
-}
-
-#toolbar.show {
-    display: block;
-}
-
 #menu {
     position: absolute;
 
     left: 0;
-    top: 32px;
-    width: 300px;
-    height: calc(100% - 32px);
+    top: 0;
+    width: 270px;
+    height: 100%;
     padding: 10px 0;
 
     text-align: center;
 
-    background-color: #f0f0f0;
+    background-color: #EEE;
 
-    display: none;
+    
     z-index: 200;
 }
 
-#menu.show {
-    display: block;
+#menu.hide {
+    display: none;
+}
+
+#menu > div:first-of-type {
+    text-align: right;
+    padding: 0 10px;
 }
 
 #info-panel {
     position: absolute;
 
     right: 0;
-    top: 32px;
+    top: 0;
 
     width: 300px;
-    height: calc(100% - 32px);
+    height: 100%;
     
     background-color: #f0f0f0;
     
@@ -93,10 +77,28 @@ html, body {
     width: 50%;
     height: 70%;
 
+    padding: 10px;
+
     display: none;
     z-index: 200;
 }
 
 #modal.show {
+    display: block;
+}
+
+#modal-new-doc {
+    display: none;
+}
+
+#modal-new-doc.show {
+    display: block;
+}
+
+#modal-open-doc {
+    display: none;
+}
+
+#modal-open-doc.show {
     display: block;
 }

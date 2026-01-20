@@ -17,6 +17,8 @@ window.saves = [];
 // contains the currently opened save
 window.save = null;
 
+var keepClosed = false;
+
 ////////////////////////////////////////////////////////////////////////////////
 
 function displayModal() {
@@ -24,10 +26,35 @@ function displayModal() {
     modal.classList.add('show');
 }
 
+function closeModal() {
+    var modal = document.getElementById('modal');
+    modal.classList.remove('show');
+}
+
 function displayNewDocModal() {
     displayModal();
+    closeOpenDocModal();
+
     var newDocModal = document.getElementById('modal-new-doc');
     newDocModal.classList.add('show');
+}
+
+function closeNewDocModal() {
+    var newDocModal = document.getElementById('modal-new-doc');
+    newDocModal.classList.remove('show');
+}
+
+function displayOpenDocModal() {
+    displayModal();
+    closeNewDocModal();
+    
+    var openDocModal = document.getElementById('modal-open-doc');
+    openDocModal.classList.add('show');
+}
+
+function closeOpenDocModal() {
+    var openDocModal = document.getElementById('modal-open-doc');
+    openDocModal.classList.remove('show');
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -205,17 +232,43 @@ async function updateView()
 //////////////////////////////////////////////////////////////////////////////
 
 document.addEventListener('mousemove', function(e) {
-    const toolbar = document.getElementById('toolbar');
     const menu = document.getElementById('menu');
-    const infoPanel = document.getElementById('info-panel');
-
-    if (e.clientY <= 32 || e.clientX <= 300) {
-        toolbar.classList.add('show');
-        menu.classList.add('show');
-    } else {
-        toolbar.classList.remove('show');
-        menu.classList.remove('show');
+    
+    if(e.clientX > 300) {
+        if (keepClosed) {
+            menu.classList.add('hide');
+        }
     }
+
+    if(e.clientX <= 300) {
+        menu.classList.remove('hide');
+    }
+});
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        var modal = document.getElementById('modal');
+        modal.classList.remove('show');
+
+        var newDocModal = document.getElementById('modal-new-doc');
+        var openDocModal = document.getElementById('modal-open-doc');
+
+        newDocModal.classList.remove('show');
+        openDocModal.classList.remove('show');
+    }
+});
+
+document.getElementById('close-menu-btn').addEventListener('click', function(e){
+    keepClosed = !keepClosed;
+
+
+    if (keepClosed) {
+        document.getElementById('close-menu-btn').textContent = 'fixar';
+    } else {
+        document.getElementById('close-menu-btn').textContent = 'fechar';
+    }
+
+    console.log('Menu will stay closed:', keepClosed);
 });
 
 document.getElementById('new-doc-btn').addEventListener('click', function(){
@@ -223,6 +276,7 @@ document.getElementById('new-doc-btn').addEventListener('click', function(){
 });
 
 document.getElementById('open-doc-btn').addEventListener('click', function(){
+    displayOpenDocModal();
 });
 
 document.getElementById('add-node-form-category').addEventListener('change', function(e) {
