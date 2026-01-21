@@ -18,6 +18,7 @@ class Graph
         this.selection = [];
 
         this.cydiv = document.getElementById('cy');
+        this.htmlTitleElement = document.getElementById('graph-title');
         this.htmlExportBtnElement = document.getElementById('export-btn');
         this.htmlOpenProjectFormIdElement = document.getElementById('open-doc-form-id')
     }
@@ -138,6 +139,8 @@ class Graph
             graph.modals.displayOpenProjectModal();
             return;
         }
+
+        this.htmlTitleElement.textContent = `${graph.save.name || 'Untitled'}`;
 
         var data = structuredClone(graph.graph);
         data.container = this.cydiv;

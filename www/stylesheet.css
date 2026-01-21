@@ -7,6 +7,21 @@ html, body {
     font-family: Verdana, Geneva, Tahoma, sans-serif;
 }
 
+h1 {
+    position: absolute;
+
+    color: #787878;
+
+    top: 50px;
+    right: 5%;
+    margin: 0;
+    padding: 0;
+    font-size: 32px;
+    font-weight: bold;
+
+    z-index: 300;
+}
+
 #menu {
     position: absolute;
 
