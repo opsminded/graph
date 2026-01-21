@@ -5,6 +5,7 @@ const API = {
     GET_GRAPH:      '#BASE_PATH#/getCytoscapeGraph',
     GET_SAVES:      '#BASE_PATH#/getSaves',
     GET_SAVE:       '#BASE_PATH#/getSave',
+    GET_STATUS:     '#BASE_PATH#/getStatus',
     UPDATE_SAVE:    '#BASE_PATH#/updateSave',
     INSERT_SAVE:    '#BASE_PATH#/insertSave',
     GET_CATEGORIES: '#BASE_PATH#/getCategories',
@@ -292,7 +293,7 @@ class Graph
 
     async fetchStatus() {
         try {
-            const response = await fetch('/getStatus');
+            const response = await fetch(API.GET_STATUS);
             if (!response.ok) {
                 console.log('[fetchStatus] Response not ok:', response.status);
                 throw new Error(`Erro ao obter status: ${response.status}`);
