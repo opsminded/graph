@@ -12,6 +12,56 @@ const API = {
     INSERT_EDGE: '/insertEdge'
 };
 
+// Utility Functions
+function createOptionElement(value, text) {
+    const option = document.createElement('option');
+    option.value = value;
+    option.text = text;
+    return option;
+}
+
+// Notification System
+class Notification {
+    static show(message, type = 'error', duration = 5000) {
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.textContent = message;
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background: ${type === 'error' ? '#f44336' : type === 'success' ? '#4caf50' : '#2196f3'};
+            color: white;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 10000;
+            max-width: 400px;
+            word-wrap: break-word;
+            animation: slideIn 0.3s ease-out;
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease-out';
+            setTimeout(() => notification.remove(), 300);
+        }, duration);
+    }
+    
+    static error(message, duration) {
+        this.show(message, 'error', duration);
+    }
+    
+    static success(message, duration) {
+        this.show(message, 'success', duration);
+    }
+    
+    static info(message, duration) {
+        this.show(message, 'info', duration);
+    }
+}
+
 // State Management Store
 class Store {
     constructor() {
@@ -190,12 +240,13 @@ class Graph
             const response = await fetch(API.GET_GRAPH);
             if (!response.ok) {
                 console.log('[fetchGraph] response:', response);
-                throw new Error(`[fetchGraph] HTTP error! status: ${response.status}`);
+                throw new Error(`Erro ao carregar o grafo: ${response.status}`);
             }
             const { data } = await response.json();
             this.store.setGraph(data);
         } catch (error) {
             console.error('[fetchGraph] Fetch error:', error);
+            Notification.error('Falha ao carregar o grafo. Por favor, recarregue a página.');
         } finally {
             this.store.setLoading(false);
         }
@@ -207,19 +258,19 @@ class Graph
             const response = await fetch(API.GET_SAVES);
             if (!response.ok) {
                 console.log('[fetchSaves] response:', response);
-                throw new Error(`[fetchSaves] HTTP error! status: ${response.status}`);
+                throw new Error(`Erro ao carregar projetos: ${response.status}`);
             }
             const { data } = await response.json();
             this.store.setSaves(data);
             
             data.forEach((save) => {
-                const option = document.createElement('option');
-                option.value = save.id;
-                option.text = save.name;
-                this.htmlOpenProjectFormIdElement.appendChild(option);
+                this.htmlOpenProjectFormIdElement.appendChild(
+                    createOptionElement(save.id, save.name)
+                );
             });
         } catch (error) {
             console.error('[fetchSaves] Fetch error:', error);
+            Notification.error('Falha ao carregar a lista de projetos.');
         } finally {
             this.store.setLoading(false);
         }
@@ -239,12 +290,13 @@ class Graph
             const response = await fetch(`${API.GET_SAVE}?id=${encodeURIComponent(saveID)}`);
             if (!response.ok) {
                 console.log('[fetchSave] response:', response);
-                throw new Error(`[fetchSave] HTTP error! status: ${response.status}`);
+                throw new Error(`Erro ao carregar projeto: ${response.status}`);
             }
             const { data } = await response.json();
             this.store.setCurrentSave(data);
         } catch (error) {
             console.error('[fetchSave] Fetch error:', error);
+            Notification.error(`Falha ao carregar o projeto. ID: ${saveID}`);
         } finally {
             this.store.setLoading(false);
         }
@@ -266,10 +318,13 @@ class Graph
             
             if (!response.ok) {
                 console.log('[updateSave] response:', response);
-                throw new Error(`[updateSave] HTTP error! status: ${response.status}`);
+                throw new Error(`Erro ao salvar: ${response.status}`);
             }
+            
+            Notification.success('Projeto salvo com sucesso!', 2000);
         } catch (error) {
             console.error('[updateSave] Fetch error:', error);
+            Notification.error('Falha ao salvar o projeto. Tente novamente.');
         } finally {
             this.store.setLoading(false);
         }
@@ -286,6 +341,12 @@ class Graph
         }
 
         this.htmlTitleElement.textContent = currentSave?.name ?? 'Untitled';
+
+        // Destroy old Cytoscape instance to prevent memory leak
+        const oldCy = this.store.getCy();
+        if (oldCy) {
+            oldCy.destroy();
+        }
 
         const data = { ...graphData };
         data.container = this.cydiv;
@@ -326,6 +387,7 @@ class Menu {
         this.store = store;
         this.MENU_WIDTH_THRESHOLD = 300;
         this.keepClosed = false;
+        this.mouseMoveDebounceTimer = null;
         this.htmlElement = document.getElementById('menu');
         this.htmlCloseBtnElement = document.getElementById('close-menu-btn');
         
@@ -376,13 +438,16 @@ class Menu {
     }
 
     onMouseMove(e) {
-        if(e.clientX > this.MENU_WIDTH_THRESHOLD) {
-            if (this.keepClosed) {
-                this.hide();
-            }
-        }
-
-        if(e.clientX <= this.MENU_WIDTH_THRESHOLD) {
+        // Debounce to prevent excessive calls (~60fps)
+        if (this.mouseMoveDebounceTimer) return;
+        
+        this.mouseMoveDebounceTimer = setTimeout(() => {
+            this.mouseMoveDebounceTimer = null;
+        }, 16);
+        
+        if (e.clientX > this.MENU_WIDTH_THRESHOLD && this.keepClosed) {
+            this.hide();
+        } else if (e.clientX <= this.MENU_WIDTH_THRESHOLD) {
             this.show();
         }
     }
@@ -431,17 +496,17 @@ class AddNodeForm {
             const response = await fetch(API.GET_CATEGORIES);
             if (!response.ok) {
                 console.log('[fetchCategories] response:', response);
-                throw new Error(`[fetchCategories] HTTP error! status: ${response.status}`);
+                throw new Error(`Erro ao carregar categorias: ${response.status}`);
             }
             const { data: categories } = await response.json();
             categories.forEach((category) => {
-                const option = document.createElement('option');
-                option.value = category.id;
-                option.text = category.name;
-                this.htmlAddNodeFormCategory.appendChild(option);
+                this.htmlAddNodeFormCategory.appendChild(
+                    createOptionElement(category.id, category.name)
+                );
             });
         } catch (error) {
             console.error('[fetchCategories] Fetch error:', error);
+            Notification.error('Falha ao carregar categorias.');
         }
     }
 
@@ -450,18 +515,17 @@ class AddNodeForm {
             const response = await fetch(API.GET_TYPES);
             if (!response.ok) {
                 console.log('[fetchTypes] response:', response);
-                throw new Error(`[fetchTypes] HTTP error! status: ${response.status}`);
+                throw new Error(`Erro ao carregar tipos: ${response.status}`);
             }
             const { data: types } = await response.json();
             types.forEach((type) => {
-                const option = document.createElement('option');
-                option.value = type.id;
-                option.text = type.name;
-                this.htmlAddNodeFormType.appendChild(option);
+                this.htmlAddNodeFormType.appendChild(
+                    createOptionElement(type.id, type.name)
+                );
             });
-        }
-        catch (error) {
+        } catch (error) {
             console.error('[fetchTypes] Fetch error:', error);
+            Notification.error('Falha ao carregar tipos.');
         }
     }
 
@@ -475,10 +539,9 @@ class AddNodeForm {
 
         nodes.forEach((node) => {
             if (node.data.category === categorySelect && node.data.type === typeSelect) {
-                const option = document.createElement('option');
-                option.value = node.data.id;
-                option.text = node.data.label;
-                nodeListSelect.appendChild(option);
+                nodeListSelect.appendChild(
+                    createOptionElement(node.data.id, node.data.label)
+                );
             }
         });
     }
@@ -528,7 +591,6 @@ class AddEdgeForm {
 
     async insertEdge(sourceNode, targetNode) {
         try {
-
             const data = {
                 source: sourceNode,
                 target: targetNode,
@@ -546,12 +608,14 @@ class AddEdgeForm {
             
             if (!response.ok) {
                 console.log('[insertEdge] response:', response);
-                alert(`Failed to create edge: HTTP ${response.status}`);
-                throw new Error(`[insertEdge] HTTP error! status: ${response.status}`);
+                throw new Error(`Erro HTTP: ${response.status}`);
             }
+            
+            Notification.success('Conexão criada com sucesso!');
         } catch (error) {
-            alert(`Failed to create edge: ${error.message}`);
             console.error('[insertEdge] Fetch error:', error);
+            Notification.error(`Falha ao criar conexão: ${error.message}`);
+            throw error;
         }
     }
 
@@ -622,7 +686,7 @@ class NewProjectModal {
         const name = this.htmlNewDocFormNameElement.value.trim();
         
         if (!name) {
-            alert('Por favor, insira um nome para o projeto.');
+            Notification.error('Por favor, insira um nome para o projeto.');
             return;
         }
         
@@ -632,6 +696,7 @@ class NewProjectModal {
         };
         
         try {
+            this.store.setLoading(true);
             const response = await fetch(API.INSERT_SAVE, {
                 method: 'POST',
                 headers: {
@@ -642,13 +707,24 @@ class NewProjectModal {
             
             if (!response.ok) {
                 console.log('response:', response);
-                throw new Error(`HTTP error! status: ${response.status}`);
+                throw new Error(`Erro HTTP: ${response.status}`);
             }
+            
             const result = await response.json();
-            window.location.href = `/?save=${result.data.id}`;
+            if (!result?.data?.id) {
+                throw new Error('Resposta inválida do servidor.');
+            }
+            
+            Notification.success('Projeto criado com sucesso!');
+            setTimeout(() => {
+                window.location.href = `/?save=${result.data.id}`;
+            }, 500);
             
         } catch (error) {
             console.error('Error:', error);
+            Notification.error('Erro ao criar projeto. Tente novamente.');
+        } finally {
+            this.store.setLoading(false);
         }
     }
 
