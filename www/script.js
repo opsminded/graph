@@ -1,5 +1,17 @@
 "use strict";
 
+// API Endpoints
+const API = {
+    GET_GRAPH: '/getCytoscapeGraph',
+    GET_SAVES: '/getSaves',
+    GET_SAVE: '/getSave',
+    UPDATE_SAVE: '/updateSave',
+    INSERT_SAVE: '/insertSave',
+    GET_CATEGORIES: '/getCategories',
+    GET_TYPES: '/getTypes',
+    INSERT_EDGE: '/insertEdge'
+};
+
 var graph = null;
 
 class Graph
@@ -56,7 +68,7 @@ class Graph
 
     async fetchGraph() {
         try {
-            const response = await fetch('/getCytoscapeGraph');
+            const response = await fetch(API.GET_GRAPH);
             if (!response.ok) {
                 console.log('[fetchGraph] response:', response);
                 throw new Error(`[fetchGraph] HTTP error! status: ${response.status}`);
@@ -71,7 +83,7 @@ class Graph
 
     async fetchSaves() {
         try {
-            const response = await fetch('/getSaves');
+            const response = await fetch(API.GET_SAVES);
             if (!response.ok) {
                 console.log('[fetchSaves] response:', response);
                 throw new Error(`[fetchSaves] HTTP error! status: ${response.status}`);
@@ -101,7 +113,7 @@ class Graph
         }
 
         try {
-            const response = await fetch(`/getSave?id=${encodeURIComponent(saveID)}`);
+            const response = await fetch(`${API.GET_SAVE}?id=${encodeURIComponent(saveID)}`);
             if (!response.ok) {
                 console.log('[fetchSave] response:', response);
                 throw new Error(`[fetchSave] HTTP error! status: ${response.status}`);
@@ -115,7 +127,7 @@ class Graph
 
     async updateSave() {
         try {
-            const response = await fetch('/updateSave', {
+            const response = await fetch(API.UPDATE_SAVE, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json'
@@ -269,7 +281,7 @@ class AddNodeForm {
 
     async fetchCategories() {
         try {
-            const response = await fetch('/getCategories');
+            const response = await fetch(API.GET_CATEGORIES);
             if (!response.ok) {
                 console.log('[fetchCategories] response:', response);
                 throw new Error(`[fetchCategories] HTTP error! status: ${response.status}`);
@@ -289,7 +301,7 @@ class AddNodeForm {
 
     async fetchTypes() {
         try {
-            const response = await fetch('/getTypes');
+            const response = await fetch(API.GET_TYPES);
             if (!response.ok) {
                 console.log('[fetchTypes] response:', response);
                 throw new Error(`[fetchTypes] HTTP error! status: ${response.status}`);
@@ -372,7 +384,7 @@ class AddEdgeForm {
                 data: {}
             }
 
-            const response = await fetch('/insertEdge', {
+            const response = await fetch(API.INSERT_EDGE, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -455,7 +467,7 @@ class NewProjectModal {
         };
         
         try {
-            const response = await fetch('/insertSave', {
+            const response = await fetch(API.INSERT_SAVE, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
