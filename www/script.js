@@ -12,41 +12,154 @@ const API = {
     INSERT_EDGE: '/insertEdge'
 };
 
-var graph = null;
+// State Management Store
+class Store {
+    constructor() {
+        this.state = {
+            graph: null,
+            nodes: [],
+            saves: [],
+            currentSave: null,
+            selection: [],
+            cy: null,
+            isLoading: false
+        };
+        this.subscribers = [];
+        this.isInitializing = true;
+    }
+
+    // Subscribe to state changes
+    subscribe(callback) {
+        this.subscribers.push(callback);
+        return () => {
+            this.subscribers = this.subscribers.filter(sub => sub !== callback);
+        };
+    }
+
+    // Notify all subscribers of state change
+    notify(changedKeys = []) {
+        if (this.isInitializing) return;
+        this.subscribers.forEach(callback => callback(this.state, changedKeys));
+    }
+
+    // Update state and notify subscribers
+    setState(updates) {
+        const changedKeys = Object.keys(updates);
+        this.state = { ...this.state, ...updates };
+        this.notify(changedKeys);
+    }
+
+    // Getters
+    getState() {
+        return this.state;
+    }
+
+    getCurrentSave() {
+        return this.state.currentSave;
+    }
+
+    getSelection() {
+        return this.state.selection;
+    }
+
+    getNodes() {
+        return this.state.nodes;
+    }
+
+    getCy() {
+        return this.state.cy;
+    }
+
+    // Actions
+    setGraph(graph) {
+        this.setState({ graph, nodes: graph?.elements?.nodes || [] });
+    }
+
+    setSaves(saves) {
+        this.setState({ saves });
+    }
+
+    setCurrentSave(save) {
+        this.setState({ currentSave: save });
+    }
+
+    setCy(cy) {
+        this.setState({ cy });
+    }
+
+    setSelection(selection) {
+        this.setState({ selection });
+    }
+
+    addToSelection(nodeId) {
+        const selection = [...this.state.selection, nodeId];
+        this.setState({ selection });
+    }
+
+    clearSelection() {
+        this.setState({ selection: [] });
+    }
+
+    addNodeToSave(nodeId) {
+        if (!this.state.currentSave) return;
+        if (this.state.currentSave.nodes.includes(nodeId)) return;
+        
+        const currentSave = {
+            ...this.state.currentSave,
+            nodes: [...this.state.currentSave.nodes, nodeId]
+        };
+        this.setState({ currentSave });
+    }
+
+    setLoading(isLoading) {
+        this.setState({ isLoading });
+    }
+
+    finishInitialization() {
+        this.isInitializing = false;
+    }
+}
 
 class Graph
 {
-    constructor() {
-        this.cydiv = null;
-        this.cy    = null;
-
-        this.menu  = new Menu();
-        this.modals = new Modals();
-
-        this.graph = null;
-        this.nodes = [];
-        this.saves = [];
-        this.save  = null;
-        this.selection = [];
-
+    constructor(store) {
+        this.store = store;
         this.cydiv = document.getElementById('cy');
         this.htmlTitleElement = document.getElementById('graph-title');
         this.htmlExportBtnElement = document.getElementById('export-btn');
-        this.htmlOpenProjectFormIdElement = document.getElementById('open-doc-form-id')
+        this.htmlOpenProjectFormIdElement = document.getElementById('open-doc-form-id');
+
+        this.menu = new Menu(store);
+        this.modals = new Modals(store);
+
+        // Subscribe to state changes
+        this.store.subscribe((state, changedKeys) => {
+            // Auto-save when currentSave nodes change (but not on initial load)
+            if (changedKeys.includes('currentSave') && state.currentSave) {
+                this.updateSave();
+            }
+            
+            // Update view when graph or currentSave changes
+            if (changedKeys.includes('currentSave') || changedKeys.includes('graph')) {
+                this.updateView();
+            }
+        });
     }
 
     async init() {
         this.htmlExportBtnElement.addEventListener('click', () => {
-            if(! this.save) {
+            const currentSave = this.store.getCurrentSave();
+            if (!currentSave) {
                 alert('Não há projeto carregado para exportar.');
                 return;
             }
 
-            const base64Image = this.cy.png({'bg' : '#ffffff'});
+            const cy = this.store.getCy();
+            const base64Image = cy.png({'bg': '#ffffff'});
             
             const downloadAnchorNode = document.createElement('a');
-            downloadAnchorNode.setAttribute("href",     base64Image);
-            downloadAnchorNode.setAttribute("download", `${this.save.name ?? 'save'}.png`);
+            downloadAnchorNode.setAttribute("href", base64Image);
+            downloadAnchorNode.setAttribute("download", `${currentSave.name ?? 'save'}.png`);
             document.body.appendChild(downloadAnchorNode);
             downloadAnchorNode.click();
             downloadAnchorNode.remove();
@@ -63,43 +176,52 @@ class Graph
         await this.fetchGraph();
         await this.fetchSaves();
         await this.fetchSave();
-        await this.updateView();
+        
+        // Finish initialization and enable reactive updates
+        this.store.finishInitialization();
+        
+        // Initial view update
+        this.updateView();
     }
 
     async fetchGraph() {
         try {
+            this.store.setLoading(true);
             const response = await fetch(API.GET_GRAPH);
             if (!response.ok) {
                 console.log('[fetchGraph] response:', response);
                 throw new Error(`[fetchGraph] HTTP error! status: ${response.status}`);
             }
             const { data } = await response.json();
-            this.graph = data;
-            this.nodes = this.graph.elements.nodes;
+            this.store.setGraph(data);
         } catch (error) {
             console.error('[fetchGraph] Fetch error:', error);
+        } finally {
+            this.store.setLoading(false);
         }
     }
 
     async fetchSaves() {
         try {
+            this.store.setLoading(true);
             const response = await fetch(API.GET_SAVES);
             if (!response.ok) {
                 console.log('[fetchSaves] response:', response);
                 throw new Error(`[fetchSaves] HTTP error! status: ${response.status}`);
             }
             const { data } = await response.json();
-            this.saves = data;
+            this.store.setSaves(data);
             
-            this.saves.forEach((save) => {
+            data.forEach((save) => {
                 const option = document.createElement('option');
                 option.value = save.id;
                 option.text = save.name;
                 this.htmlOpenProjectFormIdElement.appendChild(option);
             });
-        }
-        catch (error) {
+        } catch (error) {
             console.error('[fetchSaves] Fetch error:', error);
+        } finally {
+            this.store.setLoading(false);
         }
     }
 
@@ -113,26 +235,33 @@ class Graph
         }
 
         try {
+            this.store.setLoading(true);
             const response = await fetch(`${API.GET_SAVE}?id=${encodeURIComponent(saveID)}`);
             if (!response.ok) {
                 console.log('[fetchSave] response:', response);
                 throw new Error(`[fetchSave] HTTP error! status: ${response.status}`);
             }
             const { data } = await response.json();
-            this.save = data;
+            this.store.setCurrentSave(data);
         } catch (error) {
             console.error('[fetchSave] Fetch error:', error);
+        } finally {
+            this.store.setLoading(false);
         }
     }
 
     async updateSave() {
+        const currentSave = this.store.getCurrentSave();
+        if (!currentSave) return;
+
         try {
+            this.store.setLoading(true);
             const response = await fetch(API.UPDATE_SAVE, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(this.save)
+                body: JSON.stringify(currentSave)
             });
             
             if (!response.ok) {
@@ -141,24 +270,31 @@ class Graph
             }
         } catch (error) {
             console.error('[updateSave] Fetch error:', error);
+        } finally {
+            this.store.setLoading(false);
         }
     }
 
     updateView() {
-        if(!this.save) {
+        const currentSave = this.store.getCurrentSave();
+        const graphData = this.store.getState().graph;
+
+        if (!currentSave) {
             console.log('No save loaded, cannot update view.');
             this.modals.displayOpenProjectModal();
             return;
         }
 
-        this.htmlTitleElement.textContent = `${this.save?.name ?? 'Untitled'}`;
+        this.htmlTitleElement.textContent = currentSave?.name ?? 'Untitled';
 
-        const data = this.graph;
+        const data = { ...graphData };
         data.container = this.cydiv;
         
-        this.cy = cytoscape(data);
-        this.cy.on('select', 'node', (e) => {
-            const selectedNodes = this.cy.$('node:selected');
+        const cy = cytoscape(data);
+        this.store.setCy(cy);
+
+        cy.on('select', 'node', (e) => {
+            const selectedNodes = cy.$('node:selected');
             if (selectedNodes.length > 2) {
                 this.menu.AddEdgeForm.htmlAddEdgeFormSubmit.disabled = true;
                 e.target.unselect();
@@ -166,52 +302,63 @@ class Graph
             }
 
             const node = e.target;
-            this.selection.push(node.id());
-
-            if(this.selection.length < 2) {
-                this.menu.AddNodeForm.hide();
-                this.menu.AddEdgeForm.show();
-            } else if(this.selection.length == 2) {
-                this.menu.AddNodeForm.hide();
-                this.menu.AddEdgeForm.show();
-                this.menu.AddEdgeForm.htmlAddEdgeFormSubmit.disabled = false;
-            } else {
-                this.menu.AddNodeForm.show();
-                this.menu.AddEdgeForm.hide();
-                this.menu.AddEdgeForm.htmlAddEdgeFormSubmit.disabled = true;
-            }
+            this.store.addToSelection(node.id());
         });
 
-        this.cy.on('unselect', 'node', () => {
-            this.cy.elements().unselect();
-            this.selection = [];
-            this.menu.AddEdgeForm.hide();
-            this.menu.AddNodeForm.show();
-            this.menu.AddEdgeForm.htmlAddEdgeFormSubmit.disabled = true;
+        cy.on('unselect', 'node', () => {
+            cy.elements().unselect();
+            this.store.clearSelection();
         });
         
-        const startNodes = this.cy.nodes().filter(node => 
-            this.save.nodes.includes(node.id())
+        const startNodes = cy.nodes().filter(node => 
+            currentSave.nodes.includes(node.id())
         );
         
         const descendants = startNodes.successors();
         const allNodes = startNodes.union(descendants);
-        this.cy.elements().not(allNodes).remove();
-        this.cy.layout(this.graph.layout).run();
+        cy.elements().not(allNodes).remove();
+        cy.layout(graphData.layout).run();
     }
 }
 
 class Menu {
-    constructor() {
+    constructor(store) {
+        this.store = store;
         this.MENU_WIDTH_THRESHOLD = 300;
         this.keepClosed = false;
         this.htmlElement = document.getElementById('menu');
         this.htmlCloseBtnElement = document.getElementById('close-menu-btn');
         
-        this.AddNodeForm = new AddNodeForm();
-        this.AddEdgeForm = new AddEdgeForm();
+        this.AddNodeForm = new AddNodeForm(store);
+        this.AddEdgeForm = new AddEdgeForm(store);
 
         this.init();
+        this.setupSubscriptions();
+    }
+
+    setupSubscriptions() {
+        // React to selection changes
+        this.store.subscribe((state, changedKeys) => {
+            if (changedKeys.includes('selection')) {
+                this.handleSelectionChange(state.selection);
+            }
+        });
+    }
+
+    handleSelectionChange(selection) {
+        if (selection.length === 0) {
+            this.AddEdgeForm.hide();
+            this.AddNodeForm.show();
+            this.AddEdgeForm.htmlAddEdgeFormSubmit.disabled = true;
+        } else if (selection.length === 1) {
+            this.AddNodeForm.hide();
+            this.AddEdgeForm.show();
+            this.AddEdgeForm.htmlAddEdgeFormSubmit.disabled = true;
+        } else if (selection.length === 2) {
+            this.AddNodeForm.hide();
+            this.AddEdgeForm.show();
+            this.AddEdgeForm.htmlAddEdgeFormSubmit.disabled = false;
+        }
     }
 
     init() {
@@ -252,7 +399,8 @@ class Menu {
 }
 
 class AddNodeForm {
-    constructor() {
+    constructor(store) {
+        this.store = store;
         this.htmlElement = document.getElementById('add-node-form');
         this.htmlAddNodeFormCategory = document.getElementById('add-node-form-category');
         this.htmlAddNodeFormType = document.getElementById('add-node-form-type');
@@ -318,13 +466,14 @@ class AddNodeForm {
     }
 
     updateNodeList() {
-        const categorySelect = graph.menu.AddNodeForm.htmlAddNodeFormCategory.value;
-        const typeSelect = graph.menu.AddNodeForm.htmlAddNodeFormType.value;
+        const categorySelect = this.htmlAddNodeFormCategory.value;
+        const typeSelect = this.htmlAddNodeFormType.value;
+        const nodeListSelect = this.htmlAddNodeFormNode;
+        const nodes = this.store.getNodes();
 
-        const nodeListSelect = graph.menu.AddNodeForm.htmlAddNodeFormNode;
         nodeListSelect.innerHTML = '';
 
-        graph.nodes.forEach((node) => {
+        nodes.forEach((node) => {
             if (node.data.category === categorySelect && node.data.type === typeSelect) {
                 const option = document.createElement('option');
                 option.value = node.data.id;
@@ -346,24 +495,25 @@ class AddNodeForm {
         e.preventDefault();
 
         const id = this.htmlAddNodeFormNode.value;
+        const currentSave = this.store.getCurrentSave();
         
         if (!id) {
             alert('Por favor, selecione um nó para adicionar.');
             return;
         }
         
-        if(graph.save.nodes.includes(id)) {
+        if (currentSave.nodes.includes(id)) {
             console.log('Node already in save, not adding:', id);
             return;
         }
-        graph.save.nodes.push(id);
-        await graph.updateSave();
-        await graph.updateView();
+
+        this.store.addNodeToSave(id);
     }
 }
 
 class AddEdgeForm {
-    constructor() {
+    constructor(store) {
+        this.store = store;
         this.htmlElement = document.getElementById('add-edge-form');
         this.htmlAddEdgeFormSubmit = document.getElementById('add-edge-form-submit');
 
@@ -416,23 +566,29 @@ class AddEdgeForm {
     async onSubmit(e) {
         e.preventDefault();
     
-        if (graph.selection.length !== 2) {
+        const selection = this.store.getSelection();
+        const cy = this.store.getCy();
+
+        if (selection.length !== 2) {
             alert('Por favor, selecione exatamente dois nós para criar uma conexão entre eles.');
-            graph.selection = [];
-            graph.cy.elements().unselect();
+            this.store.clearSelection();
+            if (cy) cy.elements().unselect();
             return;
         }
         
-        const sourceNode = graph.selection[0];
-        const targetNode = graph.selection[1];
+        const sourceNode = selection[0];
+        const targetNode = selection[1];
 
         await this.insertEdge(sourceNode, targetNode);
+        
+        // Reload page to fetch updated graph with new edge
         window.location.reload();
     }
 }
 
 class NewProjectModal {
-    constructor() {
+    constructor(store) {
+        this.store = store;
         this.htmlElement = document.getElementById('modal-new-doc');
         this.htmlNewProjectFormElement = document.getElementById('new-doc-form');
         this.htmlNewDocFormNameElement = document.getElementById('new-doc-form-name');
@@ -506,7 +662,8 @@ class NewProjectModal {
 }
 
 class OpenProjectModal {
-    constructor() {
+    constructor(store) {
+        this.store = store;
         this.htmlElement = document.getElementById('modal-open-doc');
     }
 
@@ -520,9 +677,10 @@ class OpenProjectModal {
 }
 
 class Modals {
-    constructor() {
-        this.newProjectModal = new NewProjectModal();
-        this.openProjectModal = new OpenProjectModal();
+    constructor(store) {
+        this.store = store;
+        this.newProjectModal = new NewProjectModal(store);
+        this.openProjectModal = new OpenProjectModal(store);
 
         this.htmlElement = document.getElementById('modal');
         this.htmlNewProjectBtnElement = document.getElementById('new-doc-btn');
@@ -584,6 +742,7 @@ class Modals {
 }
 
 document.addEventListener("DOMContentLoaded", async function() {
-    graph = new Graph();
+    const store = new Store();
+    const graph = new Graph(store);
     await graph.init();
 });
