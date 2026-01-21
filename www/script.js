@@ -46,7 +46,7 @@ class Graph
             
             const downloadAnchorNode = document.createElement('a');
             downloadAnchorNode.setAttribute("href",     base64Image);
-            downloadAnchorNode.setAttribute("download", `${graph.save.name || 'save'}.png`);
+            downloadAnchorNode.setAttribute("download", `${graph.save.name ?? 'save'}.png`);
             document.body.appendChild(downloadAnchorNode);
             downloadAnchorNode.click();
             downloadAnchorNode.remove();
@@ -145,13 +145,13 @@ class Graph
     }
 
     updateView() {
-        if(! graph.save) {
+        if(!graph.save) {
             console.log('No save loaded, cannot update view.');
             graph.modals.displayOpenProjectModal();
             return;
         }
 
-        this.htmlTitleElement.textContent = `${graph.save.name || 'Untitled'}`;
+        this.htmlTitleElement.textContent = `${graph.save?.name ?? 'Untitled'}`;
 
         const data = structuredClone(graph.graph);
         data.container = this.cydiv;
