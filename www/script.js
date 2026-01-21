@@ -761,7 +761,7 @@ class NewProjectModal {
             
             Notification.success('Projeto criado com sucesso!');
             setTimeout(() => {
-                window.location.href = `/?save=${result.data.id}`;
+                window.location.href = `#BASE_PATH#/?save=${result.data.id}`;
             }, 500);
             
         } catch (error) {
@@ -773,7 +773,7 @@ class NewProjectModal {
     async openProject(e) {
         e.preventDefault();
         const id = this.htmlOpenProjectFormIdElement.value;
-        window.location.href = `/?save=${id}`;
+        window.location.href = `#BASE_PATH#/?save=${id}`;
     }
 }
 

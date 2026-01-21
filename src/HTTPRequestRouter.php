@@ -91,7 +91,7 @@ final class HTTPRequestRouter
             $resp->contentType = 'Content-Type: text/javascript; charset=UTF-8';
             
             $content = base64_decode($DATA_JAVASCRIPT);
-            $content = str_replace('#BASE_PATH#', '', $content);
+            $content = str_replace('#BASE_PATH#', $req->basePath, $content);
             
             $resp->binaryContent = base64_encode($content);
             return $resp;
