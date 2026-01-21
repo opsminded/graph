@@ -37,16 +37,16 @@ class Graph
 
     async init() {
         this.htmlExportBtnElement.addEventListener('click', () => {
-            if(! graph.save) {
+            if(! this.save) {
                 alert('Não há projeto carregado para exportar.');
                 return;
             }
 
-            const base64Image = graph.cy.png({'bg' : '#ffffff'});
+            const base64Image = this.cy.png({'bg' : '#ffffff'});
             
             const downloadAnchorNode = document.createElement('a');
             downloadAnchorNode.setAttribute("href",     base64Image);
-            downloadAnchorNode.setAttribute("download", `${graph.save.name ?? 'save'}.png`);
+            downloadAnchorNode.setAttribute("download", `${this.save.name ?? 'save'}.png`);
             document.body.appendChild(downloadAnchorNode);
             downloadAnchorNode.click();
             downloadAnchorNode.remove();
@@ -145,60 +145,59 @@ class Graph
     }
 
     updateView() {
-        if(!graph.save) {
+        if(!this.save) {
             console.log('No save loaded, cannot update view.');
-            graph.modals.displayOpenProjectModal();
+            this.modals.displayOpenProjectModal();
             return;
         }
 
-        this.htmlTitleElement.textContent = `${graph.save?.name ?? 'Untitled'}`;
+        this.htmlTitleElement.textContent = `${this.save?.name ?? 'Untitled'}`;
 
-        const data = structuredClone(graph.graph);
+        const data = this.graph;
         data.container = this.cydiv;
         
-        graph.cy = cytoscape(data);
-
-        graph.cy.on('select', 'node', (e) => {
-            const selectedNodes = graph.cy.$('node:selected');
+        this.cy = cytoscape(data);
+        this.cy.on('select', 'node', (e) => {
+            const selectedNodes = this.cy.$('node:selected');
             if (selectedNodes.length > 2) {
-                graph.menu.AddEdgeForm.htmlAddEdgeFormSubmit.disabled = true;
+                this.menu.AddEdgeForm.htmlAddEdgeFormSubmit.disabled = true;
                 e.target.unselect();
                 return;
             }
 
             const node = e.target;
-            graph.selection.push(node.id());
+            this.selection.push(node.id());
 
-            if(graph.selection.length < 2) {
-                graph.menu.AddNodeForm.hide();
-                graph.menu.AddEdgeForm.show();
-            } else if(graph.selection.length == 2) {
-                graph.menu.AddNodeForm.hide();
-                graph.menu.AddEdgeForm.show();
-                graph.menu.AddEdgeForm.htmlAddEdgeFormSubmit.disabled = false;
+            if(this.selection.length < 2) {
+                this.menu.AddNodeForm.hide();
+                this.menu.AddEdgeForm.show();
+            } else if(this.selection.length == 2) {
+                this.menu.AddNodeForm.hide();
+                this.menu.AddEdgeForm.show();
+                this.menu.AddEdgeForm.htmlAddEdgeFormSubmit.disabled = false;
             } else {
-                graph.menu.AddNodeForm.show();
-                graph.menu.AddEdgeForm.hide();
-                graph.menu.AddEdgeForm.htmlAddEdgeFormSubmit.disabled = true;
+                this.menu.AddNodeForm.show();
+                this.menu.AddEdgeForm.hide();
+                this.menu.AddEdgeForm.htmlAddEdgeFormSubmit.disabled = true;
             }
         });
 
-        graph.cy.on('unselect', 'node', () => {
-            graph.cy.elements().unselect();
-            graph.selection = [];
-            graph.menu.AddEdgeForm.hide();
-            graph.menu.AddNodeForm.show();
-            graph.menu.AddEdgeForm.htmlAddEdgeFormSubmit.disabled = true;
+        this.cy.on('unselect', 'node', () => {
+            this.cy.elements().unselect();
+            this.selection = [];
+            this.menu.AddEdgeForm.hide();
+            this.menu.AddNodeForm.show();
+            this.menu.AddEdgeForm.htmlAddEdgeFormSubmit.disabled = true;
         });
         
-        const startNodes = graph.cy.nodes().filter(node => 
-            graph.save.nodes.includes(node.id())
+        const startNodes = this.cy.nodes().filter(node => 
+            this.save.nodes.includes(node.id())
         );
         
         const descendants = startNodes.successors();
         const allNodes = startNodes.union(descendants);
-        graph.cy.elements().not(allNodes).remove();
-        graph.cy.layout(graph.graph.layout).run();
+        this.cy.elements().not(allNodes).remove();
+        this.cy.layout(this.graph.layout).run();
     }
 }
 
@@ -489,8 +488,7 @@ class NewProjectModal {
                 console.log('response:', response);
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            
-            e.target.reset();
+            const result = await response.json();
             window.location.href = `/?save=${result.data.id}`;
             
         } catch (error) {
