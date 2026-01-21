@@ -56,12 +56,12 @@ class Graph
 
     async fetchGraph() {
         try {
-            var response = await fetch('/getCytoscapeGraph');
+            const response = await fetch('/getCytoscapeGraph');
             if (!response.ok) {
                 console.log('[fetchGraph] response:', response);
                 throw new Error(`[fetchGraph] HTTP error! status: ${response.status}`);
             }
-            var graphData = await response.json();
+            const graphData = await response.json();
             this.graph = graphData['data'];
             this.nodes = this.graph.elements.nodes;
         } catch (error) {
@@ -71,16 +71,16 @@ class Graph
 
     async fetchSaves() {
         try {
-            var response = await fetch('/getSaves');
+            const response = await fetch('/getSaves');
             if (!response.ok) {
                 console.log('[fetchSaves] response:', response);
                 throw new Error(`[fetchSaves] HTTP error! status: ${response.status}`);
             }
-            var savesData = await response.json();
+            const savesData = await response.json();
             this.saves = savesData['data'];
             
             this.saves.forEach((save) => {
-                var option = document.createElement('option');
+                const option = document.createElement('option');
                 option.value = save.id;
                 option.text = save.name;
                 this.htmlOpenProjectFormIdElement.appendChild(option);
@@ -101,12 +101,12 @@ class Graph
         }
 
         try {
-            var response = await fetch(`/getSave?id=${encodeURIComponent(saveID)}`);
+            const response = await fetch(`/getSave?id=${encodeURIComponent(saveID)}`);
             if (!response.ok) {
                 console.log('[fetchSave] response:', response);
                 throw new Error(`[fetchSave] HTTP error! status: ${response.status}`);
             }
-            var saveData = await response.json();
+            const saveData = await response.json();
             this.save = saveData['data'];
         } catch (error) {
             console.error('[fetchSave] Fetch error:', error);
@@ -115,7 +115,7 @@ class Graph
 
     async updateSave() {
         try {
-            var response = await fetch('/updateSave', {
+            const response = await fetch('/updateSave', {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json'
@@ -127,7 +127,6 @@ class Graph
                 console.log('[updateSave] response:', response);
                 throw new Error(`[updateSave] HTTP error! status: ${response.status}`);
             }
-            var result = await response.json();
         } catch (error) {
             console.error('[updateSave] Fetch error:', error);
         }
@@ -142,7 +141,7 @@ class Graph
 
         this.htmlTitleElement.textContent = `${graph.save.name || 'Untitled'}`;
 
-        var data = structuredClone(graph.graph);
+        const data = structuredClone(graph.graph);
         data.container = this.cydiv;
         
         graph.cy = cytoscape(data);
@@ -155,7 +154,7 @@ class Graph
                 return;
             }
 
-            var node = evt.target;
+            const node = evt.target;
             graph.selection.push(node.id());
 
             if(graph.selection.length < 2) {
@@ -269,15 +268,15 @@ class AddNodeForm {
 
     async fetchCategories() {
         try {
-            var response = await fetch('/getCategories');
+            const response = await fetch('/getCategories');
             if (!response.ok) {
                 console.log('[fetchCategories] response:', response);
                 throw new Error(`[fetchCategories] HTTP error! status: ${response.status}`);
             }
-            var categoriesData = await response.json();
-            var categories = categoriesData['data'];
+            const categoriesData = await response.json();
+            const categories = categoriesData['data'];
             categories.forEach((category) => {
-                var option = document.createElement('option');
+                const option = document.createElement('option');
                 option.value = category.id;
                 option.text = category.name;
                 this.htmlAddNodeFormCategory.appendChild(option);
@@ -289,15 +288,15 @@ class AddNodeForm {
 
     async fetchTypes() {
         try {
-            var response = await fetch('/getTypes');
+            const response = await fetch('/getTypes');
             if (!response.ok) {
                 console.log('[fetchTypes] response:', response);
                 throw new Error(`[fetchTypes] HTTP error! status: ${response.status}`);
             }
-            var typesData = await response.json();
-            var types = typesData['data'];
+            const typesData = await response.json();
+            const types = typesData['data'];
             types.forEach((type) => {
-                var option = document.createElement('option');
+                const option = document.createElement('option');
                 option.value = type.id;
                 option.text = type.name;
                 this.htmlAddNodeFormType.appendChild(option);
@@ -367,14 +366,14 @@ class AddEdgeForm {
     async insertEdge(sourceNode, targetNode) {
         try {
 
-            var data = {
+            const data = {
                 source: sourceNode,
                 target: targetNode,
                 label: '',
                 data: {}
             }
 
-            var response = await fetch('/insertEdge', {
+            const response = await fetch('/insertEdge', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -387,7 +386,6 @@ class AddEdgeForm {
                 alert(error);
                 throw new Error(`[insertEdge] HTTP error! status: ${response.status}`);
             }
-            var result = await response.json();
         } catch (error) {
             alert(error);
             console.error('[insertEdge] Fetch error:', error);
