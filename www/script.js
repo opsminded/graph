@@ -27,6 +27,9 @@ class Menu {
         this.htmlElement = document.getElementById('menu');
         this.htmlCloseBtnElement = document.getElementById('close-menu-btn');
         
+        this.AddNodeForm = new AddNodeForm();
+        this.AddEdgeForm = new AddEdgeForm();
+
         this.init();
     }
 
@@ -64,6 +67,94 @@ class Menu {
         } else {
             this.htmlCloseBtnElement.textContent = 'X';
         }
+    }
+}
+
+class AddNodeForm {
+    constructor() {
+        this.htmlElement = document.getElementById('add-node-form');
+        this.htmlAddNodeFormCategory = document.getElementById('add-node-form-category');
+        this.htmlAddNodeFormType = document.getElementById('add-node-form-type');
+        this.htmlAddNodeFormNode = document.getElementById('add-node-form-node');
+
+        this.init();
+    }
+
+    init() {
+        this.htmlAddNodeFormCategory.addEventListener('change', () => {
+            updateNodeList();
+        });
+
+        this.htmlAddNodeFormType.addEventListener('change', () => {
+            updateNodeList();
+        });
+
+        this.htmlElement.addEventListener('submit', (e) => {
+            this.onSubmit(e);
+        });
+    }
+    
+    show() {
+        this.htmlElement.classList.remove('hide');
+    }
+
+    hide() {
+        this.htmlElement.classList.add('hide');
+    }
+
+    async onSubmit(e) {
+        e.preventDefault();
+
+        const id = this.htmlAddNodeFormNode.value;
+        
+        if(window.save.nodes.includes(id)) {
+            console.log('Node already in save, not adding:', id);
+            return;
+        }
+        window.save.nodes.push(id);
+        await updateSave();
+        await updateView();
+    }
+}
+
+class AddEdgeForm {
+    constructor() {
+        this.htmlElement = document.getElementById('add-edge-form');
+        this.htmlAddEdgeFormSubmit = document.getElementById('add-edge-form-submit');
+
+        this.init();
+    }
+
+    init() {
+        this.htmlElement.addEventListener('submit', (e) => {
+            this.onSubmit(e);
+        });
+    }
+
+    show() {
+        this.htmlElement.classList.add('show');
+    }
+
+    hide() {
+        this.htmlElement.classList.remove('show');
+    }
+
+    async onSubmit(e) {
+        e.preventDefault();
+    
+        if (window.selection.length !== 2) {
+            alert('Please select exactly two nodes to create an edge between them.');
+            window.selection = [];
+            window.cy.elements().unselect();
+            return;
+        }
+        
+        const sourceNode = window.selection[0];
+        const targetNode = window.selection[1];
+
+        // console.log('Creating edge between nodes:', sourceNode, 'and', targetNode);
+        await insertEdge(sourceNode, targetNode);
+        window.location.reload();
     }
 }
 
@@ -201,12 +292,11 @@ async function fetchCategories()
     }
 
     // fill the form select with categories
-    var categorySelect = document.getElementById('add-node-form-category');
     window.categories.forEach(function(category) {
         var option = document.createElement('option');
         option.value = category.id;
         option.text = category.name;
-        categorySelect.appendChild(option);
+        menu.AddNodeForm.htmlAddNodeFormCategory.appendChild(option);
     });
 }
 
@@ -226,12 +316,11 @@ async function fetchTypes()
     }
 
     // fill the form select with types
-    var typeSelect = document.getElementById('add-node-form-type');
     window.types.forEach(function(type) {
         var option = document.createElement('option');
         option.value = type.id;
         option.text = type.name;
-        typeSelect.appendChild(option);
+        menu.AddNodeForm.htmlAddNodeFormType.appendChild(option);
     });
 }
 
@@ -342,10 +431,10 @@ async function insertEdge(sourceNode, targetNode)
 
 function updateNodeList()
 {
-    const categorySelect = document.getElementById('add-node-form-category').value;
-    const typeSelect = document.getElementById('add-node-form-type').value;
+    const categorySelect = menu.AddNodeForm.htmlAddNodeFormCategory.value;
+    const typeSelect = menu.AddNodeForm.htmlAddNodeFormType.value;
 
-    const nodeListSelect = document.getElementById('add-node-form-node');
+    const nodeListSelect = menu.AddNodeForm.htmlAddNodeFormNode;
     nodeListSelect.innerHTML = '';
 
     // console.log('Selected category ID:', categorySelect);
@@ -382,7 +471,7 @@ async function updateView()
     window.cy.on('select', 'node', function(evt){
         const selectedNodes = cy.$('node:selected');
         if (selectedNodes.length > 2) {
-            document.getElementById('add-edge-form-submit').disabled = true;
+            menu.AddEdgeForm.htmlAddEdgeFormSubmit.disabled = true;
             evt.target.unselect();
             return;
         }
@@ -394,27 +483,27 @@ async function updateView()
         // console.log('Current selection:', window.selection);
 
         if(window.selection.length < 2) {
-            document.getElementById('add-node-form').classList.add('hide');
-            document.getElementById('add-edge-form').classList.add('show');
+            menu.AddNodeForm.hide();
+            menu.AddEdgeForm.show();
         } else if(window.selection.length == 2) {
             // console.log('Two nodes selected, showing add-edge form.');
-            document.getElementById('add-node-form').classList.add('hide');
-            document.getElementById('add-edge-form').classList.add('show');
-            document.getElementById('add-edge-form-submit').disabled = false;
+            menu.AddNodeForm.hide();
+            menu.AddEdgeForm.show();
+            menu.AddEdgeForm.htmlAddEdgeFormSubmit.disabled = false;
         } else {
             // console.log('Not two nodes selected, hiding add-edge form.');
-            document.getElementById('add-node-form').classList.remove('hide');
-            document.getElementById('add-edge-form').classList.remove('show');
-            document.getElementById('add-edge-form-submit').disabled = true;
+            menu.AddNodeForm.show();
+            menu.AddEdgeForm.hide();
+            menu.AddEdgeForm.htmlAddEdgeFormSubmit.disabled = true;
         }
     });
 
     window.cy.on('unselect', 'node', function(evt){
         window.cy.elements().unselect();
         window.selection = [];
-        document.getElementById('add-edge-form').classList.remove('show');
-        document.getElementById('add-node-form').classList.remove('hide');
-        document.getElementById('add-edge-form-submit').disabled = true;
+        menu.AddEdgeForm.hide();
+        menu.AddNodeForm.show();
+        menu.AddEdgeForm.htmlAddEdgeFormSubmit.disabled = true;
     });
     
     const startNodes = window.cy.nodes().filter(node => 
@@ -450,16 +539,6 @@ document.addEventListener('keydown', function(e) {
 });
 
 
-document.getElementById('add-node-form-category').addEventListener('change', function(e) {
-    const selectedCategoryID = e.target.value;
-    updateNodeList();
-});
-
-document.getElementById('add-node-form-type').addEventListener('change', function(e) {
-    const selectedTypeID = e.target.value;
-    updateNodeList();
-});
-
 document.getElementById('export-btn').addEventListener('click', function(){
     if(! window.save) {
         alert('No save loaded to export.');
@@ -474,39 +553,6 @@ document.getElementById('export-btn').addEventListener('click', function(){
     document.body.appendChild(downloadAnchorNode);
     downloadAnchorNode.click();
     downloadAnchorNode.remove();
-});
-
-document.getElementById('add-node-form').addEventListener('submit', async function(e) {
-    e.preventDefault();
-
-    const id = document.getElementById('add-node-form-node').value;
-    // console.log('Adding node with ID:', id);
-
-    if(window.save.nodes.includes(id)) {
-        console.log('Node already in save, not adding:', id);
-        return;
-    }
-    window.save.nodes.push(id);
-    await updateSave();
-    await updateView();
-});
-
-document.getElementById('add-edge-form').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    if (window.selection.length !== 2) {
-        alert('Please select exactly two nodes to create an edge between them.');
-        window.selection = [];
-        window.cy.elements().unselect();
-        return;
-    }
-    
-    const sourceNode = window.selection[0];
-    const targetNode = window.selection[1];
-
-    // console.log('Creating edge between nodes:', sourceNode, 'and', targetNode);
-    await insertEdge(sourceNode, targetNode);
-    window.location.reload();
 });
 
 document.getElementById('new-doc-form').addEventListener('submit', async function(e) {
@@ -548,10 +594,12 @@ document.getElementById('open-doc-form').addEventListener('submit', async functi
     window.location.href = `/?save=${id}`;
 });
 
-await fetchGraph();
-await fetchCategories();
-await fetchTypes();
+document.addEventListener("DOMContentLoaded", async function() {
+    await fetchGraph();
+    await fetchCategories();
+    await fetchTypes();
 
-await fetchSaves();
-await fetchSave();
-await updateView();
+    await fetchSaves();
+    await fetchSave();
+    await updateView();
+});
