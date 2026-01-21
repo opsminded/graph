@@ -1,19 +1,42 @@
+"use strict";
 
-// contains the global graph data
-window.graph = {};
+class Graph
+{
+    constructor() {
+        this.cy    = null;
 
-// contains the list of nodes
-window.nodes = [];
+        this.menu  = new Menu();
+        this.modals = new Modals();
 
-// contains the list of saves for the user to select and open
-window.saves = [];
+        this.graph = null;
+        this.nodes = [];
+        this.saves = [];
+        this.save  = null;
+        this.selection = [];
 
-// contains the currently opened save
-window.save = null;
+        this.htmlExportBtnElement = document.getElementById('export-btn');
 
-window.selection = [];
+        this.init();
+    }
 
-////////////////////////////////////////////////////////////////////////////////
+    init() {
+        this.htmlExportBtnElement.addEventListener('click', () => {
+            if(! graph.save) {
+                alert('No save loaded to export.');
+                return;
+            }
+
+            const base64Image = graph.cy.png({'bg' : '#ffffff'});
+            
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href",     base64Image);
+            downloadAnchorNode.setAttribute("download", `${graph.save.name || 'save'}.png`);
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        });
+    }
+}
 
 class Menu {
     constructor() {
@@ -101,11 +124,11 @@ class AddNodeForm {
 
         const id = this.htmlAddNodeFormNode.value;
         
-        if(window.save.nodes.includes(id)) {
+        if(graph.save.nodes.includes(id)) {
             console.log('Node already in save, not adding:', id);
             return;
         }
-        window.save.nodes.push(id);
+        graph.save.nodes.push(id);
         await updateSave();
         await updateView();
     }
@@ -136,15 +159,15 @@ class AddEdgeForm {
     async onSubmit(e) {
         e.preventDefault();
     
-        if (window.selection.length !== 2) {
+        if (graph.selection.length !== 2) {
             alert('Please select exactly two nodes to create an edge between them.');
-            window.selection = [];
-            window.cy.elements().unselect();
+            graph.selection = [];
+            graph.cy.elements().unselect();
             return;
         }
         
-        const sourceNode = window.selection[0];
-        const targetNode = window.selection[1];
+        const sourceNode = graph.selection[0];
+        const targetNode = graph.selection[1];
 
         // console.log('Creating edge between nodes:', sourceNode, 'and', targetNode);
         await insertEdge(sourceNode, targetNode);
@@ -248,10 +271,7 @@ class Modals {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-var menu = new Menu();
-var modals = new Modals();
-
+var graph = new Graph();
 ////////////////////////////////////////////////////////////////////////////////
 
 async function fetchGraph()
@@ -264,8 +284,8 @@ async function fetchGraph()
         }
         var graphData = await response.json();
         // console.log('[fetchGraph] Graph data:', graphData.data);
-        window.graph = graphData['data'];
-        window.nodes = window.graph.elements.nodes;
+        graph.graph = graphData['data'];
+        graph.nodes = graph.graph.elements.nodes;
     } catch (error) {
         console.error('[fetchGraph] Fetch error:', error);
     }
@@ -285,7 +305,7 @@ async function fetchCategories()
             var option = document.createElement('option');
             option.value = category.id;
             option.text = category.name;
-            menu.AddNodeForm.htmlAddNodeFormCategory.appendChild(option);
+            graph.menu.AddNodeForm.htmlAddNodeFormCategory.appendChild(option);
         });
     } catch (error) {
         console.error('[fetchCategories] Fetch error:', error);
@@ -306,7 +326,7 @@ async function fetchTypes()
             var option = document.createElement('option');
             option.value = type.id;
             option.text = type.name;
-            menu.AddNodeForm.htmlAddNodeFormType.appendChild(option);
+            graph.menu.AddNodeForm.htmlAddNodeFormType.appendChild(option);
         });
     }
     catch (error) {
@@ -323,11 +343,11 @@ async function fetchSaves()
             throw new Error(`[fetchSaves] HTTP error! status: ${response.status}`);
         }
         var savesData = await response.json();
-        window.saves = savesData['data'];
+        graph.saves = savesData['data'];
         
         // fill the form select with saves
         var saveSelect = document.getElementById('open-doc-form-id');
-        window.saves.forEach(function(save) {
+        graph.saves.forEach(function(save) {
             var option = document.createElement('option');
             option.value = save.id;
             option.text = save.name;
@@ -358,8 +378,8 @@ async function fetchSave()
         }
         var saveData = await response.json();
         // console.log('[fetchSave] Save data:', saveData);
-        window.save = saveData['data'];
-        // console.log('[fetchSave] Loaded save:', window.save);
+        graph.save = saveData['data'];
+        // console.log('[fetchSave] Loaded save:', graph.save);
     } catch (error) {
         console.error('[fetchSave] Fetch error:', error);
     }
@@ -373,7 +393,7 @@ async function updateSave()
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(window.save)
+            body: JSON.stringify(graph.save)
         });
         
         if (!response.ok) {
@@ -421,16 +441,13 @@ async function insertEdge(sourceNode, targetNode)
 
 function updateNodeList()
 {
-    const categorySelect = menu.AddNodeForm.htmlAddNodeFormCategory.value;
-    const typeSelect = menu.AddNodeForm.htmlAddNodeFormType.value;
+    const categorySelect = graph.menu.AddNodeForm.htmlAddNodeFormCategory.value;
+    const typeSelect = graph.menu.AddNodeForm.htmlAddNodeFormType.value;
 
-    const nodeListSelect = menu.AddNodeForm.htmlAddNodeFormNode;
+    const nodeListSelect = graph.menu.AddNodeForm.htmlAddNodeFormNode;
     nodeListSelect.innerHTML = '';
 
-    // console.log('Selected category ID:', categorySelect);
-    // console.log('Selected type ID:', typeSelect);
-
-    window.nodes.forEach(function(node) {
+    graph.nodes.forEach(function(node) {
         // console.log('Checking node:', node);
         if (node.data.category === categorySelect && node.data.type === typeSelect) {
             // console.log('Node data:', node.data);
@@ -444,60 +461,60 @@ function updateNodeList()
 
 async function updateView()
 {
-    if(! window.save) {
+    if(! graph.save) {
         console.log('No save loaded, cannot update view.');
-        modals.displayOpenProjectModal();
+        graph.modals.displayOpenProjectModal();
         return;
     }
 
     var cydiv = document.getElementById('cy');
 
-    var data = structuredClone(window.graph);
+    var data = structuredClone(graph.graph);
     data.container = cydiv;
     
     // console.log('Update view with data:', data);
-    window.cy = cytoscape(data);
+    graph.cy = cytoscape(data);
 
-    window.cy.on('select', 'node', function(evt){
+    graph.cy.on('select', 'node', function(evt){
         const selectedNodes = cy.$('node:selected');
         if (selectedNodes.length > 2) {
-            menu.AddEdgeForm.htmlAddEdgeFormSubmit.disabled = true;
+            graph.menu.AddEdgeForm.htmlAddEdgeFormSubmit.disabled = true;
             evt.target.unselect();
             return;
         }
 
         var node = evt.target;
-        window.selection.push(node.id());
+        graph.selection.push(node.id());
 
         // console.log('Selected node:', node.id());
-        // console.log('Current selection:', window.selection);
+        // console.log('Current selection:', graph.selection);
 
-        if(window.selection.length < 2) {
-            menu.AddNodeForm.hide();
-            menu.AddEdgeForm.show();
-        } else if(window.selection.length == 2) {
+        if(graph.selection.length < 2) {
+            graph.menu.AddNodeForm.hide();
+            graph.menu.AddEdgeForm.show();
+        } else if(graph.selection.length == 2) {
             // console.log('Two nodes selected, showing add-edge form.');
-            menu.AddNodeForm.hide();
-            menu.AddEdgeForm.show();
-            menu.AddEdgeForm.htmlAddEdgeFormSubmit.disabled = false;
+            graph.menu.AddNodeForm.hide();
+            graph.menu.AddEdgeForm.show();
+            graph.menu.AddEdgeForm.htmlAddEdgeFormSubmit.disabled = false;
         } else {
             // console.log('Not two nodes selected, hiding add-edge form.');
-            menu.AddNodeForm.show();
-            menu.AddEdgeForm.hide();
-            menu.AddEdgeForm.htmlAddEdgeFormSubmit.disabled = true;
+            graph.menu.AddNodeForm.show();
+            graph.menu.AddEdgeForm.hide();
+            graph.menu.AddEdgeForm.htmlAddEdgeFormSubmit.disabled = true;
         }
     });
 
-    window.cy.on('unselect', 'node', function(evt){
-        window.cy.elements().unselect();
-        window.selection = [];
-        menu.AddEdgeForm.hide();
-        menu.AddNodeForm.show();
-        menu.AddEdgeForm.htmlAddEdgeFormSubmit.disabled = true;
+    graph.cy.on('unselect', 'node', function(evt){
+        graph.cy.elements().unselect();
+        graph.selection = [];
+        graph.menu.AddEdgeForm.hide();
+        graph.menu.AddNodeForm.show();
+        graph.menu.AddEdgeForm.htmlAddEdgeFormSubmit.disabled = true;
     });
     
-    const startNodes = window.cy.nodes().filter(node => 
-        window.save.nodes.includes(node.id())
+    const startNodes = graph.cy.nodes().filter(node => 
+        graph.save.nodes.includes(node.id())
     );
     
     // console.log('Start nodes found:', startNodes.length, startNodes.map(n => n.id()));
@@ -509,41 +526,25 @@ async function updateView()
     const allNodes = startNodes.union(descendants);
     // console.log('Total nodes to keep:', allNodes.length);
     
-    window.cy.elements().not(allNodes).remove();
-    // console.log('Remaining elements:', window.cy.elements().length);
+    graph.cy.elements().not(allNodes).remove();
+    // console.log('Remaining elements:', graph.cy.elements().length);
     
     // Check layout config
-    // console.log('Layout config:', window.graph.layout);
+    // console.log('Layout config:', graph.graph.layout);
 
-    window.cy.layout(window.graph.layout).run();
+    graph.cy.layout(graph.graph.layout).run();
 }
 
 //////////////////////////////////////////////////////////////////////////////
 
 document.addEventListener('mousemove', function(e) {
-    menu.onMouseMove(e);
+    graph.menu.onMouseMove(e);
 });
 
 document.addEventListener('keydown', function(e) {
-    modals.onKeydown(e);
+    graph.modals.onKeydown(e);
 });
 
-
-document.getElementById('export-btn').addEventListener('click', function(){
-    if(! window.save) {
-        alert('No save loaded to export.');
-        return;
-    }
-
-    const base64Image = window.cy.png({'bg' : '#ffffff'});
-    
-    const downloadAnchorNode = document.createElement('a');
-    downloadAnchorNode.setAttribute("href",     base64Image);
-    downloadAnchorNode.setAttribute("download", `${window.save.name || 'save'}.png`);
-    document.body.appendChild(downloadAnchorNode);
-    downloadAnchorNode.click();
-    downloadAnchorNode.remove();
-});
 
 document.getElementById('new-doc-form').addEventListener('submit', async function(e) {
     e.preventDefault();
