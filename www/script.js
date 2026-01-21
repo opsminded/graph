@@ -72,7 +72,6 @@ class Store {
             currentSave: null,
             selection: [],
             cy: null,
-            isLoading: false,
             currentNodeSelectionForInfo: null
         };
         this.subscribers = [];
@@ -162,10 +161,6 @@ class Store {
         this.setState({ currentSave });
     }
 
-    setLoading(isLoading) {
-        this.setState({ isLoading });
-    }
-
     finishInitialization() {
         this.isInitializing = false;
     }
@@ -189,7 +184,7 @@ class Graph
         this.infoPanel = new InfoPanel(store);
 
         // Subscribe to state changes
-        this.store.subscribe((state, changedKeys) => {
+        this.store.subscribe(async (state, changedKeys) => {
             // Auto-save when currentSave nodes change (but not on initial load)
             if (changedKeys.includes('currentSave') && state.currentSave) {
                 this.updateSave();
@@ -197,7 +192,7 @@ class Graph
             
             // Update view when graph or currentSave changes
             if (changedKeys.includes('currentSave') || changedKeys.includes('graph')) {
-                this.updateView();
+                await this.updateView();
             }
         });
     }
@@ -237,12 +232,11 @@ class Graph
         this.store.finishInitialization();
         
         // Initial view update
-        this.updateView();
+        await this.updateView();
     }
 
     async fetchGraph() {
         try {
-            this.store.setLoading(true);
             const response = await fetch(API.GET_GRAPH);
             if (!response.ok) {
                 throw new Error(`Erro ao carregar o grafo: ${response.status}`);
@@ -251,14 +245,11 @@ class Graph
             this.store.setGraph(data);
         } catch (error) {
             Notification.error('Falha ao carregar o grafo. Por favor, recarregue a página.');
-        } finally {
-            this.store.setLoading(false);
         }
     }
 
     async fetchSaves() {
         try {
-            this.store.setLoading(true);
             const response = await fetch(API.GET_SAVES);
             if (!response.ok) {
                 throw new Error(`Erro ao carregar projetos: ${response.status}`);
@@ -274,8 +265,6 @@ class Graph
         } catch (error) {
             console.error('[fetchSaves] Fetch error:', error);
             Notification.error('Falha ao carregar a lista de projetos.');
-        } finally {
-            this.store.setLoading(false);
         }
     }
 
@@ -289,7 +278,6 @@ class Graph
         }
 
         try {
-            this.store.setLoading(true);
             const response = await fetch(`${API.GET_SAVE}?id=${encodeURIComponent(saveID)}`);
             if (!response.ok) {
                 throw new Error(`Erro ao carregar projeto: ${response.status}`);
@@ -299,8 +287,31 @@ class Graph
         } catch (error) {
             console.error('[fetchSave] Fetch error:', error);
             Notification.error(`Falha ao carregar o projeto. ID: ${saveID}`);
-        } finally {
-            this.store.setLoading(false);
+        }
+    }
+
+    async fetchStatus() {
+        try {
+            const response = await fetch('/getStatus');
+            if (!response.ok) {
+                console.log('[fetchStatus] Response not ok:', response.status);
+                throw new Error(`Erro ao obter status: ${response.status}`);
+            }
+            
+            const {data} = await response.json();
+            
+            const cy = this.store.getCy();
+            if (!cy) {
+                return;
+            }
+
+            data.forEach((status) => {
+                cy.getElementById(status['node_id']).addClass('node-status-' + status['status']);
+            });
+
+        } catch (error) {
+            console.error('[fetchStatus] Fetch error:', error);
+            Notification.error('Falha ao obter status do servidor.');
         }
     }
 
@@ -309,7 +320,6 @@ class Graph
         if (!currentSave) return;
 
         try {
-            this.store.setLoading(true);
             const response = await fetch(API.UPDATE_SAVE, {
                 method: 'PUT',
                 headers: {
@@ -321,17 +331,15 @@ class Graph
             if (!response.ok) {
                 throw new Error(`Erro ao salvar: ${response.status}`);
             }
-            
+
             Notification.success('Projeto salvo com sucesso!', 2000);
         } catch (error) {
             console.error('[updateSave] Fetch error:', error);
             Notification.error('Falha ao salvar o projeto. Tente novamente.');
-        } finally {
-            this.store.setLoading(false);
         }
     }
 
-    updateView() {
+    async updateView() {
         const currentSave = this.store.getCurrentSave();
         const graphData = this.store.getState().graph;
 
@@ -393,6 +401,23 @@ class Graph
         const allNodes = startNodes.union(descendants);
         cy.elements().not(allNodes).remove();
         cy.layout(graphData.layout).run();
+
+        let offset = 0;
+        setInterval(() => {
+            offset -= 9;
+            cy.edges().animate({
+                style: { 'line-dash-offset': offset }
+            }, {
+                duration: 1000,
+                easing: 'linear'
+            });
+        }, 1000);
+
+        await this.fetchStatus();
+        
+        setInterval(async () => {
+            await this.fetchStatus();
+        }, 5000);
     }
 }
 
@@ -717,7 +742,6 @@ class NewProjectModal {
         };
         
         try {
-            this.store.setLoading(true);
             const response = await fetch(API.INSERT_SAVE, {
                 method: 'POST',
                 headers: {
@@ -743,13 +767,12 @@ class NewProjectModal {
         } catch (error) {
             console.error('Error:', error);
             Notification.error('Erro ao criar projeto. Tente novamente.');
-        } finally {
-            this.store.setLoading(false);
         }
     }
 
     async openProject(e) {
         e.preventDefault();
+        const id = this.htmlOpenProjectFormIdElement.value;
         window.location.href = `/?save=${id}`;
     }
 }

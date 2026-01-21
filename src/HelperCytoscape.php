@@ -132,6 +132,10 @@ final class HelperCytoscape
 
                     "line-style" => 'dashed',
                     'line-dash-pattern'  => [6, 3],
+                    'line-dash-offset' => 0,
+                    'transition-property' => 'line-dash-offset',
+                    'transition-duration' => '1000ms',
+                    'transition-timing-function' => 'linear'
                     //'line-color' => '#00ff00',
                     //'animation' => 'pulse 1s infinite'
                 ],
