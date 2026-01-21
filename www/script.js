@@ -348,6 +348,11 @@ class AddNodeForm {
 
         const id = this.htmlAddNodeFormNode.value;
         
+        if (!id) {
+            alert('Por favor, selecione um nó para adicionar.');
+            return;
+        }
+        
         if(graph.save.nodes.includes(id)) {
             console.log('Node already in save, not adding:', id);
             return;
@@ -459,8 +464,15 @@ class NewProjectModal {
     async insertProject(e) {
         e.preventDefault();
     
+        const name = this.htmlNewDocFormNameElement.value.trim();
+        
+        if (!name) {
+            alert('Por favor, insira um nome para o projeto.');
+            return;
+        }
+        
         const formData = {
-            name: this.htmlNewDocFormNameElement.value,
+            name: name,
             nodes: []
         };
         
