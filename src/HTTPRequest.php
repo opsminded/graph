@@ -19,15 +19,13 @@ final class HTTPRequest
         $this->params = $_GET;
         $this->method = $_SERVER["REQUEST_METHOD"];
 
-        $scriptName = $_SERVER["SCRIPT_NAME"];
         $requestUri = $_SERVER["REQUEST_URI"];
         $requestUri = strtok($requestUri, "?");
-
         
-        $path = str_replace($scriptName, "", $requestUri);
-
-        $this->path = $path;
-
+        $scriptName = $_SERVER["SCRIPT_NAME"];
+        
+        $this->path = str_replace($scriptName, "", $requestUri);
+        
         if ($this->method === self::METHOD_POST || $this->method === self::METHOD_PUT) {
             $jsonData = file_get_contents("php://input");
             if ($jsonData) {
