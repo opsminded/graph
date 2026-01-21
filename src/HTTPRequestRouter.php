@@ -89,7 +89,11 @@ final class HTTPRequestRouter
         {
             $resp = new HTTPOKResponse("script.js", []);
             $resp->contentType = 'Content-Type: text/javascript; charset=UTF-8';
-            $resp->binaryContent = $DATA_JAVASCRIPT;
+            
+            $content = base64_decode($DATA_JAVASCRIPT);
+            $content = str_replace('#BASE_PATH#', '', $content);
+            
+            $resp->binaryContent = base64_encode($content);
             return $resp;
         }
 

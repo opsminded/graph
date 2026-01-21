@@ -2,14 +2,14 @@
 
 // API Endpoints
 const API = {
-    GET_GRAPH: '/getCytoscapeGraph',
-    GET_SAVES: '/getSaves',
-    GET_SAVE: '/getSave',
-    UPDATE_SAVE: '/updateSave',
-    INSERT_SAVE: '/insertSave',
-    GET_CATEGORIES: '/getCategories',
-    GET_TYPES: '/getTypes',
-    INSERT_EDGE: '/insertEdge'
+    GET_GRAPH:      '#BASE_PATH#/getCytoscapeGraph',
+    GET_SAVES:      '#BASE_PATH#/getSaves',
+    GET_SAVE:       '#BASE_PATH#/getSave',
+    UPDATE_SAVE:    '#BASE_PATH#/updateSave',
+    INSERT_SAVE:    '#BASE_PATH#/insertSave',
+    GET_CATEGORIES: '#BASE_PATH#/getCategories',
+    GET_TYPES:      '#BASE_PATH#/getTypes',
+    INSERT_EDGE:    '#BASE_PATH#/insertEdge'
 };
 
 // Utility Functions

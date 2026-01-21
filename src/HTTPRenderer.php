@@ -41,7 +41,8 @@ final class HTTPRenderer
             if (!array_key_exists($response->template, $this->templates)) {
                 throw new Exception("template not found: " . $response->template);
             }
-            echo base64_decode($this->templates[$response->template]['data']);
+            $content = base64_decode($this->templates[$response->template]['data']);
+            eval('?>' . $content);
             exit();
         }
     }

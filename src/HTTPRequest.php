@@ -8,6 +8,7 @@ final class HTTPRequest
     public array $params;
     public string $path;
     public string $method;
+    public string $basePath;
 
     public const METHOD_GET    = "GET";
     public const METHOD_POST   = "POST";
@@ -21,6 +22,8 @@ final class HTTPRequest
 
         $requestUri = $_SERVER["REQUEST_URI"];
         $requestUri = strtok($requestUri, "?");
+
+        $this->basePath = rtrim(dirname($requestUri), "/\\");
         
         $scriptName = $_SERVER["SCRIPT_NAME"];
         

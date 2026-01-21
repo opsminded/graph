@@ -1,12 +1,17 @@
 <!DOCTYPE html>
+<?php
+$requestUri = $_SERVER["REQUEST_URI"];
+$requestUri = strtok($requestUri, "?");
+$basePath = rtrim(dirname($requestUri), "/\\");
+?>
 <html lang="pt-BR">
     <head>
         <meta charset="UTF-8">
         <meta http-equiv="content-type" content="text/html; charset=UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Bradesketch</title>
-        <script src="/index.php/cytoscape.js"></script>
-        <link rel="stylesheet" href="/index.php/style.css">
+        <script src="<?php echo $basePath; ?>/index.php/cytoscape.js"></script>
+        <link rel="stylesheet" href="<?php echo $basePath; ?>/index.php/style.css">
     </head>
     <body>
         <div id="graph-header">
@@ -16,7 +21,7 @@
         </div>
         <div id="menu">
             <div><button id="close-menu-btn">X</button></div>
-            <img src="/index.php/getImage?img=logo" alt="Logo" width="32" height="32">
+            <img src="<?php echo $basePath; ?>/index.php/getImage?img=logo" alt="Logo" width="32" height="32">
             <h2><span style="color: rgb(182, 43, 43);">Brades</span>ketch</h2>
 
             <div id="user-panel">
@@ -109,5 +114,5 @@
         
         <div id="cy"></div>
     </body>
-    <script type="module" src="/index.php/script.js"></script>
+    <script type="module" src="<?php echo $basePath; ?>/index.php/script.js"></script>
 </html>
