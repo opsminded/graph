@@ -2,12 +2,6 @@
 // contains the global graph data
 window.graph = {};
 
-// contains the list of categories
-window.categories = [];
-
-// contains the list of types
-window.types = [];
-
 // contains the list of nodes
 window.nodes = [];
 
@@ -286,18 +280,16 @@ async function fetchCategories()
             throw new Error(`[fetchCategories] HTTP error! status: ${response.status}`);
         }
         var categoriesData = await response.json();
-        window.categories = categoriesData['data'];
+        var categories = categoriesData['data'];
+        categories.forEach(function(category) {
+            var option = document.createElement('option');
+            option.value = category.id;
+            option.text = category.name;
+            menu.AddNodeForm.htmlAddNodeFormCategory.appendChild(option);
+        });
     } catch (error) {
         console.error('[fetchCategories] Fetch error:', error);
     }
-
-    // fill the form select with categories
-    window.categories.forEach(function(category) {
-        var option = document.createElement('option');
-        option.value = category.id;
-        option.text = category.name;
-        menu.AddNodeForm.htmlAddNodeFormCategory.appendChild(option);
-    });
 }
 
 async function fetchTypes()
@@ -309,19 +301,17 @@ async function fetchTypes()
             throw new Error(`[fetchTypes] HTTP error! status: ${response.status}`);
         }
         var typesData = await response.json();
-        window.types = typesData['data'];
+        var types = typesData['data'];
+        types.forEach(function(type) {
+            var option = document.createElement('option');
+            option.value = type.id;
+            option.text = type.name;
+            menu.AddNodeForm.htmlAddNodeFormType.appendChild(option);
+        });
     }
     catch (error) {
         console.error('[fetchTypes] Fetch error:', error);
     }
-
-    // fill the form select with types
-    window.types.forEach(function(type) {
-        var option = document.createElement('option');
-        option.value = type.id;
-        option.text = type.name;
-        menu.AddNodeForm.htmlAddNodeFormType.appendChild(option);
-    });
 }
 
 async function fetchSaves()
