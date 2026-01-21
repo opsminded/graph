@@ -26,7 +26,7 @@ class Graph
     async init() {
         this.htmlExportBtnElement.addEventListener('click', () => {
             if(! graph.save) {
-                alert('No save loaded to export.');
+                alert('Não há projeto carregado para exportar.');
                 return;
             }
 
@@ -315,9 +315,7 @@ class AddNodeForm {
         nodeListSelect.innerHTML = '';
 
         graph.nodes.forEach(function(node) {
-            // console.log('Checking node:', node);
             if (node.data.category === categorySelect && node.data.type === typeSelect) {
-                // console.log('Node data:', node.data);
                 const option = document.createElement('option');
                 option.value = node.data.id;
                 option.text = node.data.label;
@@ -383,11 +381,9 @@ class AddEdgeForm {
             
             if (!response.ok) {
                 console.log('[insertEdge] response:', response);
-                alert(error);
                 throw new Error(`[insertEdge] HTTP error! status: ${response.status}`);
             }
         } catch (error) {
-            alert(error);
             console.error('[insertEdge] Fetch error:', error);
         }
     }
@@ -404,7 +400,7 @@ class AddEdgeForm {
         e.preventDefault();
     
         if (graph.selection.length !== 2) {
-            alert('Please select exactly two nodes to create an edge between them.');
+            alert('Por favor, selecione exatamente dois nós para criar uma conexão entre eles.');
             graph.selection = [];
             graph.cy.elements().unselect();
             return;
@@ -413,7 +409,6 @@ class AddEdgeForm {
         const sourceNode = graph.selection[0];
         const targetNode = graph.selection[1];
 
-        // console.log('Creating edge between nodes:', sourceNode, 'and', targetNode);
         await this.insertEdge(sourceNode, targetNode);
         window.location.reload();
     }
@@ -469,9 +464,6 @@ class NewProjectModal {
                 console.log('response:', response);
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            
-            const result = await response.json();
-            // console.log('new document Success:', result);
             
             e.target.reset();
             window.location.href = `/?save=${result.data.id}`;
@@ -567,8 +559,6 @@ class Modals {
         }
     }
 }
-
-////////////////////////////////////////////////////////////////////////////////
 
 document.addEventListener("DOMContentLoaded", async function() {
     graph = new Graph();
