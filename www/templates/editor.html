@@ -9,21 +9,23 @@
         <link rel="stylesheet" href="/index.php/style.css">
     </head>
     <body>
-        <h1 id="graph-title">Graph</h1>
+        <div id="graph-header">
+            <h1 id="graph-title">Graph</h1>
+            <p>Autor: <span id="graph-author"></span></p>
+            <p>Criado em: <span id="graph-created"></span></p>
+        </div>
         <div id="menu">
             <div><button id="close-menu-btn">X</button></div>
             <img src="/index.php/getImage?img=logo" alt="Logo" width="32" height="32">
-            <h1><span style="color: rgb(182, 43, 43);">Brades</span>ketch</h1>
+            <h2><span style="color: rgb(182, 43, 43);">Brades</span>ketch</h2>
 
-            <div>
+            <div id="user-panel">
                 <p><button id="login-btn" title="Entrar">Entrar</button></p>
                 <p>
                     <button id="new-doc-btn" title="Novo Documento" style="margin: 0 10px;">Novo</button>
                     <button id="open-doc-btn" title="Abrir Documento" style="margin: 0 10px;">Abrir</button>
                 </p>
             </div>
-
-            <hr>
 
             <form id="add-node-form" method="post">
                 <h3>Adicionar Item</h3>
@@ -66,6 +68,15 @@
 
         <div id="info-panel">
             <h2>Propriedades do Nó</h2>
+            <div id="info-panel-content">
+                <p><strong>ID:</strong> <span id="info-node-id"></span></p>
+                <p><strong>Rótulo:</strong> <span id="info-node-label"></span></p>
+                <p><strong>Categoria:</strong> <span id="info-node-category"></span></p>
+                <p><strong>Tipo:</strong> <span id="info-node-type"></span></p>
+                <div id="info-node-properties">
+                    <!-- Additional properties will be populated dynamically -->
+                </div>
+            </div>
         </div>
 
         <div id="modal">

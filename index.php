@@ -23,7 +23,7 @@ $router           = new HTTPRequestRouter($controller);
 $renderer         = new HTTPRenderer($DATA_TEMPLATES);
 
 if(false) {
-    $service->insertNode(new ModelNode('Credito', 'Crédito', 'business', 'business', false, ['host' => 'users.example.com']));
+    $service->insertNode(new ModelNode('Credito', 'Crédito', 'business', 'business', false, ['host' => 'users.example.com', 'api' => 'http://users.example.com']));
     $service->insertNode(new ModelNode('Pagamento', 'Pagamento', 'business', 'business_case', false, ['host' => 'payments.example.com']));
     $service->insertNode(new ModelNode('UserService', 'User Service', 'application', 'service', false, ['host' => 'users.example.com']));
     $service->insertNode(new ModelNode('AuthService', 'Authentication Service', 'application', 'service', false, ['host' => 'auth.example.com']));

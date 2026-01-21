@@ -72,7 +72,8 @@ class Store {
             currentSave: null,
             selection: [],
             cy: null,
-            isLoading: false
+            isLoading: false,
+            currentNodeSelectionForInfo: null
         };
         this.subscribers = [];
         this.isInitializing = true;
@@ -175,12 +176,17 @@ class Graph
     constructor(store) {
         this.store = store;
         this.cydiv = document.getElementById('cy');
+        
         this.htmlTitleElement = document.getElementById('graph-title');
+        this.htmlAuthorElement = document.getElementById('graph-author');
+        this.htmlCreatedElement = document.getElementById('graph-created');
+
         this.htmlExportBtnElement = document.getElementById('export-btn');
         this.htmlOpenProjectFormIdElement = document.getElementById('open-doc-form-id');
 
-        this.menu = new Menu(store);
+        this.menu = new Menu(store, this);
         this.modals = new Modals(store);
+        this.infoPanel = new InfoPanel(store);
 
         // Subscribe to state changes
         this.store.subscribe((state, changedKeys) => {
@@ -239,13 +245,11 @@ class Graph
             this.store.setLoading(true);
             const response = await fetch(API.GET_GRAPH);
             if (!response.ok) {
-                console.log('[fetchGraph] response:', response);
                 throw new Error(`Erro ao carregar o grafo: ${response.status}`);
             }
             const { data } = await response.json();
             this.store.setGraph(data);
         } catch (error) {
-            console.error('[fetchGraph] Fetch error:', error);
             Notification.error('Falha ao carregar o grafo. Por favor, recarregue a página.');
         } finally {
             this.store.setLoading(false);
@@ -257,7 +261,6 @@ class Graph
             this.store.setLoading(true);
             const response = await fetch(API.GET_SAVES);
             if (!response.ok) {
-                console.log('[fetchSaves] response:', response);
                 throw new Error(`Erro ao carregar projetos: ${response.status}`);
             }
             const { data } = await response.json();
@@ -289,7 +292,6 @@ class Graph
             this.store.setLoading(true);
             const response = await fetch(`${API.GET_SAVE}?id=${encodeURIComponent(saveID)}`);
             if (!response.ok) {
-                console.log('[fetchSave] response:', response);
                 throw new Error(`Erro ao carregar projeto: ${response.status}`);
             }
             const { data } = await response.json();
@@ -317,7 +319,6 @@ class Graph
             });
             
             if (!response.ok) {
-                console.log('[updateSave] response:', response);
                 throw new Error(`Erro ao salvar: ${response.status}`);
             }
             
@@ -335,12 +336,18 @@ class Graph
         const graphData = this.store.getState().graph;
 
         if (!currentSave) {
-            console.log('No save loaded, cannot update view.');
             this.modals.displayOpenProjectModal();
             return;
         }
 
         this.htmlTitleElement.textContent = currentSave?.name ?? 'Untitled';
+        this.htmlAuthorElement.textContent = currentSave?.creator ?? 'Unknown';
+        this.htmlCreatedElement.textContent = new Date(currentSave?.created_at).toLocaleString() ?? 'Unknown';
+
+        if (!graphData) {
+            console.log('No graph data available, cannot update view.');
+            return;
+        }
 
         // Destroy old Cytoscape instance to prevent memory leak
         const oldCy = this.store.getCy();
@@ -369,6 +376,13 @@ class Graph
         cy.on('unselect', 'node', () => {
             cy.elements().unselect();
             this.store.clearSelection();
+            this.infoPanel.hide();
+        });
+
+        cy.on('dbltap', 'node', (e) => {
+            const node = e.target;
+            this.store.setState({ currentNodeSelectionForInfo: node.id() });
+            this.infoPanel.show();
         });
         
         const startNodes = cy.nodes().filter(node => 
@@ -383,8 +397,9 @@ class Graph
 }
 
 class Menu {
-    constructor(store) {
+    constructor(store, graph) {
         this.store = store;
+        this.graph = graph;
         this.MENU_WIDTH_THRESHOLD = 300;
         this.keepClosed = false;
         this.mouseMoveDebounceTimer = null;
@@ -392,7 +407,7 @@ class Menu {
         this.htmlCloseBtnElement = document.getElementById('close-menu-btn');
         
         this.AddNodeForm = new AddNodeForm(store);
-        this.AddEdgeForm = new AddEdgeForm(store);
+        this.AddEdgeForm = new AddEdgeForm(store, graph);
 
         this.init();
         this.setupSubscriptions();
@@ -495,7 +510,6 @@ class AddNodeForm {
         try {
             const response = await fetch(API.GET_CATEGORIES);
             if (!response.ok) {
-                console.log('[fetchCategories] response:', response);
                 throw new Error(`Erro ao carregar categorias: ${response.status}`);
             }
             const { data: categories } = await response.json();
@@ -514,7 +528,6 @@ class AddNodeForm {
         try {
             const response = await fetch(API.GET_TYPES);
             if (!response.ok) {
-                console.log('[fetchTypes] response:', response);
                 throw new Error(`Erro ao carregar tipos: ${response.status}`);
             }
             const { data: types } = await response.json();
@@ -575,8 +588,9 @@ class AddNodeForm {
 }
 
 class AddEdgeForm {
-    constructor(store) {
+    constructor(store, graph) {
         this.store = store;
+        this.graph = graph;
         this.htmlElement = document.getElementById('add-edge-form');
         this.htmlAddEdgeFormSubmit = document.getElementById('add-edge-form-submit');
 
@@ -607,7 +621,6 @@ class AddEdgeForm {
             });
             
             if (!response.ok) {
-                console.log('[insertEdge] response:', response);
                 throw new Error(`Erro HTTP: ${response.status}`);
             }
             
@@ -634,7 +647,7 @@ class AddEdgeForm {
         const cy = this.store.getCy();
 
         if (selection.length !== 2) {
-            alert('Por favor, selecione exatamente dois nós para criar uma conexão entre eles.');
+            Notification.error('Por favor, selecione exatamente dois nós para criar uma conexão entre eles.');
             this.store.clearSelection();
             if (cy) cy.elements().unselect();
             return;
@@ -643,10 +656,18 @@ class AddEdgeForm {
         const sourceNode = selection[0];
         const targetNode = selection[1];
 
-        await this.insertEdge(sourceNode, targetNode);
-        
-        // Reload page to fetch updated graph with new edge
-        window.location.reload();
+        try {
+            await this.insertEdge(sourceNode, targetNode);
+            
+            // Clear selection
+            this.store.clearSelection();
+            if (cy) cy.elements().unselect();
+            
+            // Re-fetch graph to get the new edge - will trigger reactive update
+            await this.graph.fetchGraph();
+        } catch (error) {
+            // Error already handled in insertEdge
+        }
     }
 }
 
@@ -706,7 +727,6 @@ class NewProjectModal {
             });
             
             if (!response.ok) {
-                console.log('response:', response);
                 throw new Error(`Erro HTTP: ${response.status}`);
             }
             
@@ -730,9 +750,6 @@ class NewProjectModal {
 
     async openProject(e) {
         e.preventDefault();
-        console.log('Open project form submitted.');
-        console.log(this.htmlOpenProjectFormIdElement.value);
-        const id = this.htmlOpenProjectFormIdElement.value;
         window.location.href = `/?save=${id}`;
     }
 }
@@ -814,6 +831,75 @@ class Modals {
         if (e.key === 'Escape') {
             this.hide();
         }
+    }
+}
+
+class InfoPanel {
+    constructor(store) {
+        this.store = store;
+        this.htmlElement = document.getElementById('info-panel');
+        this.htmlInfoNodeId = document.getElementById('info-node-id');
+        this.htmlInfoNodeLabel = document.getElementById('info-node-label');
+        this.htmlInfoNodeCategory = document.getElementById('info-node-category');
+        this.htmlInfoNodeType = document.getElementById('info-node-type');
+        this.htmlInfoNodeProperties = document.getElementById('info-node-properties');
+    }
+
+    show() {
+
+        const state = this.store.getState();
+        const nodeId = state.currentNodeSelectionForInfo;
+        const nodes = state.graph?.elements?.nodes || [];
+        const nodeData = nodes.find(node => node.data.id === nodeId);
+
+        console.log(nodeData);
+
+        if (nodeData) {
+            this.htmlInfoNodeId.textContent = nodeData.data.id;
+            this.htmlInfoNodeLabel.textContent = nodeData.data.label;
+            this.htmlInfoNodeCategory.textContent = nodeData.data.category;
+            this.htmlInfoNodeType.textContent = nodeData.data.type;
+
+            // Clear previous properties
+            this.htmlInfoNodeProperties.innerHTML = '';
+            
+            // Populate additional properties
+            for (const [key, value] of Object.entries(nodeData.data)) {
+                if (['id', 'label', 'category', 'type'].includes(key)) continue;
+                
+                const p = document.createElement('p');
+
+                const strong = document.createElement('strong');
+                strong.textContent = `${key}: `;
+                p.appendChild(strong);
+
+                if(value !== null && typeof value === 'string' && value.startsWith('http')) {
+                    const a = document.createElement('a');
+                    a.href = value;
+                    a.textContent = value;
+                    a.target = '_blank';
+                    p.appendChild(a);
+                } else {
+                    const span = document.createElement('span');
+                    span.textContent = `${value}`;
+                    p.appendChild(span);
+                }
+
+                this.htmlInfoNodeProperties.appendChild(p);
+            }
+
+        } else {
+            this.htmlInfoNodeId.textContent = 'N/A';
+            this.htmlInfoNodeLabel.textContent = 'N/A';
+            this.htmlInfoNodeCategory.textContent = 'N/A';
+            this.htmlInfoNodeType.textContent = 'N/A';
+        }
+
+        this.htmlElement.classList.add('show');
+    }
+
+    hide() {
+        this.htmlElement.classList.remove('show');
     }
 }
 
