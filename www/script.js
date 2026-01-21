@@ -146,15 +146,15 @@ class Graph
         
         graph.cy = cytoscape(data);
 
-        graph.cy.on('select', 'node', function(evt){
+        graph.cy.on('select', 'node', (e) => {
             const selectedNodes = graph.cy.$('node:selected');
             if (selectedNodes.length > 2) {
                 graph.menu.AddEdgeForm.htmlAddEdgeFormSubmit.disabled = true;
-                evt.target.unselect();
+                e.target.unselect();
                 return;
             }
 
-            const node = evt.target;
+            const node = e.target;
             graph.selection.push(node.id());
 
             if(graph.selection.length < 2) {
@@ -171,7 +171,7 @@ class Graph
             }
         });
 
-        graph.cy.on('unselect', 'node', function(evt){
+        graph.cy.on('unselect', 'node', () => {
             graph.cy.elements().unselect();
             graph.selection = [];
             graph.menu.AddEdgeForm.hide();
@@ -315,7 +315,7 @@ class AddNodeForm {
         const nodeListSelect = graph.menu.AddNodeForm.htmlAddNodeFormNode;
         nodeListSelect.innerHTML = '';
 
-        graph.nodes.forEach(function(node) {
+        graph.nodes.forEach((node) => {
             if (node.data.category === categorySelect && node.data.type === typeSelect) {
                 const option = document.createElement('option');
                 option.value = node.data.id;
