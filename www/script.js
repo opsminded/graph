@@ -192,6 +192,7 @@ class Graph
 
 class Menu {
     constructor() {
+        this.MENU_WIDTH_THRESHOLD = 300;
         this.keepClosed = false;
         this.htmlElement = document.getElementById('menu');
         this.htmlCloseBtnElement = document.getElementById('close-menu-btn');
@@ -217,13 +218,13 @@ class Menu {
     }
 
     onMouseMove(e) {
-        if(e.clientX > 300) {
+        if(e.clientX > this.MENU_WIDTH_THRESHOLD) {
             if (this.keepClosed) {
                 this.hide();
             }
         }
 
-        if(e.clientX <= 300) {
+        if(e.clientX <= this.MENU_WIDTH_THRESHOLD) {
             this.show();
         }
     }
@@ -381,9 +382,11 @@ class AddEdgeForm {
             
             if (!response.ok) {
                 console.log('[insertEdge] response:', response);
+                alert(`Failed to create edge: HTTP ${response.status}`);
                 throw new Error(`[insertEdge] HTTP error! status: ${response.status}`);
             }
         } catch (error) {
+            alert(`Failed to create edge: ${error.message}`);
             console.error('[insertEdge] Fetch error:', error);
         }
     }
