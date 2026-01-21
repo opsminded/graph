@@ -17,9 +17,155 @@ window.saves = [];
 // contains the currently opened save
 window.save = null;
 
-window.keepClosed = false;
-
 window.selection = [];
+
+////////////////////////////////////////////////////////////////////////////////
+
+class Menu {
+    constructor() {
+        this.keepClosed = false;
+        this.htmlElement = document.getElementById('menu');
+        this.htmlCloseBtnElement = document.getElementById('close-menu-btn');
+        
+        this.init();
+    }
+
+    init() {
+        this.htmlCloseBtnElement.addEventListener('click', () => {
+            this.onCloseBtnClick();
+        });
+    }
+
+    show() {
+        this.htmlElement.classList.remove('hide');
+    }
+
+    hide() {
+        this.htmlElement.classList.add('hide');
+    }
+
+    onMouseMove(e) {
+        if(e.clientX > 300) {
+            if (this.keepClosed) {
+                this.hide();
+            }
+        }
+
+        if(e.clientX <= 300) {
+            this.show();
+        }
+    }
+
+    onCloseBtnClick() {
+        this.keepClosed = !this.keepClosed;
+
+        if (this.keepClosed) {
+            this.htmlCloseBtnElement.textContent = 'fixar';
+        } else {
+            this.htmlCloseBtnElement.textContent = 'X';
+        }
+    }
+}
+
+class NewProjectModal {
+    constructor() {
+        this.htmlElement = document.getElementById('modal-new-doc');
+    }
+
+    show() {
+        this.htmlElement.classList.add('show');
+    }
+
+    hide() {
+        this.htmlElement.classList.remove('show');
+    }
+}
+
+class OpenProjectModal {
+    constructor() {
+        this.htmlElement = document.getElementById('modal-open-doc');
+    }
+
+    show() {
+        this.htmlElement.classList.add('show');
+    }
+
+    hide() {
+        this.htmlElement.classList.remove('show');
+    }
+}
+
+class Modals {
+    constructor() {
+        this.newProjectModal = null;
+        this.openProjectModal = null;
+
+        this.htmlElement = document.getElementById('modal');
+        this.htmlNewProjectBtnElement = document.getElementById('new-doc-btn');
+        this.htmlOpenProjectBtnElement = document.getElementById('open-doc-btn');
+        this.htmlCloseBtnElement = document.getElementById('close-modal-btn');
+
+        this.init();
+    }
+
+    init() {
+        this.newProjectModal = new NewProjectModal();
+        this.openProjectModal = new OpenProjectModal();
+
+        this.htmlNewProjectBtnElement.addEventListener('click', () => {
+            this.displayNewProjectModal();
+        });
+
+        this.htmlOpenProjectBtnElement.addEventListener('click', () => {
+            this.displayOpenProjectModal();
+        });
+
+        this.htmlCloseBtnElement.addEventListener('click', () => {
+            this.hide();
+        });
+    }
+
+    show() {
+        this.htmlElement.classList.add('show');
+    }
+    
+    hide() {
+        this.htmlElement.classList.remove('show');
+        this.closeNewProjectModal();
+        this.closeOpenProjectModal();
+    }
+
+    displayNewProjectModal() {
+        this.show();
+        this.newProjectModal.show();
+        this.openProjectModal.hide();
+    }
+    
+    displayOpenProjectModal() {
+        this.show();
+        this.openProjectModal.show();
+        this.newProjectModal.hide();
+    }
+
+    closeNewProjectModal() {
+        this.newProjectModal.hide();
+    }
+    
+    closeOpenProjectModal() {
+        this.openProjectModal.hide();
+    }
+
+    onKeydown(e) {
+        if (e.key === 'Escape') {
+            this.hide();
+        }
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+var menu = new Menu();
+var modals = new Modals();
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -194,42 +340,6 @@ async function insertEdge(sourceNode, targetNode)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-function displayModal() {
-    var modal = document.getElementById('modal');
-    modal.classList.add('show');
-}
-
-function closeModal() {
-    var modal = document.getElementById('modal');
-    modal.classList.remove('show');
-}
-
-function displayNewDocModal() {
-    displayModal();
-    closeOpenDocModal();
-
-    var newDocModal = document.getElementById('modal-new-doc');
-    newDocModal.classList.add('show');
-}
-
-function closeNewDocModal() {
-    var newDocModal = document.getElementById('modal-new-doc');
-    newDocModal.classList.remove('show');
-}
-
-function displayOpenDocModal() {
-    displayModal();
-    closeNewDocModal();
-    
-    var openDocModal = document.getElementById('modal-open-doc');
-    openDocModal.classList.add('show');
-}
-
-function closeOpenDocModal() {
-    var openDocModal = document.getElementById('modal-open-doc');
-    openDocModal.classList.remove('show');
-}
-
 function updateNodeList()
 {
     const categorySelect = document.getElementById('add-node-form-category').value;
@@ -257,7 +367,7 @@ async function updateView()
 {
     if(! window.save) {
         console.log('No save loaded, cannot update view.');
-        displayOpenDocModal();
+        modals.displayOpenProjectModal();
         return;
     }
 
@@ -332,58 +442,13 @@ async function updateView()
 //////////////////////////////////////////////////////////////////////////////
 
 document.addEventListener('mousemove', function(e) {
-    const menu = document.getElementById('menu');
-    
-    if(e.clientX > 300) {
-        if (window.keepClosed) {
-            menu.classList.add('hide');
-        }
-    }
-
-    if(e.clientX <= 300) {
-        menu.classList.remove('hide');
-    }
+    menu.onMouseMove(e);
 });
 
 document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        var modal = document.getElementById('modal');
-        modal.classList.remove('show');
-
-        var newDocModal = document.getElementById('modal-new-doc');
-        var openDocModal = document.getElementById('modal-open-doc');
-
-        newDocModal.classList.remove('show');
-        openDocModal.classList.remove('show');
-    }
+    modals.onKeydown(e);
 });
 
-document.getElementById('close-modal-btn').addEventListener('click', function(e) {
-    if (e.target === e.currentTarget) {
-        closeModal();
-    }
-});
-
-document.getElementById('close-menu-btn').addEventListener('click', function(e){
-    window.keepClosed = !window.keepClosed;
-
-
-    if (window.keepClosed) {
-        document.getElementById('close-menu-btn').textContent = 'fixar';
-    } else {
-        document.getElementById('close-menu-btn').textContent = 'fechar';
-    }
-
-    console.log('Menu will stay closed:', window.keepClosed);
-});
-
-document.getElementById('new-doc-btn').addEventListener('click', function(){
-    displayNewDocModal();
-});
-
-document.getElementById('open-doc-btn').addEventListener('click', function(){
-    displayOpenDocModal();
-});
 
 document.getElementById('add-node-form-category').addEventListener('change', function(e) {
     const selectedCategoryID = e.target.value;
