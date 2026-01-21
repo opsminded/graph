@@ -73,8 +73,8 @@ class Graph
                 console.log('[fetchGraph] response:', response);
                 throw new Error(`[fetchGraph] HTTP error! status: ${response.status}`);
             }
-            const graphData = await response.json();
-            this.graph = graphData['data'];
+            const { data } = await response.json();
+            this.graph = data;
             this.nodes = this.graph.elements.nodes;
         } catch (error) {
             console.error('[fetchGraph] Fetch error:', error);
@@ -88,8 +88,8 @@ class Graph
                 console.log('[fetchSaves] response:', response);
                 throw new Error(`[fetchSaves] HTTP error! status: ${response.status}`);
             }
-            const savesData = await response.json();
-            this.saves = savesData['data'];
+            const { data } = await response.json();
+            this.saves = data;
             
             this.saves.forEach((save) => {
                 const option = document.createElement('option');
@@ -118,8 +118,8 @@ class Graph
                 console.log('[fetchSave] response:', response);
                 throw new Error(`[fetchSave] HTTP error! status: ${response.status}`);
             }
-            const saveData = await response.json();
-            this.save = saveData['data'];
+            const { data } = await response.json();
+            this.save = data;
         } catch (error) {
             console.error('[fetchSave] Fetch error:', error);
         }
@@ -286,8 +286,7 @@ class AddNodeForm {
                 console.log('[fetchCategories] response:', response);
                 throw new Error(`[fetchCategories] HTTP error! status: ${response.status}`);
             }
-            const categoriesData = await response.json();
-            const categories = categoriesData['data'];
+            const { data: categories } = await response.json();
             categories.forEach((category) => {
                 const option = document.createElement('option');
                 option.value = category.id;
@@ -306,8 +305,7 @@ class AddNodeForm {
                 console.log('[fetchTypes] response:', response);
                 throw new Error(`[fetchTypes] HTTP error! status: ${response.status}`);
             }
-            const typesData = await response.json();
-            const types = typesData['data'];
+            const { data: types } = await response.json();
             types.forEach((type) => {
                 const option = document.createElement('option');
                 option.value = type.id;
