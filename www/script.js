@@ -1,5 +1,5 @@
 "use strict";
-"v1";
+"v2";
 
 // API Endpoints
 const API = {
@@ -287,7 +287,7 @@ class Graph
         const saveID = urlParams.get('save');
         
         if (!saveID) {
-            console.log('[fetchSave] No save ID provided in URL parameters.');
+            console.log('No save ID provided in URL parameters.');
             return;
         }
 
@@ -308,7 +308,7 @@ class Graph
         try {
             const response = await fetch(API.GET_STATUS);
             if (!response.ok) {
-                console.log('[fetchStatus] Response not ok:', response.status);
+                console.error('[fetchStatus] Response not ok:', response.status);
                 throw new Error(`Erro ao obter status: ${response.status}`);
             }
             
@@ -381,9 +381,6 @@ class Graph
             
             const updatedNodes = currentSave.nodes.filter(nodeId => nodeId !== node);
 
-            console.log('Current save before removal:', currentSave);
-            console.log('Removing node from save:', node);
-            console.log('Updated nodes list:', updatedNodes);
             currentSave.nodes = updatedNodes;
             this.store.clearSelection();
             this.store.setCurrentSave(currentSave);
@@ -398,14 +395,10 @@ class Graph
                 return;
             }
 
-            console.log('Selected edge to remove:', selectedEdge);
-
             const payload = {
                 'source': selectedEdge.data('source'),
                 'target': selectedEdge.data('target')
             };
-
-            console.log('Payload for edge deletion:', payload);
 
             try {
                 const response = await fetch(API.DELETE_EDGE, {
@@ -420,6 +413,7 @@ class Graph
                     throw new Error(`Erro ao remover aresta: ${response.status}`);
                 }
 
+                this.store.setSelectedEdge(null);
                 Notification.success('Aresta removida com sucesso!', 2000);
                 await this.fetchGraph();
             } catch (error) {
@@ -979,8 +973,6 @@ class InfoPanel {
         const nodeId = state.currentNodeSelectionForInfo;
         const nodes = state.graph?.elements?.nodes || [];
         const nodeData = nodes.find(node => node.data.id === nodeId);
-
-        console.log(nodeData);
 
         if (nodeData) {
             this.htmlInfoNodeId.textContent = nodeData.data.id;

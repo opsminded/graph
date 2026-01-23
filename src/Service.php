@@ -99,8 +99,8 @@ final class Service implements ServiceInterface
                 $data[ModelCategory::CATEGORY_KEYNAME_ID],
                 $data[ModelCategory::CATEGORY_KEYNAME_NAME],
                 $data[ModelCategory::CATEGORY_KEYNAME_SHAPE],
-                $data[ModelCategory::CATEGORY_KEYNAME_WIDTH],
-                $data[ModelCategory::CATEGORY_KEYNAME_HEIGHT],
+                (int)$data[ModelCategory::CATEGORY_KEYNAME_WIDTH],
+                (int)$data[ModelCategory::CATEGORY_KEYNAME_HEIGHT],
             );
             $categories[] = $category;
         }
