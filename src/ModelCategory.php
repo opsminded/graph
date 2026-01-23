@@ -32,8 +32,8 @@ final class ModelCategory
             self::CATEGORY_KEYNAME_ID     => $this->id,
             self::CATEGORY_KEYNAME_NAME   => $this->name,
             self::CATEGORY_KEYNAME_SHAPE  => $this->shape,
-            self::CATEGORY_KEYNAME_WIDTH  => $this->width,
-            self::CATEGORY_KEYNAME_HEIGHT => $this->height,
+            (int)self::CATEGORY_KEYNAME_WIDTH  => $this->width,
+            (int)self::CATEGORY_KEYNAME_HEIGHT => $this->height,
         ];
     }
 }

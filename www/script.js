@@ -11,7 +11,8 @@ const API = {
     INSERT_SAVE:    '#BASE_PATH#/insertSave',
     GET_CATEGORIES: '#BASE_PATH#/getCategories',
     GET_TYPES:      '#BASE_PATH#/getTypes',
-    INSERT_EDGE:    '#BASE_PATH#/insertEdge'
+    INSERT_EDGE:    '#BASE_PATH#/insertEdge',
+    DELETE_EDGE:    '#BASE_PATH#/deleteEdge'
 };
 
 // Utility Functions
@@ -73,6 +74,7 @@ class Store {
             saves: [],
             currentSave: null,
             selection: [],
+            selectedEdge: null,
             cy: null,
             currentNodeSelectionForInfo: null
         };
@@ -143,6 +145,10 @@ class Store {
         this.setState({ selection });
     }
 
+    getSelectedEdge() {
+        return this.state.selectedEdge;
+    }
+
     addToSelection(nodeId) {
         const selection = [...this.state.selection, nodeId];
         this.setState({ selection });
@@ -150,6 +156,10 @@ class Store {
 
     clearSelection() {
         this.setState({ selection: [] });
+    }
+
+    setSelectedEdge(edgeId) {
+        this.setState({ selectedEdge: edgeId });
     }
 
     addNodeToSave(nodeId) {
@@ -222,7 +232,9 @@ class Graph
             this.menu.onMouseMove(e);
         });
 
-        document.addEventListener('keydown', (e) => {
+        document.addEventListener('keydown', async (e) => {
+            await this.removeNode(e);
+            await this.removeEdge(e);
             this.modals.onKeydown(e);
         });
 
@@ -341,6 +353,82 @@ class Graph
         }
     }
 
+    async removeNode(e) {
+
+        const edgeSelected = this.store.getSelectedEdge();
+        if (edgeSelected) {
+            return;
+        }
+
+        if (e.key === 'Delete' || e.key === 'Backspace') {
+            const selection = this.store.getSelection();
+            if (selection.length > 1) {
+                Notification.error('Por favor, selecione somente um nó para remover.');
+                return;
+            }
+            const node = selection[0];
+            const currentSave = this.store.getCurrentSave();
+            
+            if (!currentSave) {
+                Notification.error('Nenhum projeto carregado.');
+                return;
+            }
+            
+            if (!currentSave.nodes.includes(node)) {
+                Notification.error('O nó selecionado é uma dependência obrigatória.');
+                return;
+            }
+            
+            const updatedNodes = currentSave.nodes.filter(nodeId => nodeId !== node);
+
+            console.log('Current save before removal:', currentSave);
+            console.log('Removing node from save:', node);
+            console.log('Updated nodes list:', updatedNodes);
+            currentSave.nodes = updatedNodes;
+            this.store.clearSelection();
+            this.store.setCurrentSave(currentSave);
+            return;
+        }
+    }
+
+    async removeEdge(e) {
+        if (e.key === 'Delete' || e.key === 'Backspace') {
+            const selectedEdge = this.store.getSelectedEdge();
+            if (!selectedEdge) {
+                return;
+            }
+
+            console.log('Selected edge to remove:', selectedEdge);
+
+            const payload = {
+                'source': selectedEdge.data('source'),
+                'target': selectedEdge.data('target')
+            };
+
+            console.log('Payload for edge deletion:', payload);
+
+            try {
+                const response = await fetch(API.DELETE_EDGE, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Erro ao remover aresta: ${response.status}`);
+                }
+
+                Notification.success('Aresta removida com sucesso!', 2000);
+                await this.fetchGraph();
+            } catch (error) {
+                console.error('[updateSave] Fetch error:', error);
+                Notification.error('Falha ao remover a aresta. Tente novamente.');
+            }
+        }
+    }
+
     async updateView() {
         const currentSave = this.store.getCurrentSave();
         const graphData = this.store.getState().graph;
@@ -383,10 +471,25 @@ class Graph
             this.store.addToSelection(node.id());
         });
 
+        cy.on('select', 'edge', (e) => {
+            const selectedEdges = cy.$('edge:selected');
+            if (selectedEdges.length > 1) {
+                e.target.unselect();
+                return;
+            }
+            
+            const edge = e.target;
+            this.store.setSelectedEdge(edge);
+        });
+
         cy.on('unselect', 'node', () => {
             cy.elements().unselect();
             this.store.clearSelection();
             this.infoPanel.hide();
+        });
+
+        cy.on('unselect', 'edge', () => {
+            this.store.setSelectedEdge(null);
         });
 
         cy.on('dbltap', 'node', (e) => {
@@ -404,16 +507,16 @@ class Graph
         cy.elements().not(allNodes).remove();
         cy.layout(graphData.layout).run();
 
-        let offset = 0;
-        setInterval(() => {
-            offset -= 9;
-            cy.edges().animate({
-                style: { 'line-dash-offset': offset }
-            }, {
-                duration: 1000,
-                easing: 'linear'
-            });
-        }, 1000);
+        // let offset = 0;
+        // setInterval(() => {
+        //     offset -= 9;
+        //     cy.edges().animate({
+        //         style: { 'line-dash-offset': offset }
+        //     }, {
+        //         duration: 1000,
+        //         easing: 'linear'
+        //     });
+        // }, 1000);
 
         await this.fetchStatus();
         

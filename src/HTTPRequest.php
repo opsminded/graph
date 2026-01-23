@@ -29,7 +29,7 @@ final class HTTPRequest
         
         $this->path = str_replace($scriptName, "", $requestUri);
         
-        if ($this->method === self::METHOD_POST || $this->method === self::METHOD_PUT) {
+        if ($this->method === self::METHOD_POST || $this->method === self::METHOD_PUT || $this->method === self::METHOD_DELETE) {
             $jsonData = file_get_contents("php://input");
             if ($jsonData) {
                 $this->data = json_decode($jsonData, true); 
