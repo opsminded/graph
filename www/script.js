@@ -1,6 +1,14 @@
 "use strict";
 "v2";
 
+var COSELAYOUT = {
+    'name': 'cose',
+    'animate': false,
+    'fit': true,
+    'padding': 30,
+    'componentSpacing': 40
+};
+
 // API Endpoints
 const API = {
     GET_GRAPH:      '#BASE_PATH#/getCytoscapeGraph',
@@ -189,6 +197,7 @@ class Graph
         this.htmlCreatedElement = document.getElementById('graph-created');
 
         this.htmlExportBtnElement = document.getElementById('export-btn');
+        this.htmlFitBtnElement = document.getElementById('fit-btn');
         this.htmlOpenProjectFormIdElement = document.getElementById('open-doc-form-id');
 
         this.menu = new Menu(store, this);
@@ -210,6 +219,12 @@ class Graph
     }
 
     async init() {
+        this.htmlFitBtnElement.addEventListener('click', () => {
+            const cy = this.store.getCy();
+            cy.layout(COSELAYOUT).run();
+            cy.fit();
+        });
+
         this.htmlExportBtnElement.addEventListener('click', () => {
             const currentSave = this.store.getCurrentSave();
             if (!currentSave) {
@@ -247,6 +262,10 @@ class Graph
         
         // Initial view update
         await this.updateView();
+
+        const cy = this.store.getCy();
+        cy.layout(COSELAYOUT).run();
+        cy.fit();
     }
 
     async fetchGraph() {
@@ -499,8 +518,7 @@ class Graph
         const descendants = startNodes.successors();
         const allNodes = startNodes.union(descendants);
         cy.elements().not(allNodes).remove();
-        cy.layout(graphData.layout).run();
-
+        
         // let offset = 0;
         // setInterval(() => {
         //     offset -= 9;

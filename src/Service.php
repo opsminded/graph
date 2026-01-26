@@ -396,7 +396,7 @@ final class Service implements ServiceInterface
             $this->logger->info("status found", $statusData);
             return new ModelStatus($id, $statusData[ModelStatus::STATUS_KEYNAME_STATUS] ?? "unknown");
         }
-        $this->logger->error("status not found", ["id" => $id]);
+        $this->logger->info("status not found", ["id" => $id]);
         return null;
     }
 

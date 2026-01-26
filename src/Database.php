@@ -26,7 +26,7 @@ final class Database implements DatabaseInterface
             $this->logger->info("user found", ['params' => $params, 'row' => $row]);
             return $row;
         }
-        $this->logger->error("user not found", ['params' => $params]);
+        $this->logger->info("user not found", ['params' => $params]);
         return null;
     }
 
@@ -111,7 +111,7 @@ final class Database implements DatabaseInterface
             $this->logger->info("node fetched", ['params' => $params, 'row' => $row]);
             return $row;
         }
-        $this->logger->error("node not found", ['params' => $params]);
+        $this->logger->info("node not found", ['params' => $params]);
         return null;
     }
 
@@ -142,7 +142,7 @@ final class Database implements DatabaseInterface
             $this->logger->info("parent node fetched", ['row' => $row]);
             return $row;
         }
-        $this->logger->error("parent node not found", ['id' => $id]);
+        $this->logger->info("parent node not found", ['id' => $id]);
         return null;
     }
 
@@ -217,7 +217,7 @@ final class Database implements DatabaseInterface
             $this->logger->info("edge found", ['params' => $params, 'row' => $row]);
             return $row;
         }
-        $this->logger->error("edge not found", ['params' => $params]);
+        $this->logger->info("edge not found", ['params' => $params]);
         return null;
     }
 
@@ -331,7 +331,7 @@ final class Database implements DatabaseInterface
             $this->logger->info("save fetched", ['params' => $params, 'row' => $row]);
             return $row;
         }
-        $this->logger->error("save not found", ['params' => $params]);
+        $this->logger->info("save not found", ['params' => $params]);
         return null;
     }
 
@@ -436,7 +436,7 @@ final class Database implements DatabaseInterface
             )');
         
         $this->pdo->exec("INSERT OR IGNORE INTO categories VALUES
-            ('business',       'Business',       'round-rectangle', 50, 50),
+            ('business',       'Business',       'round-rectangle', 80, 80),
             ('application',    'Application',    'ellipse', 60, 60),
             ('infrastructure', 'Infrastructure', 'round-hexagon', 60, 53)");
         

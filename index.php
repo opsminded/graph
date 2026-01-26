@@ -64,6 +64,30 @@ if(false) {
     $service->insertNode(new ModelNode('Flutua', 'Flutua', 'infrastructure', 'server', false, ['host' => 'users.example.com']));
 }
 
+if (false) {
+    $letter = 'a';
+    for ($x = 1; $x <= 3000; $x++) {
+        $service->insertNode(new ModelNode($letter . 'Node' . $x, $letter . 'Node ' . $x, 'application', 'service', false, ['host' => $letter . 'node' . $x . '.example.com']));
+        // if ($x > 1) {
+        //     for ($y = 1; $y <= 2; $y++) {
+        //         $targetNode = $letter . 'Node' . rand(1, $x - 1);
+        //         if ($targetNode !== $letter . 'Node' . ($x - 1)) {
+        //             $service->insertEdge(new ModelEdge($letter . 'Node' . $x, $targetNode, 'ConnectsTo'));
+        //         }
+        //     }
+        // }
+        $statusValues = [
+            ModelStatus::STATUS_VALUE_HEALTHY,
+            ModelStatus::STATUS_VALUE_IMPACTED,
+            ModelStatus::STATUS_VALUE_UNHEALTHY,
+            ModelStatus::STATUS_VALUE_MAINTENANCE,
+            ModelStatus::STATUS_VALUE_UNKNOWN
+        ];
+        $randomStatus = $statusValues[array_rand($statusValues)];
+        $service->updateNodeStatus(new ModelStatus($letter . 'Node' . $x, $randomStatus));
+    }
+}
+
 if($_SERVER['REQUEST_URI'] === '/favicon.ico') {
     return false;
 }
