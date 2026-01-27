@@ -29,17 +29,17 @@ class TestHelperCytoscape extends TestAbstractTest
         $cy = new HelperCytoscape($this->database, $img, 'http://example.com/images');
 
         $nodes = [
-            new ModelNode('n1', 'Node 1', 'business', 'server',  false, ['a' => 1]),
-            new ModelNode('n2', 'Node 2', 'business', 'server', false, ['b' => 2]),
-            new ModelNode('n3', 'Node 3', 'business', 'server', false, ['c' => 3]),
+            new Node('n1', 'Node 1', 'business', 'server',  false, ['a' => 1]),
+            new Node('n2', 'Node 2', 'business', 'server', false, ['b' => 2]),
+            new Node('n3', 'Node 3', 'business', 'server', false, ['c' => 3]),
         ];
 
         $edges = [
-            new ModelEdge('n1', 'n2', 'label1'),
-            new ModelEdge('n2', 'n3', 'label2'),
+            new Edge('n1', 'n2', 'label1'),
+            new Edge('n2', 'n3', 'label2'),
         ];
 
-        $graph = new ModelGraph($nodes, $edges);
+        $graph = new Graph($nodes, $edges);
         $data = $cy->toArray($graph);
     }
 }

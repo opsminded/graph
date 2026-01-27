@@ -1,0 +1,42 @@
+<?php
+
+declare(strict_types=1);
+
+interface ServiceInterface
+{
+    public function getUser(string $id): ?User;
+    public function insertUser(User $user): bool;
+    public function updateUser(User $user): bool;
+
+    public function getCategories(): array;
+    public function insertCategory(Category $category): bool;
+    
+    public function getTypes(): array;
+    public function insertType(Type $type): bool;
+
+    public function getGraph(): Graph;
+
+    public function getNode(string $id): ?Node;
+    public function getNodes(): array;
+    public function insertNode(Node $node): bool;
+    public function updateNode(Node $node): bool;
+    public function deleteNode(Node $node): bool;
+
+    public function getEdge(string $source, string $target): ?Edge;
+    public function getEdges(): array;
+    public function insertEdge(Edge $edge): bool;
+    public function updateEdge(Edge $edge): bool;
+    public function deleteEdge(Edge $edge): bool;
+
+    public function getStatus(): array;
+    public function getNodeStatus(string $id): ?Status;
+    public function updateNodeStatus(Status $status): bool;
+
+    public function getProject(string $id): ?Project;
+    public function getProjects(): array;
+    public function insertProject(Project $project): bool;
+    public function updateProject(Project $project): bool;
+    public function deleteProject(string $id): bool;
+
+    public function getLogs(int $limit): array;
+}

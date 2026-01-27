@@ -27,12 +27,12 @@ final class HelperCytoscape
         $this->imageBaseUrl = $imageBaseUrl;
     }
 
-    public function toArray(ModelGraph $graph): array
+    public function toArray(Graph $graph): array
     {
         return [
             self::KEYNAME_ELEMENTS => [
-                ModelGraph::KEYNAME_NODES => $this->getNodes($graph),
-                ModelGraph::KEYNAME_EDGES => $this->getEdges($graph),
+                Graph::KEYNAME_NODES => $this->getNodes($graph),
+                Graph::KEYNAME_EDGES => $this->getEdges($graph),
             ],
 
             self::KEYNAME_STYLES => $this->getStyle(),
@@ -48,22 +48,22 @@ final class HelperCytoscape
         ];
     }
 
-    private function getNodes(ModelGraph $graph): array
+    private function getNodes(Graph $graph): array
     {
         $graphArr = $graph->toArray();
         $nodes = [];
-        foreach ($graphArr[ModelGraph::KEYNAME_NODES] as $index => $node) {
+        foreach ($graphArr[Graph::KEYNAME_NODES] as $index => $node) {
             $node = $node->toArray();
             $nodes[] = [
                 "data" => array_merge([
-                    ModelNode::NODE_KEYNAME_ID => $node[ModelNode::NODE_KEYNAME_ID],
-                    ModelNode::NODE_KEYNAME_LABEL => $node[ModelNode::NODE_KEYNAME_LABEL],
-                    ModelNode::NODE_KEYNAME_CATEGORY => $node[ModelNode::NODE_KEYNAME_CATEGORY],
-                    ModelNode::NODE_KEYNAME_TYPE => $node[ModelNode::NODE_KEYNAME_TYPE],
+                    Node::NODE_KEYNAME_ID => $node[Node::NODE_KEYNAME_ID],
+                    Node::NODE_KEYNAME_LABEL => $node[Node::NODE_KEYNAME_LABEL],
+                    Node::NODE_KEYNAME_CATEGORY => $node[Node::NODE_KEYNAME_CATEGORY],
+                    Node::NODE_KEYNAME_TYPE => $node[Node::NODE_KEYNAME_TYPE],
                 ], $node["data"]),
                 "classes" => [
-                    "node-category-".$node[ModelNode::NODE_KEYNAME_CATEGORY],
-                    "node-type-".$node[ModelNode::NODE_KEYNAME_TYPE],
+                    "node-category-".$node[Node::NODE_KEYNAME_CATEGORY],
+                    "node-type-".$node[Node::NODE_KEYNAME_TYPE],
                     "node-status-unknown",
                 ],
             ];
@@ -72,19 +72,19 @@ final class HelperCytoscape
         return $nodes;
     }
 
-    private function getEdges(ModelGraph $graph): array
+    private function getEdges(Graph $graph): array
     {
         $edgesArr = $graph->toArray();
         $edges = [];
-        foreach ($edgesArr[ModelGraph::KEYNAME_EDGES] as $edge) {
+        foreach ($edgesArr[Graph::KEYNAME_EDGES] as $edge) {
             $edge = $edge->toArray();
             $edges[] = [
                 "data" => [
-                    ModelEdge::EDGE_KEYNAME_ID     => $edge[ModelEdge::EDGE_KEYNAME_ID],
-                    ModelEdge::EDGE_KEYNAME_SOURCE => $edge[ModelEdge::EDGE_KEYNAME_SOURCE],
-                    ModelEdge::EDGE_KEYNAME_TARGET => $edge[ModelEdge::EDGE_KEYNAME_TARGET],
-                    ModelEdge::EDGE_KEYNAME_LABEL  => $edge[ModelEdge::EDGE_KEYNAME_LABEL],
-                    ModelEdge::EDGE_KEYNAME_DATA   => $edge[ModelEdge::EDGE_KEYNAME_DATA],
+                    Edge::EDGE_KEYNAME_ID     => $edge[Edge::EDGE_KEYNAME_ID],
+                    Edge::EDGE_KEYNAME_SOURCE => $edge[Edge::EDGE_KEYNAME_SOURCE],
+                    Edge::EDGE_KEYNAME_TARGET => $edge[Edge::EDGE_KEYNAME_TARGET],
+                    Edge::EDGE_KEYNAME_LABEL  => $edge[Edge::EDGE_KEYNAME_LABEL],
+                    Edge::EDGE_KEYNAME_DATA   => $edge[Edge::EDGE_KEYNAME_DATA],
                 ]
             ];
         }

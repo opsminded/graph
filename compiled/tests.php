@@ -2,24 +2,1491 @@
 
 declare(strict_types=1);
 
-class TestHTTPRequestException extends TestAbstractTest
+class TestHelperContext extends TestAbstractTest
 {
-    public function testHTTPRequestException(): void
+    public function testGraphContextUpdate(): void
     {
-        $req = new HTTPRequestException('message', ['key' => 'val'], ['id' => ''], '/get');
-        if($req->getData() != ['key' => 'val']) {
-            throw new Exception('problem on TestHTTPRequestException');
+        HelperContext::update('maria', 'admin', '192.168.0.1');
+        if (HelperContext::getUser() != 'maria') {
+            throw new Exception('TODO message. testGraphContextUpdate');
         }
 
-        if($req->getParams() != ['id' => '']) {
-            throw new Exception('problem on TestHTTPRequestException');
+        if (HelperContext::getGroup() != 'admin') {
+            throw new Exception('TODO message. testGraphContextUpdate');
         }
 
-        if($req->getPath() != '/get') {
-            throw new Exception('problem on TestHTTPRequestException');
+        if (HelperContext::getClientIP() != '192.168.0.1') {
+            throw new Exception('TODO message. testGraphContextUpdate');
         }
     }
 }
+
+#####################################
+
+class TestHelperLogger extends TestAbstractTest
+{
+    public function testLoggerConstructor(): void
+    {
+        
+    }
+}
+#####################################
+
+class TestHelperCytoscape extends TestAbstractTest
+{
+    private ?PDO $pdo;
+    private ?LoggerInterface $logger;
+    private ?Database $database;
+
+    public function up(): void
+    {
+        $this->pdo = Database::createConnection('sqlite::memory:');
+        $this->logger = new Logger();
+        $this->database = new Database($this->pdo, $this->logger);
+    }
+
+    public function down(): void
+    {
+        $this->pdo = null;
+        $this->logger = null;
+        $this->database = null;
+    }
+
+    public function testHelperCytoscape(): void
+    {
+        global $DATA_IMAGES;
+        $img = new HelperImages($DATA_IMAGES);
+        $cy = new HelperCytoscape($this->database, $img, 'http://example.com/images');
+
+        $nodes = [
+            new Node('n1', 'Node 1', 'business', 'server',  false, ['a' => 1]),
+            new Node('n2', 'Node 2', 'business', 'server', false, ['b' => 2]),
+            new Node('n3', 'Node 3', 'business', 'server', false, ['c' => 3]),
+        ];
+
+        $edges = [
+            new Edge('n1', 'n2', 'label1'),
+            new Edge('n2', 'n3', 'label2'),
+        ];
+
+        $graph = new Graph($nodes, $edges);
+        $data = $cy->toArray($graph);
+    }
+}
+
+#####################################
+
+final class TestOKResponse extends TestAbstractTest
+{
+    public function testOKResponse(): void
+    {
+        $resp = new OKResponse('node created', ['key' => 'val']);
+        if($resp->code != 200) {
+            throw new Exception('problem on testOKResponse');
+        }
+
+        if ($resp->status != "success") {
+            throw new Exception('problem on testOKResponse');
+        }
+
+        if ($resp->message != "node created") {
+            throw new Exception('problem on testOKResponse');
+        }
+
+        if ($resp->data != ['key' => 'val']) {
+            throw new Exception('problem on testOKResponse');
+        }
+    }
+}
+#####################################
+
+class TestUnauthorizedResponse extends TestAbstractTest
+{
+    public function testUnauthorizedResponse(): void
+    {
+        $resp = new UnauthorizedResponse('database error', ['key' => 'val']);
+        if($resp->code != 401) {
+            throw new Exception('problem on code testUnauthorizedResponse 1');
+        }
+
+        if ($resp->status != "error") {
+            throw new Exception('problem on status testUnauthorizedResponse 2');
+        }
+
+        if ($resp->message != "database error") {
+            throw new Exception('problem on testUnauthorizedResponse 3');
+        }
+
+        if ($resp->data != ['key' => 'val']) {
+            throw new Exception('problem on testUnauthorizedResponse 4');
+        }
+    }
+}
+#####################################
+
+class TestNotFoundResponse extends TestAbstractTest
+{
+    public function testNotFoundResponse(): void
+    {
+        $resp = new NotFoundResponse('node not found', ['key' => 'val']);
+        if($resp->code != 404) {
+            throw new Exception('problem on code testNotFoundResponse');
+        }
+
+        if ($resp->status != "error") {
+            throw new Exception('problem on status testNotFoundResponse');
+        }
+
+        if ($resp->message != "node not found") {
+            throw new Exception('problem on testNotFoundResponse');
+        }
+
+        if ($resp->data != ['key' => 'val']) {
+            throw new Exception('problem on testNotFoundResponse');
+        }
+    }
+}
+#####################################
+
+final class TestController extends TestAbstractTest
+{
+    private ?PDO $pdo;
+    
+    private ?Logger $databaseLogger;
+    private ?Logger $serviceLogger;
+    private ?Logger $controllerLogger;
+
+    private ?DatabaseInterface $database;
+    private ?ServiceInterface $service;
+    private ?ControllerInterface $controller;
+
+    private ?HelperImages $imagesHelper;
+    private ?HelperCytoscape $cytoscapeHelper;
+    
+
+    public function up(): void
+    {
+        global $DATA_IMAGES;
+
+        $this->pdo = Database::createConnection('sqlite::memory:');
+        $this->databaseLogger = new Logger();
+        $this->serviceLogger = new Logger();
+        $this->controllerLogger = new Logger();
+
+        $this->imagesHelper = new HelperImages($DATA_IMAGES);
+        
+        $this->database = new Database($this->pdo, $this->databaseLogger);
+
+        $this->cytoscapeHelper = new HelperCytoscape($this->database, $this->imagesHelper, 'http://example.com/images');
+
+        $this->service = new Service($this->database, $this->serviceLogger);
+        $this->controller = new Controller($this->service, $this->cytoscapeHelper, $this->controllerLogger);
+    }
+
+    public function down(): void
+    {
+        $this->controller = null;
+        $this->cytoscapeHelper = null;
+        $this->imagesHelper = null;
+        $this->service = null;
+        $this->database = null;
+
+        $this->databaseLogger = null;
+        $this->serviceLogger = null;
+        $this->controllerLogger = null;
+
+        $this->pdo = null;
+
+        $_GET = [];
+        $_SERVER = [];
+    }
+
+    public function testGetUser(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getUser';
+        $req = new Request();
+        $resp = $this->controller->getUser($req);
+        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'Controller::getUser\'') {
+            print_r($resp);
+            throw new Exception('error on testGetUser 1');
+        }
+        
+        $_GET['id'] = 'maria';
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getUser';
+
+        $req = new Request();
+        $resp = $this->controller->getUser($req);
+        if ($resp->code !== 404 || $resp->status !== 'error' || $resp->message !== 'user not found') {
+            throw new Exception('error on testGetUser 2');
+        }
+
+        $this->database->insertUser('maria', 'contributor');
+
+        $req = new Request();
+        $resp = $this->controller->getUser($req);
+        if ($resp->code !== 200 || $resp->status !== 'success' || $resp->message !== 'user found' || $resp->data['id'] !== 'maria') {
+            throw new Exception('error on testGetUser 3');
+        }
+
+        unset($_GET['id']);
+        $req = new Request();
+        $resp = $this->controller->getUser($req);
+        if ($resp->code !== 400 || $resp->status !== 'error' || $resp->message !== 'param \'id\' is missing') {
+            throw new Exception('error on testGetUser 4');
+        }
+    }
+
+    public function testInsertUser(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/insertUser';
+        $req = new Request();
+        $resp = $this->controller->insertUser($req);
+        if ($resp->code != 405 || $resp->message != 'method \'GET\' not allowed in \'Controller::insertUser\'') {
+            throw new Exception('error on testInsertUser 1');
+        }
+
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/insertUser';
+        
+        $req = new Request();
+        $req->data['id'] = 'maria';
+        $req->data['group'] = 'admin';
+
+        $resp = $this->controller->insertUser($req);
+        if ($resp->code !== 201 || $resp->status !== 'success' || $resp->message !== 'user created' || $resp->data['id'] !== 'maria' || $resp->data['group']['id'] !== 'admin') {
+            print_r($resp);
+            throw new Exception('error on testInsertUser 2');
+        }
+
+        $req->data = [];
+        $resp = $this->controller->insertUser($req);
+        if ($resp->code !== 400 || $resp->message !== 'key id not found in data') {
+            throw new Exception('error on testInsertUser 3');
+        }
+        
+        $req->data['id'] = 'maria';
+        $resp = $this->controller->insertUser($req);
+        if ($resp->code !== 400 || $resp->message !== 'key group not found in data') {
+            print_r($resp);
+            throw new Exception('error on testInsertUser 4');
+        }
+    }
+
+    public function testUpdateUser(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/updateUser';
+        $req = new Request();
+        $resp = $this->controller->updateUser($req);
+        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'Controller::updateUser\'') {
+            throw new Exception('error on testUpdateUser');
+        }
+
+        $_SERVER['REQUEST_METHOD'] = 'PUT';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/updateUser';
+
+        $req = new Request();
+        $req->data['id'] = 'maria';
+        $req->data['group'] = 'admin';
+
+        $resp = $this->controller->updateUser($req);
+        if ($resp->code !== 404 || $resp->status !== 'error' || $resp->data['id'] !== 'maria') {
+            throw new Exception('error on testUpdateUser');
+        }
+
+        $this->database->insertUser('maria', 'contributor');
+        $resp = $this->controller->updateUser($req);
+        if ($resp->code !== 200 || $resp->status !== 'success' || $resp->message !== 'user updated' || $resp->data['id'] !== 'maria') {
+            throw new Exception('error on testUpdateUser');
+        }
+    }
+
+    public function testGetCategories(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'PUT';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getCategories';
+        $req = new Request();
+
+        $resp = $this->controller->getCategories($req);
+        if ($resp->code != 405 || $resp->message != 'method \'PUT\' not allowed in \'Controller::getCategories\'') {
+            print_r($resp);
+            throw new Exception('error on testGetCategories 1');
+        }
+
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $req = new Request();
+        $resp = $this->controller->getCategories($req);
+        
+        if ($resp->code !== 200 || $resp->status !== 'success' || count($resp->data) === 0) {
+            print_r($resp);
+            throw new Exception('error on testGetCategories 2');
+        }
+
+        if ($resp->data[0]['id'] !== 'business' || $resp->data[1]['id'] !== 'application' || $resp->data[2]['id'] !== 'infrastructure') {
+            print_r($resp);
+            throw new Exception('error on testGetCategories 3');
+        }
+    }
+
+    public function testGetTypes(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'DELETE';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getTypes';
+        $req = new Request();
+
+        $resp = $this->controller->getTypes($req);
+
+        if ($resp->code != 405 || $resp->message != 'method \'DELETE\' not allowed in \'Controller::getTypes\'') {
+            throw new Exception('error on testGetTypes');
+        }
+
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getTypes';
+        $req = new Request();
+        $resp = $this->controller->getTypes($req);
+        if ($resp->code !== 200 || $resp->status !== 'success' || count($resp->data) === 0) {
+            throw new Exception('error on testGetTypes');
+        }
+        
+        if ($resp->data[0]['id'] !== 'business' || $resp->data[1]['id'] !== 'business_case') {
+            throw new Exception('error on testGetTypes');
+        }
+    }
+
+    public function testgetCytoscapeGraph(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'PUT';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getGraph';
+        $req = new Request();
+        $resp = $this->controller->getCytoscapeGraph($req);
+        if ($resp->code != 405 || $resp->message != 'method \'PUT\' not allowed in \'Controller::getCytoscapeGraph\'') {
+            throw new Exception('error on testGetGraph');
+        }
+
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getGraph';
+
+        $req = new Request();
+        $resp = $this->controller->getCytoscapeGraph($req);
+    }
+
+    public function testGetNode(): void
+    {
+        $_GET['id'] = 'node1';
+        $_SERVER['REQUEST_METHOD'] = 'DELETE';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getNode';
+        $req = new Request();
+        $resp = $this->controller->getNode($req);
+        if ($resp->code != 405 || $resp->message != 'method \'DELETE\' not allowed in \'Controller::getNode\'') {
+            throw new Exception('error on testGetNode 1');
+        }
+
+        $_GET['id'] = 'node1';
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getNode';
+
+        $req = new Request();
+        $resp = $this->controller->getNode($req);
+        if ($resp->code !== 404 || $resp->message !== 'node not found') {
+            throw new Exception('error on testGetNode 2');
+        }
+        
+        $this->database->insertNode('node1', 'label 1', 'application', 'service');
+        $req = new Request();
+        $resp = $this->controller->getNode($req);
+        if ($resp->code !== 200 || $resp->status !== 'success' || $resp->message !== 'node found') {
+            throw new Exception('error on testGetNode 3');
+        }
+
+        $_GET = [];
+        $req = new Request();
+        $resp = $this->controller->getNode($req);
+        if ($resp->code !== 400 || $resp->message !== 'param \'id\' is missing') {
+            throw new Exception('error on testGetNode 4');
+        }
+    }
+
+    public function testGetNodes(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getNodes';
+        $req = new Request();
+        $resp = $this->controller->getNodes($req);
+        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'Controller::getNodes\'') {
+            throw new Exception('error on testGetNodes');
+        }
+
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getNodes';
+
+        $req = new Request();
+        $resp = $this->controller->getNodes($req);
+        if ($resp->code !== 200 || count($resp->data) > 0) {
+            throw new Exception('error on testGetNodes');
+        }
+
+        $this->database->insertNode('node1', 'label1', 'application', 'service');
+        $this->database->insertNode('node2', 'label2', 'application', 'service');
+        $req = new Request();
+        $resp = $this->controller->getNodes($req);
+        if ($resp->code !== 200 || count($resp->data) !== 2) {
+            throw new Exception('error on testGetNodes');
+        }
+        if ($resp->data[0]['id'] !== 'node1' || $resp->data[1]['id'] !== 'node2') {
+            throw new Exception('error on testGetNodes');
+        }
+    }
+
+    public function testInsertNode(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'PUT';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/insertNode';
+
+        $req = new Request();
+        $resp = $this->controller->insertNode($req);
+        if ($resp->code != 405 || $resp->message != 'method \'PUT\' not allowed in \'Controller::insertNode\'') {
+            throw new Exception('error on testInsertNode');
+        }
+
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/insertNode';
+
+        $req = new Request();
+        $req->data['id'] = 'node1';
+        $req->data['label'] = 'node1';
+        $req->data['category'] = 'application';
+        $req->data['type'] = 'database';
+        $req->data['user_created'] = true;
+        $req->data['data'] = ['a' => 'b'];
+        $resp = $this->controller->insertNode($req);
+    }
+    
+    public function testUpdateNode(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/updateNode';
+        $req = new Request();
+        $resp = $this->controller->updateNode($req);
+        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'Controller::updateNode\'') {
+            throw new Exception('error on testUpdateNode');
+        }
+
+        $_SERVER['REQUEST_METHOD'] = 'PUT';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/updateNode';
+        
+        $req = new Request();
+        $req->data['id'] = 'node1';
+        $req->data['label'] = 'node1';
+        $req->data['category'] = 'application';
+        $req->data['type'] = 'database';
+        $req->data['data'] = ['a' => 'b'];
+        $resp = $this->controller->updateNode($req);
+    }
+    
+    public function testDeleteNode(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/deleteNode';
+        $req = new Request();
+        $resp = $this->controller->deleteNode($req);
+        if ($resp->code != 405 || $resp->message != 'method \'GET\' not allowed in \'Controller::deleteNode\'') {
+            throw new Exception('error on testDeleteNode');
+        }
+
+        $_SERVER['REQUEST_METHOD'] = 'DELETE';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/deleteNode';
+
+        $req = new Request();
+        $req->data['id'] = 'node1';
+        $req->data['label'] = 'node1';
+        $req->data['category'] = 'application';
+        $req->data['type'] = 'database';
+        $req->data['data'] = ['a' => 'b'];
+        $resp = $this->controller->deleteNode($req);
+        if ($resp->code !== 404 || $resp->status !== 'error' || $resp->data['id'] !== 'node1') {
+            throw new Exception('error on testDeleteNode');
+        }
+        $this->database->insertNode('node1', 'label 1', 'application', 'service');
+        $req = new Request();
+        $req->data['id'] = 'node1';
+        $resp = $this->controller->deleteNode($req);
+        if ($resp->code !== 204 || $resp->status !== 'success' || $resp->data['id'] !== 'node1') {
+            throw new Exception('error on testDeleteNode');
+        }
+    }
+
+    public function testGetEdge(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getEdge';
+        $req = new Request();
+        $resp = $this->controller->getEdge($req);
+        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'Controller::getEdge\'') {
+            throw new Exception('error on testGetEdge 1');
+        }
+
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getEdge';
+
+        $_GET['source'] = 'node1';
+        $_GET['target'] = 'node2';
+        $req = new Request();
+        $resp = $this->controller->getEdge($req);
+        if ($resp->code !== 404 || $resp->status !== 'error' || $resp->data['source'] !== 'node1') {
+            throw new Exception('error on testGetEdge 2');
+        }
+
+        $this->database->insertNode('node1', 'label1', 'application', 'service');
+        $this->database->insertNode('node2', 'label2', 'application', 'service');
+        $this->database->insertEdge('node1-node2', 'node1', 'node2', 'label');
+        
+        $req = new Request();
+        $req->data['source'] = 'node1';
+        $req->data['target'] = 'node2';
+        $resp = $this->controller->getEdge($req);
+        if ($resp->code !== 200 || $resp->status !== 'success' || $resp->data['source'] !== 'node1') {
+            throw new Exception('error on testGetEdge 3');
+        }
+    }
+    
+    public function testGetEdges(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getEdges';
+        $req = new Request();
+        $resp = $this->controller->getEdges($req);
+        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'Controller::getEdges\'') {
+            throw new Exception('error on testGetEdges');
+        }
+
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getEdges';
+
+        $req = new Request();
+        $resp = $this->controller->getEdges($req);
+
+        $this->database->insertNode('node1', 'label1', 'application', 'service');
+        $this->database->insertNode('node2', 'label2', 'application', 'service');
+        $this->database->insertEdge('node1-node2', 'node1', 'node2', 'label');
+
+        $req = new Request();
+        $resp = $this->controller->getEdges($req);
+
+        if ($resp->code !== 200 || count($resp->data) !== 1) {
+            throw new Exception('error on testGetEdges');
+        }
+        if ($resp->data[0]['source'] !== 'node1' || $resp->data[0]['target'] !== 'node2') {
+            throw new Exception('error on testGetEdges');
+        }
+        
+    }
+    
+    public function testInsertEdge(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/insertEdge';
+        $req = new Request();
+        $resp = $this->controller->insertEdge($req);
+        if ($resp->code != 405 || $resp->message != 'method \'GET\' not allowed in \'Controller::insertEdge\'') {
+            throw new Exception('error on testInsertEdge');
+        }
+
+        $this->database->insertNode('node1', 'label1', 'application', 'service');
+        $this->database->insertNode('node2', 'label2', 'application', 'service');
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/insertEdge';
+
+        $req = new Request();
+        $req->data['source'] = 'node1';
+        $req->data['target'] = 'node2';
+        $req->data['label'] = 'edge from node1 to node2';
+        $req->data['data'] = ['a' => 'b'];
+        $resp = $this->controller->insertEdge($req);
+        if ($resp->code !== 200 || $resp->status !== 'success' || $resp->data['source'] !== 'node1') {
+            throw new Exception('error on testInsertEdge');
+        }
+    }
+    
+    public function testUpdateEdge(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/updateEdge';
+        $req = new Request();
+        $resp = $this->controller->updateEdge($req);
+        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'Controller::updateEdge\'') {
+            throw new Exception('error on testUpdateEdge');
+        }
+
+        $_SERVER['REQUEST_METHOD'] = 'PUT';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/updateEdge';
+        $req = new Request();
+        $req->data['source'] = 'node1';
+        $req->data['target'] = 'node2';
+        $req->data['label'] = 'edge from node1 to node2';
+        $req->data['data'] = ['a' => 'b'];
+        $resp = $this->controller->updateEdge($req);
+    }
+    
+    public function testDeleteEdge(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'PUT';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/deleteEdge';
+        $req = new Request();
+        $resp = $this->controller->deleteEdge($req);
+        if ($resp->code != 405 || $resp->message != 'method \'PUT\' not allowed in \'Controller::deleteEdge\'') {
+            throw new Exception('error on testDeleteEdge');
+        }
+
+        $_SERVER['REQUEST_METHOD'] = 'DELETE';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/deleteEdge';
+        $req = new Request();
+        $req->data['source'] = 'node1';
+        $req->data['target'] = 'node2';
+        $resp = $this->controller->deleteEdge($req);
+    }
+
+    public function testGetStatus(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'PUT';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getStatus';
+        $req = new Request();
+        $resp = $this->controller->getStatus($req);
+        if ($resp->code != 405 || $resp->message != 'method \'PUT\' not allowed in \'Controller::getStatus\'') {
+            throw new Exception('error on testGetStatus');
+        }
+
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getStatus';
+        $req = new Request();
+        $resp = $this->controller->getStatus($req);
+        if ($resp->code !== 200 || $resp->status !== 'success' || count($resp->data) > 0) {
+            throw new Exception('error on testGetStatus');
+        }
+        $this->database->insertNode('node1', 'label1', 'application', 'service');
+        $this->database->insertNode('node2', 'label2', 'application', 'service');
+
+        $req = new Request();
+        $resp = $this->controller->getStatus($req);
+        if ($resp->code !== 200 || $resp->status !== 'success' || count($resp->data) !== 2) {
+            throw new Exception('error on testGetStatus');
+        }
+        if ($resp->data[0]['node_id'] !== 'node1' || $resp->data[1]['node_id'] !== 'node2') {
+            throw new Exception('error on testGetStatus');
+        }
+    }
+    
+    public function testGetNodeStatus(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getNodeStatus';
+        $req = new Request();
+        $resp = $this->controller->getNodeStatus($req);
+        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'Controller::getNodeStatus\'') {
+            print_r($resp);
+            throw new Exception('error on testGetNodeStatus 1');
+        }
+
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getNodeStatus';
+        $req = new Request();
+        $resp = $this->controller->getNodeStatus($req);
+        if ($resp->code !== 400 || $resp->status !== 'error' || $resp->message !== 'param \'node_id\' is missing') {
+            print_r($resp);
+            throw new Exception('error on testGetNodeStatus 2');
+        }
+
+        $_GET[Status::STATUS_KEYNAME_NODE_ID] = 'node1';
+        $req = new Request();
+        $resp = $this->controller->getNodeStatus($req);
+        if ($resp->code !== 404 || $resp->message !== 'node not found' || $resp->data[Status::STATUS_KEYNAME_NODE_ID] !== 'node1') {
+            print_r($resp);
+            throw new Exception('error on testGetNodeStatus 3');
+        }
+
+        $this->database->insertNode('node1', 'label 1', 'business', 'database');
+        $_GET[Status::STATUS_KEYNAME_NODE_ID] = 'node1';
+        $req = new Request();
+        $resp = $this->controller->getNodeStatus($req);
+        if ($resp->code !== 200 || $resp->message !== 'node found' || $resp->data[Status::STATUS_KEYNAME_NODE_ID] !== 'node1' || $resp->data['status'] !== 'unknown') {
+            throw new Exception('error on testGetNodeStatus');
+        }
+    }
+    
+    public function testUpdateNodeStatus(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/updateNodeStatus';
+        $req = new Request();
+        $resp = $this->controller->updateNodeStatus($req);
+        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'Controller::updateNodeStatus\'') {
+            throw new Exception('error on testUpdateNodeStatus');
+        }
+
+        $this->database->insertNode('node1', 'label', 'application', 'service');
+        $_SERVER['REQUEST_METHOD'] = 'PUT';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/updateNodeStatus';
+        $req = new Request();
+        $req->data['node_id'] = 'node1';
+        $req->data['status'] = 'healthy';
+        $resp = $this->controller->updateNodeStatus($req);
+    }
+
+    public function testGetProject(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getProject';
+        $req = new Request();
+        $resp = $this->controller->getProject($req);
+        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'Controller::getProject\'') {
+            throw new Exception('error on testGetProject 1');
+        }
+
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getProject';
+        $req = new Request();
+        $resp = $this->controller->getProject($req);
+        if ($resp->code !== 400 || $resp->message !== 'param \'id\' is missing') {
+            throw new Exception('error on testGetProject 2');
+        }
+
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getProject';
+        $_GET['id'] = 'meu-project';
+        $req = new Request();
+        $resp = $this->controller->getProject($req);
+        if( $resp->code !== 404 || $resp->message !== 'project not found') {
+            print_r($resp);
+            throw new Exception('error on testGetProject 3');
+        }
+        
+        $this->database->insertProject('meu-project', 'meu project', 'admin', ['nodes' => ['a', 'b']]);
+        
+        $req = new Request();
+        $resp = $this->controller->getProject($req);
+        if( $resp->code !== 200 || $resp->message !== 'project found') {
+            throw new Exception('error on testGetProject 4');
+        }
+        if($resp->data['id'] !== 'meu-project' || $resp->data['name'] !== 'meu project') {
+            throw new Exception('error on testGetProject 5');
+        }
+    }
+
+    public function testGetProjects(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getProjects';
+        $req = new Request();
+        $resp = $this->controller->getProjects($req);
+        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'Controller::getProjects\'') {
+            throw new Exception('error on testGetProjects 1');
+        }
+
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getProjects';
+        $req = new Request();
+        $resp = $this->controller->getProjects($req);
+        if( $resp->code !== 200 || $resp->message !== 'projects found') {
+            throw new Exception('error on testGetProjects 2');
+        }
+        
+        $this->database->insertProject('meu-project', 'meu project', 'admin', ['nodes' => ['a', 'b']]);
+        
+        $req = new Request();
+        $resp = $this->controller->getProjects($req);
+        if( $resp->code !== 200 || $resp->message !== 'projects found' || count($resp->data) !== 1) {
+            throw new Exception('error on testGetProjects 3');
+        }
+        if($resp->data[0]['id'] !== 'meu-project' || $resp->data[0]['name'] !== 'meu project') {
+            throw new Exception('error on testGetProjects 4');
+        }
+    }
+
+    public function testInsertProject(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/insertProject';
+        $req = new Request();
+        $resp = $this->controller->insertProject($req);
+        if ($resp->code != 405 || $resp->message != 'method \'GET\' not allowed in \'Controller::insertProject\'') {
+            throw new Exception('error on testInsertProject 1');
+        }
+
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/insertProject';
+        $req = new Request();
+        $req->data['id'] = 'project1';
+        $req->data['name'] = 'My Project 1';
+        $req->data['creator'] = 'admin';
+        $req->data['nodes'] = ['a', 'b'];
+        $resp = $this->controller->insertProject($req);
+        if($resp->code !== 201 || $resp->message !== 'project created') {
+            print_r($resp);
+            throw new Exception('error on testInsertProject 2');
+        }
+
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getProjects';
+        $req = new Request();
+        $resp = $this->controller->getProjects($req);
+        if( $resp->code !== 200 || $resp->message !== 'projects found' || count($resp->data) !== 1) {
+            throw new Exception('error on testInsertProject 3');
+        }
+
+        if($resp->data[0]['name'] !== 'My Project 1') {
+            throw new Exception('error on testInsertProject 4');
+        }
+    }
+
+    public function testUpdateProject(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/updateProject';
+        $req = new Request();
+        $resp = $this->controller->updateProject($req);
+        if ($resp->code != 405 || $resp->message != 'method \'GET\' not allowed in \'Controller::updateProject\'') {
+            throw new Exception('error on testUpdateProject 1');
+        }
+
+        $_SERVER['REQUEST_METHOD'] = 'PUT';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/updateProject';
+        $req = new Request();
+        $req->data['id'] = 'project1';
+        $req->data['name'] = 'My Project 1 Updated';
+        $req->data['creator'] = 'admin';
+        $req->data['nodes'] = [];
+        $resp = $this->controller->updateProject($req);
+        if ($resp->code !== 404 || $resp->message !== 'project not updated' || $resp->data['id'] !== 'project1') {
+            print_r($resp);
+            throw new Exception('error on testUpdateProject 2');
+        }
+
+        $this->database->insertProject('project1', 'My Project 1', 'admin', ['nodes' => [], 'edges' => []]);
+        $req = new Request();
+        $req->data['id'] = 'project1';
+        $req->data['name'] = 'My Project 1 Updated';
+        $req->data['creator'] = 'admin';
+        $req->data['nodes'] = ['node1', 'node2'];
+        $resp = $this->controller->updateProject($req);
+        if ($resp->code !== 200 || $resp->message !== 'project updated' || $resp->data['name'] !== 'My Project 1 Updated' || count($resp->data['nodes']) !== 2) {
+            print_r($resp);
+            throw new Exception('error on testUpdateProject 3');
+        }
+    }
+
+    public function testDeleteProject(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/deleteProject';
+        $req = new Request();
+        $resp = $this->controller->deleteProject($req);
+        if ($resp->code != 405 || $resp->message != 'method \'GET\' not allowed in \'Controller::deleteProject\'') {
+            throw new Exception('error on testDeleteProject 1');
+        }
+
+        $_SERVER['REQUEST_METHOD'] = 'DELETE';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/deleteProject';
+        $req = new Request();
+        $req->data['id'] = 'project1';
+        $resp = $this->controller->deleteProject($req);
+        if ($resp->code !== 404 || $resp->message !== 'project not deleted' || $resp->data['id'] !== 'project1') {
+            print_r($resp);
+            throw new Exception('error on testDeleteProject 2');
+        }
+
+        $this->database->insertProject('project1', 'My Project 1', 'admin', ['nodes' => [], 'edges' => []]);
+        $req = new Request();
+        $req->data['id'] = 'project1';
+        $resp = $this->controller->deleteProject($req);
+        if ($resp->code !== 204 || $resp->message !== 'project deleted' || $resp->data['id'] !== 'project1') {
+            throw new Exception('error on testDeleteProject 3');
+        }
+
+        $projects = $this->database->getProjects();
+        if (count($projects) !== 0) {
+            throw new Exception('error on testDeleteProject 4');
+        }
+    }
+
+    public function testGetLogs(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getLogs';
+        $req = new Request();
+        $resp = $this->controller->getLogs($req);
+        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'Controller::getLogs\'') {
+            throw new Exception('error on testGetLogs 1');
+        }
+
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getLogs';
+        $req = new Request();
+        $resp = $this->controller->getLogs($req);
+        if ($resp->code !== 400 || $resp->message !== 'param \'limit\' is missing') {
+            throw new Exception('error on testGetLogs 2');
+        }
+        
+        $_GET['limit'] = 2;
+        $req = new Request();
+        $resp = $this->controller->getLogs($req);
+        if ($resp->code !== 200 || $resp->message !== 'logs found') {
+            throw new Exception('error on testGetLogs 3');
+        }
+        
+        $this->database->insertLog('node', 'node1', 'insert', null, ['id' => 'node1'], 'user', '293820');
+        sleep(1);
+        $this->database->insertLog('node', 'node2', 'insert', null, ['id' => 'node2'], 'user', '111111');
+        sleep(1);
+        $this->database->insertLog('node', 'node3', 'insert', null, ['id' => 'node3'], 'user', '111111');
+        
+        $_GET['limit'] = 2;
+        $req = new Request();
+        $resp = $this->controller->getLogs($req);
+        if ($resp->code !== 200 || $resp->message !== 'logs found') {
+            throw new Exception('error on testGetLogs');
+        }
+    }
+}
+
+#####################################
+
+class TestForbiddenResponse extends TestAbstractTest
+{
+    public function testForbiddenResponse(): void
+    {
+        $resp = new ForbiddenResponse('node not created', ['key' => 'val']);
+        if($resp->code != 403) {
+            throw new Exception('problem on code testForbiddenResponse');
+        }
+
+        if ($resp->status != "error") {
+            throw new Exception('problem on status testForbiddenResponse');
+        }
+
+        if ($resp->message != "node not created") {
+            throw new Exception('problem on testForbiddenResponse');
+        }
+
+        if ($resp->data != ['key' => 'val']) {
+            throw new Exception('problem on testForbiddenResponse');
+        }
+    }
+}
+#####################################
+
+class TestRequestRouter extends TestAbstractTest
+{
+    private ?PDO $pdo;
+    
+    private ?Logger $databaseLogger;
+    private ?Logger $serviceLogger;
+    private ?Logger $controllerLogger;
+
+    private ?DatabaseInterface $database;
+    private ?ServiceInterface $service;
+    private ?ControllerInterface $controller;
+
+    private ?HelperImages $imagesHelper;
+    private ?HelperCytoscape $cytoscapeHelper;
+
+    private ?RequestRouter $router;
+
+    public function up(): void
+    {
+        global $DATA_IMAGES;
+
+        $_GET = [];
+        $_SERVER = [];
+
+        $this->pdo = Database::createConnection('sqlite::memory:');
+
+        $this->databaseLogger = new Logger();
+        $this->serviceLogger = new Logger();
+        $this->controllerLogger = new Logger();
+
+        $this->database = new Database($this->pdo, $this->databaseLogger);
+
+        $this->imagesHelper = new HelperImages($DATA_IMAGES);
+        $this->cytoscapeHelper = new HelperCytoscape($this->database, $this->imagesHelper, 'http://localhost/images');
+
+        $this->service = new Service($this->database, $this->serviceLogger);
+        $this->controller = new Controller($this->service, $this->cytoscapeHelper, $this->controllerLogger);
+        $this->router = new RequestRouter($this->controller);
+    }
+
+    public function down(): void
+    {
+        $this->router = null;
+        $this->controller = null;
+        $this->cytoscapeHelper = null;
+        $this->imagesHelper = null;
+        $this->service = null;
+        $this->database = null;
+
+        $this->databaseLogger = null;
+        $this->serviceLogger = null;
+        $this->controllerLogger = null;
+
+        $this->pdo = null;
+
+        $_GET = [];
+        $_SERVER = [];
+    }
+
+    public function testRequestRouter(): void
+    {
+        HelperContext::update('admin', 'admin', '127.0.0.1');
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/insertUser';
+        $req = new Request();
+        $req->data[User::USER_KEYNAME_ID] = 'joao';
+        $req->data[User::USER_KEYNAME_GROUP] = 'contributor';
+        $resp = $this->router->handle($req);
+        if($resp->code !== 201 || $resp->message !== 'user created' || $resp->data['id'] !== 'joao' || $resp->data['group']['id'] !== 'contributor') {
+            print_r($resp);
+            throw new Exception('error on testRequestRouter');
+        }
+    }
+
+    public function testRequestRouterException(): void
+    {
+        HelperContext::update('admin', 'admin', '127.0.0.1');
+        $_SERVER['REQUEST_METHOD'] = 'PUT';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/updateUser';
+        $req = new Request();
+        $req->data[User::USER_KEYNAME_ID] = 'joao';
+        $req->data[User::USER_KEYNAME_GROUP] = 'contributor';
+        $resp = $this->router->handle($req);
+        if($resp->code !== 500 || $resp->message !== 'method not found in list') {
+            throw new Exception('error on testRequestRouterException');
+        }
+    }
+}
+#####################################
+
+class TestBadRequestResponse extends TestAbstractTest
+{
+    public function testBadRequestResponse(): void
+    {
+        $resp = new BadRequestResponse('bad request', ['key' => 'val']);
+        if($resp->code != 400) {
+            throw new Exception('problem on code testBadRequestResponse');
+        }
+
+        if ($resp->status != "error") {
+            throw new Exception('problem on status testBadRequestResponse');
+        }
+
+        if ($resp->message != "bad request") {
+            throw new Exception('problem on testBadRequestResponse');
+        }
+
+        if ($resp->data != ['key' => 'val']) {
+            throw new Exception('problem on testBadRequestResponse');
+        }
+    }
+}
+#####################################
+
+class TestResponse extends TestAbstractTest
+{
+    public function testResponse(): void
+    {
+        $resp = new Response(200, 'success', 'node created', ['key' => 'val'], 'text/plain', 'dGVzdGU=', ['Content-Type' => 'application/json'], 'template');
+        if($resp->code != 200) {
+            throw new Exception('problem on testResponse');
+        }
+
+        if ($resp->status != "success") {
+            throw new Exception('problem on testResponse');
+        }
+
+        if ($resp->message != "node created") {
+            throw new Exception('problem on testResponse');
+        }
+
+        if ($resp->data['key'] != 'val') {
+            throw new Exception('problem on testResponse');
+        }
+
+        if ($resp->contentType != 'text/plain') {
+            throw new Exception('problem on testResponse');
+        }
+
+        if ($resp->headers['Content-Type'] != 'application/json') {
+            throw new Exception('problem on testResponse');
+        }
+
+        if ($resp->binaryContent != 'dGVzdGU=') {
+            throw new Exception('problem on testResponse');
+        }
+
+        if ($resp->template != 'template') {
+            throw new Exception('problem on testResponse');
+        }   
+    }
+}
+#####################################
+
+class TestRequestException extends TestAbstractTest
+{
+    public function testRequestException(): void
+    {
+        $req = new RequestException('message', ['key' => 'val'], ['id' => ''], '/get');
+        if($req->getData() != ['key' => 'val']) {
+            throw new Exception('problem on TestRequestException');
+        }
+
+        if($req->getParams() != ['id' => '']) {
+            throw new Exception('problem on TestRequestException');
+        }
+
+        if($req->getPath() != '/get') {
+            throw new Exception('problem on TestRequestException');
+        }
+    }
+}
+#####################################
+
+class TestInternalServerErrorResponse extends TestAbstractTest
+{
+    public function testInternalServerErrorResponse(): void
+    {
+        $resp = new InternalServerErrorResponse('database error', ['key' => 'val']);
+        if($resp->code != 500) {
+            throw new Exception('problem on code TestInternalServerErrorResponse');
+        }
+
+        if ($resp->status != "error") {
+            throw new Exception('problem on status TestInternalServerErrorResponse');
+        }
+
+        if ($resp->message != "database error") {
+            throw new Exception('problem on TestInternalServerErrorResponse');
+        }
+
+        if ($resp->data != ['key' => 'val']) {
+            throw new Exception('problem on TestInternalServerErrorResponse');
+        }
+    }
+}
+#####################################
+
+class TestRequest extends TestAbstractTest
+{
+    public function testRequest(): void
+    {
+        $_GET['id'] = '1';
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = 'api.php';
+        $_SERVER['REQUEST_URI'] = 'api.php/getNodes';
+        $req = new Request();
+        if($req->getParam('id') != 1) {
+            throw new Exception('problem on testRequest');
+        }
+    }
+}
+#####################################
+
+class TestCreatedResponse extends TestAbstractTest
+{
+    public function testCreatedResponse(): void
+    {
+        $resp = new CreatedResponse('node created', ['key' => 'val']);
+        if($resp->code != 201) {
+            throw new Exception('problem on code TestCreatedResponse');
+        }
+
+        if ($resp->status != "success") {
+            throw new Exception('problem on status TestCreatedResponse');
+        }
+
+        if ($resp->message != "node created") {
+            throw new Exception('problem on TestCreatedResponse');
+        }
+
+        if ($resp->data != ['key' => 'val']) {
+            throw new Exception('problem on TestCreatedResponse');
+        }
+    }
+}
+#####################################
+
+class TestNode extends TestAbstractTest
+{
+    public function testNodeConstructor(): void
+    {
+        $node = new Node('node1', 'Node 01', 'business', 'server', true, ['key' => 'value']);
+
+        if ($node->getId() != 'node1' || $node->getLabel() != 'Node 01' || $node->getCategory() != 'business' || $node->getType() != 'server' || $node->getUserCreated() !== true) {
+            throw new Exception('test_Node problem - property mismatch');
+        }
+
+        $data = $node->getData();
+        if ($data['key'] != 'value') {
+            throw new Exception('test_Node problem - data mismatch');
+        }
+
+        $data = $node->toArray();
+        if ($data['id'] != 'node1' || $data['label'] != 'Node 01' || $data['category'] != 'business' || $data['type'] != 'server' || $data['user_created'] !== true) {
+            throw new Exception('test_Node problem - toArray mismatch');
+        }
+
+        if ($data['data']['key'] != 'value') {
+            throw new Exception('test_Node problem - toArray data mismatch');
+        }
+
+        // Test validation - invalid ID
+        try {
+            new Node('invalid@id', 'Label', 'business', 'server', true, []);
+            throw new Exception('test_Node problem - should throw exception for invalid ID');
+        } catch (InvalidArgumentException $e) {
+            // Expected
+        }
+
+        // Test validation - label too long
+        try {
+            new Node('node2', str_repeat('a', 210000), 'business', 'server', true, []);
+            throw new Exception('test_Node problem - should throw exception for long label');
+        } catch (InvalidArgumentException $e) {
+            // Expected
+        }
+    }
+}
+
+#####################################
+
+class TestLog extends TestAbstractTest
+{
+    public function testLogConstructor(): void
+    {
+        $oldData = ['id' => 'node1', 'label' => 'Old Label'];
+        $newData = ['id' => 'node1', 'label' => 'New Label'];
+
+        $log = new Log('node', 'node1', 'update', $oldData, $newData);
+
+        if ($log->entityType != 'node' || $log->entityId != 'node1' || $log->action != 'update') {
+            throw new Exception('test_AuditLog problem - property mismatch');
+        }
+
+        if ($log->oldData['label'] != 'Old Label') {
+            throw new Exception('test_AuditLog problem - oldData mismatch');
+        }
+
+        if ($log->newData['label'] != 'New Label') {
+            throw new Exception('test_AuditLog problem - newData mismatch');
+        }
+
+        // Test with null data
+        $log2 = new Log('node', 'node2', 'insert', null, ['id' => 'node2']);
+        if ($log2->oldData !== null) {
+            throw new Exception('test_AuditLog problem - oldData should be null');
+        }
+
+        if ($log2->newData['id'] != 'node2') {
+            throw new Exception('test_AuditLog problem - newData mismatch for insert');
+        }
+
+        // Test delete action with null newData
+        $log3 = new Log('edge', 'edge1', 'delete', ['id' => 'edge1'], null);
+        if ($log3->newData !== null) {
+            throw new Exception('test_AuditLog problem - newData should be null for delete');
+        }
+
+        if ($log3->oldData['id'] != 'edge1') {
+            throw new Exception('test_AuditLog problem - oldData mismatch for delete');
+        }
+    }
+}
+
+#####################################
+
+class TestUser extends TestAbstractTest
+{
+    public function testUserConstructor(): void
+    {
+        $user = new User('admin', new Group('admin'));
+        $data = $user->toArray();
+        if($data['id'] != $user->getId() || $data['group']['id'] != 'admin') {
+            throw new Exception('test_User problem');
+        }
+    }
+}
+
+#####################################
+
+class TestGraph extends TestAbstractTest
+{
+    public function testGraphConstructor(): void
+    {
+        $node1 = new Node('node1', 'Node 01', 'business', 'server', false,  ['key' => 'value1']);
+        $node2 = new Node('node2', 'Node 02', 'application', 'database', false, ['key' => 'value2']);
+        
+        $edge1 = new Edge('node1', 'node2', 'lbl node1', ['weight' => '10']);
+
+        $graph = new Graph([$node1, $node2], [$edge1]);
+        
+        if (count($graph->getNodes()) != 2) {
+            throw new Exception('TODO message. Node quantity');
+        }
+
+        if (count($graph->getEdges()) != 1) {
+            throw new Exception('TODO message. Edge quantity');
+        }
+
+        $data = $graph->toArray();
+        if (!isset($data['nodes']) || !isset($data['edges'])) {
+            throw new Exception('TODO message');
+        }
+
+        if (count($data['nodes']) != 2 || count($data['edges']) != 1) {
+            throw new Exception('TODO message');
+        }
+    }
+}
+
+#####################################
+
+class TestStatus extends TestAbstractTest
+{
+    public function testStatusConstructor(): void
+    {
+        $status = new Status('node1', 'healthy');
+
+        if($status->getNodeId() != 'node1' || $status->getStatus() != 'healthy') {
+            throw new Exception('testStatusConstructor problem');
+        }
+
+        $data = $status->toArray();
+        if($data['node_id'] != 'node1' || $data['status'] != 'healthy') {
+            throw new Exception('testStatusConstructor problem');
+        }
+    }
+
+    public function testStatusException(): void
+    {
+        try {
+            new Status('node1', 'xpto');
+        } catch(InvalidArgumentException $e) {
+            return;
+        }
+
+        throw new Exception(('problem on testStatusException'));
+    }
+}
+#####################################
+
+class TestEdge extends TestAbstractTest
+{
+    public function testEdgeConstruct(): void
+    {
+        $edge = new Edge('node1', 'node2', 'label', ['weight' => '10']);
+
+        if ($edge->getId() != 'node1-node2' || $edge->getSource() != 'node1' || $edge->getTarget() != 'node2') {
+            throw new Exception('testEdgeConstruct');
+        }
+
+        $data = $edge->getData();
+        if ($data['weight'] != '10') {
+            throw new Exception('testEdgeConstruct');
+        }
+
+        $arr = $edge->toArray();
+        if ($arr['source'] != 'node1' || $arr['target'] != 'node2') {
+            throw new Exception('testEdgeConstruct');
+        }
+
+        if ($arr['data']['weight'] != '10') {
+            throw new Exception('testEdgeConstruct');
+        }
+
+        // Test with empty data
+        $edge3 = new Edge('node5', 'node6', 'label');
+        if (count($edge3->getData()) != 0) {
+            throw new Exception('testEdgeConstruct');
+        }
+    }
+}
+
+#####################################
+
+class TestGroup extends TestAbstractTest
+{
+    public function testGroupConstructor(): void
+    {
+        $group = new Group('contributor');
+        $data = $group->toArray();
+        if($data['id'] != $group->getId()) {
+            throw new Exception('test_Group problem');
+        }
+    }
+
+    public function testGroupException(): void
+    {
+        try {
+            new Group('xpto');
+        } catch(InvalidArgumentException $e) {
+            return;
+        }
+        throw new Exception('test_Group problem');
+    }
+}
+
 #####################################
 
 class TestDatabase extends TestAbstractTest
@@ -677,7 +2144,7 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('error on testGetStatus');
         }
 
-        if ($s[0][ModelStatus::STATUS_KEYNAME_NODE_ID] !== 'node1' || $s[0][ModelStatus::STATUS_KEYNAME_STATUS] !== null) {
+        if ($s[0][Status::STATUS_KEYNAME_NODE_ID] !== 'node1' || $s[0][Status::STATUS_KEYNAME_STATUS] !== null) {
             throw new Exception('error on testGetStatus');
         }
     }
@@ -893,1404 +2360,6 @@ class TestDatabase extends TestAbstractTest
 
 #####################################
 
-class TestHTTPRequestRouter extends TestAbstractTest
-{
-    private ?PDO $pdo;
-    
-    private ?Logger $databaseLogger;
-    private ?Logger $serviceLogger;
-    private ?Logger $controllerLogger;
-
-    private ?DatabaseInterface $database;
-    private ?ServiceInterface $service;
-    private ?HTTPControllerInterface $controller;
-
-    private ?HelperImages $imagesHelper;
-    private ?HelperCytoscape $cytoscapeHelper;
-
-    private ?HTTPRequestRouter $router;
-
-    public function up(): void
-    {
-        global $DATA_IMAGES;
-
-        $_GET = [];
-        $_SERVER = [];
-
-        $this->pdo = Database::createConnection('sqlite::memory:');
-
-        $this->databaseLogger = new Logger();
-        $this->serviceLogger = new Logger();
-        $this->controllerLogger = new Logger();
-
-        $this->database = new Database($this->pdo, $this->databaseLogger);
-
-        $this->imagesHelper = new HelperImages($DATA_IMAGES);
-        $this->cytoscapeHelper = new HelperCytoscape($this->database, $this->imagesHelper, 'http://localhost/images');
-
-        $this->service = new Service($this->database, $this->serviceLogger);
-        $this->controller = new HTTPController($this->service, $this->cytoscapeHelper, $this->controllerLogger);
-        $this->router = new HTTPRequestRouter($this->controller);
-    }
-
-    public function down(): void
-    {
-        $this->router = null;
-        $this->controller = null;
-        $this->cytoscapeHelper = null;
-        $this->imagesHelper = null;
-        $this->service = null;
-        $this->database = null;
-
-        $this->databaseLogger = null;
-        $this->serviceLogger = null;
-        $this->controllerLogger = null;
-
-        $this->pdo = null;
-
-        $_GET = [];
-        $_SERVER = [];
-    }
-
-    public function testHTTPRequestRouter(): void
-    {
-        HelperContext::update('admin', 'admin', '127.0.0.1');
-        $_SERVER['REQUEST_METHOD'] = 'POST';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/insertUser';
-        $req = new HTTPRequest();
-        $req->data[ModelUser::USER_KEYNAME_ID] = 'joao';
-        $req->data[ModelUser::USER_KEYNAME_GROUP] = 'contributor';
-        $resp = $this->router->handle($req);
-        if($resp->code !== 201 || $resp->message !== 'user created' || $resp->data['id'] !== 'joao' || $resp->data['group']['id'] !== 'contributor') {
-            print_r($resp);
-            throw new Exception('error on testHTTPRequestRouter');
-        }
-    }
-
-    public function testHTTPRequestRouterException(): void
-    {
-        HelperContext::update('admin', 'admin', '127.0.0.1');
-        $_SERVER['REQUEST_METHOD'] = 'PUT';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/updataUser';
-        $req = new HTTPRequest();
-        $req->data[ModelUser::USER_KEYNAME_ID] = 'joao';
-        $req->data[ModelUser::USER_KEYNAME_GROUP] = 'contributor';
-        $resp = $this->router->handle($req);
-        if($resp->code !== 500 || $resp->message !== 'method not found in list') {
-            throw new Exception('error on testHTTPRequestRouterException');
-        }
-    }
-}
-#####################################
-
-class TestHTTPInternalServerErrorResponse extends TestAbstractTest
-{
-    public function testHTTPInternalServerErrorResponse(): void
-    {
-        $resp = new HTTPInternalServerErrorResponse('database error', ['key' => 'val']);
-        if($resp->code != 500) {
-            throw new Exception('problem on code TestHTTPInternalServerErrorResponse');
-        }
-
-        if ($resp->status != "error") {
-            throw new Exception('problem on status TestHTTPInternalServerErrorResponse');
-        }
-
-        if ($resp->message != "database error") {
-            throw new Exception('problem on TestHTTPInternalServerErrorResponse');
-        }
-
-        if ($resp->data != ['key' => 'val']) {
-            throw new Exception('problem on TestHTTPInternalServerErrorResponse');
-        }
-    }
-}
-#####################################
-
-class TestHTTPNotFoundResponse extends TestAbstractTest
-{
-    public function testHTTPNotFoundResponse(): void
-    {
-        $resp = new HTTPNotFoundResponse('node not found', ['key' => 'val']);
-        if($resp->code != 404) {
-            throw new Exception('problem on code testHTTPOKResponse');
-        }
-
-        if ($resp->status != "error") {
-            throw new Exception('problem on status testHTTPOKResponse');
-        }
-
-        if ($resp->message != "node not found") {
-            throw new Exception('problem on testHTTPOKResponse');
-        }
-
-        if ($resp->data != ['key' => 'val']) {
-            throw new Exception('problem on testHTTPOKResponse');
-        }
-    }
-}
-#####################################
-
-class TestHTTPForbiddenResponse extends TestAbstractTest
-{
-    public function testHTTPForbiddenResponse(): void
-    {
-        $resp = new HTTPForbiddenResponse('node not created', ['key' => 'val']);
-        if($resp->code != 403) {
-            throw new Exception('problem on code testHTTPOKResponse');
-        }
-
-        if ($resp->status != "error") {
-            throw new Exception('problem on status testHTTPOKResponse');
-        }
-
-        if ($resp->message != "node not created") {
-            throw new Exception('problem on testHTTPOKResponse');
-        }
-
-        if ($resp->data != ['key' => 'val']) {
-            throw new Exception('problem on testHTTPOKResponse');
-        }
-    }
-}
-#####################################
-
-final class TestHTTPOKResponse extends TestAbstractTest
-{
-    public function testHTTPOKResponse(): void
-    {
-        $resp = new HTTPOKResponse('node created', ['key' => 'val']);
-        if($resp->code != 200) {
-            throw new Exception('problem on testHTTPOKResponse');
-        }
-
-        if ($resp->status != "success") {
-            throw new Exception('problem on testHTTPOKResponse');
-        }
-
-        if ($resp->message != "node created") {
-            throw new Exception('problem on testHTTPOKResponse');
-        }
-
-        if ($resp->data != ['key' => 'val']) {
-            throw new Exception('problem on testHTTPOKResponse');
-        }
-    }
-}
-#####################################
-
-class TestModelGraph extends TestAbstractTest
-{
-    public function testGraphConstructor(): void
-    {
-        $node1 = new ModelNode('node1', 'Node 01', 'business', 'server', false,  ['key' => 'value1']);
-        $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', false, ['key' => 'value2']);
-        
-        $edge1 = new ModelEdge('node1', 'node2', 'lbl node1', ['weight' => '10']);
-
-        $graph = new ModelGraph([$node1, $node2], [$edge1]);
-        
-        if (count($graph->getNodes()) != 2) {
-            throw new Exception('TODO message. Node quantity');
-        }
-
-        if (count($graph->getEdges()) != 1) {
-            throw new Exception('TODO message. Edge quantity');
-        }
-
-        $data = $graph->toArray();
-        if (!isset($data['nodes']) || !isset($data['edges'])) {
-            throw new Exception('TODO message');
-        }
-
-        if (count($data['nodes']) != 2 || count($data['edges']) != 1) {
-            throw new Exception('TODO message');
-        }
-    }
-}
-
-#####################################
-
-class TestModelUser extends TestAbstractTest
-{
-    public function testUserConstructor(): void
-    {
-        $user = new ModelUser('admin', new ModelGroup('admin'));
-        $data = $user->toArray();
-        if($data['id'] != $user->getId() || $data['group']['id'] != 'admin') {
-            throw new Exception('test_UserModel problem');
-        }
-    }
-}
-
-#####################################
-
-class TestHelperContext extends TestAbstractTest
-{
-    public function testGraphContextUpdate(): void
-    {
-        HelperContext::update('maria', 'admin', '192.168.0.1');
-        if (HelperContext::getUser() != 'maria') {
-            throw new Exception('TODO message. testGraphContextUpdate');
-        }
-
-        if (HelperContext::getGroup() != 'admin') {
-            throw new Exception('TODO message. testGraphContextUpdate');
-        }
-
-        if (HelperContext::getClientIP() != '192.168.0.1') {
-            throw new Exception('TODO message. testGraphContextUpdate');
-        }
-    }
-}
-
-#####################################
-
-class TestModelEdge extends TestAbstractTest
-{
-    public function testEdgeConstruct(): void
-    {
-        $edge = new ModelEdge('node1', 'node2', 'label', ['weight' => '10']);
-
-        if ($edge->getId() != 'node1-node2' || $edge->getSource() != 'node1' || $edge->getTarget() != 'node2') {
-            throw new Exception('testEdgeConstruct');
-        }
-
-        $data = $edge->getData();
-        if ($data['weight'] != '10') {
-            throw new Exception('testEdgeConstruct');
-        }
-
-        $arr = $edge->toArray();
-        if ($arr['source'] != 'node1' || $arr['target'] != 'node2') {
-            throw new Exception('testEdgeConstruct');
-        }
-
-        if ($arr['data']['weight'] != '10') {
-            throw new Exception('testEdgeConstruct');
-        }
-
-        // Test with empty data
-        $edge3 = new ModelEdge('node5', 'node6', 'label');
-        if (count($edge3->getData()) != 0) {
-            throw new Exception('testEdgeConstruct');
-        }
-    }
-}
-
-#####################################
-
-class TestHTTPResponse extends TestAbstractTest
-{
-    public function testHTTPResponse(): void
-    {
-        $resp = new HTTPResponse(200, 'success', 'node created', ['key' => 'val'], 'text/plain', 'dGVzdGU=', ['Content-Type' => 'application/json'], 'template');
-        if($resp->code != 200) {
-            throw new Exception('problem on testHTTPResponse');
-        }
-
-        if ($resp->status != "success") {
-            throw new Exception('problem on testHTTPResponse');
-        }
-
-        if ($resp->message != "node created") {
-            throw new Exception('problem on testHTTPResponse');
-        }
-
-        if ($resp->data['key'] != 'val') {
-            throw new Exception('problem on testHTTPResponse');
-        }
-
-        if ($resp->contentType != 'text/plain') {
-            throw new Exception('problem on testHTTPResponse');
-        }
-
-        if ($resp->headers['Content-Type'] != 'application/json') {
-            throw new Exception('problem on testHTTPResponse');
-        }
-
-        if ($resp->binaryContent != 'dGVzdGU=') {
-            throw new Exception('problem on testHTTPResponse');
-        }
-
-        if ($resp->template != 'template') {
-            throw new Exception('problem on testHTTPResponse');
-        }   
-    }
-}
-#####################################
-
-class TestHTTPCreatedResponse extends TestAbstractTest
-{
-    public function testHTTPCreatedResponse(): void
-    {
-        $resp = new HTTPCreatedResponse('node created', ['key' => 'val']);
-        if($resp->code != 201) {
-            throw new Exception('problem on code testHTTPOKResponse');
-        }
-
-        if ($resp->status != "success") {
-            throw new Exception('problem on status testHTTPOKResponse');
-        }
-
-        if ($resp->message != "node created") {
-            throw new Exception('problem on testHTTPOKResponse');
-        }
-
-        if ($resp->data != ['key' => 'val']) {
-            throw new Exception('problem on testHTTPOKResponse');
-        }
-    }
-}
-#####################################
-
-class TestHelperLogger extends TestAbstractTest
-{
-    public function testLoggerConstructor(): void
-    {
-        
-    }
-}
-#####################################
-
-final class TestHTTPController extends TestAbstractTest
-{
-    private ?PDO $pdo;
-    
-    private ?Logger $databaseLogger;
-    private ?Logger $serviceLogger;
-    private ?Logger $controllerLogger;
-
-    private ?DatabaseInterface $database;
-    private ?ServiceInterface $service;
-    private ?HTTPControllerInterface $controller;
-
-    private ?HelperImages $imagesHelper;
-    private ?HelperCytoscape $cytoscapeHelper;
-    
-
-    public function up(): void
-    {
-        global $DATA_IMAGES;
-
-        $this->pdo = Database::createConnection('sqlite::memory:');
-        $this->databaseLogger = new Logger();
-        $this->serviceLogger = new Logger();
-        $this->controllerLogger = new Logger();
-
-        $this->imagesHelper = new HelperImages($DATA_IMAGES);
-        
-        $this->database = new Database($this->pdo, $this->databaseLogger);
-
-        $this->cytoscapeHelper = new HelperCytoscape($this->database, $this->imagesHelper, 'http://example.com/images');
-
-        $this->service = new Service($this->database, $this->serviceLogger);
-        $this->controller = new HTTPController($this->service, $this->cytoscapeHelper, $this->controllerLogger);
-    }
-
-    public function down(): void
-    {
-        $this->controller = null;
-        $this->cytoscapeHelper = null;
-        $this->imagesHelper = null;
-        $this->service = null;
-        $this->database = null;
-
-        $this->databaseLogger = null;
-        $this->serviceLogger = null;
-        $this->controllerLogger = null;
-
-        $this->pdo = null;
-
-        $_GET = [];
-        $_SERVER = [];
-    }
-
-    public function testGetUser(): void
-    {
-        $_SERVER['REQUEST_METHOD'] = 'POST';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/getUser';
-        $req = new HTTPRequest();
-        $resp = $this->controller->getUser($req);
-        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'HTTPController::getUser\'') {
-            print_r($resp);
-            throw new Exception('error on testGetUser 1');
-        }
-        
-        $_GET['id'] = 'maria';
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/getUser';
-
-        $req = new HTTPRequest();
-        $resp = $this->controller->getUser($req);
-        if ($resp->code !== 404 || $resp->status !== 'error' || $resp->message !== 'user not found') {
-            throw new Exception('error on testGetUser 2');
-        }
-
-        $this->database->insertUser('maria', 'contributor');
-
-        $req = new HTTPRequest();
-        $resp = $this->controller->getUser($req);
-        if ($resp->code !== 200 || $resp->status !== 'success' || $resp->message !== 'user found' || $resp->data['id'] !== 'maria') {
-            throw new Exception('error on testGetUser 3');
-        }
-
-        unset($_GET['id']);
-        $req = new HTTPRequest();
-        $resp = $this->controller->getUser($req);
-        if ($resp->code !== 400 || $resp->status !== 'error' || $resp->message !== 'param \'id\' is missing') {
-            throw new Exception('error on testGetUser 4');
-        }
-    }
-
-    public function testInsertUser(): void
-    {
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/insertUser';
-        $req = new HTTPRequest();
-        $resp = $this->controller->insertUser($req);
-        if ($resp->code != 405 || $resp->message != 'method \'GET\' not allowed in \'HTTPController::insertUser\'') {
-            throw new Exception('error on testInsertUser 1');
-        }
-
-        $_SERVER['REQUEST_METHOD'] = 'POST';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/insertUser';
-        
-        $req = new HTTPRequest();
-        $req->data['id'] = 'maria';
-        $req->data['group'] = 'admin';
-
-        $resp = $this->controller->insertUser($req);
-        if ($resp->code !== 201 || $resp->status !== 'success' || $resp->message !== 'user created' || $resp->data['id'] !== 'maria' || $resp->data['group']['id'] !== 'admin') {
-            print_r($resp);
-            throw new Exception('error on testInsertUser 2');
-        }
-
-        $req->data = [];
-        $resp = $this->controller->insertUser($req);
-        if ($resp->code !== 400 || $resp->message !== 'key id not found in data') {
-            throw new Exception('error on testInsertUser 3');
-        }
-        
-        $req->data['id'] = 'maria';
-        $resp = $this->controller->insertUser($req);
-        if ($resp->code !== 400 || $resp->message !== 'key group not found in data') {
-            print_r($resp);
-            throw new Exception('error on testInsertUser 4');
-        }
-    }
-
-    public function testUpdateUser(): void
-    {
-        $_SERVER['REQUEST_METHOD'] = 'POST';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/updateUser';
-        $req = new HTTPRequest();
-        $resp = $this->controller->updateUser($req);
-        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'HTTPController::updateUser\'') {
-            throw new Exception('error on testUpdateUser');
-        }
-
-        $_SERVER['REQUEST_METHOD'] = 'PUT';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/updateUser';
-
-        $req = new HTTPRequest();
-        $req->data['id'] = 'maria';
-        $req->data['group'] = 'admin';
-
-        $resp = $this->controller->updateUser($req);
-        if ($resp->code !== 404 || $resp->status !== 'error' || $resp->data['id'] !== 'maria') {
-            throw new Exception('error on testUpdateUser');
-        }
-
-        $this->database->insertUser('maria', 'contributor');
-        $resp = $this->controller->updateUser($req);
-        if ($resp->code !== 200 || $resp->status !== 'success' || $resp->message !== 'user updated' || $resp->data['id'] !== 'maria') {
-            throw new Exception('error on testUpdateUser');
-        }
-    }
-
-    public function testGetCategories(): void
-    {
-        $_SERVER['REQUEST_METHOD'] = 'PUT';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/getCategories';
-        $req = new HTTPRequest();
-
-        $resp = $this->controller->getCategories($req);
-        if ($resp->code != 405 || $resp->message != 'method \'PUT\' not allowed in \'HTTPController::getCategories\'') {
-            print_r($resp);
-            throw new Exception('error on testGetCategories 1');
-        }
-
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $req = new HTTPRequest();
-        $resp = $this->controller->getCategories($req);
-        
-        if ($resp->code !== 200 || $resp->status !== 'success' || count($resp->data) === 0) {
-            print_r($resp);
-            throw new Exception('error on testGetCategories 2');
-        }
-
-        if ($resp->data[0]['id'] !== 'business' || $resp->data[1]['id'] !== 'application' || $resp->data[2]['id'] !== 'infrastructure') {
-            print_r($resp);
-            throw new Exception('error on testGetCategories 3');
-        }
-    }
-
-    public function testGetTypes(): void
-    {
-        $_SERVER['REQUEST_METHOD'] = 'DELETE';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/getTypes';
-        $req = new HTTPRequest();
-
-        $resp = $this->controller->getTypes($req);
-
-        if ($resp->code != 405 || $resp->message != 'method \'DELETE\' not allowed in \'HTTPController::getTypes\'') {
-            throw new Exception('error on testGetTypes');
-        }
-
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/getTypes';
-        $req = new HTTPRequest();
-        $resp = $this->controller->getTypes($req);
-        if ($resp->code !== 200 || $resp->status !== 'success' || count($resp->data) === 0) {
-            throw new Exception('error on testGetTypes');
-        }
-        
-        if ($resp->data[0]['id'] !== 'business' || $resp->data[1]['id'] !== 'business_case') {
-            throw new Exception('error on testGetTypes');
-        }
-    }
-
-    public function testgetCytoscapeGraph(): void
-    {
-        $_SERVER['REQUEST_METHOD'] = 'PUT';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/getGraph';
-        $req = new HTTPRequest();
-        $resp = $this->controller->getCytoscapeGraph($req);
-        if ($resp->code != 405 || $resp->message != 'method \'PUT\' not allowed in \'HTTPController::getCytoscapeGraph\'') {
-            throw new Exception('error on testGetGraph');
-        }
-
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/getGraph';
-
-        $req = new HTTPRequest();
-        $resp = $this->controller->getCytoscapeGraph($req);
-    }
-
-    public function testGetNode(): void
-    {
-        $_GET['id'] = 'node1';
-        $_SERVER['REQUEST_METHOD'] = 'DELETE';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/getNode';
-        $req = new HTTPRequest();
-        $resp = $this->controller->getNode($req);
-        if ($resp->code != 405 || $resp->message != 'method \'DELETE\' not allowed in \'HTTPController::getNode\'') {
-            throw new Exception('error on testGetNode 1');
-        }
-
-        $_GET['id'] = 'node1';
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/getNode';
-
-        $req = new HTTPRequest();
-        $resp = $this->controller->getNode($req);
-        if ($resp->code !== 404 || $resp->message !== 'node not found') {
-            throw new Exception('error on testGetNode 2');
-        }
-        
-        $this->database->insertNode('node1', 'label 1', 'application', 'service');
-        $req = new HTTPRequest();
-        $resp = $this->controller->getNode($req);
-        if ($resp->code !== 200 || $resp->status !== 'success' || $resp->message !== 'node found') {
-            throw new Exception('error on testGetNode 3');
-        }
-
-        $_GET = [];
-        $req = new HTTPRequest();
-        $resp = $this->controller->getNode($req);
-        if ($resp->code !== 400 || $resp->message !== 'param \'id\' is missing') {
-            throw new Exception('error on testGetNode 4');
-        }
-    }
-
-    public function testGetNodes(): void
-    {
-        $_SERVER['REQUEST_METHOD'] = 'POST';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/getNodes';
-        $req = new HTTPRequest();
-        $resp = $this->controller->getNodes($req);
-        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'HTTPController::getNodes\'') {
-            throw new Exception('error on testGetNodes');
-        }
-
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/getNodes';
-
-        $req = new HTTPRequest();
-        $resp = $this->controller->getNodes($req);
-        if ($resp->code !== 200 || count($resp->data) > 0) {
-            throw new Exception('error on testGetNodes');
-        }
-
-        $this->database->insertNode('node1', 'label1', 'application', 'service');
-        $this->database->insertNode('node2', 'label2', 'application', 'service');
-        $req = new HTTPRequest();
-        $resp = $this->controller->getNodes($req);
-        if ($resp->code !== 200 || count($resp->data) !== 2) {
-            throw new Exception('error on testGetNodes');
-        }
-        if ($resp->data[0]['id'] !== 'node1' || $resp->data[1]['id'] !== 'node2') {
-            throw new Exception('error on testGetNodes');
-        }
-    }
-
-    public function testInsertNode(): void
-    {
-        $_SERVER['REQUEST_METHOD'] = 'PUT';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/insertNode';
-
-        $req = new HTTPRequest();
-        $resp = $this->controller->insertNode($req);
-        if ($resp->code != 405 || $resp->message != 'method \'PUT\' not allowed in \'HTTPController::insertNode\'') {
-            throw new Exception('error on testInsertNode');
-        }
-
-        $_SERVER['REQUEST_METHOD'] = 'POST';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/insertNode';
-
-        $req = new HTTPRequest();
-        $req->data['id'] = 'node1';
-        $req->data['label'] = 'node1';
-        $req->data['category'] = 'application';
-        $req->data['type'] = 'database';
-        $req->data['user_created'] = true;
-        $req->data['data'] = ['a' => 'b'];
-        $resp = $this->controller->insertNode($req);
-    }
-    
-    public function testUpdateNode(): void
-    {
-        $_SERVER['REQUEST_METHOD'] = 'POST';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/updateNode';
-        $req = new HTTPRequest();
-        $resp = $this->controller->updateNode($req);
-        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'HTTPController::updateNode\'') {
-            throw new Exception('error on testUpdateNode');
-        }
-
-        $_SERVER['REQUEST_METHOD'] = 'PUT';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/updateNode';
-        
-        $req = new HTTPRequest();
-        $req->data['id'] = 'node1';
-        $req->data['label'] = 'node1';
-        $req->data['category'] = 'application';
-        $req->data['type'] = 'database';
-        $req->data['data'] = ['a' => 'b'];
-        $resp = $this->controller->updateNode($req);
-    }
-    
-    public function testDeleteNode(): void
-    {
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/deleteNode';
-        $req = new HTTPRequest();
-        $resp = $this->controller->deleteNode($req);
-        if ($resp->code != 405 || $resp->message != 'method \'GET\' not allowed in \'HTTPController::deleteNode\'') {
-            throw new Exception('error on testDeleteNode');
-        }
-
-        $_SERVER['REQUEST_METHOD'] = 'DELETE';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/deleteNode';
-
-        $req = new HTTPRequest();
-        $req->data['id'] = 'node1';
-        $req->data['label'] = 'node1';
-        $req->data['category'] = 'application';
-        $req->data['type'] = 'database';
-        $req->data['data'] = ['a' => 'b'];
-        $resp = $this->controller->deleteNode($req);
-        if ($resp->code !== 404 || $resp->status !== 'error' || $resp->data['id'] !== 'node1') {
-            throw new Exception('error on testDeleteNode');
-        }
-        $this->database->insertNode('node1', 'label 1', 'application', 'service');
-        $req = new HTTPRequest();
-        $req->data['id'] = 'node1';
-        $resp = $this->controller->deleteNode($req);
-        if ($resp->code !== 204 || $resp->status !== 'success' || $resp->data['id'] !== 'node1') {
-            throw new Exception('error on testDeleteNode');
-        }
-    }
-
-    public function testGetEdge(): void
-    {
-        $_SERVER['REQUEST_METHOD'] = 'POST';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/getEdge';
-        $req = new HTTPRequest();
-        $resp = $this->controller->getEdge($req);
-        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'HTTPController::getEdge\'') {
-            throw new Exception('error on testGetEdge 1');
-        }
-
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/getEdge';
-
-        $_GET['source'] = 'node1';
-        $_GET['target'] = 'node2';
-        $req = new HTTPRequest();
-        $resp = $this->controller->getEdge($req);
-        if ($resp->code !== 404 || $resp->status !== 'error' || $resp->data['source'] !== 'node1') {
-            throw new Exception('error on testGetEdge 2');
-        }
-
-        $this->database->insertNode('node1', 'label1', 'application', 'service');
-        $this->database->insertNode('node2', 'label2', 'application', 'service');
-        $this->database->insertEdge('node1-node2', 'node1', 'node2', 'label');
-        
-        $req = new HTTPRequest();
-        $req->data['source'] = 'node1';
-        $req->data['target'] = 'node2';
-        $resp = $this->controller->getEdge($req);
-        if ($resp->code !== 200 || $resp->status !== 'success' || $resp->data['source'] !== 'node1') {
-            throw new Exception('error on testGetEdge 3');
-        }
-    }
-    
-    public function testGetEdges(): void
-    {
-        $_SERVER['REQUEST_METHOD'] = 'POST';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/getEdges';
-        $req = new HTTPRequest();
-        $resp = $this->controller->getEdges($req);
-        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'HTTPController::getEdges\'') {
-            throw new Exception('error on testGetEdges');
-        }
-
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/getEdges';
-
-        $req = new HTTPRequest();
-        $resp = $this->controller->getEdges($req);
-
-        $this->database->insertNode('node1', 'label1', 'application', 'service');
-        $this->database->insertNode('node2', 'label2', 'application', 'service');
-        $this->database->insertEdge('node1-node2', 'node1', 'node2', 'label');
-
-        $req = new HTTPRequest();
-        $resp = $this->controller->getEdges($req);
-
-        if ($resp->code !== 200 || count($resp->data) !== 1) {
-            throw new Exception('error on testGetEdges');
-        }
-        if ($resp->data[0]['source'] !== 'node1' || $resp->data[0]['target'] !== 'node2') {
-            throw new Exception('error on testGetEdges');
-        }
-        
-    }
-    
-    public function testInsertEdge(): void
-    {
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/insertEdge';
-        $req = new HTTPRequest();
-        $resp = $this->controller->insertEdge($req);
-        if ($resp->code != 405 || $resp->message != 'method \'GET\' not allowed in \'HTTPController::insertEdge\'') {
-            throw new Exception('error on testInsertEdge');
-        }
-
-        $this->database->insertNode('node1', 'label1', 'application', 'service');
-        $this->database->insertNode('node2', 'label2', 'application', 'service');
-        $_SERVER['REQUEST_METHOD'] = 'POST';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/insertEdge';
-
-        $req = new HTTPRequest();
-        $req->data['source'] = 'node1';
-        $req->data['target'] = 'node2';
-        $req->data['label'] = 'edge from node1 to node2';
-        $req->data['data'] = ['a' => 'b'];
-        $resp = $this->controller->insertEdge($req);
-        if ($resp->code !== 200 || $resp->status !== 'success' || $resp->data['source'] !== 'node1') {
-            throw new Exception('error on testInsertEdge');
-        }
-    }
-    
-    public function testUpdateEdge(): void
-    {
-        $_SERVER['REQUEST_METHOD'] = 'POST';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/updateEdge';
-        $req = new HTTPRequest();
-        $resp = $this->controller->updateEdge($req);
-        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'HTTPController::updateEdge\'') {
-            throw new Exception('error on testUpdateEdge');
-        }
-
-        $_SERVER['REQUEST_METHOD'] = 'PUT';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/updateEdge';
-        $req = new HTTPRequest();
-        $req->data['source'] = 'node1';
-        $req->data['target'] = 'node2';
-        $req->data['label'] = 'edge from node1 to node2';
-        $req->data['data'] = ['a' => 'b'];
-        $resp = $this->controller->updateEdge($req);
-    }
-    
-    public function testDeleteEdge(): void
-    {
-        $_SERVER['REQUEST_METHOD'] = 'PUT';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/deleteEdge';
-        $req = new HTTPRequest();
-        $resp = $this->controller->deleteEdge($req);
-        if ($resp->code != 405 || $resp->message != 'method \'PUT\' not allowed in \'HTTPController::deleteEdge\'') {
-            throw new Exception('error on testDeleteEdge');
-        }
-
-        $_SERVER['REQUEST_METHOD'] = 'DELETE';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/deleteEdge';
-        $req = new HTTPRequest();
-        $req->data['source'] = 'node1';
-        $req->data['target'] = 'node2';
-        $resp = $this->controller->deleteEdge($req);
-    }
-
-    public function testGetStatus(): void
-    {
-        $_SERVER['REQUEST_METHOD'] = 'PUT';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/getStatus';
-        $req = new HTTPRequest();
-        $resp = $this->controller->getStatus($req);
-        if ($resp->code != 405 || $resp->message != 'method \'PUT\' not allowed in \'HTTPController::getStatus\'') {
-            throw new Exception('error on testGetStatus');
-        }
-
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/getStatus';
-        $req = new HTTPRequest();
-        $resp = $this->controller->getStatus($req);
-        if ($resp->code !== 200 || $resp->status !== 'success' || count($resp->data) > 0) {
-            throw new Exception('error on testGetStatus');
-        }
-        $this->database->insertNode('node1', 'label1', 'application', 'service');
-        $this->database->insertNode('node2', 'label2', 'application', 'service');
-
-        $req = new HTTPRequest();
-        $resp = $this->controller->getStatus($req);
-        if ($resp->code !== 200 || $resp->status !== 'success' || count($resp->data) !== 2) {
-            throw new Exception('error on testGetStatus');
-        }
-        if ($resp->data[0]['node_id'] !== 'node1' || $resp->data[1]['node_id'] !== 'node2') {
-            throw new Exception('error on testGetStatus');
-        }
-    }
-    
-    public function testGetNodeStatus(): void
-    {
-        $_SERVER['REQUEST_METHOD'] = 'POST';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/getNodeStatus';
-        $req = new HTTPRequest();
-        $resp = $this->controller->getNodeStatus($req);
-        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'HTTPController::getNodeStatus\'') {
-            print_r($resp);
-            throw new Exception('error on testGetNodeStatus 1');
-        }
-
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/getNodeStatus';
-        $req = new HTTPRequest();
-        $resp = $this->controller->getNodeStatus($req);
-        if ($resp->code !== 400 || $resp->status !== 'error' || $resp->message !== 'param \'node_id\' is missing') {
-            print_r($resp);
-            throw new Exception('error on testGetNodeStatus 2');
-        }
-
-        $_GET[ModelStatus::STATUS_KEYNAME_NODE_ID] = 'node1';
-        $req = new HTTPRequest();
-        $resp = $this->controller->getNodeStatus($req);
-        if ($resp->code !== 404 || $resp->message !== 'node not found' || $resp->data[ModelStatus::STATUS_KEYNAME_NODE_ID] !== 'node1') {
-            print_r($resp);
-            throw new Exception('error on testGetNodeStatus 3');
-        }
-
-        $this->database->insertNode('node1', 'label 1', 'business', 'database');
-        $_GET[ModelStatus::STATUS_KEYNAME_NODE_ID] = 'node1';
-        $req = new HTTPRequest();
-        $resp = $this->controller->getNodeStatus($req);
-        if ($resp->code !== 200 || $resp->message !== 'node found' || $resp->data[ModelStatus::STATUS_KEYNAME_NODE_ID] !== 'node1' || $resp->data['status'] !== 'unknown') {
-            throw new Exception('error on testGetNodeStatus');
-        }
-    }
-    
-    public function testUpdateNodeStatus(): void
-    {
-        $_SERVER['REQUEST_METHOD'] = 'POST';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/updateNodeStatus';
-        $req = new HTTPRequest();
-        $resp = $this->controller->updateNodeStatus($req);
-        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'HTTPController::updateNodeStatus\'') {
-            throw new Exception('error on testUpdateNodeStatus');
-        }
-
-        $this->database->insertNode('node1', 'label', 'application', 'service');
-        $_SERVER['REQUEST_METHOD'] = 'PUT';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/updateNodeStatus';
-        $req = new HTTPRequest();
-        $req->data['node_id'] = 'node1';
-        $req->data['status'] = 'healthy';
-        $resp = $this->controller->updateNodeStatus($req);
-    }
-
-    public function testGetProject(): void
-    {
-        $_SERVER['REQUEST_METHOD'] = 'POST';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/getProject';
-        $req = new HTTPRequest();
-        $resp = $this->controller->getProject($req);
-        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'HTTPController::getProject\'') {
-            throw new Exception('error on testGetProject 1');
-        }
-
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/getProject';
-        $req = new HTTPRequest();
-        $resp = $this->controller->getProject($req);
-        if ($resp->code !== 400 || $resp->message !== 'param \'id\' is missing') {
-            throw new Exception('error on testGetProject 2');
-        }
-
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/getProject';
-        $_GET['id'] = 'meu-project';
-        $req = new HTTPRequest();
-        $resp = $this->controller->getProject($req);
-        if( $resp->code !== 404 || $resp->message !== 'project not found') {
-            print_r($resp);
-            throw new Exception('error on testGetProject 3');
-        }
-        
-        $this->database->insertProject('meu-project', 'meu project', 'admin', ['nodes' => ['a', 'b']]);
-        
-        $req = new HTTPRequest();
-        $resp = $this->controller->getProject($req);
-        if( $resp->code !== 200 || $resp->message !== 'project found') {
-            throw new Exception('error on testGetProject 4');
-        }
-        if($resp->data['id'] !== 'meu-project' || $resp->data['name'] !== 'meu project') {
-            throw new Exception('error on testGetProject 5');
-        }
-    }
-
-    public function testGetProjects(): void
-    {
-        $_SERVER['REQUEST_METHOD'] = 'POST';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/getProjects';
-        $req = new HTTPRequest();
-        $resp = $this->controller->getProjects($req);
-        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'HTTPController::getProjects\'') {
-            throw new Exception('error on testGetProjects 1');
-        }
-
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/getProjects';
-        $req = new HTTPRequest();
-        $resp = $this->controller->getProjects($req);
-        if( $resp->code !== 200 || $resp->message !== 'projects found') {
-            throw new Exception('error on testGetProjects 2');
-        }
-        
-        $this->database->insertProject('meu-project', 'meu project', 'admin', ['nodes' => ['a', 'b']]);
-        
-        $req = new HTTPRequest();
-        $resp = $this->controller->getProjects($req);
-        if( $resp->code !== 200 || $resp->message !== 'projects found' || count($resp->data) !== 1) {
-            throw new Exception('error on testGetProjects 3');
-        }
-        if($resp->data[0]['id'] !== 'meu-project' || $resp->data[0]['name'] !== 'meu project') {
-            throw new Exception('error on testGetProjects 4');
-        }
-    }
-
-    public function testInsertProject(): void
-    {
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/insertProject';
-        $req = new HTTPRequest();
-        $resp = $this->controller->insertProject($req);
-        if ($resp->code != 405 || $resp->message != 'method \'GET\' not allowed in \'HTTPController::insertProject\'') {
-            throw new Exception('error on testInsertProject 1');
-        }
-
-        $_SERVER['REQUEST_METHOD'] = 'POST';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/insertProject';
-        $req = new HTTPRequest();
-        $req->data['id'] = 'project1';
-        $req->data['name'] = 'My Project 1';
-        $req->data['creator'] = 'admin';
-        $req->data['nodes'] = ['a', 'b'];
-        $resp = $this->controller->insertProject($req);
-        if($resp->code !== 201 || $resp->message !== 'project created') {
-            print_r($resp);
-            throw new Exception('error on testInsertProject 2');
-        }
-
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/getProjects';
-        $req = new HTTPRequest();
-        $resp = $this->controller->getProjects($req);
-        if( $resp->code !== 200 || $resp->message !== 'projects found' || count($resp->data) !== 1) {
-            throw new Exception('error on testInsertProject 3');
-        }
-
-        if($resp->data[0]['name'] !== 'My Project 1') {
-            throw new Exception('error on testInsertProject 4');
-        }
-    }
-
-    public function testUpdateProject(): void
-    {
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/updateProject';
-        $req = new HTTPRequest();
-        $resp = $this->controller->updateProject($req);
-        if ($resp->code != 405 || $resp->message != 'method \'GET\' not allowed in \'HTTPController::updateProject\'') {
-            throw new Exception('error on testUpdateProject 1');
-        }
-
-        $_SERVER['REQUEST_METHOD'] = 'PUT';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/updateProject';
-        $req = new HTTPRequest();
-        $req->data['id'] = 'project1';
-        $req->data['name'] = 'My Project 1 Updated';
-        $req->data['creator'] = 'admin';
-        $req->data['nodes'] = [];
-        $resp = $this->controller->updateProject($req);
-        if ($resp->code !== 404 || $resp->message !== 'project not updated' || $resp->data['id'] !== 'project1') {
-            print_r($resp);
-            throw new Exception('error on testUpdateProject 2');
-        }
-
-        $this->database->insertProject('project1', 'My Project 1', 'admin', ['nodes' => [], 'edges' => []]);
-        $req = new HTTPRequest();
-        $req->data['id'] = 'project1';
-        $req->data['name'] = 'My Project 1 Updated';
-        $req->data['creator'] = 'admin';
-        $req->data['nodes'] = ['node1', 'node2'];
-        $resp = $this->controller->updateProject($req);
-        if ($resp->code !== 200 || $resp->message !== 'project updated' || $resp->data['name'] !== 'My Project 1 Updated' || count($resp->data['nodes']) !== 2) {
-            print_r($resp);
-            throw new Exception('error on testUpdateProject 3');
-        }
-    }
-
-    public function testDeleteProject(): void
-    {
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/deleteProject';
-        $req = new HTTPRequest();
-        $resp = $this->controller->deleteProject($req);
-        if ($resp->code != 405 || $resp->message != 'method \'GET\' not allowed in \'HTTPController::deleteProject\'') {
-            throw new Exception('error on testDeleteProject 1');
-        }
-
-        $_SERVER['REQUEST_METHOD'] = 'DELETE';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/deleteProject';
-        $req = new HTTPRequest();
-        $req->data['id'] = 'project1';
-        $resp = $this->controller->deleteProject($req);
-        if ($resp->code !== 404 || $resp->message !== 'project not deleted' || $resp->data['id'] !== 'project1') {
-            print_r($resp);
-            throw new Exception('error on testDeleteProject 2');
-        }
-
-        $this->database->insertProject('project1', 'My Project 1', 'admin', ['nodes' => [], 'edges' => []]);
-        $req = new HTTPRequest();
-        $req->data['id'] = 'project1';
-        $resp = $this->controller->deleteProject($req);
-        if ($resp->code !== 204 || $resp->message !== 'project deleted' || $resp->data['id'] !== 'project1') {
-            throw new Exception('error on testDeleteProject 3');
-        }
-
-        $projects = $this->database->getProjects();
-        if (count($projects) !== 0) {
-            throw new Exception('error on testDeleteProject 4');
-        }
-    }
-
-    public function testGetLogs(): void
-    {
-        $_SERVER['REQUEST_METHOD'] = 'POST';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/getLogs';
-        $req = new HTTPRequest();
-        $resp = $this->controller->getLogs($req);
-        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'HTTPController::getLogs\'') {
-            throw new Exception('error on testGetLogs 1');
-        }
-
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/getLogs';
-        $req = new HTTPRequest();
-        $resp = $this->controller->getLogs($req);
-        if ($resp->code !== 400 || $resp->message !== 'param \'limit\' is missing') {
-            throw new Exception('error on testGetLogs 2');
-        }
-        
-        $_GET['limit'] = 2;
-        $req = new HTTPRequest();
-        $resp = $this->controller->getLogs($req);
-        if ($resp->code !== 200 || $resp->message !== 'logs found') {
-            throw new Exception('error on testGetLogs 3');
-        }
-        
-        $this->database->insertLog('node', 'node1', 'insert', null, ['id' => 'node1'], 'user', '293820');
-        sleep(1);
-        $this->database->insertLog('node', 'node2', 'insert', null, ['id' => 'node2'], 'user', '111111');
-        sleep(1);
-        $this->database->insertLog('node', 'node3', 'insert', null, ['id' => 'node3'], 'user', '111111');
-        
-        $_GET['limit'] = 2;
-        $req = new HTTPRequest();
-        $resp = $this->controller->getLogs($req);
-        if ($resp->code !== 200 || $resp->message !== 'logs found') {
-            throw new Exception('error on testGetLogs');
-        }
-    }
-}
-
-#####################################
-
-class TestHTTPRequest extends TestAbstractTest
-{
-    public function testHTTPRequest()
-    {
-        $_GET['id'] = '1';
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/getNodes';
-        $req = new HTTPRequest();
-        if($req->getParam('id') != 1) {
-            throw new Exception('problem on testHTTPRequest');
-        }
-    }
-}
-#####################################
-
-class TestModelNode extends TestAbstractTest
-{
-    public function testNodeConstructor(): void
-    {
-        $node = new ModelNode('node1', 'Node 01', 'business', 'server', true, ['key' => 'value']);
-
-        if ($node->getId() != 'node1' || $node->getLabel() != 'Node 01' || $node->getCategory() != 'business' || $node->getType() != 'server' || $node->getUserCreated() !== true) {
-            throw new Exception('test_Node problem - property mismatch');
-        }
-
-        $data = $node->getData();
-        if ($data['key'] != 'value') {
-            throw new Exception('test_Node problem - data mismatch');
-        }
-
-        $data = $node->toArray();
-        if ($data['id'] != 'node1' || $data['label'] != 'Node 01' || $data['category'] != 'business' || $data['type'] != 'server' || $data['user_created'] !== true) {
-            throw new Exception('test_Node problem - toArray mismatch');
-        }
-
-        if ($data['data']['key'] != 'value') {
-            throw new Exception('test_Node problem - toArray data mismatch');
-        }
-
-        // Test validation - invalid ID
-        try {
-            new ModelNode('invalid@id', 'Label', 'business', 'server', true, []);
-            throw new Exception('test_Node problem - should throw exception for invalid ID');
-        } catch (InvalidArgumentException $e) {
-            // Expected
-        }
-
-        // Test validation - label too long
-        try {
-            new ModelNode('node2', str_repeat('a', 210000), 'business', 'server', true, []);
-            throw new Exception('test_Node problem - should throw exception for long label');
-        } catch (InvalidArgumentException $e) {
-            // Expected
-        }
-    }
-}
-
-#####################################
-
-class TestHelperCytoscape extends TestAbstractTest
-{
-    private ?PDO $pdo;
-    private ?LoggerInterface $logger;
-    private ?Database $database;
-
-    public function up(): void
-    {
-        $this->pdo = Database::createConnection('sqlite::memory:');
-        $this->logger = new Logger();
-        $this->database = new Database($this->pdo, $this->logger);
-    }
-
-    public function down(): void
-    {
-        $this->pdo = null;
-        $this->logger = null;
-        $this->database = null;
-    }
-
-    public function testHelperCytoscape(): void
-    {
-        global $DATA_IMAGES;
-        $img = new HelperImages($DATA_IMAGES);
-        $cy = new HelperCytoscape($this->database, $img, 'http://example.com/images');
-
-        $nodes = [
-            new ModelNode('n1', 'Node 1', 'business', 'server',  false, ['a' => 1]),
-            new ModelNode('n2', 'Node 2', 'business', 'server', false, ['b' => 2]),
-            new ModelNode('n3', 'Node 3', 'business', 'server', false, ['c' => 3]),
-        ];
-
-        $edges = [
-            new ModelEdge('n1', 'n2', 'label1'),
-            new ModelEdge('n2', 'n3', 'label2'),
-        ];
-
-        $graph = new ModelGraph($nodes, $edges);
-        $data = $cy->toArray($graph);
-    }
-}
-
-#####################################
-
-class TestModelGroup extends TestAbstractTest
-{
-    public function testGroupConstructor(): void
-    {
-        $group = new ModelGroup('contributor');
-        $data = $group->toArray();
-        if($data['id'] != $group->getId()) {
-            throw new Exception('test_Group problem');
-        }
-    }
-
-    public function testGroupException(): void
-    {
-        try {
-            new ModelGroup('xpto');
-        } catch(InvalidArgumentException $e) {
-            return;
-        }
-        throw new Exception('test_Group problem');
-    }
-}
-
-#####################################
-
-class TestModelStatus extends TestAbstractTest
-{
-    public function testStatusConstructor(): void
-    {
-        $status = new ModelStatus('node1', 'healthy');
-
-        if($status->getNodeId() != 'node1' || $status->getStatus() != 'healthy') {
-            throw new Exception('testStatusConstructor problem');
-        }
-
-        $data = $status->toArray();
-        if($data['node_id'] != 'node1' || $data['status'] != 'healthy') {
-            throw new Exception('testStatusConstructor problem');
-        }
-    }
-
-    public function testStatusException(): void
-    {
-        try {
-            new ModelStatus('node1', 'xpto');
-        } catch(InvalidArgumentException $e) {
-            return;
-        }
-
-        throw new Exception(('problem on testStatusException'));
-    }
-}
-#####################################
-
-class TestHTTPBadRequestResponse extends TestAbstractTest
-{
-    public function testHTTPBadRequestResponse(): void
-    {
-        $resp = new HTTPBadRequestResponse('bad request', ['key' => 'val']);
-        if($resp->code != 400) {
-            throw new Exception('problem on code testHTTPOKResponse');
-        }
-
-        if ($resp->status != "error") {
-            throw new Exception('problem on status testHTTPOKResponse');
-        }
-
-        if ($resp->message != "bad request") {
-            throw new Exception('problem on testHTTPOKResponse');
-        }
-
-        if ($resp->data != ['key' => 'val']) {
-            throw new Exception('problem on testHTTPOKResponse');
-        }
-    }
-}
-#####################################
-
 class TestService extends TestAbstractTest
 {
     private ?PDO $pdo;
@@ -2344,10 +2413,10 @@ class TestService extends TestAbstractTest
         if ($user !== null) {
             throw new Exception('error on testInsertUser');
         }
-        $this->service->insertUser(new ModelUser('maria', new ModelGroup('contributor')));
+        $this->service->insertUser(new User('maria', new Group('contributor')));
         
         try {
-            $this->service->insertUser(new ModelUser('maria', new ModelGroup('contributor')));
+            $this->service->insertUser(new User('maria', new Group('contributor')));
         } catch (Exception $e) {
             return;
         }
@@ -2357,13 +2426,13 @@ class TestService extends TestAbstractTest
     public function testUpdateUser(): void
     {
         HelperContext::update('admin', 'admin', '127.0.0.1');
-        $this->service->insertUser(new ModelUser('maria', new ModelGroup('contributor')));
-        $this->service->updateUser(new ModelUser('maria', new ModelGroup('admin')));
+        $this->service->insertUser(new User('maria', new Group('contributor')));
+        $this->service->updateUser(new User('maria', new Group('admin')));
         $user = $this->service->getUser('maria');
         if ($user->getId() !== 'maria' || $user->getGroup()->getId() !== 'admin') {
             throw new Exception('error on testUpdateUser');
         }
-        if ($this->service->updateUser(new ModelUser('pedro', new ModelGroup('admin')))) {
+        if ($this->service->updateUser(new User('pedro', new Group('admin')))) {
             throw new Exception('error on testUpdateUser');
         }
     }
@@ -2386,7 +2455,7 @@ class TestService extends TestAbstractTest
             throw new Exception('error on testGetCategories - business category not found');
         }
 
-        $this->service->insertCategory(new ModelCategory('custom', 'Custom Category', 'circle', 100, 100));
+        $this->service->insertCategory(new Category('custom', 'Custom Category', 'circle', 100, 100));
         $categories = $this->service->getCategories();
         $foundCustom = false;
         foreach ($categories as $category) {
@@ -2418,7 +2487,7 @@ class TestService extends TestAbstractTest
             throw new Exception('error on testGetTypes - service type not found');
         }
 
-        $this->service->insertType(new ModelType('customType', 'Custom Type'));
+        $this->service->insertType(new Type('customType', 'Custom Type'));
         $types = $this->service->getTypes();
         $foundCustomType = false;
         foreach ($types as $type) {
@@ -2435,11 +2504,11 @@ class TestService extends TestAbstractTest
     public function testGetGraph(): void
     {
         HelperContext::update('admin', 'admin', '127.0.0.1');
-        $node1 = new ModelNode('n1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
-        $node2 = new ModelNode('n2', 'Node 02', 'business', 'service', false, ['key' => 'value2']);
+        $node1 = new Node('n1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
+        $node2 = new Node('n2', 'Node 02', 'business', 'service', false, ['key' => 'value2']);
         $this->service->insertNode($node1);
         $this->service->insertNode($node2);
-        $edge1 = new ModelEdge('n1', 'n2', 'label', ['weight' => '10']);
+        $edge1 = new Edge('n1', 'n2', 'label', ['weight' => '10']);
         $this->service->insertEdge($edge1);
         $graph = $this->service->getGraph();
         if (count($graph->getNodes()) !== 2) {
@@ -2457,7 +2526,7 @@ class TestService extends TestAbstractTest
         if ($node !== null) {
             throw new Exception('error on testGetNode - should be null');
         }
-        $newNode = new ModelNode('node1', 'Node 01', 'business', 'service', false, ['key' => 'value']);
+        $newNode = new Node('node1', 'Node 01', 'business', 'service', false, ['key' => 'value']);
         $this->service->insertNode($newNode);
         $node = $this->service->getNode('node1');
         if ($node->getId() !== 'node1' || $node->getLabel() !== 'Node 01' || $node->getCategory() !== 'business' || $node->getType() !== 'service') {
@@ -2476,8 +2545,8 @@ class TestService extends TestAbstractTest
         if (count($nodes) !== 0) {
             throw new Exception('error on testGetNodes - should be empty');
         }
-        $node1 = new ModelNode('node1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
-        $node2 = new ModelNode('node2', 'Node 02', 'business', 'database', false, ['key' => 'value2']);
+        $node1 = new Node('node1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
+        $node2 = new Node('node2', 'Node 02', 'business', 'database', false, ['key' => 'value2']);
         $this->service->insertNode($node1);
         $this->service->insertNode($node2);
         $nodes = $this->service->getNodes();
@@ -2495,7 +2564,7 @@ class TestService extends TestAbstractTest
     public function testInsertNode(): void
     {
         HelperContext::update('admin', 'admin', '127.0.0.1');
-        $node = new ModelNode('node1', 'Node 01', 'business', 'service', false, ['key' => 'value']);
+        $node = new Node('node1', 'Node 01', 'business', 'service', false, ['key' => 'value']);
         $this->service->insertNode($node);
         $retrievedNode = $this->service->getNode('node1');
         if ($retrievedNode->getId() !== 'node1' || $retrievedNode->getLabel() !== 'Node 01') {
@@ -2503,7 +2572,7 @@ class TestService extends TestAbstractTest
         }
         // Test with contributor permission
         HelperContext::update('admin', 'admin', '127.0.0.1');
-        $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', false, ['key' => 'value2']);
+        $node2 = new Node('node2', 'Node 02', 'application', 'database', false, ['key' => 'value2']);
         $this->service->insertNode($node2);
         $retrievedNode2 = $this->service->getNode('node2');
         if ($retrievedNode2->getId() !== 'node2') {
@@ -2514,9 +2583,9 @@ class TestService extends TestAbstractTest
     public function testUpdateNode(): void
     {
         HelperContext::update('admin', 'admin', '127.0.0.1');
-        $node = new ModelNode('node1', 'Node 01', 'business', 'service', false, ['key' => 'value']);
+        $node = new Node('node1', 'Node 01', 'business', 'service', false, ['key' => 'value']);
         $this->service->insertNode($node);
-        $updatedNode = new ModelNode('node1', 'Updated Node', 'application', 'database', false, ['key' => 'newvalue']);
+        $updatedNode = new Node('node1', 'Updated Node', 'application', 'database', false, ['key' => 'newvalue']);
         
         $this->service->updateNode($updatedNode);
         $retrievedNode = $this->service->getNode('node1');
@@ -2531,7 +2600,7 @@ class TestService extends TestAbstractTest
         }
         
         // try to update node not found
-        $updatedNode = new ModelNode('node5', 'Updated Node', 'application', 'database', false, ['key' => 'newvalue']);
+        $updatedNode = new Node('node5', 'Updated Node', 'application', 'database', false, ['key' => 'newvalue']);
         if ($this->service->updateNode($updatedNode)) {
             throw new Exception('error on testUpdateNode - should be false');
         }
@@ -2541,9 +2610,9 @@ class TestService extends TestAbstractTest
     {
         HelperContext::update('admin', 'admin', '127.0.0.1');
 
-        $this->service->deleteNode(new ModelNode('id', 'one node', 'application', 'database', false, []));
+        $this->service->deleteNode(new Node('id', 'one node', 'application', 'database', false, []));
 
-        $node1 = new ModelNode('node1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
+        $node1 = new Node('node1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
         $this->service->insertNode($node1);
 
         $node = $this->service->getNode('node1');
@@ -2562,15 +2631,15 @@ class TestService extends TestAbstractTest
     public function testGetEdge(): void
     {
         HelperContext::update('admin', 'admin', '127.0.0.1');
-        $node1 = new ModelNode('node1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
-        $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', false, ['key' => 'value2']);
+        $node1 = new Node('node1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
+        $node2 = new Node('node2', 'Node 02', 'application', 'database', false, ['key' => 'value2']);
         $this->service->insertNode($node1);
         $this->service->insertNode($node2);
         $edge = $this->service->getEdge('node1', 'node2');
         if ($edge !== null) {
             throw new Exception('error on testGetEdge - should be null');
         }
-        $newEdge = new ModelEdge('node1', 'node2', 'label', ['weight' => '10']);
+        $newEdge = new Edge('node1', 'node2', 'label', ['weight' => '10']);
         $this->service->insertEdge($newEdge);
         $edge = $this->service->getEdge('node1', 'node2');
         if ($edge->getId() !== 'node1-node2' || $edge->getSource() !== 'node1' || $edge->getTarget() !== 'node2') {
@@ -2588,14 +2657,14 @@ class TestService extends TestAbstractTest
         if (count($edges) !== 0) {
             throw new Exception('error on testGetEdges - should be empty');
         }
-        $node1 = new ModelNode('node1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
-        $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', false, ['key' => 'value2']);
-        $node3 = new ModelNode('node3', 'Node 03', 'application', 'service', false, ['key' => 'value3']);
+        $node1 = new Node('node1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
+        $node2 = new Node('node2', 'Node 02', 'application', 'database', false, ['key' => 'value2']);
+        $node3 = new Node('node3', 'Node 03', 'application', 'service', false, ['key' => 'value3']);
         $this->service->insertNode($node1);
         $this->service->insertNode($node2);
         $this->service->insertNode($node3);
-        $edge1 = new ModelEdge('node1', 'node2', 'label', ['weight' => '10']);
-        $edge2 = new ModelEdge('node2', 'node3', 'label', ['weight' => '20']);
+        $edge1 = new Edge('node1', 'node2', 'label', ['weight' => '10']);
+        $edge2 = new Edge('node2', 'node3', 'label', ['weight' => '20']);
         $this->service->insertEdge($edge1);
         $this->service->insertEdge($edge2);
         $edges = $this->service->getEdges();
@@ -2612,11 +2681,11 @@ class TestService extends TestAbstractTest
     
     public function testInsertEdge(): void {
         HelperContext::update('admin', 'admin', '127.0.0.1');
-        $node1 = new ModelNode('node1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
-        $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', false, ['key' => 'value2']);
+        $node1 = new Node('node1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
+        $node2 = new Node('node2', 'Node 02', 'application', 'database', false, ['key' => 'value2']);
         $this->service->insertNode($node1);
         $this->service->insertNode($node2);
-        $edge = new ModelEdge('node1', 'node2', 'label', ['weight' => '10']);
+        $edge = new Edge('node1', 'node2', 'label', ['weight' => '10']);
         $this->service->insertEdge($edge);
         $retrievedEdge = $this->service->getEdge('node1', 'node2');
         if ($retrievedEdge->getId() !== 'node1-node2' || $retrievedEdge->getSource() !== 'node1' || $retrievedEdge->getTarget() !== 'node2') {
@@ -2628,17 +2697,17 @@ class TestService extends TestAbstractTest
     {
         HelperContext::update('admin', 'admin', '127.0.0.1');
 
-        $node1 = new ModelNode('node1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
-        $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', false, ['key' => 'value2']);
-        $node3 = new ModelNode('node3', 'Node 03', 'application', 'service', false, ['key' => 'value3']);
+        $node1 = new Node('node1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
+        $node2 = new Node('node2', 'Node 02', 'application', 'database', false, ['key' => 'value2']);
+        $node3 = new Node('node3', 'Node 03', 'application', 'service', false, ['key' => 'value3']);
         $this->service->insertNode($node1);
         $this->service->insertNode($node2);
         $this->service->insertNode($node3);
 
-        $edge = new ModelEdge('node1', 'node2', 'label', ['weight' => '10']);
+        $edge = new Edge('node1', 'node2', 'label', ['weight' => '10']);
         $this->service->insertEdge($edge);
         
-        $updatedEdge = new ModelEdge('node1', 'node2', 'label', ['weight' => '30']);
+        $updatedEdge = new Edge('node1', 'node2', 'label', ['weight' => '30']);
         $this->service->updateEdge($updatedEdge);
         $retrievedEdge = $this->service->getEdge('node1', 'node2');
 
@@ -2651,7 +2720,7 @@ class TestService extends TestAbstractTest
         }
 
         // Test updating non-existent edge
-        $nonExistentEdge = new ModelEdge('node1', 'node3', 'label', ['weight' => '50']);
+        $nonExistentEdge = new Edge('node1', 'node3', 'label', ['weight' => '50']);
         if ($this->service->updateEdge($nonExistentEdge)) {
             throw new Exception('error on testUpdateEdge - should return false for non-existent edge');
         }
@@ -2660,24 +2729,24 @@ class TestService extends TestAbstractTest
     public function testDeleteEdge(): void
     {
         HelperContext::update('admin', 'admin', '127.0.0.1');
-        $node1 = new ModelNode('node1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
-        $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', false, ['key' => 'value2']);
+        $node1 = new Node('node1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
+        $node2 = new Node('node2', 'Node 02', 'application', 'database', false, ['key' => 'value2']);
         $this->service->insertNode($node1);
         $this->service->insertNode($node2);
-        $edge = new ModelEdge('node1', 'node2', 'label', ['weight' => '10']);
+        $edge = new Edge('node1', 'node2', 'label', ['weight' => '10']);
         $this->service->insertEdge($edge);
         $retrievedEdge = $this->service->getEdge('node1', 'node2');
         if ($retrievedEdge === null) {
             throw new Exception('error on testDeleteEdge - edge not inserted');
         }
-        $this->service->deleteEdge(new ModelEdge('node1', 'node2', 'label'));
+        $this->service->deleteEdge(new Edge('node1', 'node2', 'label'));
         $edges = $this->service->getEdges();
         if (count($edges) !== 0) {
             throw new Exception('error on testDeleteEdge - edge not deleted');
         }
 
         // Test deleting non-existent edge
-        if ($this->service->deleteEdge(new ModelEdge('node1', 'node2', 'label'))) {
+        if ($this->service->deleteEdge(new Edge('node1', 'node2', 'label'))) {
             throw new Exception('error on testDeleteEdge - should return false for non-existent edge');
         }
     }
@@ -2691,12 +2760,12 @@ class TestService extends TestAbstractTest
             throw new Exception('error on testGetStatus - should be empty');
         }
         
-        $node1 = new ModelNode('node1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
-        $node2 = new ModelNode('node2', 'Node 02', 'application', 'database', false, ['key' => 'value2']);
+        $node1 = new Node('node1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
+        $node2 = new Node('node2', 'Node 02', 'application', 'database', false, ['key' => 'value2']);
         $this->service->insertNode($node1);
         $this->service->insertNode($node2);
-        $this->service->updateNodeStatus(new ModelStatus('node1', 'healthy'));
-        $this->service->updateNodeStatus(new ModelStatus('node2', 'unhealthy'));
+        $this->service->updateNodeStatus(new Status('node1', 'healthy'));
+        $this->service->updateNodeStatus(new Status('node2', 'unhealthy'));
         
         $status = $this->service->getStatus();
         if (count($status) !== 2) {
@@ -2707,13 +2776,13 @@ class TestService extends TestAbstractTest
     public function testGetNodeStatus(): void
     {
         HelperContext::update('admin', 'admin', '127.0.0.1');
-        $node1 = new ModelNode('node1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
+        $node1 = new Node('node1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
         $this->service->insertNode($node1);
         $status = $this->service->getNodeStatus('node1');
         if ($status->getNodeId() !== 'node1' || $status->getStatus() !== 'unknown') {
             throw new Exception('error on testGetNodeStatus - default should be unknown');
         }
-        $this->service->updateNodeStatus(new ModelStatus('node1', 'healthy'));
+        $this->service->updateNodeStatus(new Status('node1', 'healthy'));
         $status = $this->service->getNodeStatus('node1');
         if ($status->getNodeId() !== 'node1' || $status->getStatus() !== 'healthy') {
             throw new Exception('error on testGetNodeStatus - status should be healthy');
@@ -2723,21 +2792,21 @@ class TestService extends TestAbstractTest
     public function testUpdateNodeStatus(): void
     {
         HelperContext::update('admin', 'admin', '127.0.0.1');
-        $node1 = new ModelNode('node1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
+        $node1 = new Node('node1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
         $this->service->insertNode($node1);
-        $this->service->updateNodeStatus(new ModelStatus('node1', 'healthy'));
+        $this->service->updateNodeStatus(new Status('node1', 'healthy'));
         $status = $this->service->getNodeStatus('node1');
         if ($status->getStatus() !== 'healthy') {
             throw new Exception('error on testUpdateNodeStatus - status not set');
         }
-        $this->service->updateNodeStatus(new ModelStatus('node1', 'maintenance'));
+        $this->service->updateNodeStatus(new Status('node1', 'maintenance'));
         $status = $this->service->getNodeStatus('node1');
         if ($status->getStatus() !== 'maintenance') {
             throw new Exception('error on testUpdateNodeStatus - status not updated');
         }
 
         try {
-            $this->service->updateNodeStatus(new ModelStatus('node6', 'healthy'));
+            $this->service->updateNodeStatus(new Status('node6', 'healthy'));
         } catch (PDOException $e) {
             return;
         }
@@ -2751,7 +2820,7 @@ class TestService extends TestAbstractTest
             throw new Exception('error on testGetProject - should be null for nonexistent project');
         }
 
-        $this->service->insertProject(new ModelProject('project1', 'First Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), ['a', 'b']));
+        $this->service->insertProject(new Project('project1', 'First Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), ['a', 'b']));
         $project = $this->service->getProject('project1');
         if( $project === null || $project->id !== 'project1' || $project->name !== 'First Project') {
             throw new Exception('error on testGetProject - project data mismatch');
@@ -2765,7 +2834,7 @@ class TestService extends TestAbstractTest
             throw new Exception('error on getProjects - should be empty');
         }
 
-        $this->service->insertProject(new ModelProject('project1', 'First Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), []));
+        $this->service->insertProject(new Project('project1', 'First Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), []));
 
         $projects = $this->service->getProjects();
         if (count($projects) !== 1) {
@@ -2776,7 +2845,7 @@ class TestService extends TestAbstractTest
     public function testInsertProject(): void
     {
         HelperContext::update('admin', 'admin', '127.0.0.1');
-        $this->service->insertProject(new ModelProject('project1', 'First Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), []));
+        $this->service->insertProject(new Project('project1', 'First Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), []));
         $projects = $this->service->getProjects();
         if (count($projects) !== 1) {
             throw new Exception('error on testInsertProject - should have 1 project');
@@ -2787,7 +2856,7 @@ class TestService extends TestAbstractTest
         }
 
         try {
-            $this->service->insertProject(new ModelProject('project1', 'Duplicate Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), []));
+            $this->service->insertProject(new Project('project1', 'Duplicate Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), []));
         } catch (Exception $e) {
             return;
         }
@@ -2797,8 +2866,8 @@ class TestService extends TestAbstractTest
     public function testUpdateProject(): void
     {
         HelperContext::update('admin', 'admin', '127.0.0.1');
-        $this->service->insertProject(new ModelProject('project1', 'First Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), []));
-        $this->service->updateProject(new ModelProject('project1', 'Updated Project Name', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), []));
+        $this->service->insertProject(new Project('project1', 'First Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), []));
+        $this->service->updateProject(new Project('project1', 'Updated Project Name', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), []));
         $projects = $this->service->getProjects();
         if (count($projects) !== 1) {
             throw new Exception('error on testUpdateProject - should have 1 project');
@@ -2808,7 +2877,7 @@ class TestService extends TestAbstractTest
             throw new Exception('error on testUpdateProject - project name not updated');
         }
         
-        if($this->service->updateProject(new ModelProject('project2', 'Non-existent Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), []))) {
+        if($this->service->updateProject(new Project('project2', 'Non-existent Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), []))) {
             throw new Exception('error on testUpdateProject - should return false for non-existent project');
         }
     }
@@ -2816,7 +2885,7 @@ class TestService extends TestAbstractTest
     public function testDeleteProject(): void
     {
         HelperContext::update('admin', 'admin', '127.0.0.1');
-        $this->service->insertProject(new ModelProject('project1', 'First Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), []));
+        $this->service->insertProject(new Project('project1', 'First Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), []));
         $this->service->deleteProject('project1');
         $projects = $this->service->getProjects();
         if (count($projects) !== 0) {
@@ -2832,10 +2901,10 @@ class TestService extends TestAbstractTest
             throw new Exception('error on testGetLogs - should be empty');
         }
 
-        $node1 = new ModelNode('node1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
+        $node1 = new Node('node1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
         $this->service->insertNode($node1);
         sleep(1);
-        $updatedNode = new ModelNode('node1', 'Updated Node', 'application', 'database', false, ['key' => 'newvalue']);
+        $updatedNode = new Node('node1', 'Updated Node', 'application', 'database', false, ['key' => 'newvalue']);
         $this->service->updateNode($updatedNode);
         sleep(1);
         $this->service->deleteNode($node1);
@@ -2852,75 +2921,6 @@ class TestService extends TestAbstractTest
         }
         if ($logs[2]->action !== 'insert' || $logs[2]->entityType !== 'node') {
             throw new Exception('error on testGetLogs - third log should be insert');
-        }
-    }
-}
-
-#####################################
-
-class TestHTTPUnauthorizedResponse extends TestAbstractTest
-{
-    public function testHTTPUnauthorizedResponse(): void
-    {
-        $resp = new HTTPUnauthorizedResponse('database error', ['key' => 'val']);
-        if($resp->code != 401) {
-            throw new Exception('problem on code testHTTPUnauthorizedResponse 1');
-        }
-
-        if ($resp->status != "error") {
-            throw new Exception('problem on status testHTTPUnauthorizedResponse 2');
-        }
-
-        if ($resp->message != "database error") {
-            throw new Exception('problem on testHTTPUnauthorizedResponse 3');
-        }
-
-        if ($resp->data != ['key' => 'val']) {
-            throw new Exception('problem on testHTTPUnauthorizedResponse 4');
-        }
-    }
-}
-#####################################
-
-class TestModelLog extends TestAbstractTest
-{
-    public function testLogConstructor(): void
-    {
-        $oldData = ['id' => 'node1', 'label' => 'Old Label'];
-        $newData = ['id' => 'node1', 'label' => 'New Label'];
-
-        $log = new ModelLog('node', 'node1', 'update', $oldData, $newData);
-
-        if ($log->entityType != 'node' || $log->entityId != 'node1' || $log->action != 'update') {
-            throw new Exception('test_AuditLog problem - property mismatch');
-        }
-
-        if ($log->oldData['label'] != 'Old Label') {
-            throw new Exception('test_AuditLog problem - oldData mismatch');
-        }
-
-        if ($log->newData['label'] != 'New Label') {
-            throw new Exception('test_AuditLog problem - newData mismatch');
-        }
-
-        // Test with null data
-        $log2 = new ModelLog('node', 'node2', 'insert', null, ['id' => 'node2']);
-        if ($log2->oldData !== null) {
-            throw new Exception('test_AuditLog problem - oldData should be null');
-        }
-
-        if ($log2->newData['id'] != 'node2') {
-            throw new Exception('test_AuditLog problem - newData mismatch for insert');
-        }
-
-        // Test delete action with null newData
-        $log3 = new ModelLog('edge', 'edge1', 'delete', ['id' => 'edge1'], null);
-        if ($log3->newData !== null) {
-            throw new Exception('test_AuditLog problem - newData should be null for delete');
-        }
-
-        if ($log3->oldData['id'] != 'edge1') {
-            throw new Exception('test_AuditLog problem - oldData mismatch for delete');
         }
     }
 }

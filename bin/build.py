@@ -11,6 +11,7 @@ def print_file(output, filename):
     if filename in printed_files:
         return
     
+    print(f'Printing {filename}')
     printed_files.append(filename)
 
     with open(filename, 'r') as f:
@@ -46,7 +47,7 @@ with open('compiled/compiled_templates.php', 'r') as file:
 
 filenames = []
 folder = Path('src')
-for file in folder.iterdir():
+for file in folder.rglob('*.php'):
     filenames.append(str(file))
 
 
@@ -89,18 +90,18 @@ with open('compiled/graph.php', 'w') as outputfile:
     outputfile.write(f"$DATA_JAVASCRIPT = '{str(javascript)}';\n")
     outputfile.write("\n")
     
-    print_file(outputfile, 'src/HTTPResponse.php')
-    for file in folder.iterdir():
+    print_file(outputfile, 'src/HTTP/Response/Response.php')
+    for file in folder.rglob('*.php'):
         print_file(outputfile, str(file))
 
 printed_files = []
 filenames = []
 folder = Path('tests')
-for file in folder.iterdir():
+for file in folder.rglob('*.php'):
     filenames.append(str(file))
  
 with open('compiled/tests.php', 'w') as outputfile:
     outputfile.write("".join(init))
     
-    for file in folder.iterdir():
+    for file in folder.rglob('*.php'):
         print_file(outputfile, str(file))
