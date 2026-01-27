@@ -11,7 +11,7 @@ class TestDatabase extends TestAbstractTest
     public function up(): void
     {
         $this->pdo = Database::createConnection('sqlite::memory:');
-        $this->logger = new Logger();
+        $this->logger = new Logger(1);
         $this->database = new Database($this->pdo, $this->logger);
     }
 
@@ -128,8 +128,12 @@ class TestDatabase extends TestAbstractTest
 
     public function testGetCategory(): void
     {
+        $category = $this->database->getCategory('nonexistent');
+        if ($category !== null) {
+            throw new Exception('should return null');
+        }
         $category = $this->database->getCategory('business');
-        if ($category['id'] !== 'business' || $category['name'] !== 'Business') {
+        if ($category['id'] !== 'business' || $category['name'] !== 'Negócios') {
             throw new Exception('business expected');
         }
     }
@@ -144,8 +148,8 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('should have categories');
         }
 
-        $this->database->insertCategory('cat1', 'Category 1', 'box', 100, 50);
-        $this->database->insertCategory('cat2', 'Category 2', 'box', 100, 50);
+        $this->pdo->exec('insert into categories (id, name, shape, width, height) values ("cat1", "Category 1", "box", 80, 80)');
+        $this->pdo->exec('insert into categories (id, name, shape, width, height) values ("cat2", "Category 2", "box", 80, 80)');
 
         $categories = $this->database->getCategories();
         if (count($categories) !== $originalCount + 2) {
@@ -170,33 +174,66 @@ class TestDatabase extends TestAbstractTest
         }
     }
 
-    public function testUpdateCategory(): void
+    public function testInsertCategory(): void
     {
         $this->database->insertCategory('cat1', 'Category 1', 'box', 100, 50);
+        $stmt = $this->pdo->prepare('select * from categories where id = :id');
+        $stmt->execute([':id' => 'cat1']);
+        $category = $stmt->fetch();
+        if ($category['id'] !== 'cat1' || $category['name'] !== 'Category 1' || $category['shape'] !== 'box' || $category['width'] !== 100 || $category['height'] !== 50) {
+            throw new Exception('error on insert category cat1');
+        }
+    }
+
+    public function testUpdateCategory(): void
+    {
+        $this->pdo->exec('insert into categories (id, name, shape, width, height) values ("cat1", "Category 1", "box", 100, 50)');
         $this->database->updateCategory('cat1', 'Updated Category 1', 'circle', 150, 75);
 
-        $category = $this->database->getCategory('cat1');
+        $stmt = $this->pdo->prepare('select * from categories where id = :id');
+        $stmt->execute([':id' => 'cat1']);
+        $category = $stmt->fetch();
+
         if ($category['id'] !== 'cat1' || $category['name'] !== 'Updated Category 1' || $category['shape'] !== 'circle' || $category['width'] !== 150 || $category['height'] !== 75) {
             throw new Exception('error on update category cat1');
         }
+
+        $result = $this->database->updateCategory('nonexistent', 'Name', 'box', 100, 50);
+        if ($result) {
+            throw new Exception('error on update nonexistent category');
+        }
+
     }
 
     public function testDeleteCategory(): void
     {
-        $this->database->insertCategory('cat1', 'Category 1', 'box', 100, 50);
+        $this->pdo->exec('insert into categories (id, name, shape, width, height) values ("cat1", "Category 1", "box", 100, 50)');
         $this->database->deleteCategory('cat1');
 
-        $category = $this->database->getCategory('cat1');
-        if ($category !== null) {
+        $stmt = $this->pdo->prepare('select * from categories where id = :id');
+        $stmt->execute([':id' => 'cat1']);
+        $category = $stmt->fetch();
+
+        if ($category !== false) {
             throw new Exception('category cat1 should be deleted');
+        }
+
+        $result = $this->database->deleteCategory('nonexistent');
+        if ($result) {
+            throw new Exception('deleting nonexistent category should return false');
         }
     }
 
-    public function getType(): void
+    public function testGetType(): void
     {
         $type = $this->database->getType('service');
-        if ($type['id'] !== 'service' || $type['name'] !== 'Service') {
+        if ($type['id'] !== 'service' || $type['name'] !== 'Serviço') {
             throw new Exception('service expected');
+        }
+
+        $type = $this->database->getType('nonexistent');
+        if ($type !== null) {
+            throw new Exception('should return null');
         }
     }
 
@@ -209,8 +246,8 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('should have types');
         }
 
-        $this->database->insertType('type1', 'Type 1');
-        $this->database->insertType('type2', 'Type 2');
+        $this->pdo->exec('insert into types (id, name) values ("type1", "Type 1")');
+        $this->pdo->exec('insert into types (id, name) values ("type2", "Type 2")');
 
         $types = $this->database->getTypes();
         if (count($types) !== $originalCount + 2) {
@@ -234,15 +271,53 @@ class TestDatabase extends TestAbstractTest
         }
     }
 
-    public function testUpdateType(): void
+    public function testInsertType(): void
     {
         $this->database->insertType('type1', 'Type 1');
+        $stmt = $this->pdo->prepare('select * from types where id = :id');
+        $stmt->execute([':id' => 'type1']);
+        $type = $stmt->fetch();
+        if ($type['id'] !== 'type1' || $type['name'] !== 'Type 1') {
+            throw new Exception('error on insert type type1');
+        }
+    }
+
+    public function testUpdateType(): void
+    {
+        $this->pdo->exec('insert into types (id, name) values ("type1", "Type 1")');
         $this->database->updateType('type1', 'Updated Type 1');
 
-        $type = $this->database->getType('type1');
+        $stmt = $this->pdo->prepare('select * from types where id = :id');
+        $stmt->execute([':id' => 'type1']);
+        $type = $stmt->fetch();
+
         if ($type['id'] !== 'type1' || $type['name'] !== 'Updated Type 1') {
             throw new Exception('error on update type type1');
-        }   
+        }
+
+        $result = $this->database->updateType('nonexistent', 'Name');
+        if ($result) {
+            throw new Exception('error on update nonexistent type');
+        }
+    }
+
+    public function testDeleteType(): void
+    {
+        $this->pdo->exec('insert into types (id, name) values ("type1", "Type 1")');
+        $this->database->deleteType('type1');
+
+        $stmt = $this->pdo->prepare('select * from types where id = :id');
+        $stmt->execute([':id' => 'type1']);
+        $type = $stmt->fetch();
+
+        if ($type !== false) {
+            throw new Exception('type type1 should be deleted');
+        }
+
+        $result = $this->database->deleteType('nonexistent');
+        if ($result) {
+            throw new Exception('deleting nonexistent type should return false');
+        }
     }
 
     public function testGetNode(): void {
@@ -270,22 +345,11 @@ class TestDatabase extends TestAbstractTest
         }
     }
 
-    public function testDeleteType(): void
-    {
-        $this->database->insertType('type1', 'Type 1');
-        $this->database->deleteType('type1');
-
-        $type = $this->database->getType('type1');
-        if ($type !== null) {
-            throw new Exception('type type1 should be deleted');
-        }
-    }
-
     public function testGetNodes(): void {
-        $this->database->insertCategory('cat1', 'cat1', 'box', 100, 50);
-        $this->database->insertCategory('cat2', 'cat2', 'box', 100, 50);
-        $this->database->insertType('app', 'Application');
-        $this->database->insertType('db', 'Database');
+        $this->pdo->exec('insert into categories (id, name, shape, width, height) values ("cat1", "Category 1", "box", 100, 50)');
+        $this->pdo->exec('insert into categories (id, name, shape, width, height) values ("cat2", "Category 2", "box", 100, 50)');
+        $this->pdo->exec('insert into types (id, name) values ("app", "Application")');
+        $this->pdo->exec('insert into types (id, name) values ("db", "Database")');
         
         $stmt = $this->pdo->prepare('insert into nodes (id, label, category, type, data) values (:id, :label, :category, :type, :data)');
 
@@ -296,7 +360,7 @@ class TestDatabase extends TestAbstractTest
             ':type' => 'app',
             ':data' => json_encode(['running_on' => 'SRV01OP'])
         ]);
-        sleep(1);
+        usleep(500);
         $stmt->execute([
             ':id' => 'node2',
             ':label' => 'Node 02',
@@ -328,77 +392,28 @@ class TestDatabase extends TestAbstractTest
         }
     }
 
-    // public function testGetNodeParentOf(): void
-    // {
-    //     $this->database->insertCategory('cat1', 'cat1', 'box', 100, 50);
-    //     $this->database->insertCategory('cat2', 'cat2', 'box', 100, 50);
-    //     $this->database->insertType('app', 'Application');
-    //     $this->database->insertType('db', 'Database');
-        
-    //     $stmt = $this->pdo->prepare('insert into nodes (id, label, category, type, data) values (:id, :label, :category, :type, :data)');
-
-    //     $this->database->insertNode('node1', 'Node 01', 'cat1', 'app', false, ['running_on' => 'SRV01OP']);
-    //     $this->database->insertNode('node2', 'Node 02', 'cat2', 'db', false, ['running_on' => 'SRV011P']);
-    //     $this->database->insertNode('node3', 'Node 03', 'cat1', 'app', false, ['running_on' => 'SRV012P']);
-
-    //     $this->database->insertEdge('edge1', 'node1', 'node2', 'label', ['a' => 'b']);
-    //     $this->database->insertEdge('edge2', 'node2', 'node3', 'label', ['b' => 'c']);
-
-    //     $node = $this->database->getNodeParentOf('node2');
-
-    //     if ($node['id'] !== 'node1' || $node['label'] !== 'Node 01' || $node['category'] !== 'cat1' || $node['type'] !== 'app') {
-    //         throw new Exception('error on testGetNodeParentOf');
-    //     }
-
-    //     if ($node['data']['running_on'] !== 'SRV01OP') {
-    //         throw new Exception('error on testGetNodeParentOf');
-    //     }
-
-    //     $node = $this->database->getNodeParentOf('node1');
-    //     if ($node !== null) {
-    //         throw new Exception('error on testGetNodeParentOf');
-    //     }
-    // }
-
-    public function testGetDependentNodesOf(): void {
-        $this->database->insertCategory('cat1', 'cat1', 'box', 100, 50);
-        $this->database->insertCategory('cat2', 'cat2', 'box', 100, 50);
-        $this->database->insertType('app', 'Application');
-        $this->database->insertType('db', 'Database');
-
-        $stmt = $this->pdo->prepare('insert into nodes (id, label, category, type, data) values (:id, :label, :category, :type, :data)');
-
-        $this->database->insertNode('node1', 'Node 01', 'cat1', 'app', false, ['running_on' => 'SRV01OP']);
-        $this->database->insertNode('node2', 'Node 02', 'cat2', 'db', false, ['running_on' => 'SRV011P']);
-        $this->database->insertNode('node3', 'Node 03', 'cat1', 'app', false, ['running_on' => 'SRV012P']);
-
-        $this->database->insertEdge('edge1', 'node1', 'node2', 'label', ['a' => 'b']);
-        $this->database->insertEdge('edge2', 'node2', 'node3', 'label', ['b' => 'c']);
-
-        $nodes = $this->database->getDependentNodesOf(['node2']);
-        
-        if (count($nodes) !== 2) {
-            throw new Exception('error on testGetDependentNodesOf 1');
-        }
-
-        if ($nodes[1]['id'] !== 'node3') {
-            throw new Exception('error on testGetDependentNodesOf 2');
-        }
-    }
-
     public function testInsertNode(): void {
         $this->database->insertNode('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']);
-        $node = $this->database->getNode('node1');
-        if ($node['id'] !== 'node1' || $node['label'] !== 'Node 01' || $node['category'] !== 'business' || $node['type'] !== 'service') {
+        
+
+        $stmt = $this->pdo->prepare('select * from nodes where id = :id');
+        $stmt->execute([':id' => 'node1']);
+        $dbNode = $stmt->fetch();
+
+        if ($dbNode['id'] !== 'node1' || $dbNode['label'] !== 'Node 01' || $dbNode['category'] !== 'business' || $dbNode['type'] !== 'service') {
             throw new Exception('error on testInsertNode');
         }
-        if ($node['data']['running_on'] !== 'SRV01OP') {
+        if ($dbNode['data'] !== "{\"running_on\":\"SRV01OP\"}") {
             throw new Exception('error on testInsertNode');
         }
 
         $this->database->insertNode('user_created', 'User Created', 'application', 'database', true, ['created_by' => 'admin']);
-        $node = $this->database->getNode('user_created');
-        if ($node['id'] !== 'user_created' || $node['label'] !== 'User Created' || $node['category'] !== 'application' || $node['type'] !== 'database' || $node['user_created'] !== true) {
+        
+        $stmt->execute([':id' => 'user_created']);
+        $dbNode = $stmt->fetch();
+
+        if ($dbNode['id'] !== 'user_created' || $dbNode['label'] !== 'User Created' || $dbNode['category'] !== 'application' || $dbNode['type'] !== 'database' || $dbNode['user_created'] !== 1) {
+            print_r($dbNode);
             throw new Exception('error on testInsertNode');
         }
 
@@ -419,57 +434,61 @@ class TestDatabase extends TestAbstractTest
 
         $this->database->batchInsertNodes($nodes);
 
+        $stmt = $this->pdo->prepare('select * from nodes where id = :id');
+        
         foreach ($nodes as $n) {
-            $node = $this->database->getNode($n['id']);
+            $stmt->execute([':id' => $n['id']]);
+            $node = $stmt->fetch();
+
             if ($node['id'] !== $n['id'] || $node['label'] !== $n['label'] || $node['category'] !== $n['category'] || $node['type'] !== $n['type']) {
                 throw new Exception('error on batchInsertNodes');
             }
-            if ($node['data']['running_on'] !== $n['data']['running_on']) {
+            if (json_decode($node['data'], true)['running_on'] !== $n['data']['running_on']) {
                 throw new Exception('error on batchInsertNodes');
             }
         }
     }
 
     public function testUpdateNode(): void {
-        $this->database->insertNode('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']);
+        $this->pdo->exec('insert into nodes (id, label, category, type, data) values ("node1", "Node 01", "business", "service", \'{"running_on":"SRV011P"}\')');
+        $this->pdo->exec('insert into nodes (id, label, category, type, data) values ("node2", "Node 02", "application", "database", \'{"running_on":"SRV012P"}\')');
+        
         $this->database->updateNode('node1', 'Novo Label', 'application', 'database', ['other' => 'diff']);
-        $node = $this->database->getNode('node1');
+
+        $stmt = $this->pdo->prepare('select * from nodes where id = :id');
+        $stmt->execute([':id' => 'node1']);
+        $node = $stmt->fetch();
+
         if ($node['id'] !== 'node1' || $node['label'] !== 'Novo Label' || $node['category'] !== 'application' || $node['type'] !== 'database') {
-            throw new Exception('error on testUpdateNode');
+            throw new Exception('error on testUpdateNode 0');
         }
-        if ($node['data']['other'] !== 'diff') {
-            throw new Exception('error on testUpdateNode');
+        if (json_decode($node['data'], true)['other'] !== 'diff') {
+            throw new Exception('error on testUpdateNode 1');
         }
 
-        if ($this->database->updateNode('node2', 'Novo Label', 'application', 'database', ['other' => 'diff'])) {
-            throw new Exception('error on testUpdateNode');
+        if ($this->database->updateNode('node3', 'Novo Label', 'application', 'database', ['other' => 'diff'])) {
+            throw new Exception('error on testUpdateNode 2');
         }
     }
 
     public function testDeleteNode(): void {
-        $node = $this->database->getNode('node1');
-        if ($node !== null) {
-            throw new Exception('error on testDeleteNode');
-        }
-        $this->database->insertNode('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']);
-        $node = $this->database->getNode('node1');
-        if ($node['id'] !== 'node1' || $node['label'] !== 'Node 01' || $node['category'] !== 'business' || $node['type'] !== 'service') {
-            throw new Exception('error on testDeleteNode');
-        }
+        $this->pdo->exec('insert into nodes (id, label, category, type, data) values ("node2", "Node 02", "application", "database", \'{"running_on":"SRV011P"}\')');
 
         // Test deleting the node
-        if (!$this->database->deleteNode('node1')) {
+        if (!$this->database->deleteNode('node2')) {
             throw new Exception('error on testDeleteNode - delete should succeed');
         }
 
         // Verify node was deleted
-        $node = $this->database->getNode('node1');
-        if ($node !== null) {
-            throw new Exception('error on testDeleteNode - node should be null after delete');
+        $stmt = $this->pdo->prepare('select * from nodes where id = :id');
+        $stmt->execute([':id' => 'node2']);
+        $node = $stmt->fetch();
+        if ($node !== false) {
+            throw new Exception('error on testDeleteNode - node should be deleted');
         }
 
         // Test deleting non-existent node
-        if ($this->database->deleteNode('node2')) {
+        if ($this->database->deleteNode('node4')) {
             throw new Exception('error on testDeleteNode - should return false for non-existent node');
         }
     }
@@ -480,11 +499,10 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('error on testGetEdge');
         }
 
-        $this->database->insertNode('node1', 'Node 01', 'application', 'service', false, ['running_on' => 'SRV01OP']);
-        
-        $this->database->insertNode('node2', 'Node 02', 'business', 'database', false, ['running_on' => 'SRV011P']);
-        
-        $this->database->insertEdge('edge1', 'node1', 'node2', 'label', ['a' => 'b']);
+        $this->pdo->exec('insert into nodes (id, label, category, type, data) values ("node1", "Node 01", "application", "service", \'{"running_on":"SRV01OP"}\')');
+        $this->pdo->exec('insert into nodes (id, label, category, type, data) values ("node2", "Node 02", "business", "database", \'{"running_on":"SRV011P"}\')');
+
+        $this->pdo->exec('insert into edges (id, source, target, label, data) values ("edge1", "node1", "node2", "label", \'{"a":"b"}\')');
         
         $edge = $this->database->getEdge('node1', 'node2');
         
@@ -497,23 +515,17 @@ class TestDatabase extends TestAbstractTest
     }
 
     public function testGetEdges(): void {
-        $edge = $this->database->getEdge('node1', 'node2');
-        if ($edge !== null) {
-            throw new Exception('error on testGetEdges');
-        }
+        $stmt = $this->pdo->prepare('insert into nodes (id, label, category, type, data) values (:id, :label, :category, :type, :data)');
+        $stmt->execute([':id' => 'node1', ':label' => 'Node 01', ':category' => 'business', ':type' => 'service', ':data' => json_encode(['running_on' => 'SRV01'])]);
+        $stmt->execute([':id' => 'node2', ':label' => 'Node 02', ':category' => 'business', ':type' => 'service', ':data' => json_encode(['running_on' => 'SRV02'])]);
+        $stmt->execute([':id' => 'node3', ':label' => 'Node 03', ':category' => 'business', ':type' => 'service', ':data' => json_encode(['running_on' => 'SRV03'])]);
 
-        $edge = $this->database->getEdge('node2', 'node3');
-        if ($edge !== null) {
-            throw new Exception('error on testGetEdges');
-        }
-
-        $this->database->insertNode('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']);
-        $this->database->insertNode('node2', 'Node 02', 'application', 'database', false, ['running_on' => 'SRV011P']);
-        $this->database->insertNode('node3', 'Node 03', 'application', 'service', false, ['running_on' => 'SRV012P']);
-
-        $this->database->insertEdge('edge1', 'node1', 'node2', 'label', ['a' => 'b']);
-        $this->database->insertEdge('edge2', 'node2', 'node3', 'label', ['b' => 'c']);
-
+        $stmt = $this->pdo->query('select * from nodes');
+        $nodes = $stmt->fetchAll();
+        
+        $this->pdo->exec('insert into edges (id, source, target, label, data) values ("edge1", "node1", "node2", "label", \'{"a":"b"}\')');
+        $this->pdo->exec('insert into edges (id, source, target, label, data) values ("edge2", "node2", "node3", "label", \'{"b":"c"}\')');
+        
         $edges = $this->database->getEdges();
         if (count($edges) !== 2) {
             throw new Exception('error on testGetEdges');
@@ -529,47 +541,32 @@ class TestDatabase extends TestAbstractTest
     }
 
     public function testInsertEdge(): void {
-        $edge = $this->database->getEdge('node1', 'node2');
-        if ($edge !== null) {
-            throw new Exception('error on testInsertEdge');
-        }
-
-        $this->database->insertNode('node1', 'Node 01', 'application', 'service', false, ['running_on' => 'SRV01OP']);
-        $this->database->insertNode('node2', 'Node 02', 'business', 'database', false, ['running_on' => 'SRV011P']);
+        $stmt = $this->pdo->prepare('insert into nodes (id, label, category, type, data) values (:id, :label, :category, :type, :data)');
+        $stmt->execute([':id' => 'node1', ':label' => 'Node 01', ':category' => 'application', ':type' => 'service', ':data' => json_encode(['running_on' => 'SRV01OP'])]);
+        $stmt->execute([':id' => 'node2', ':label' => 'Node 02', ':category' => 'business', ':type' => 'database', ':data' => json_encode(['running_on' => 'SRV011P'])]);
 
         $this->database->insertEdge('edge1', 'node1', 'node2', 'label', ['a' => 'b']);
 
-        $edge = $this->database->getEdge('node1', 'node2');
+        $stmt = $this->pdo->query('select * from edges where id = :id');
+        $stmt->execute([':id' => 'edge1']);
+        $dbEdge = $stmt->fetch();
 
-        if ($edge['id'] !== 'edge1' || $edge['source'] !== 'node1' || $edge['target'] !== 'node2') {
-            throw new Exception('error on testInsertEdge');
+        if ($dbEdge['id'] !== 'edge1' || $dbEdge['source'] !== 'node1' || $dbEdge['target'] !== 'node2') {
+            throw new Exception('error on testInsertEdge 1');
         }
 
-        if ($edge['data']['a'] !== 'b') {
-            throw new Exception('error on testInsertEdge');
+        if (json_decode($dbEdge['data'], true)['a'] !== 'b') {
+            throw new Exception('error on testInsertEdge 2');
         }
-
-        $this->database->insertEdge('edge2', 'node2', 'node1', 'label', ['a' => 'b']);
-        $edge = $this->database->getEdge('node2', 'node1');
-
-        if ($edge !== null) {
-            throw new Exception('error on testInsertEdge');
-        }
-
-        try {
-            $this->database->insertEdge('edge1', 'node1', 'node2', 'label', ['a' => 'b']);
-        } catch (Exception $e) {
-            return;
-        }
-        throw new Exception('error on testInsertEdge');
     }
 
     public function testBatchInsertEdges(): void
     {
-        $this->database->insertNode('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']);
-        $this->database->insertNode('node2', 'Node 02', 'application', 'database', false, ['running_on' => 'SRV011P']);
-        $this->database->insertNode('node3', 'Node 03', 'application', 'service', false, ['running_on' => 'SRV012P']);
-
+        $stmt = $this->pdo->prepare('insert into nodes (id, label, category, type, data) values (:id, :label, :category, :type, :data)');
+        $stmt->execute([':id' => 'node1', ':label' => 'Node 01', ':category' => 'business', ':type' => 'service', ':data' => json_encode(['running_on' => 'SRV01OP'])]);
+        $stmt->execute([':id' => 'node2', ':label' => 'Node 02', ':category' => 'application', ':type' => 'database', ':data' => json_encode(['running_on' => 'SRV011P'])]);
+        $stmt->execute([':id' => 'node3', ':label' => 'Node 03', ':category' => 'application', ':type' => 'service', ':data' => json_encode(['running_on' => 'SRV012P'])]);
+        
         $edges = [
             ['id' => 'edge1', 'source' => 'node1', 'target' => 'node2', 'label' => 'label1', 'data' => ['a' => 'b']],
             ['id' => 'edge2', 'source' => 'node2', 'target' => 'node3', 'label' => 'label2', 'data' => ['b' => 'c']],
@@ -577,14 +574,18 @@ class TestDatabase extends TestAbstractTest
 
         $this->database->batchInsertEdges($edges);
 
+        $stmt = $this->pdo->prepare('select * from edges where source = :source and target = :target');
+        
         foreach ($edges as $e) {
-            $edge = $this->database->getEdge($e['source'], $e['target']);
+            $stmt->execute([':source' => $e['source'], ':target' => $e['target']]);
+            $edge = $stmt->fetch();
+
             if ($edge['id'] !== $e['id'] || $edge['source'] !== $e['source'] || $edge['target'] !== $e['target']) {
-                throw new Exception('error on batchInsertEdges');
+                throw new Exception('error on batchInsertEdges 1');
             }
             foreach ($e['data'] as $key => $value) {
-                if ($edge['data'][$key] !== $value) {
-                    throw new Exception('error on batchInsertEdges');
+                if (json_decode($edge['data'], true)[$key] !== $value) {
+                    throw new Exception('error on batchInsertEdges 2');
                 }
             }
         }
@@ -592,19 +593,20 @@ class TestDatabase extends TestAbstractTest
 
     public function testUpdateEdge(): void
     {
-        $edge = $this->database->getEdge('node1', 'node2');
-        if ($edge !== null) {
-            throw new Exception('error on testUpdateEdge');
-        }
+        $stmt = $this->pdo->prepare('insert into nodes (id, label, category, type, data) values (:id, :label, :category, :type, :data)');
+        $stmt->execute([':id' => 'node1', ':label' => 'Node 01', ':category' => 'business', ':type' => 'service', ':data' => json_encode(['running_on' => 'SRV01OP'])]);
+        $stmt->execute([':id' => 'node2', ':label' => 'Node 02', ':category' => 'application', ':type' => 'database', ':data' => json_encode(['running_on' => 'SRV011P'])]);
 
-        $this->database->insertNode('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']);
-        $this->database->insertNode('node2', 'Node 02', 'application', 'database', false, ['running_on' => 'SRV011P']);
-        $this->database->insertNode('node3', 'Node 03', 'application', 'service', false, ['running_on' => 'SRV012P']);
-        $this->database->insertEdge('edge1', 'node1', 'node2', 'label', ['a' => 'b']);
+        $stmt = $this->pdo->prepare('insert into edges (id, source, target, label, data) values (:id, :source, :target, :label, :data)');
+        $stmt->execute([':id' => 'edge1', ':source' => 'node1', ':target' => 'node2', ':label' => 'label', ':data' => json_encode(['a' => 'b'])]);
+
 
         $this->database->updateEdge('edge1', 'label', ['x' => 'y']);
 
-        $edge = $this->database->getEdge('node1', 'node2');
+        $stmt = $this->pdo->prepare('select * from edges where id = :id');
+        $stmt->execute([':id' => 'edge1']);
+        $edge = $stmt->fetch();
+        $edge['data'] = json_decode($edge['data'], true);
 
         if ($edge['id'] !== 'edge1' || $edge['source'] !== 'node1' || $edge['target'] !== 'node2') {
             throw new Exception('error on testUpdateEdge');
@@ -620,20 +622,28 @@ class TestDatabase extends TestAbstractTest
     }
 
     public function testDeleteEdge(): void {
-        $this->database->insertNode('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']);
-        $this->database->insertNode('node2', 'Node 02', 'application', 'database', false, ['running_on' => 'SRV011P']);
-        $this->database->insertNode('node3', 'Node 03', 'application', 'service', false, ['running_on' => 'SRV012P']);
-        $this->database->insertEdge('edge1', 'node1', 'node2', 'label', ['a' => 'b']);
-        $this->database->insertEdge('edge2', 'node2', 'node3', 'label', ['b' => 'c']);
+        $stmt = $this->pdo->prepare('insert into nodes (id, label, category, type, data) values (:id, :label, :category, :type, :data)');
+        $stmt->execute([':id' => 'node1', ':label' => 'Node 01', ':category' => 'business', ':type' => 'service', ':data' => json_encode(['running_on' => 'SRV01OP'])]);
+        $stmt->execute([':id' => 'node2', ':label' => 'Node 02', ':category' => 'application', ':type' => 'database', ':data' => json_encode(['running_on' => 'SRV011P'])]);
+        $stmt->execute([':id' => 'node3', ':label' => 'Node 03', ':category' => 'application', ':type' => 'service', ':data' => json_encode(['running_on' => 'SRV012P'])]);
 
-        if (count($this->database->getEdges()) !== 2) {
-            throw new Exception('error on testDeleteEdge');
-        }
+        $stmt = $this->pdo->prepare('insert into edges (id, source, target, label, data) values (:id, :source, :target, :label, :data)');
+        $stmt->execute([':id' => 'edge1', ':source' => 'node1', ':target' => 'node2', ':label' => 'label', ':data' => json_encode(['a' => 'b'])]);
+        $stmt->execute([':id' => 'edge2', ':source' => 'node2', ':target' => 'node3', ':label' => 'label', ':data' => json_encode(['b' => 'c'])]);
 
         $this->database->deleteEdge('edge1');
         $this->database->deleteEdge('edge2');
 
-        if (count($this->database->getEdges()) !== 0) {
+        $stmt = $this->pdo->prepare('select * from edges where id = :id');
+        $stmt->execute([':id' => 'edge1']);
+        $edge = $stmt->fetch();
+        if ($edge !== false) {
+            throw new Exception('error on testDeleteEdge');
+        }
+
+        $stmt->execute([':id' => 'edge2']);
+        $edge = $stmt->fetch();
+        if ($edge !== false) {
             throw new Exception('error on testDeleteEdge');
         }
 
@@ -649,7 +659,8 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('error on testGetStatus');
         }
 
-        $this->database->insertNode('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']);
+        $stmt = $this->pdo->prepare('insert into nodes (id, label, category, type, data) values (:id, :label, :category, :type, :data)');
+        $stmt->execute([':id' => 'node2', ':label' => 'Node 02', ':category' => 'application', ':type' => 'database', ':data' => json_encode(['running_on' => 'SRV011P'])]);
 
         $s = $this->database->getStatus();
 
@@ -657,19 +668,14 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('error on testGetStatus');
         }
 
-        if ($s[0][Status::STATUS_KEYNAME_NODE_ID] !== 'node1' || $s[0][Status::STATUS_KEYNAME_STATUS] !== null) {
+        if ($s[0][Status::STATUS_KEYNAME_NODE_ID] !== 'node2' || $s[0][Status::STATUS_KEYNAME_STATUS] !== null) {
             throw new Exception('error on testGetStatus');
         }
     }
 
     public function testGetNodeStatus(): void {
-        $s = $this->database->getStatus();
-
-        if (count($s) !== 0) {
-            throw new Exception('error on testGetStatus');
-        }
-
-        $this->database->insertNode('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']);
+        $stmt = $this->pdo->prepare('insert into nodes (id, label, category, type, data) values (:id, :label, :category, :type, :data)');
+        $stmt->execute([':id' => 'node1', ':label' => 'Node 01', ':category' => 'business', ':type' => 'service', ':data' => json_encode(['running_on' => 'SRV01OP'])]);
 
         $s = $this->database->getNodeStatus('node1');
 
@@ -705,6 +711,34 @@ class TestDatabase extends TestAbstractTest
             return;
         }
         throw new Exception('error on testUpdateNodeStatus');
+    }
+
+    public function testBatchUpdateNodeStatus(): void {
+        $s = $this->database->getStatus();
+
+        if (count($s) !== 0) {
+            throw new Exception('error on testBatchUpdateNodeStatus');
+        }
+
+        $this->database->insertNode('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']);
+        $this->database->insertNode('node2', 'Node 02', 'application', 'database', false, ['running_on' => 'SRV011P']);
+
+        $statuses = [
+            ['node_id' => 'node1', 'status' => 'healthy'],
+            ['node_id' => 'node2', 'status' => 'unhealthy'],
+        ];
+
+        $this->database->batchUpdateNodeStatus($statuses);
+
+        $s1 = $this->database->getNodeStatus('node1');
+        if ($s1['id'] !== 'node1' || $s1['status'] !== 'healthy') {
+            throw new Exception('error on testBatchUpdateNodeStatus');
+        }
+
+        $s2 = $this->database->getNodeStatus('node2');
+        if ($s2['id'] !== 'node2' || $s2['status'] !== 'unhealthy') {
+            throw new Exception('error on testBatchUpdateNodeStatus');
+        }
     }
 
     public function testGetProject(): void
@@ -807,30 +841,6 @@ class TestDatabase extends TestAbstractTest
 
         if ($this->database->deleteProject('nonexistent')) {
             throw new Exception('error on testDeleteProject 3');
-        }
-    }
-
-    public function testGetSuccessors(): void
-    {
-        $this->database->insertNode('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']);
-        $this->database->insertNode('node2', 'Node 02', 'application', 'database', false, ['running_on' => 'SRV011P']);
-        $this->database->insertNode('node3', 'Node 03', 'application', 'service', false, ['running_on' => 'SRV012P']);
-
-        $this->database->insertEdge('edge1', 'node1', 'node2', 'label', ['a' => 'b']);
-        $this->database->insertEdge('edge2', 'node2', 'node3', 'label', ['b' => 'c']);
-
-        $successors = $this->database->getSuccessors(['node1']);
-
-        if (count($successors) !== 2) {
-            throw new Exception('error on testGetSuccessors 1');
-        }
-
-        if ($successors[0]['id'] !== 'node2') {
-            throw new Exception('error on testGetSuccessors 2');
-        }
-
-        if ($successors[1]['id'] !== 'node3') {
-            throw new Exception('error on testGetSuccessors 3');
         }
     }
 

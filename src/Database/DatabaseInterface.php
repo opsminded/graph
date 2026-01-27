@@ -50,8 +50,6 @@ interface DatabaseInterface
     public function updateProject(string $id, string $name, string $author, array $data): bool;
     public function deleteProject(string $id): bool;
 
-    public function getSuccessors(string $id): array;
-
     public function getLogs(int $limit): array;
     public function insertLog(string $entity_type, string $entity_id, string $action, ?array $old_data = null, ?array $new_data = null, string $user_id, string $ip_address): bool;
 }

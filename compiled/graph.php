@@ -1332,49 +1332,6 @@ final class Database implements DatabaseInterface
         return $rows;
     }
 
-    public function getDependentNodesOf(array $ids): array
-    {
-        $this->logger->debug("fetching dependent nodes");
-
-        if(empty($ids)) {
-            $this->logger->info("no ids provided for dependent nodes fetch");
-            return [];
-        }
-
-        $placeholders = [];
-        $params = [];
-        foreach ($ids as $index => $id) {
-            $placeholders[] = ":id{$index}";
-            $params[":id{$index}"] = $id;
-        }
-        $placeholdersStr = implode(', ', $placeholders);
-
-        $sql = "
-        WITH RECURSIVE descendants AS (
-            SELECT id, id as root_id, 0 as depth
-            FROM nodes
-            WHERE id IN ($placeholdersStr)
-            UNION ALL
-            
-            SELECT n.id, d.root_id, d.depth + 1
-            FROM nodes n
-            INNER JOIN edges e ON n.id = e.target
-            INNER JOIN descendants d ON e.source = d.id
-        )
-        SELECT     d.id,
-                   d.depth
-        FROM       descendants d
-        ORDER BY   d.depth,
-                   d.id;
-        ";
-
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($params);
-        $rows = $stmt->fetchAll();
-        $this->logger->info("dependent nodes fetched", ['rows' => $rows]);
-        return $rows;
-    }
-
     public function insertNode(string $id, string $label, string $category, string $type, bool $userCreated = false, array $data = []): bool
     {
         $this->logger->debug("inserting new node", ['id' => $id, 'label' => $label, 'category' => $category, 'type' => $type, 'userCreated' => $userCreated, 'data' => $data]);
@@ -1485,11 +1442,6 @@ final class Database implements DatabaseInterface
     public function insertEdge(string $id, string $source, string $target, string $label, array $data = []): bool
     {
         $this->logger->debug("inserting edge", ['id' => $id, 'source' => $source, 'target' => $target, 'label' => $label, 'data' => $data]);
-        $edgeData = $this->getEdge($target, $source);
-        if (! is_null($edgeData)) {
-            $this->logger->error("cicle detected", $edgeData);
-            return false;
-        }
         $sql = "INSERT INTO edges(id, source, target, label, data) VALUES (:id, :source, :target, :label, :data)";
         $data = json_encode($data, JSON_UNESCAPED_UNICODE);
         $params = [':id' => $id, ':source' => $source, ':target' => $target, ':label' => $label, ':data' => $data];
@@ -1505,11 +1457,6 @@ final class Database implements DatabaseInterface
         $sql = "INSERT INTO edges(id, source, target, label, data) VALUES (:id, :source, :target, :label, :data)";
         $stmt = $this->pdo->prepare($sql);
         foreach ($edges as $edge) {
-            $edgeData = $this->getEdge($edge['target'], $edge['source']);
-            if (! is_null($edgeData)) {
-                $this->logger->error("cicle detected", $edgeData);
-                continue;
-            }
             $data = json_encode($edge['data'] ?? [], JSON_UNESCAPED_UNICODE);
             $params = [
                 ':id' => $edge['id'],
@@ -1601,7 +1548,7 @@ final class Database implements DatabaseInterface
         $row = $stmt->fetch();
         if ($row) {
 
-            $save = [
+            $project = [
                 'id' => $row['id'],
                 'name' => $row['name'],
                 'author' => $row['author'],
@@ -1610,17 +1557,7 @@ final class Database implements DatabaseInterface
                 'updated_at' => $row['updated_at'],
             ];
 
-            $depNodes = $this->getDependentNodesOf($save['data']['nodes'] ?? []);
-            
-            unset($save['data']);
-
-            $save['nodes'] = [];
-            foreach($depNodes as $depNode) {
-                $save['nodes'][] = $depNode['id'];
-            }
-
-            $this->logger->info("project fetched", ['params' => $params, 'row' => $row]);
-            return $save;
+            return $project;
         }
         $this->logger->info("project not found", ['params' => $params]);
         return null;
@@ -1682,34 +1619,34 @@ final class Database implements DatabaseInterface
         return false;
     }
 
-    public function getSuccessors(string $id): array
-    {
-        $this->logger->debug("fetching successors", ['id' => $id]);
-        $sql = "
-        WITH RECURSIVE successors AS (
-            SELECT id, 0 as depth
-            FROM nodes
-            WHERE id = :id
-            UNION ALL
-            SELECT n.id, s.depth + 1
-            FROM nodes n
-            INNER JOIN edges e ON n.id = e.target
-            INNER JOIN successors s ON e.source = s.id
-        )
-        SELECT     id,
-                   depth
-        FROM       successors
-        WHERE      id != :id
-        ORDER BY   depth,
-                   id;
-        ";
-        $params = [':id' => $id];
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($params);
-        $rows = $stmt->fetchAll();
-        $this->logger->info("successors fetched", ['params' => $params, 'rows' => $rows]);
-        return $rows;
-    }
+    // public function getSuccessors(string $id): array
+    // {
+    //     $this->logger->debug("fetching successors", ['id' => $id]);
+    //     $sql = "
+    //     WITH RECURSIVE successors AS (
+    //         SELECT id, 0 as depth
+    //         FROM nodes
+    //         WHERE id = :id
+    //         UNION ALL
+    //         SELECT n.id, s.depth + 1
+    //         FROM nodes n
+    //         INNER JOIN edges e ON n.id = e.target
+    //         INNER JOIN successors s ON e.source = s.id
+    //     )
+    //     SELECT     id,
+    //                depth
+    //     FROM       successors
+    //     WHERE      id != :id
+    //     ORDER BY   depth,
+    //                id;
+    //     ";
+    //     $params = [':id' => $id];
+    //     $stmt = $this->pdo->prepare($sql);
+    //     $stmt->execute($params);
+    //     $rows = $stmt->fetchAll();
+    //     $this->logger->info("successors fetched", ['params' => $params, 'rows' => $rows]);
+    //     return $rows;
+    // }
 
     public function getLogs(int $limit): array
     {
@@ -1745,8 +1682,6 @@ final class Database implements DatabaseInterface
             );
         ');
 
-        $this->pdo->exec('INSERT OR IGNORE INTO users VALUES(\'admin\', \'admin\')');
-
         $this->pdo->exec('
             CREATE TABLE IF NOT EXISTS categories (
                 id TEXT PRIMARY KEY,
@@ -1757,24 +1692,12 @@ final class Database implements DatabaseInterface
             );
         ');
         
-        $this->pdo->exec("INSERT OR IGNORE INTO categories VALUES
-            ('business',       'Business',       'round-rectangle', 80, 80),
-            ('application',    'Application',    'ellipse', 60, 60),
-            ('infrastructure', 'Infrastructure', 'round-hexagon', 60, 53)");
-        
         $this->pdo->exec('
             CREATE TABLE IF NOT EXISTS types (
                 id TEXT PRIMARY KEY,
                 name TEXT NOT NULL
             );
         ');
-
-        $this->pdo->exec("INSERT OR IGNORE INTO types VALUES
-            ('business', 'Business'),
-            ('business_case', 'Business Case'),
-            ('service', 'Service'),
-            ('server', 'Server'),
-            ('database', 'Database')");
 
         $this->pdo->exec('
             CREATE TABLE IF NOT EXISTS nodes (
@@ -1847,6 +1770,20 @@ final class Database implements DatabaseInterface
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             );
         ');
+
+        $this->pdo->exec('INSERT OR IGNORE INTO users VALUES(\'admin\', \'admin\')');
+        
+        $this->pdo->exec("INSERT OR IGNORE INTO categories VALUES
+            ('business',       'Negócios',       'round-rectangle', 80, 80),
+            ('application',    'Aplicação',      'ellipse',         60, 60),
+            ('infrastructure', 'Infraestrutura', 'round-hexagon',   60, 53)");
+
+        $this->pdo->exec("INSERT OR IGNORE INTO types VALUES
+            ('business',      'Negócios'),
+            ('business_case', 'Caso de Uso'),
+            ('service',       'Serviço'),
+            ('server',        'Servidor'),
+            ('database',      'Banco de Dados')");
     }
 
     public static function createConnection(string $dsn): PDO
@@ -1907,8 +1844,6 @@ interface DatabaseInterface
     public function insertProject(string $id, string $name, string $author, array $data): bool;
     public function updateProject(string $id, string $name, string $author, array $data): bool;
     public function deleteProject(string $id): bool;
-
-    public function getSuccessors(string $id): array;
 
     public function getLogs(int $limit): array;
     public function insertLog(string $entity_type, string $entity_id, string $action, ?array $old_data = null, ?array $new_data = null, string $user_id, string $ip_address): bool;
