@@ -36,6 +36,17 @@ class TestDatabase extends TestAbstractTest
         }
     }
 
+    public function testGetUsers(): void
+    {
+        $users = $this->database->getUsers();
+        if (count($users) !== 1) {
+            throw new Exception('should have one user');
+        }
+        if ($users[0]['id'] !== 'admin' || $users[0]['group'] !== 'admin') {
+            throw new Exception('admin expected');
+        }
+    }
+
     public function testInsertUser(): void
     {
         $this->database->insertUser('maria', 'contributor');
@@ -54,7 +65,28 @@ class TestDatabase extends TestAbstractTest
         throw new Exception('error expected');
     }
 
-    public function testUpdateUser(): void {
+    public function testBatchInsertUsers(): void
+    {
+        $users = [
+            ['id' => 'joao', 'group' => 'admin'],
+            ['id' => 'ana', 'group' => 'contributor'],
+            ['id' => 'carlos', 'group' => 'viewer'],
+        ];
+        $this->database->batchInsertUsers($users);
+
+        foreach ($users as $u) {
+            $stmt = $this->pdo->prepare('select * from users where id = :id');
+            $stmt->execute([':id' => $u['id']]);
+            $user = $stmt->fetch();
+
+            if ($user['id'] !== $u['id'] || $user['user_group'] !== $u['group']) {
+                throw new Exception($u['id'] . ' expected');
+            }
+        }
+    }
+
+    public function testUpdateUser(): void
+    {
         $stmt = $this->pdo->prepare('insert into users (id, user_group) values (:id, :user_group)');
         $stmt->execute([':id' => 'maria', ':user_group' => 'contributor']);
         
@@ -71,6 +103,37 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('expected joao not found');
         }
     }
+
+    public function testDeleteUser(): void
+    {
+        $stmt = $this->pdo->prepare('insert into users (id, user_group) values (:id, :user_group)');
+        $stmt->execute([':id' => 'maria', ':user_group' => 'contributor']);
+        
+        if (!$this->database->deleteUser('maria')) {
+            throw new Exception('expected maria deleted');
+        }
+
+        $stmt = $this->pdo->prepare('select * from users where id = :id');
+        $stmt->execute([':id' => 'maria']);
+        $user = $stmt->fetch();
+
+        if ($user !== false) {
+            throw new Exception('expected maria not found');
+        }
+
+        if ($this->database->deleteUser('joao')) {
+            throw new Exception('expected joao not found');
+        }
+    }
+
+    public function testGetCategory(): void
+    {
+        $category = $this->database->getCategory('business');
+        if ($category['id'] !== 'business' || $category['name'] !== 'Business') {
+            throw new Exception('business expected');
+        }
+    }
+
 
     public function testGetCategories(): void
     {
@@ -104,6 +167,36 @@ class TestDatabase extends TestAbstractTest
 
         if ($categories[1]['id'] !== 'cat2' || $categories[1]['name'] !== 'Category 2') {
             throw new Exception('error on category cat2');
+        }
+    }
+
+    public function testUpdateCategory(): void
+    {
+        $this->database->insertCategory('cat1', 'Category 1', 'box', 100, 50);
+        $this->database->updateCategory('cat1', 'Updated Category 1', 'circle', 150, 75);
+
+        $category = $this->database->getCategory('cat1');
+        if ($category['id'] !== 'cat1' || $category['name'] !== 'Updated Category 1' || $category['shape'] !== 'circle' || $category['width'] !== 150 || $category['height'] !== 75) {
+            throw new Exception('error on update category cat1');
+        }
+    }
+
+    public function testDeleteCategory(): void
+    {
+        $this->database->insertCategory('cat1', 'Category 1', 'box', 100, 50);
+        $this->database->deleteCategory('cat1');
+
+        $category = $this->database->getCategory('cat1');
+        if ($category !== null) {
+            throw new Exception('category cat1 should be deleted');
+        }
+    }
+
+    public function getType(): void
+    {
+        $type = $this->database->getType('service');
+        if ($type['id'] !== 'service' || $type['name'] !== 'Service') {
+            throw new Exception('service expected');
         }
     }
 
@@ -141,6 +234,17 @@ class TestDatabase extends TestAbstractTest
         }
     }
 
+    public function testUpdateType(): void
+    {
+        $this->database->insertType('type1', 'Type 1');
+        $this->database->updateType('type1', 'Updated Type 1');
+
+        $type = $this->database->getType('type1');
+        if ($type['id'] !== 'type1' || $type['name'] !== 'Updated Type 1') {
+            throw new Exception('error on update type type1');
+        }   
+    }
+
     public function testGetNode(): void {
         $stmt = $this->pdo->prepare('insert into nodes (id, label, category, type, data) values (:id, :label, :category, :type, :data)');
         $stmt->execute([
@@ -163,6 +267,17 @@ class TestDatabase extends TestAbstractTest
 
         if (!is_null($this->database->getNode('node2'))) {
             throw new Exception('null expected');
+        }
+    }
+
+    public function testDeleteType(): void
+    {
+        $this->database->insertType('type1', 'Type 1');
+        $this->database->deleteType('type1');
+
+        $type = $this->database->getType('type1');
+        if ($type !== null) {
+            throw new Exception('type type1 should be deleted');
         }
     }
 
@@ -293,6 +408,26 @@ class TestDatabase extends TestAbstractTest
             return;
         }
         throw new Exception('error on testInsertNode');
+    }
+
+    public function testBatchInsertNodes(): void {
+        $nodes = [
+            ['id' => 'node1', 'label' => 'Node 01', 'category' => 'business', 'type' => 'service', 'user_created' => false, 'data' => ['running_on' => 'SRV01OP']],
+            ['id' => 'node2', 'label' => 'Node 02', 'category' => 'application', 'type' => 'database', 'user_created' => false, 'data' => ['running_on' => 'SRV011P']],
+            ['id' => 'node3', 'label' => 'Node 03', 'category' => 'application', 'type' => 'service', 'user_created' => false, 'data' => ['running_on' => 'SRV012P']],
+        ];
+
+        $this->database->batchInsertNodes($nodes);
+
+        foreach ($nodes as $n) {
+            $node = $this->database->getNode($n['id']);
+            if ($node['id'] !== $n['id'] || $node['label'] !== $n['label'] || $node['category'] !== $n['category'] || $node['type'] !== $n['type']) {
+                throw new Exception('error on batchInsertNodes');
+            }
+            if ($node['data']['running_on'] !== $n['data']['running_on']) {
+                throw new Exception('error on batchInsertNodes');
+            }
+        }
     }
 
     public function testUpdateNode(): void {
@@ -429,7 +564,34 @@ class TestDatabase extends TestAbstractTest
         throw new Exception('error on testInsertEdge');
     }
 
-    public function testUpdateEdge(): void {
+    public function testBatchInsertEdges(): void
+    {
+        $this->database->insertNode('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']);
+        $this->database->insertNode('node2', 'Node 02', 'application', 'database', false, ['running_on' => 'SRV011P']);
+        $this->database->insertNode('node3', 'Node 03', 'application', 'service', false, ['running_on' => 'SRV012P']);
+
+        $edges = [
+            ['id' => 'edge1', 'source' => 'node1', 'target' => 'node2', 'label' => 'label1', 'data' => ['a' => 'b']],
+            ['id' => 'edge2', 'source' => 'node2', 'target' => 'node3', 'label' => 'label2', 'data' => ['b' => 'c']],
+        ];
+
+        $this->database->batchInsertEdges($edges);
+
+        foreach ($edges as $e) {
+            $edge = $this->database->getEdge($e['source'], $e['target']);
+            if ($edge['id'] !== $e['id'] || $edge['source'] !== $e['source'] || $edge['target'] !== $e['target']) {
+                throw new Exception('error on batchInsertEdges');
+            }
+            foreach ($e['data'] as $key => $value) {
+                if ($edge['data'][$key] !== $value) {
+                    throw new Exception('error on batchInsertEdges');
+                }
+            }
+        }
+    }
+
+    public function testUpdateEdge(): void
+    {
         $edge = $this->database->getEdge('node1', 'node2');
         if ($edge !== null) {
             throw new Exception('error on testUpdateEdge');
@@ -645,6 +807,30 @@ class TestDatabase extends TestAbstractTest
 
         if ($this->database->deleteProject('nonexistent')) {
             throw new Exception('error on testDeleteProject 3');
+        }
+    }
+
+    public function testGetSuccessors(): void
+    {
+        $this->database->insertNode('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']);
+        $this->database->insertNode('node2', 'Node 02', 'application', 'database', false, ['running_on' => 'SRV011P']);
+        $this->database->insertNode('node3', 'Node 03', 'application', 'service', false, ['running_on' => 'SRV012P']);
+
+        $this->database->insertEdge('edge1', 'node1', 'node2', 'label', ['a' => 'b']);
+        $this->database->insertEdge('edge2', 'node2', 'node3', 'label', ['b' => 'c']);
+
+        $successors = $this->database->getSuccessors(['node1']);
+
+        if (count($successors) !== 2) {
+            throw new Exception('error on testGetSuccessors 1');
+        }
+
+        if ($successors[0]['id'] !== 'node2') {
+            throw new Exception('error on testGetSuccessors 2');
+        }
+
+        if ($successors[1]['id'] !== 'node3') {
+            throw new Exception('error on testGetSuccessors 3');
         }
     }
 
