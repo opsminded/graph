@@ -17,8 +17,8 @@ final class Service implements ServiceInterface
         "Service::getEdges"            => true,
         "Service::getStatus"           => true,
         "Service::getNodeStatus"       => true,
-        "Service::getSave"             => true,
-        "Service::getSaves"            => true,
+        "Service::getProject"          => true,
+        "Service::getProjects"         => true,
         "Service::getLogs"             => true,
         "Service::insertUser"          => false,
         "Service::updateUser"          => false,
@@ -31,9 +31,9 @@ final class Service implements ServiceInterface
         "Service::updateEdge"          => false,
         "Service::deleteEdge"          => false,
         "Service::updateNodeStatus"    => false,
-        "Service::insertSave"          => false,
-        "Service::updateSave"          => false,
-        "Service::deleteSave"          => false,
+        "Service::insertProject"       => false,
+        "Service::updateProject"       => false,
+        "Service::deleteProject"       => false,
         "Service::insertLog"           => false,
     ];
 
@@ -192,47 +192,6 @@ final class Service implements ServiceInterface
             $nodes[] = $node;
         }
         return $nodes;
-    }
-
-    public function getNodeParentOf(string $id): ?ModelNode
-    {
-        $this->logger->debug("getting parent node of", ["id" => $id]);
-        $this->verify();
-        $parentData = $this->database->getNodeParentOf($id);
-        if (! is_null($parentData)) {
-            $parentNode = new ModelNode(
-                $parentData[ModelNode::NODE_KEYNAME_ID],
-                $parentData[ModelNode::NODE_KEYNAME_LABEL],
-                $parentData[ModelNode::NODE_KEYNAME_CATEGORY],
-                $parentData[ModelNode::NODE_KEYNAME_TYPE],
-                $parentData[ModelNode::NODE_KEYNAME_USERCREATED],
-                $parentData[ModelNode::NODE_KEYNAME_DATA]
-            );
-            $this->logger->info("parent node found", $parentNode->toArray());
-            return $parentNode;
-        }
-        $this->logger->info("parent node not found", [ModelNode::NODE_KEYNAME_ID => $id]);
-        return null;
-    }
-    public function getDependentNodesOf(string $id): array
-    {
-        $this->logger->debug("getting dependent nodes of", [ModelNode::NODE_KEYNAME_ID => $id]);
-        $this->verify();
-        $dependentNodesData = $this->database->getDependentNodesOf($id);
-        $dependentNodes     = [];
-        foreach ($dependentNodesData as $data) {
-            $node = new ModelNode(
-                $data[ModelNode::NODE_KEYNAME_ID],
-                $data[ModelNode::NODE_KEYNAME_LABEL],
-                $data[ModelNode::NODE_KEYNAME_CATEGORY],
-                $data[ModelNode::NODE_KEYNAME_TYPE],
-                $data[ModelNode::NODE_KEYNAME_USERCREATED],
-                $data[ModelNode::NODE_KEYNAME_DATA]
-            );
-            $dependentNodes[] = $node;
-        }
-        $this->logger->info("dependent nodes found", ["count" => count($dependentNodes)]);
-        return $dependentNodes;
     }
 
     public function insertNode(ModelNode $node): bool
@@ -412,94 +371,101 @@ final class Service implements ServiceInterface
         throw new RuntimeException("unexpected error on Service::updateNodeStatus");
     }
 
-    public function getSave(string $id): ?ModelSave
+    public function getProject(string $id): ?ModelProject
     {
-        $this->logger->debug("getting save", ["id" => $id]);
+        $this->logger->debug("getting project", ["id" => $id]);
         $this->verify();
-        $data = $this->database->getSave($id);
+        $data = $this->database->getProject($id);
 
         if (! is_null($data)) {
             $nodes = [];
-            foreach($data['data']['nodes'] as $n) {
+            // echo "data1\n";
+            // print_r($data);
+            // exit();
+            foreach($data['nodes'] as $n) {
                 $nodes[] = $n;
             }
-            $save = new ModelSave(
-                $data[ModelSave::SAVE_KEYNAME_ID],
-                $data[ModelSave::SAVE_KEYNAME_NAME],
-                $data[ModelSave::SAVE_KEYNAME_CREATOR],
-                new DateTimeImmutable($data[ModelSave::SAVE_KEYNAME_CREATED_AT]),
-                new DateTimeImmutable($data[ModelSave::SAVE_KEYNAME_UPDATED_AT]),
+            $project = new ModelProject(
+                $data[ModelProject::PROJECT_KEYNAME_ID],
+                $data[ModelProject::PROJECT_KEYNAME_NAME],
+                $data[ModelProject::PROJECT_KEYNAME_AUTHOR],
+                new DateTimeImmutable($data[ModelProject::PROJECT_KEYNAME_CREATED_AT]),
+                new DateTimeImmutable($data[ModelProject::PROJECT_KEYNAME_UPDATED_AT]),
                 $nodes
             );
-            $this->logger->info("save found", ["save" => $save]);
-            return $save;
+            $this->logger->info("project found", ["project" => $project]);
+            return $project;
         }
-        $this->logger->info("save not found", ["id" => $id]);
+        $this->logger->info("project not found", ["id" => $id]);
         return null;
     }
 
-    public function getSaves(): array
+    public function getProjects(): array
     {
-        $this->logger->debug("getting saves");
+        $this->logger->debug("getting projects");
         $this->verify();
-        $savesData = $this->database->getSaves();
-        $saves     = [];
-        foreach ($savesData as $data) {
+        $projectsData = $this->database->getProjects();
+        $projects     = [];
+
+        foreach ($projectsData as $data) {
+            echo "data2\n";
+            print_r($data);
+            exit();
             $nodes = [];
-            foreach($data['data']['nodes'] as $n) {
+            foreach($data['nodes'] as $n) {
                 $nodes[] = $n;
             }
 
-            $save = new ModelSave(
-                $data[ModelSave::SAVE_KEYNAME_ID],
-                $data[ModelSave::SAVE_KEYNAME_NAME],
-                $data[ModelSave::SAVE_KEYNAME_CREATOR],
-                new DateTimeImmutable($data[ModelSave::SAVE_KEYNAME_CREATED_AT]),
-                new DateTimeImmutable($data[ModelSave::SAVE_KEYNAME_UPDATED_AT]),
+            $project = new ModelProject(
+                $data[ModelProject::PROJECT_KEYNAME_ID],
+                $data[ModelProject::PROJECT_KEYNAME_NAME],
+                $data[ModelProject::PROJECT_KEYNAME_AUTHOR],
+                new DateTimeImmutable($data[ModelProject::PROJECT_KEYNAME_CREATED_AT]),
+                new DateTimeImmutable($data[ModelProject::PROJECT_KEYNAME_UPDATED_AT]),
                 $nodes
             );
-            $saves[] = $save;
+            $projects[] = $project;
         }
-        return $saves;
+        return $projects;
     }
 
-    public function insertSave(ModelSave $save): bool
+    public function insertProject(ModelProject $project): bool
     {
-        $this->logger->debug("inserting save", ["save" => $save]);
+        $this->logger->debug("inserting project", ["project" => $project->toArray()]);
         $this->verify();
 
         $data = [
             'nodes' => []
         ];
 
-        foreach($save->nodes as $node) {
+        foreach($project->nodes as $node) {
             $data['nodes'][] = $node;
         }
 
-        return $this->database->insertSave($save->id, $save->name, $save->creator, $data);
+        return $this->database->insertProject($project->id, $project->name, $project->author, $data);
     }
 
-    public function updateSave(ModelSave $save): bool
+    public function updateProject(ModelProject $project): bool
     {
-        $this->logger->debug("updating save", ["save" => $save]);
+        $this->logger->debug("updating project", ["project" => $project->toArray()]);
         $this->verify();
 
         $data = [
             'nodes' => []
         ];
 
-        foreach($save->nodes as $node) {
+        foreach($project->nodes as $node) {
             $data['nodes'][] = $node;
         }
 
-        return $this->database->updateSave($save->id, $save->name, $save->creator, $data);
+        return $this->database->updateProject($project->id, $project->name, $project->author, $data);
     }
 
-    public function deleteSave(string $id): bool
+    public function deleteProject(string $id): bool
     {
-        $this->logger->debug("deleting save", ["id" => $id]);
+        $this->logger->debug("deleting project", ["id" => $id]);
         $this->verify();
-        return $this->database->deleteSave($id);
+        return $this->database->deleteProject($id);
     }
 
     public function getLogs(int $limit): array

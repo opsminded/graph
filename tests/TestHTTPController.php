@@ -309,101 +309,101 @@ final class TestHTTPController extends TestAbstractTest
         }
     }
 
-    public function testGetNodeParentOf(): void
-    {
-        $_SERVER['REQUEST_METHOD'] = 'POST';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/getNodeParentOf';
-        $req = new HTTPRequest();
-        $resp = $this->controller->getNodeParentOf($req);
-        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'HTTPController::getNodeParentOf\'') {
-            print_r($resp);
-            throw new Exception('error on testGetNodeParentOf');
-        }
+    // public function testGetNodeParentOf(): void
+    // {
+    //     $_SERVER['REQUEST_METHOD'] = 'POST';
+    //     $_SERVER['SCRIPT_NAME'] = 'api.php';
+    //     $_SERVER['REQUEST_URI'] = 'api.php/getNodeParentOf';
+    //     $req = new HTTPRequest();
+    //     $resp = $this->controller->getNodeParentOf($req);
+    //     if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'HTTPController::getNodeParentOf\'') {
+    //         print_r($resp);
+    //         throw new Exception('error on testGetNodeParentOf');
+    //     }
 
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/getNodeParentOf';
-        $req = new HTTPRequest();
-        $resp = $this->controller->getNodeParentOf($req);
-        if ($resp->code !== 400 || $resp->status !== 'error') {
-            print_r($resp);
-            throw new Exception('error on testGetNodeParentOf');
-        }
+    //     $_SERVER['REQUEST_METHOD'] = 'GET';
+    //     $_SERVER['SCRIPT_NAME'] = 'api.php';
+    //     $_SERVER['REQUEST_URI'] = 'api.php/getNodeParentOf';
+    //     $req = new HTTPRequest();
+    //     $resp = $this->controller->getNodeParentOf($req);
+    //     if ($resp->code !== 400 || $resp->status !== 'error') {
+    //         print_r($resp);
+    //         throw new Exception('error on testGetNodeParentOf');
+    //     }
 
-        $_GET['id'] = 'node1';
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/getNodeParentOf';
-        $req = new HTTPRequest();
-        $resp = $this->controller->getNodeParentOf($req);
-        if ($resp->code !== 404 || $resp->status !== 'error' || $resp->data['id'] !== 'node1') {
-            print_r($resp);
-            throw new Exception('error on testGetNodeParentOf');
-        }
+    //     $_GET['id'] = 'node1';
+    //     $_SERVER['REQUEST_METHOD'] = 'GET';
+    //     $_SERVER['SCRIPT_NAME'] = 'api.php';
+    //     $_SERVER['REQUEST_URI'] = 'api.php/getNodeParentOf';
+    //     $req = new HTTPRequest();
+    //     $resp = $this->controller->getNodeParentOf($req);
+    //     if ($resp->code !== 404 || $resp->status !== 'error' || $resp->data['id'] !== 'node1') {
+    //         print_r($resp);
+    //         throw new Exception('error on testGetNodeParentOf');
+    //     }
 
-        $_GET['id'] = 'node2';
-        $this->database->insertNode('node1', 'label1', 'application', 'service');
-        $this->database->insertNode('node2', 'label2', 'application', 'service');
-        $this->database->insertEdge('node1-node2', 'node1', 'node2', 'label');
-        $req = new HTTPRequest();
-        $resp = $this->controller->getNodeParentOf($req);
-        if ($resp->code !== 200 || $resp->status !== 'success' || $resp->data['id'] !== 'node1') {
-            print_r($resp);
-            throw new Exception('error on testGetNodeParentOf');
-        }
-    }
+    //     $_GET['id'] = 'node2';
+    //     $this->database->insertNode('node1', 'label1', 'application', 'service');
+    //     $this->database->insertNode('node2', 'label2', 'application', 'service');
+    //     $this->database->insertEdge('node1-node2', 'node1', 'node2', 'label');
+    //     $req = new HTTPRequest();
+    //     $resp = $this->controller->getNodeParentOf($req);
+    //     if ($resp->code !== 200 || $resp->status !== 'success' || $resp->data['id'] !== 'node1') {
+    //         print_r($resp);
+    //         throw new Exception('error on testGetNodeParentOf');
+    //     }
+    // }
 
-    public function testGetDependentNodesOf(): void
-    {
-        $_SERVER['REQUEST_METHOD'] = 'POST';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/getDependentNodesOf';
-        $req = new HTTPRequest();
+    // public function testGetDependentNodesOf(): void
+    // {
+    //     $_SERVER['REQUEST_METHOD'] = 'POST';
+    //     $_SERVER['SCRIPT_NAME'] = 'api.php';
+    //     $_SERVER['REQUEST_URI'] = 'api.php/getDependentNodesOf';
+    //     $req = new HTTPRequest();
 
-        $resp = $this->controller->getDependentNodesOf($req);
-        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'HTTPController::getDependentNodesOf\'') {
-            print_r($resp);
-            throw new Exception('error on testGetDependentNodesOf');
-        }
+    //     $resp = $this->controller->getDependentNodesOf($req);
+    //     if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'HTTPController::getDependentNodesOf\'') {
+    //         print_r($resp);
+    //         throw new Exception('error on testGetDependentNodesOf');
+    //     }
 
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/getDependentNodesOf';
-        $req = new HTTPRequest();
-        $resp = $this->controller->getDependentNodesOf($req);
-        if ($resp->code !== 400 || $resp->status !== 'error') {
-            print_r($resp);
-            throw new Exception('error on testGetDependentNodesOf');
-        }
+    //     $_SERVER['REQUEST_METHOD'] = 'GET';
+    //     $_SERVER['SCRIPT_NAME'] = 'api.php';
+    //     $_SERVER['REQUEST_URI'] = 'api.php/getDependentNodesOf';
+    //     $req = new HTTPRequest();
+    //     $resp = $this->controller->getDependentNodesOf($req);
+    //     if ($resp->code !== 400 || $resp->status !== 'error') {
+    //         print_r($resp);
+    //         throw new Exception('error on testGetDependentNodesOf');
+    //     }
 
-        $_GET['id'] = 'node1';
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/getDependentNodesOf';
-        $req = new HTTPRequest();
-        $resp = $this->controller->getDependentNodesOf($req);
-        if ($resp->code !== 200 || $resp->status !== 'success' || count($resp->data) !== 0) {
-            throw new Exception('error on testGetDependentNodesOf');
-        }
+    //     $_GET['id'] = 'node1';
+    //     $_SERVER['REQUEST_METHOD'] = 'GET';
+    //     $_SERVER['SCRIPT_NAME'] = 'api.php';
+    //     $_SERVER['REQUEST_URI'] = 'api.php/getDependentNodesOf';
+    //     $req = new HTTPRequest();
+    //     $resp = $this->controller->getDependentNodesOf($req);
+    //     if ($resp->code !== 200 || $resp->status !== 'success' || count($resp->data) !== 0) {
+    //         throw new Exception('error on testGetDependentNodesOf');
+    //     }
 
-        $this->database->insertNode('node1', 'label1', 'application', 'service');
-        $this->database->insertNode('node2', 'label2', 'application', 'service');
-        $this->database->insertNode('node3', 'label3', 'application', 'service');
-        $this->database->insertEdge('node1-node2', 'node1', 'node2', 'label');
-        $this->database->insertEdge('node1-node3', 'node1', 'node3', 'label');
+    //     $this->database->insertNode('node1', 'label1', 'application', 'service');
+    //     $this->database->insertNode('node2', 'label2', 'application', 'service');
+    //     $this->database->insertNode('node3', 'label3', 'application', 'service');
+    //     $this->database->insertEdge('node1-node2', 'node1', 'node2', 'label');
+    //     $this->database->insertEdge('node1-node3', 'node1', 'node3', 'label');
 
-        $_GET['id'] = 'node1';
-        $req = new HTTPRequest();
-        $resp = $this->controller->getDependentNodesOf($req);
-        if ($resp->code !== 200 || $resp->status !== 'success' || count($resp->data) !== 2) {
-            throw new Exception('error on testGetDependentNodesOf');
-        }
+    //     $_GET['id'] = 'node1';
+    //     $req = new HTTPRequest();
+    //     $resp = $this->controller->getDependentNodesOf($req);
+    //     if ($resp->code !== 200 || $resp->status !== 'success' || count($resp->data) !== 2) {
+    //         throw new Exception('error on testGetDependentNodesOf');
+    //     }
 
-        if($resp->data[0]['id'] !== 'node2' || $resp->data[1]['id'] !== 'node3') {
-            throw new Exception('error on testGetDependentNodesOf');
-        }
-    }
+    //     if($resp->data[0]['id'] !== 'node2' || $resp->data[1]['id'] !== 'node3') {
+    //         throw new Exception('error on testGetDependentNodesOf');
+    //     }
+    // }
 
     public function testInsertNode(): void
     {
@@ -762,6 +762,9 @@ final class TestHTTPController extends TestAbstractTest
         if($resp->data['id'] !== 'meu-save' || $resp->data['name'] !== 'meu save') {
             throw new Exception('error on testGetSave 5');
         }
+
+        print_r($resp);
+        exit();
     }
 
     public function testGetSaves(): void

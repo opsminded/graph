@@ -12,7 +12,7 @@ $coverageData = json_decode(file_get_contents($filename), true);
 echo "<html><head><meta charset='UTF-8'><style>
 body { font-family: monospace; font-size: 14px; margin: 0; }
 .covered { background: #0f0; }
-.not-executable { background: #fff652ff; display: none;}
+.not-executable { background: #fff652ff;}
 .line { padding: 2px 10px; white-space: pre; border-left: 3px solid transparent; }
 .covered { border-left-color: #0f0; }
 .not-covered { border-left-color: #f00; background-color: rgba(253, 18, 18, 0.52);}

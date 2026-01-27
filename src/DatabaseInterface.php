@@ -18,8 +18,6 @@ interface DatabaseInterface
 
     public function getNode(string $id): ?array;
     public function getNodes(): array;
-    public function getNodeParentOf(string $id): ?array;
-    public function getDependentNodesOf(string $id): array;
     public function insertNode(string $id, string $label, string $category, string $type, bool $userCreated = false, array $data = []): bool;
     public function updateNode(string $id, string $label, string $category, string $type, array $data = []): bool;
     public function deleteNode(string $id): bool;
@@ -34,11 +32,13 @@ interface DatabaseInterface
     public function getNodeStatus(string $id): ?array;
     public function updateNodeStatus(string $id, string $status): bool;
 
-    public function getSave(string $id): ?array;
-    public function getSaves(): array;
-    public function insertSave(string $id, string $name, string $creator, array $data): bool;
-    public function updateSave(string $id, string $name, string $creator, array $data): bool;
-    public function deleteSave(string $id): bool;
+    public function getProject(string $id): ?array;
+    public function getProjects(): array;
+    public function insertProject(string $id, string $name, string $author, array $data): bool;
+    public function updateProject(string $id, string $name, string $author, array $data): bool;
+    public function deleteProject(string $id): bool;
+
+    public function getSuccessors(string $id): array;
 
     public function getLogs(int $limit): array;
     public function insertLog(string $entity_type, string $entity_id, string $action, ?array $old_data = null, ?array $new_data = null, string $user_id, string $ip_address): bool;

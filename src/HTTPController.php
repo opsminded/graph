@@ -132,42 +132,6 @@ final class HTTPController implements HTTPControllerInterface
         return new HTTPOKResponse("nodes found", $data);
     }
 
-    public function getNodeParentOf(HTTPRequest $req): HTTPResponseInterface
-    {
-        if ($req->method !== HTTPRequest::METHOD_GET) {
-            return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
-        }
-        try {
-            $id = $req->getParam(ModelNode::NODE_KEYNAME_ID);
-        } catch(HTTPRequestException $e) {
-            return new HTTPBadRequestResponse($e->getMessage(), []);
-        }
-        $parent = $this->service->getNodeParentOf($id);
-        if(is_null($parent)) {
-            return new HTTPNotFoundResponse("parent node not found", [ModelNode::NODE_KEYNAME_ID => $id]);
-        }
-        $data = $parent->toArray();
-        return new HTTPOKResponse("parent node found", $data);
-    }
-
-    public function getDependentNodesOf(HTTPRequest $req): HTTPResponseInterface
-    {
-        if ($req->method !== HTTPRequest::METHOD_GET) {
-            return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
-        }
-        try {
-            $id = $req->getParam(ModelNode::NODE_KEYNAME_ID);
-        } catch(HTTPRequestException $e) {
-            return new HTTPBadRequestResponse($e->getMessage(), []);
-        }
-        $dependents = $this->service->getDependentNodesOf($id);
-        $data = [];
-        foreach($dependents as $dependent) {
-            $data[] = $dependent->toArray();
-        }
-        return new HTTPOKResponse("dependent nodes found", $data);
-    }
-
     public function insertNode(HTTPRequest $req): HTTPResponseInterface
     {
         if($req->method !== HTTPRequest::METHOD_POST) {
@@ -359,6 +323,7 @@ final class HTTPController implements HTTPControllerInterface
             return new HTTPBadRequestResponse($e->getMessage(), []);
         }
         $save = $this->service->getSave($id);
+        
         if(!is_null($save)) {
             $data = $save->toArray();
             return new HTTPOKResponse("save found", $data);

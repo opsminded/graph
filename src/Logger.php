@@ -37,6 +37,10 @@ final class Logger implements LoggerInterface
             return;
         }
 
+        if ($this->level == 2 && $type != self::LOGGER_LEVEL_INFO && $type != self::LOGGER_LEVEL_ERROR) {
+            return;
+        }
+
         $trace = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 3);
         $method = "{$trace[2]['class']}::{$trace[2]['function']}";
         $data = json_encode($data);

@@ -18,8 +18,6 @@ interface ServiceInterface
 
     public function getNode(string $id): ?ModelNode;
     public function getNodes(): array;
-    public function getNodeParentOf(string $id): ?ModelNode;
-    public function getDependentNodesOf(string $id): array;
     public function insertNode(ModelNode $node): bool;
     public function updateNode(ModelNode $node): bool;
     public function deleteNode(ModelNode $node): bool;
@@ -34,11 +32,11 @@ interface ServiceInterface
     public function getNodeStatus(string $id): ?ModelStatus;
     public function updateNodeStatus(ModelStatus $status): bool;
 
-    public function getSave(string $id): ?ModelSave;
-    public function getSaves(): array;
-    public function insertSave(ModelSave $save): bool;
-    public function updateSave(ModelSave $save): bool;
-    public function deleteSave(string $id): bool;
+    public function getProject(string $id): ?ModelProject;
+    public function getProjects(): array;
+    public function insertProject(ModelProject $project): bool;
+    public function updateProject(ModelProject $project): bool;
+    public function deleteProject(string $id): bool;
 
     public function getLogs(int $limit): array;
 }

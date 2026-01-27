@@ -129,34 +129,45 @@ final class Database implements DatabaseInterface
         return $rows;
     }
 
-    public function getNodeParentOf(string $id): ?array
-    {
-        $this->logger->debug("fetching parent node");
-        $sql = "SELECT n.* FROM nodes n INNER JOIN edges e ON n.id = e.source WHERE e.target = :id";
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([':id' => $id]);
-        $row = $stmt->fetch();
-        if ($row) {
-            $row[ModelNode::NODE_KEYNAME_USERCREATED] = (bool)$row[ModelNode::NODE_KEYNAME_USERCREATED];
-            $row['data'] = json_decode($row['data'], true);
-            $this->logger->info("parent node fetched", ['row' => $row]);
-            return $row;
-        }
-        $this->logger->info("parent node not found", ['id' => $id]);
-        return null;
-    }
-
-    public function getDependentNodesOf(string $id): array
+    public function getDependentNodesOf(array $ids): array
     {
         $this->logger->debug("fetching dependent nodes");
-        $sql = "SELECT n.* FROM nodes n INNER JOIN edges e ON n.id = e.target WHERE e.source = :id";
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([':id' => $id]);
-        $rows = $stmt->fetchAll();
-        foreach($rows as &$row) {
-            $row[ModelNode::NODE_KEYNAME_USERCREATED] = (bool)$row[ModelNode::NODE_KEYNAME_USERCREATED];
-            $row['data'] = json_decode($row['data'], true);
+
+        if(empty($ids)) {
+            $this->logger->info("no ids provided for dependent nodes fetch");
+            return [];
         }
+
+        $placeholders = [];
+        $params = [];
+        foreach ($ids as $index => $id) {
+            $placeholders[] = ":id{$index}";
+            $params[":id{$index}"] = $id;
+        }
+        $placeholdersStr = implode(', ', $placeholders);
+
+        $sql = "
+        WITH RECURSIVE descendants AS (
+            SELECT id, id as root_id, 0 as depth
+            FROM nodes
+            WHERE id IN ($placeholdersStr)
+            UNION ALL
+            
+            SELECT n.id, d.root_id, d.depth + 1
+            FROM nodes n
+            INNER JOIN edges e ON n.id = e.target
+            INNER JOIN descendants d ON e.source = d.id
+        )
+        SELECT     d.id,
+                   d.depth
+        FROM       descendants d
+        ORDER BY   d.depth,
+                   d.id;
+        ";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll();
         $this->logger->info("dependent nodes fetched", ['rows' => $rows]);
         return $rows;
     }
@@ -318,77 +329,125 @@ final class Database implements DatabaseInterface
         return true;
     }
 
-    public function getSave(string $id): ?array
+    public function getProject(string $id): ?array
     {
-        $this->logger->debug("fetching save", ['id' => $id]);
-        $sql = "SELECT * FROM saves WHERE id = :id";
+        $this->logger->debug("fetching project", ['id' => $id]);
+        $sql = "SELECT * FROM projects WHERE id = :id";
         $params = [':id' => $id];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         $row = $stmt->fetch();
         if ($row) {
-            $row['data'] = json_decode($row['data'], true);
-            $this->logger->info("save fetched", ['params' => $params, 'row' => $row]);
-            return $row;
+
+            $save = [
+                'id' => $row['id'],
+                'name' => $row['name'],
+                'author' => $row['author'],
+                'data' => json_decode($row['data'], true),
+                'created_at' => $row['created_at'],
+                'updated_at' => $row['updated_at'],
+            ];
+
+            $depNodes = $this->getDependentNodesOf($save['data']['nodes'] ?? []);
+            print_r($depNodes);
+
+            unset($save['data']);
+
+            $save['nodes'] = [];
+            foreach($depNodes as $depNode) {
+                $save['nodes'][] = $depNode['id'];
+            }
+
+            $this->logger->info("project fetched", ['params' => $params, 'row' => $row]);
+            return $save;
         }
-        $this->logger->info("save not found", ['params' => $params]);
+        $this->logger->info("project not found", ['params' => $params]);
         return null;
     }
 
-    public function getSaves(): array
+    public function getProjects(): array
     {
-        $this->logger->debug("fetching saves");
-        $sql = "SELECT * FROM saves";
+        $this->logger->debug("fetching projects");
+        $sql = "SELECT * FROM projects";
         $stmt  = $this->pdo->query($sql);
         $rows  = $stmt->fetchAll();
         foreach($rows as &$row) {
             $row['data'] = json_decode($row['data'], true);
         }
-        $this->logger->info("saves fetched", ['rows' => $rows]);
+        $this->logger->info("projects fetched", ['rows' => $rows]);
         return $rows;
     }
 
-    public function insertSave(string $id, string $name, string $creator, array $data): bool
+    public function insertProject(string $id, string $name, string $author, array $data): bool
     {
-        $this->logger->debug("inserting new save", ['id' => $id, 'name' => $name, 'creator' => $creator, 'data' => $data]);
-        $sql = "INSERT INTO saves (id, name, creator, data) VALUES (:id, :name, :creator, :data)";
+        $this->logger->debug("inserting new project", ['id' => $id, 'name' => $name, 'author' => $author, 'data' => $data]);
+        $sql = "INSERT INTO projects (id, name, author, data) VALUES (:id, :name, :author, :data)";
         $data = json_encode($data, JSON_UNESCAPED_UNICODE);
-        $params = [':id' => $id, ':name' => $name, ':creator' => $creator, ':data' => $data];
+        $params = [':id' => $id, ':name' => $name, ':author' => $author, ':data' => $data];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
-        $this->logger->info("save inserted", ['params' => $params]);
+        $this->logger->info("project inserted", ['params' => $params]);
         return true;
     }
 
-    public function updateSave(string $id, string $name, string $creator, array $data): bool
+    public function updateProject(string $id, string $name, string $author, array $data): bool
     {
-        $this->logger->debug("updating save", ['id' => $id, 'name' => $name, 'creator' => $creator, 'data' => $data]);
-        $sql = "UPDATE saves SET name = :name, creator = :creator, data = :data, updated_at = CURRENT_TIMESTAMP WHERE id = :id";
+        $this->logger->debug("updating project", ['id' => $id, 'name' => $name, 'author' => $author, 'data' => $data]);
+        $sql = "UPDATE projects SET name = :name, author = :author, data = :data, updated_at = CURRENT_TIMESTAMP WHERE id = :id";
         $data = json_encode($data, JSON_UNESCAPED_UNICODE);
-        $params = [':id' => $id, ':name' => $name, ':creator' => $creator, ':data' => $data];
+        $params = [':id' => $id, ':name' => $name, ':author' => $author, ':data' => $data];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         if ($stmt->rowCount() > 0) {
-            $this->logger->info("save updated", ['params' => $params]);
+            $this->logger->info("project updated", ['params' => $params]);
             return true;
         }
-        $this->logger->error("save not updated", ['params' => $params]);
+        $this->logger->error("project not updated", ['params' => $params]);
         return false;
     }
 
-    public function deleteSave(string $id): bool
+    public function deleteProject(string $id): bool
     {
-        $this->logger->debug("deleting save", ['id' => $id]);
-        $sql = "DELETE FROM saves WHERE id = :id";
+        $this->logger->debug("deleting project", ['id' => $id]);
+        $sql = "DELETE FROM projects WHERE id = :id";
         $params = [':id' => $id];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         if ($stmt->rowCount() > 0) {
-            $this->logger->info("save deleted", ['params' => $params]);
+            $this->logger->info("project deleted", ['params' => $params]);
             return true;
         }
-        $this->logger->error("save not deleted", ['params' => $params]);
+        $this->logger->error("project not deleted", ['params' => $params]);
         return false;
+    }
+
+    public function getSuccessors(string $id): array
+    {
+        $this->logger->debug("fetching successors", ['id' => $id]);
+        $sql = "
+        WITH RECURSIVE successors AS (
+            SELECT id, 0 as depth
+            FROM nodes
+            WHERE id = :id
+            UNION ALL
+            SELECT n.id, s.depth + 1
+            FROM nodes n
+            INNER JOIN edges e ON n.id = e.target
+            INNER JOIN successors s ON e.source = s.id
+        )
+        SELECT     id,
+                   depth
+        FROM       successors
+        WHERE      id != :id
+        ORDER BY   depth,
+                   id;
+        ";
+        $params = [':id' => $id];
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll();
+        $this->logger->info("successors fetched", ['params' => $params, 'rows' => $rows]);
+        return $rows;
     }
 
     public function getLogs(int $limit): array
@@ -485,19 +544,18 @@ final class Database implements DatabaseInterface
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (node_id) REFERENCES nodes(id) ON DELETE CASCADE
             )');
-        
+        $this->pdo->exec('CREATE INDEX IF NOT EXISTS idx_node_status_node_id ON status (node_id)');
+
         $this->pdo->exec('
-            CREATE TABLE IF NOT EXISTS saves (
+            CREATE TABLE IF NOT EXISTS projects (
                 id         TEXT PRIMARY KEY NOT NULL,
                 name       TEXT NOT NULL,
-                creator    TEXT NOT NULL,
+                author     TEXT NOT NULL,
                 data       TEXT NOT NULL,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )');
-
-        $this->pdo->exec('CREATE INDEX IF NOT EXISTS idx_node_status_node_id ON status (node_id)');
-
+            );');
+        
         $this->pdo->exec('
             CREATE TABLE IF NOT EXISTS audit (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
