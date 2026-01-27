@@ -379,9 +379,6 @@ final class Service implements ServiceInterface
 
         if (! is_null($data)) {
             $nodes = [];
-            // echo "data1\n";
-            // print_r($data);
-            // exit();
             foreach($data['nodes'] as $n) {
                 $nodes[] = $n;
             }
@@ -405,14 +402,12 @@ final class Service implements ServiceInterface
         $this->logger->debug("getting projects");
         $this->verify();
         $projectsData = $this->database->getProjects();
+        
         $projects     = [];
 
         foreach ($projectsData as $data) {
-            echo "data2\n";
-            print_r($data);
-            exit();
             $nodes = [];
-            foreach($data['nodes'] as $n) {
+            foreach($data['data']['nodes'] as $n) {
                 $nodes[] = $n;
             }
 

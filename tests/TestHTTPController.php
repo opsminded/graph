@@ -309,102 +309,6 @@ final class TestHTTPController extends TestAbstractTest
         }
     }
 
-    // public function testGetNodeParentOf(): void
-    // {
-    //     $_SERVER['REQUEST_METHOD'] = 'POST';
-    //     $_SERVER['SCRIPT_NAME'] = 'api.php';
-    //     $_SERVER['REQUEST_URI'] = 'api.php/getNodeParentOf';
-    //     $req = new HTTPRequest();
-    //     $resp = $this->controller->getNodeParentOf($req);
-    //     if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'HTTPController::getNodeParentOf\'') {
-    //         print_r($resp);
-    //         throw new Exception('error on testGetNodeParentOf');
-    //     }
-
-    //     $_SERVER['REQUEST_METHOD'] = 'GET';
-    //     $_SERVER['SCRIPT_NAME'] = 'api.php';
-    //     $_SERVER['REQUEST_URI'] = 'api.php/getNodeParentOf';
-    //     $req = new HTTPRequest();
-    //     $resp = $this->controller->getNodeParentOf($req);
-    //     if ($resp->code !== 400 || $resp->status !== 'error') {
-    //         print_r($resp);
-    //         throw new Exception('error on testGetNodeParentOf');
-    //     }
-
-    //     $_GET['id'] = 'node1';
-    //     $_SERVER['REQUEST_METHOD'] = 'GET';
-    //     $_SERVER['SCRIPT_NAME'] = 'api.php';
-    //     $_SERVER['REQUEST_URI'] = 'api.php/getNodeParentOf';
-    //     $req = new HTTPRequest();
-    //     $resp = $this->controller->getNodeParentOf($req);
-    //     if ($resp->code !== 404 || $resp->status !== 'error' || $resp->data['id'] !== 'node1') {
-    //         print_r($resp);
-    //         throw new Exception('error on testGetNodeParentOf');
-    //     }
-
-    //     $_GET['id'] = 'node2';
-    //     $this->database->insertNode('node1', 'label1', 'application', 'service');
-    //     $this->database->insertNode('node2', 'label2', 'application', 'service');
-    //     $this->database->insertEdge('node1-node2', 'node1', 'node2', 'label');
-    //     $req = new HTTPRequest();
-    //     $resp = $this->controller->getNodeParentOf($req);
-    //     if ($resp->code !== 200 || $resp->status !== 'success' || $resp->data['id'] !== 'node1') {
-    //         print_r($resp);
-    //         throw new Exception('error on testGetNodeParentOf');
-    //     }
-    // }
-
-    // public function testGetDependentNodesOf(): void
-    // {
-    //     $_SERVER['REQUEST_METHOD'] = 'POST';
-    //     $_SERVER['SCRIPT_NAME'] = 'api.php';
-    //     $_SERVER['REQUEST_URI'] = 'api.php/getDependentNodesOf';
-    //     $req = new HTTPRequest();
-
-    //     $resp = $this->controller->getDependentNodesOf($req);
-    //     if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'HTTPController::getDependentNodesOf\'') {
-    //         print_r($resp);
-    //         throw new Exception('error on testGetDependentNodesOf');
-    //     }
-
-    //     $_SERVER['REQUEST_METHOD'] = 'GET';
-    //     $_SERVER['SCRIPT_NAME'] = 'api.php';
-    //     $_SERVER['REQUEST_URI'] = 'api.php/getDependentNodesOf';
-    //     $req = new HTTPRequest();
-    //     $resp = $this->controller->getDependentNodesOf($req);
-    //     if ($resp->code !== 400 || $resp->status !== 'error') {
-    //         print_r($resp);
-    //         throw new Exception('error on testGetDependentNodesOf');
-    //     }
-
-    //     $_GET['id'] = 'node1';
-    //     $_SERVER['REQUEST_METHOD'] = 'GET';
-    //     $_SERVER['SCRIPT_NAME'] = 'api.php';
-    //     $_SERVER['REQUEST_URI'] = 'api.php/getDependentNodesOf';
-    //     $req = new HTTPRequest();
-    //     $resp = $this->controller->getDependentNodesOf($req);
-    //     if ($resp->code !== 200 || $resp->status !== 'success' || count($resp->data) !== 0) {
-    //         throw new Exception('error on testGetDependentNodesOf');
-    //     }
-
-    //     $this->database->insertNode('node1', 'label1', 'application', 'service');
-    //     $this->database->insertNode('node2', 'label2', 'application', 'service');
-    //     $this->database->insertNode('node3', 'label3', 'application', 'service');
-    //     $this->database->insertEdge('node1-node2', 'node1', 'node2', 'label');
-    //     $this->database->insertEdge('node1-node3', 'node1', 'node3', 'label');
-
-    //     $_GET['id'] = 'node1';
-    //     $req = new HTTPRequest();
-    //     $resp = $this->controller->getDependentNodesOf($req);
-    //     if ($resp->code !== 200 || $resp->status !== 'success' || count($resp->data) !== 2) {
-    //         throw new Exception('error on testGetDependentNodesOf');
-    //     }
-
-    //     if($resp->data[0]['id'] !== 'node2' || $resp->data[1]['id'] !== 'node3') {
-    //         throw new Exception('error on testGetDependentNodesOf');
-    //     }
-    // }
-
     public function testInsertNode(): void
     {
         $_SERVER['REQUEST_METHOD'] = 'PUT';
@@ -721,194 +625,191 @@ final class TestHTTPController extends TestAbstractTest
         $resp = $this->controller->updateNodeStatus($req);
     }
 
-    public function testGetSave(): void
+    public function testGetProject(): void
     {
         $_SERVER['REQUEST_METHOD'] = 'POST';
         $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/getSave';
+        $_SERVER['REQUEST_URI'] = 'api.php/getProject';
         $req = new HTTPRequest();
-        $resp = $this->controller->getSave($req);
-        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'HTTPController::getSave\'') {
-            throw new Exception('error on testGetSave 1');
+        $resp = $this->controller->getProject($req);
+        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'HTTPController::getProject\'') {
+            throw new Exception('error on testGetProject 1');
         }
 
         $_SERVER['REQUEST_METHOD'] = 'GET';
         $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/getSave';
+        $_SERVER['REQUEST_URI'] = 'api.php/getProject';
         $req = new HTTPRequest();
-        $resp = $this->controller->getSave($req);
+        $resp = $this->controller->getProject($req);
         if ($resp->code !== 400 || $resp->message !== 'param \'id\' is missing') {
-            throw new Exception('error on testGetSave 2');
+            throw new Exception('error on testGetProject 2');
         }
 
         $_SERVER['REQUEST_METHOD'] = 'GET';
         $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/getSave';
-        $_GET['id'] = 'meu-save';
+        $_SERVER['REQUEST_URI'] = 'api.php/getProject';
+        $_GET['id'] = 'meu-project';
         $req = new HTTPRequest();
-        $resp = $this->controller->getSave($req);
-        if( $resp->code !== 404 || $resp->message !== 'save not found') {
+        $resp = $this->controller->getProject($req);
+        if( $resp->code !== 404 || $resp->message !== 'project not found') {
             print_r($resp);
-            throw new Exception('error on testGetSave 3');
+            throw new Exception('error on testGetProject 3');
         }
         
-        $this->database->insertSave('meu-save', 'meu save', 'admin', ['nodes' => ['a', 'b']]);
+        $this->database->insertProject('meu-project', 'meu project', 'admin', ['nodes' => ['a', 'b']]);
         
         $req = new HTTPRequest();
-        $resp = $this->controller->getSave($req);
-        if( $resp->code !== 200 || $resp->message !== 'save found') {
-            throw new Exception('error on testGetSave 4');
+        $resp = $this->controller->getProject($req);
+        if( $resp->code !== 200 || $resp->message !== 'project found') {
+            throw new Exception('error on testGetProject 4');
         }
-        if($resp->data['id'] !== 'meu-save' || $resp->data['name'] !== 'meu save') {
-            throw new Exception('error on testGetSave 5');
+        if($resp->data['id'] !== 'meu-project' || $resp->data['name'] !== 'meu project') {
+            throw new Exception('error on testGetProject 5');
         }
-
-        print_r($resp);
-        exit();
     }
 
-    public function testGetSaves(): void
+    public function testGetProjects(): void
     {
         $_SERVER['REQUEST_METHOD'] = 'POST';
         $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/getSaves';
+        $_SERVER['REQUEST_URI'] = 'api.php/getProjects';
         $req = new HTTPRequest();
-        $resp = $this->controller->getSaves($req);
-        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'HTTPController::getSaves\'') {
-            throw new Exception('error on testGetSaves 1');
+        $resp = $this->controller->getProjects($req);
+        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'HTTPController::getProjects\'') {
+            throw new Exception('error on testGetProjects 1');
         }
 
         $_SERVER['REQUEST_METHOD'] = 'GET';
         $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/getSaves';
+        $_SERVER['REQUEST_URI'] = 'api.php/getProjects';
         $req = new HTTPRequest();
-        $resp = $this->controller->getSaves($req);
-        if( $resp->code !== 200 || $resp->message !== 'saves found') {
-            throw new Exception('error on testGetSaves 2');
+        $resp = $this->controller->getProjects($req);
+        if( $resp->code !== 200 || $resp->message !== 'projects found') {
+            throw new Exception('error on testGetProjects 2');
         }
         
-        $this->database->insertSave('meu-save', 'meu save', 'admin', ['nodes' => ['a', 'b']]);
+        $this->database->insertProject('meu-project', 'meu project', 'admin', ['nodes' => ['a', 'b']]);
         
         $req = new HTTPRequest();
-        $resp = $this->controller->getSaves($req);
-        if( $resp->code !== 200 || $resp->message !== 'saves found' || count($resp->data) !== 1) {
-            throw new Exception('error on testGetSaves 3');
+        $resp = $this->controller->getProjects($req);
+        if( $resp->code !== 200 || $resp->message !== 'projects found' || count($resp->data) !== 1) {
+            throw new Exception('error on testGetProjects 3');
         }
-        if($resp->data[0]['id'] !== 'meu-save' || $resp->data[0]['name'] !== 'meu save') {
-            throw new Exception('error on testGetSaves 4');
+        if($resp->data[0]['id'] !== 'meu-project' || $resp->data[0]['name'] !== 'meu project') {
+            throw new Exception('error on testGetProjects 4');
         }
     }
 
-    public function testInsertSave(): void
+    public function testInsertProject(): void
     {
         $_SERVER['REQUEST_METHOD'] = 'GET';
         $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/insertSave';
+        $_SERVER['REQUEST_URI'] = 'api.php/insertProject';
         $req = new HTTPRequest();
-        $resp = $this->controller->insertSave($req);
-        if ($resp->code != 405 || $resp->message != 'method \'GET\' not allowed in \'HTTPController::insertSave\'') {
-            throw new Exception('error on testInsertSave 1');
+        $resp = $this->controller->insertProject($req);
+        if ($resp->code != 405 || $resp->message != 'method \'GET\' not allowed in \'HTTPController::insertProject\'') {
+            throw new Exception('error on testInsertProject 1');
         }
 
         $_SERVER['REQUEST_METHOD'] = 'POST';
         $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/insertSave';
+        $_SERVER['REQUEST_URI'] = 'api.php/insertProject';
         $req = new HTTPRequest();
-        $req->data['id'] = 'save1';
-        $req->data['name'] = 'My Save 1';
+        $req->data['id'] = 'project1';
+        $req->data['name'] = 'My Project 1';
         $req->data['creator'] = 'admin';
         $req->data['nodes'] = ['a', 'b'];
-        $resp = $this->controller->insertSave($req);
-        if($resp->code !== 201 || $resp->message !== 'save created') {
+        $resp = $this->controller->insertProject($req);
+        if($resp->code !== 201 || $resp->message !== 'project created') {
             print_r($resp);
-            throw new Exception('error on testInsertSave 2');
+            throw new Exception('error on testInsertProject 2');
         }
 
         $_SERVER['REQUEST_METHOD'] = 'GET';
         $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/getSaves';
+        $_SERVER['REQUEST_URI'] = 'api.php/getProjects';
         $req = new HTTPRequest();
-        $resp = $this->controller->getSaves($req);
-        if( $resp->code !== 200 || $resp->message !== 'saves found' || count($resp->data) !== 1) {
-            throw new Exception('error on testInsertSave 3');
+        $resp = $this->controller->getProjects($req);
+        if( $resp->code !== 200 || $resp->message !== 'projects found' || count($resp->data) !== 1) {
+            throw new Exception('error on testInsertProject 3');
         }
 
-        if($resp->data[0]['name'] !== 'My Save 1') {
-            throw new Exception('error on testInsertSave 4');
+        if($resp->data[0]['name'] !== 'My Project 1') {
+            throw new Exception('error on testInsertProject 4');
         }
     }
 
-    public function testUpdateSave(): void
+    public function testUpdateProject(): void
     {
         $_SERVER['REQUEST_METHOD'] = 'GET';
         $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/updateSave';
+        $_SERVER['REQUEST_URI'] = 'api.php/updateProject';
         $req = new HTTPRequest();
-        $resp = $this->controller->updateSave($req);
-        if ($resp->code != 405 || $resp->message != 'method \'GET\' not allowed in \'HTTPController::updateSave\'') {
-            throw new Exception('error on testUpdateSave 1');
+        $resp = $this->controller->updateProject($req);
+        if ($resp->code != 405 || $resp->message != 'method \'GET\' not allowed in \'HTTPController::updateProject\'') {
+            throw new Exception('error on testUpdateProject 1');
         }
 
         $_SERVER['REQUEST_METHOD'] = 'PUT';
         $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/updateSave';
+        $_SERVER['REQUEST_URI'] = 'api.php/updateProject';
         $req = new HTTPRequest();
-        $req->data['id'] = 'save1';
-        $req->data['name'] = 'My Save 1 Updated';
+        $req->data['id'] = 'project1';
+        $req->data['name'] = 'My Project 1 Updated';
         $req->data['creator'] = 'admin';
         $req->data['nodes'] = [];
-        $resp = $this->controller->updateSave($req);
-        if ($resp->code !== 404 || $resp->message !== 'save not updated' || $resp->data['id'] !== 'save1') {
+        $resp = $this->controller->updateProject($req);
+        if ($resp->code !== 404 || $resp->message !== 'project not updated' || $resp->data['id'] !== 'project1') {
             print_r($resp);
-            throw new Exception('error on testUpdateSave 2');
+            throw new Exception('error on testUpdateProject 2');
         }
 
-        $this->database->insertSave('save1', 'My Save 1', 'admin', ['nodes' => [], 'edges' => []]);
+        $this->database->insertProject('project1', 'My Project 1', 'admin', ['nodes' => [], 'edges' => []]);
         $req = new HTTPRequest();
-        $req->data['id'] = 'save1';
-        $req->data['name'] = 'My Save 1 Updated';
+        $req->data['id'] = 'project1';
+        $req->data['name'] = 'My Project 1 Updated';
         $req->data['creator'] = 'admin';
         $req->data['nodes'] = ['node1', 'node2'];
-        $resp = $this->controller->updateSave($req);
-        if ($resp->code !== 200 || $resp->message !== 'save updated' || $resp->data['name'] !== 'My Save 1 Updated' || count($resp->data['nodes']) !== 2) {
+        $resp = $this->controller->updateProject($req);
+        if ($resp->code !== 200 || $resp->message !== 'project updated' || $resp->data['name'] !== 'My Project 1 Updated' || count($resp->data['nodes']) !== 2) {
             print_r($resp);
-            throw new Exception('error on testUpdateSave 3');
+            throw new Exception('error on testUpdateProject 3');
         }
     }
 
-    public function testDeleteSave(): void
+    public function testDeleteProject(): void
     {
         $_SERVER['REQUEST_METHOD'] = 'GET';
         $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/deleteSave';
+        $_SERVER['REQUEST_URI'] = 'api.php/deleteProject';
         $req = new HTTPRequest();
-        $resp = $this->controller->deleteSave($req);
-        if ($resp->code != 405 || $resp->message != 'method \'GET\' not allowed in \'HTTPController::deleteSave\'') {
-            throw new Exception('error on testDeleteSave 1');
+        $resp = $this->controller->deleteProject($req);
+        if ($resp->code != 405 || $resp->message != 'method \'GET\' not allowed in \'HTTPController::deleteProject\'') {
+            throw new Exception('error on testDeleteProject 1');
         }
 
         $_SERVER['REQUEST_METHOD'] = 'DELETE';
         $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/deleteSave';
+        $_SERVER['REQUEST_URI'] = 'api.php/deleteProject';
         $req = new HTTPRequest();
-        $req->data['id'] = 'save1';
-        $resp = $this->controller->deleteSave($req);
-        if ($resp->code !== 404 || $resp->message !== 'save not deleted' || $resp->data['id'] !== 'save1') {
+        $req->data['id'] = 'project1';
+        $resp = $this->controller->deleteProject($req);
+        if ($resp->code !== 404 || $resp->message !== 'project not deleted' || $resp->data['id'] !== 'project1') {
             print_r($resp);
-            throw new Exception('error on testDeleteSave 2');
+            throw new Exception('error on testDeleteProject 2');
         }
 
-        $this->database->insertSave('save1', 'My Save 1', 'admin', ['nodes' => [], 'edges' => []]);
+        $this->database->insertProject('project1', 'My Project 1', 'admin', ['nodes' => [], 'edges' => []]);
         $req = new HTTPRequest();
-        $req->data['id'] = 'save1';
-        $resp = $this->controller->deleteSave($req);
-        if ($resp->code !== 204 || $resp->message !== 'save deleted' || $resp->data['id'] !== 'save1') {
-            throw new Exception('error on testDeleteSave 3');
+        $req->data['id'] = 'project1';
+        $resp = $this->controller->deleteProject($req);
+        if ($resp->code !== 204 || $resp->message !== 'project deleted' || $resp->data['id'] !== 'project1') {
+            throw new Exception('error on testDeleteProject 3');
         }
 
-        $saves = $this->database->getSaves();
-        if (count($saves) !== 0) {
-            throw new Exception('error on testDeleteSave 4');
+        $projects = $this->database->getProjects();
+        if (count($projects) !== 0) {
+            throw new Exception('error on testDeleteProject 4');
         }
     }
 

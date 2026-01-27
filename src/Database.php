@@ -30,6 +30,16 @@ final class Database implements DatabaseInterface
         return null;
     }
 
+    public function getUsers(): array
+    {
+        $this->logger->debug("fetching users");
+        $sql = "SELECT id, user_group as \"group\" FROM users";
+        $stmt  = $this->pdo->query($sql);
+        $rows  = $stmt->fetchAll();
+        $this->logger->info("users fetched", ['rows' => $rows]);
+        return $rows;
+    }
+
     public function insertUser(string $id, string $group): bool
     {
         $this->logger->debug("inserting new user", ['id' => $id, 'group' => $group]);
@@ -37,6 +47,19 @@ final class Database implements DatabaseInterface
         $params = [':id' => $id, ':group' => $group];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
+        return true;
+    }
+
+    public function batchInsertUsers(array $users): bool
+    {
+        $this->logger->debug("batch inserting users", ['users' => $users]);
+        $sql = "INSERT INTO users (id, user_group) VALUES (:id, :group)";
+        $stmt = $this->pdo->prepare($sql);
+        foreach ($users as $user) {
+            $params = [':id' => $user['id'], ':group' => $user['group']];
+            $stmt->execute($params);
+        }
+        $this->logger->info("batch users inserted", ['users' => $users]);
         return true;
     }
 
@@ -53,6 +76,37 @@ final class Database implements DatabaseInterface
         }
         $this->logger->info("user not updated", ['params' => $params]);
         return false;
+    }
+
+    public function deleteUser(string $id): bool
+    {
+        $this->logger->debug("deleting user", ['id' => $id]);
+        $sql = "DELETE FROM users WHERE id = :id";
+        $params = [':id' => $id];
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        if($stmt->rowCount() > 0) {
+            $this->logger->info("user deleted", ['params' => $params]);
+            return true;
+        }
+        $this->logger->info("user not deleted", ['params' => $params]);
+        return false;
+    }
+
+    public function getCategory(string $id): ?array
+    {
+        $this->logger->debug("fetching category", ['id' => $id]);
+        $sql = "SELECT * FROM categories WHERE id = :id";
+        $params = [':id' => $id];
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $row = $stmt->fetch();
+        if ($row) {
+            $this->logger->info("category fetched", ['params' => $params, 'row' => $row]);
+            return $row;
+        }
+        $this->logger->info("category not found", ['params' => $params]);
+        return null;
     }
 
     public function getCategories(): array
@@ -75,6 +129,52 @@ final class Database implements DatabaseInterface
         $this->logger->info("category inserted", ['params' => $params]);
         return true;
     }
+
+    public function updateCategory(string $id, string $name, string $shape, int $width, int $height): bool
+    {
+        $this->logger->debug("updating category", ['id' => $id, 'name' => $name, 'shape' => $shape, 'width' => $width, 'height' => $height]);
+        $sql = "UPDATE categories SET name = :name, shape = :shape, width = :width, height = :height WHERE id = :id";
+        $params = [':id' => $id, ':name' => $name, ':shape' => $shape, ':width' => $width, ':height' => $height];
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        if ($stmt->rowCount() > 0) {
+            $this->logger->info("category updated", ['params' => $params]);
+            return true;
+        }
+        $this->logger->error("category not updated", ['params' => $params]);
+        return false;
+    }
+
+    public function deleteCategory(string $id): bool
+    {
+        $this->logger->debug('deleting category', ['id' => $id]);
+        $sql = "DELETE FROM categories WHERE id = :id";
+        $params = [':id' => $id];
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        if ($stmt->rowCount() > 0) {
+            $this->logger->info("category deleted", ['params' => $params]);
+            return true;
+        }
+        $this->logger->error("category not deleted", ['params' => $params]);
+        return false;
+    }
+
+    public function getType(string $id): ?array
+    {
+        $this->logger->debug("fetching type", ['id' => $id]);
+        $sql = "SELECT * FROM types WHERE id = :id";
+        $params = [':id' => $id];
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $row = $stmt->fetch();
+        if ($row) {
+            $this->logger->info("type fetched", ['params' => $params, 'row' => $row]);
+            return $row;
+        }
+        $this->logger->info("type not found", ['params' => $params]);
+        return null;
+    }
     
     public function getTypes(): array
     {
@@ -95,6 +195,36 @@ final class Database implements DatabaseInterface
         $stmt->execute($params);
         $this->logger->info("type inserted", ['params' => $params]);
         return true;
+    }
+
+    public function updateType(string $id, string $name): bool
+    {
+        $this->logger->debug("updating type", ['id' => $id, 'name' => $name]);
+        $sql = "UPDATE types SET name = :name WHERE id = :id";
+        $params = [':id' => $id, ':name' => $name];
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        if ($stmt->rowCount() > 0) {
+            $this->logger->info("type updated", ['params' => $params]);
+            return true;
+        }
+        $this->logger->error("type not updated", ['params' => $params]);
+        return false;
+    }
+
+    public function deleteType(string $id): bool
+    {
+        $this->logger->debug("deleting type", ['id' => $id]);
+        $sql = "DELETE FROM types WHERE id = :id";
+        $params = [':id' => $id];
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        if ($stmt->rowCount() > 0) {
+            $this->logger->info("type deleted", ['params' => $params]);
+            return true;
+        }
+        $this->logger->error("type not deleted", ['params' => $params]);
+        return false;
     }
 
     public function getNode(string $id): ?array
@@ -184,6 +314,27 @@ final class Database implements DatabaseInterface
         return true;
     }
 
+    public function batchInsertNodes(array $nodes): bool
+    {
+        $this->logger->debug("batch inserting nodes", ['nodes' => $nodes]);
+        $sql = "INSERT INTO nodes (id, label, category, type, user_created, data) VALUES (:id, :label, :category, :type, :user_created, :data)";
+        $stmt = $this->pdo->prepare($sql);
+        foreach ($nodes as $node) {
+            $data = json_encode($node['data'] ?? [], JSON_UNESCAPED_UNICODE);
+            $params = [
+                ':id' => $node['id'],
+                ':label' => $node['label'],
+                ':category' => $node['category'],
+                ':type' => $node['type'],
+                ':user_created' => $node['user_created'] ?? false,
+                ':data' => $data
+            ];
+            $stmt->execute($params);
+        }
+        $this->logger->info("batch nodes inserted", ['nodes' => $nodes]);
+        return true;
+    }
+
     public function updateNode(string $id, string $label, string $category, string $type, array $data = []): bool
     {
         $this->logger->debug("updating node", ['id' => $id, 'label' => $label, 'category' => $category, 'type' => $type, 'data' => $data]);
@@ -198,6 +349,19 @@ final class Database implements DatabaseInterface
         }
         $this->logger->error("node not updated", ['params' => $params]);
         return false;
+    }
+
+    public function batchUpdateNodeStatus(array $statuses): bool
+    {
+        $this->logger->debug("batch updating node statuses", ['statuses' => $statuses]);
+        $sql = "REPLACE INTO status (node_id, status) VALUES (:node_id, :status)";
+        $stmt = $this->pdo->prepare($sql);
+        foreach ($statuses as $status) {
+            $params = [':node_id' => $status['node_id'], ':status' => $status['status']];
+            $stmt->execute($params);
+        }
+        $this->logger->info("batch node statuses updated", ['statuses' => $statuses]);
+        return true;
     }
 
     public function deleteNode(string $id): bool
@@ -259,6 +423,31 @@ final class Database implements DatabaseInterface
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         $this->logger->info("edge inserted", ['params' => $params]);
+        return true;
+    }
+
+    public function batchInsertEdges(array $edges): bool
+    {
+        $this->logger->debug("batch inserting edges", ['edges' => $edges]);
+        $sql = "INSERT INTO edges(id, source, target, label, data) VALUES (:id, :source, :target, :label, :data)";
+        $stmt = $this->pdo->prepare($sql);
+        foreach ($edges as $edge) {
+            $edgeData = $this->getEdge($edge['target'], $edge['source']);
+            if (! is_null($edgeData)) {
+                $this->logger->error("cicle detected", $edgeData);
+                continue;
+            }
+            $data = json_encode($edge['data'] ?? [], JSON_UNESCAPED_UNICODE);
+            $params = [
+                ':id' => $edge['id'],
+                ':source' => $edge['source'],
+                ':target' => $edge['target'],
+                ':label' => $edge['label'],
+                ':data' => $data
+            ];
+            $stmt->execute($params);
+        }
+        $this->logger->info("batch edges inserted", ['edges' => $edges]);
         return true;
     }
 
@@ -349,8 +538,7 @@ final class Database implements DatabaseInterface
             ];
 
             $depNodes = $this->getDependentNodesOf($save['data']['nodes'] ?? []);
-            print_r($depNodes);
-
+            
             unset($save['data']);
 
             $save['nodes'] = [];
@@ -481,7 +669,8 @@ final class Database implements DatabaseInterface
             CREATE TABLE IF NOT EXISTS users (
                 id TEXT PRIMARY KEY,
                 user_group TEXT NOT NULL
-            )');
+            );
+        ');
 
         $this->pdo->exec('INSERT OR IGNORE INTO users VALUES(\'admin\', \'admin\')');
 
@@ -492,7 +681,8 @@ final class Database implements DatabaseInterface
                 shape TEXT NOT NULL,
                 width INTEGER NOT NULL,
                 height INTEGER NOT NULL
-            )');
+            );
+        ');
         
         $this->pdo->exec("INSERT OR IGNORE INTO categories VALUES
             ('business',       'Business',       'round-rectangle', 80, 80),
@@ -503,7 +693,8 @@ final class Database implements DatabaseInterface
             CREATE TABLE IF NOT EXISTS types (
                 id TEXT PRIMARY KEY,
                 name TEXT NOT NULL
-            )');
+            );
+        ');
 
         $this->pdo->exec("INSERT OR IGNORE INTO types VALUES
             ('business', 'Business'),
@@ -522,7 +713,8 @@ final class Database implements DatabaseInterface
                 data TEXT NOT NULL,
                 FOREIGN KEY (category) REFERENCES categories(id),
                 FOREIGN KEY (type) REFERENCES types(id)
-            )');
+            );
+        ');
 
         $this->pdo->exec('
             CREATE TABLE IF NOT EXISTS edges (
@@ -533,7 +725,8 @@ final class Database implements DatabaseInterface
                 data TEXT,
                 FOREIGN KEY (source) REFERENCES nodes(id) ON DELETE CASCADE,
                 FOREIGN KEY (target) REFERENCES nodes(id) ON DELETE CASCADE
-            )');
+            );
+        ');
 
         $this->pdo->exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_edges_source_target ON edges (source, target)');
 
@@ -543,7 +736,8 @@ final class Database implements DatabaseInterface
                 status     TEXT NOT NULL,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (node_id) REFERENCES nodes(id) ON DELETE CASCADE
-            )');
+            );
+        ');
         $this->pdo->exec('CREATE INDEX IF NOT EXISTS idx_node_status_node_id ON status (node_id)');
 
         $this->pdo->exec('
@@ -554,7 +748,18 @@ final class Database implements DatabaseInterface
                 data       TEXT NOT NULL,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            );');
+            );
+        ');
+        
+        $this->pdo->exec('
+            CREATE TABLE IF NOT EXISTS project_nodes (
+                project_id TEXT NOT NULL,
+                node_id    TEXT NOT NULL,
+                PRIMARY KEY (project_id, node_id),
+                FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+                FOREIGN KEY (node_id) REFERENCES nodes(id) ON DELETE CASCADE
+            );
+        ');
         
         $this->pdo->exec('
             CREATE TABLE IF NOT EXISTS audit (
@@ -567,7 +772,8 @@ final class Database implements DatabaseInterface
                 user_id TEXT NOT NULL,
                 ip_address TEXT NOT NULL,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )');
+            );
+        ');
     }
 
     public static function createConnection(string $dsn): PDO

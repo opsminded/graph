@@ -202,55 +202,6 @@ class TestService extends TestAbstractTest
             throw new Exception('error on testGetNodes - second node mismatch');
         }
     }
-
-    // public function testGetNodeParentOf(): void
-    // {
-    //     HelperContext::update('admin', 'admin', '127.0.0.1');
-    //     $nodeA = new ModelNode('nodeA', 'Node A', 'business', 'service', false, ['key' => 'valueA']);
-    //     $nodeB = new ModelNode('nodeB', 'Node B', 'business', 'database', false, ['key' => 'valueB']);
-    //     $nodeC = new ModelNode('nodeC', 'Node C', 'business', 'service', false, ['key' => 'valueC']);
-    //     $this->service->insertNode($nodeA);
-    //     $this->service->insertNode($nodeB);
-    //     $this->service->insertNode($nodeC);
-    //     $edgeAB = new ModelEdge('nodeA', 'nodeB', 'label', ['relation' => 'parent']);
-    //     $edgeAC = new ModelEdge('nodeA', 'nodeC', 'label', ['relation' => 'parent']);
-    //     $this->service->insertEdge($edgeAB);
-    //     $this->service->insertEdge($edgeAC);
-    //     $parentOfB = $this->service->getNodeParentOf('nodeB');
-        
-    //     if ($parentOfB === null || $parentOfB->getId() !== 'nodeA' || $parentOfB->getLabel() !== 'Node A') {
-    //         throw new Exception('error on testGetNodeParentOf - parent of nodeB should be nodeA');
-    //     }
-
-    //     $parentOfA = $this->service->getNodeParentOf('nodeA');
-    //     if ($parentOfA !== null) {
-    //         throw new Exception('error on testGetNodeParentOf - nodeA should have no parent');
-    //     }
-    // }
-
-    // public function testGetDependentNodesOf(): void
-    // {
-    //     HelperContext::update('admin', 'admin', '127.0.0.1');
-    //     $nodeA = new ModelNode('nodeA', 'Node A', 'business', 'service', false, ['key' => 'valueA']);
-    //     $nodeB = new ModelNode('nodeB', 'Node B', 'business', 'database', false, ['key' => 'valueB']);
-    //     $nodeC = new ModelNode('nodeC', 'Node C', 'business', 'service', false, ['key' => 'valueC']);
-    //     $this->service->insertNode($nodeA);
-    //     $this->service->insertNode($nodeB);
-    //     $this->service->insertNode($nodeC);
-    //     $edgeAB = new ModelEdge('nodeA', 'nodeB', 'label', ['relation' => 'parent']);
-    //     $edgeAC = new ModelEdge('nodeA', 'nodeC', 'label', ['relation' => 'parent']);
-    //     $this->service->insertEdge($edgeAB);
-    //     $this->service->insertEdge($edgeAC);
-    //     $dependentsOfA = $this->service->getDependentNodesOf(['nodeA']);
-    //     if (count($dependentsOfA) !== 3) {
-    //         print_r($dependentsOfA);
-    //         throw new Exception('error on testGetDependentNodesOf - expected 2 dependent nodes for nodeA');
-    //     }
-    //     $ids = array_map(fn($node) => $node->getId(), $dependentsOfA);
-    //     if (!in_array('nodeB', $ids) || !in_array('nodeC', $ids)) {
-    //         throw new Exception('error on testGetDependentNodesOf - dependent nodes mismatch for nodeA');
-    //     }
-    // }
     
     public function testInsertNode(): void
     {

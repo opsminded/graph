@@ -563,11 +563,6 @@ class TestDatabase extends TestAbstractTest
         $this->database->insertProject('initial', 'Initial Project', 'admin', ['nodes' => ['a', 'c']]);
 
         $project = $this->database->getProject('initial');
-        echo "project: ";
-        print_r($project);
-        // if ($project['id'] !== 'initial' || $project['name'] !== 'Initial Project' || $project['author'] !== 'admin' || count($project['data']['nodes']) !== 2) {
-        //     throw new Exception('error on testGetProject');
-        // }
     }
 
     public function testGetProjects(): void

@@ -37,7 +37,7 @@ abstract class TestAbstractTest
             $this->$testName();
             $this->down();
         } catch(Exception $e) {
-            print("{$class} {$testName}\n");
+            echo "{$class} {$testName}\n";
             throw new Exception("Exception found in test '{$testName}'. ({$e->getMessage()})\n");
         }
     }

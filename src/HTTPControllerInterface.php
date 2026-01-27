@@ -29,11 +29,10 @@ interface HTTPControllerInterface
     public function getNodeStatus(HTTPRequest $req): HTTPResponseInterface;
     public function updateNodeStatus(HTTPRequest $req): HTTPResponseInterface;
 
-    public function getSave(HTTPRequest $req): HTTPResponseInterface;
-    public function getSaves(HTTPRequest $req): HTTPResponseInterface;
-    public function insertSave(HTTPRequest $req): HTTPResponseInterface;
-    public function updateSave(HTTPRequest $req): HTTPResponseInterface;
-    public function deleteSave(HTTPRequest $req): HTTPResponseInterface;
-
+    public function getProject(HTTPRequest $req): HTTPResponseInterface;
+    public function getProjects(HTTPRequest $req): HTTPResponseInterface;
+    public function insertProject(HTTPRequest $req): HTTPResponseInterface;
+    public function updateProject(HTTPRequest $req): HTTPResponseInterface;
+    public function deleteProject(HTTPRequest $req): HTTPResponseInterface;
     public function getLogs(HTTPRequest $req): HTTPResponseInterface;
 }

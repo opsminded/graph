@@ -695,39 +695,39 @@ final class HTTPController implements HTTPControllerInterface
         return new HTTPOKResponse("node found", $data);
     }
 
-    public function getSave(HTTPRequest $req): HTTPResponseInterface
+    public function getProject(HTTPRequest $req): HTTPResponseInterface
     {
         if($req->method !== HTTPRequest::METHOD_GET) {
             return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
         try {
-            $id = $req->getParam(ModelSave::SAVE_KEYNAME_ID);
+            $id = $req->getParam(ModelProject::PROJECT_KEYNAME_ID);
         } catch(HTTPRequestException $e) {
             return new HTTPBadRequestResponse($e->getMessage(), []);
         }
-        $save = $this->service->getSave($id);
+        $project = $this->service->getProject($id);
         
-        if(!is_null($save)) {
-            $data = $save->toArray();
-            return new HTTPOKResponse("save found", $data);
+        if(!is_null($project)) {
+            $data = $project->toArray();
+            return new HTTPOKResponse("project found", $data);
         }
-        return new HTTPNotFoundResponse("save not found", [ModelSave::SAVE_KEYNAME_ID => $id]);
+        return new HTTPNotFoundResponse("project not found", [ModelProject::PROJECT_KEYNAME_ID => $id]);
     }
 
-    public function getSaves(HTTPRequest $req): HTTPResponseInterface
+    public function getProjects(HTTPRequest $req): HTTPResponseInterface
     {
         if($req->method !== HTTPRequest::METHOD_GET) {
             return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
-        $savesData = $this->service->getSaves();
+        $projectsData = $this->service->getProjects();
         $data = [];
-        foreach($savesData as $save) {
-            $data[] = $save->toArray();
+        foreach($projectsData as $project) {
+            $data[] = $project->toArray();
         }
-        return new HTTPOKResponse("saves found", $data);
+        return new HTTPOKResponse("projects found", $data);
     }
 
-    public function insertSave(HTTPRequest $req): HTTPResponseInterface
+    public function insertProject(HTTPRequest $req): HTTPResponseInterface
     {
         $creator = HelperContext::getUser();
 
@@ -735,28 +735,28 @@ final class HTTPController implements HTTPControllerInterface
             return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
 
-        if (! array_key_exists(ModelSave::SAVE_KEYNAME_NODES, $req->data)) {
-            return new HTTPBadRequestResponse("key " . ModelSave::SAVE_KEYNAME_NODES . " not found in data", $req->data);
+        if (! array_key_exists(ModelProject::PROJECT_KEYNAME_NODES, $req->data)) {
+            return new HTTPBadRequestResponse("key " . ModelProject::PROJECT_KEYNAME_NODES . " not found in data", $req->data);
         }
 
         $now = new DateTimeImmutable();
 
-        $id = $this->createSlug($req->data[ModelSave::SAVE_KEYNAME_NAME] ?? 'save');
+        $id = $this->createSlug($req->data[ModelProject::PROJECT_KEYNAME_NAME] ?? 'project');
 
-        $save = new ModelSave(
+        $project = new ModelProject(
             $id,
-            $req->data[ModelSave::SAVE_KEYNAME_NAME],
+            $req->data[ModelProject::PROJECT_KEYNAME_NAME],
             $creator,
             $now,
             $now,
-            $req->data[ModelSave::SAVE_KEYNAME_NODES],
+            $req->data[ModelProject::PROJECT_KEYNAME_NODES],
         );
-        $this->service->insertSave($save);
-        $data = $save->toArray();
-        return new HTTPCreatedResponse("save created", $data);
+        $this->service->insertProject($project);
+        $data = $project->toArray();
+        return new HTTPCreatedResponse("project created", $data);
     }
 
-    public function updateSave(HTTPRequest $req): HTTPResponseInterface
+    public function updateProject(HTTPRequest $req): HTTPResponseInterface
     {
         $creator = HelperContext::getUser();
 
@@ -764,42 +764,42 @@ final class HTTPController implements HTTPControllerInterface
             return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
 
-        $nodes = $req->data[ModelSave::SAVE_KEYNAME_NODES];
+        $nodes = $req->data[ModelProject::PROJECT_KEYNAME_NODES];
 
         $now = new DateTimeImmutable();
 
-        $save = new ModelSave(
-            $req->data[ModelSave::SAVE_KEYNAME_ID],
-            $req->data[ModelSave::SAVE_KEYNAME_NAME],
+        $project = new ModelProject(
+            $req->data[ModelProject::PROJECT_KEYNAME_ID],
+            $req->data[ModelProject::PROJECT_KEYNAME_NAME],
             $creator,
             $now,
             $now,
             $nodes,
         );
-        if($this->service->updateSave($save)) {
-            $data = $save->toArray();
-            return new HTTPOKResponse("save updated", $data);
+        if($this->service->updateProject($project)) {
+            $data = $project->toArray();
+            return new HTTPOKResponse("project updated", $data);
         }
-        return new HTTPNotFoundResponse("save not updated", [ModelSave::SAVE_KEYNAME_ID => $req->data[ModelSave::SAVE_KEYNAME_ID]]);
+        return new HTTPNotFoundResponse("project not updated", [ModelProject::PROJECT_KEYNAME_ID => $req->data[ModelProject::PROJECT_KEYNAME_ID]]);
     }
-    public function deleteSave(HTTPRequest $req): HTTPResponseInterface
+    public function deleteProject(HTTPRequest $req): HTTPResponseInterface
     {
         if($req->method !== HTTPRequest::METHOD_DELETE) {
             return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
 
-        $save = new ModelSave(
-            $req->data[ModelSave::SAVE_KEYNAME_ID],
+        $project = new ModelProject(
+            $req->data[ModelProject::PROJECT_KEYNAME_ID],
             '',
             '',
             new DateTimeImmutable(),
             new DateTimeImmutable(),
             [],
         );
-        if($this->service->deleteSave($save->id)) {
-            return new HTTPNoContentResponse("save deleted", [ModelSave::SAVE_KEYNAME_ID => $req->data[ModelSave::SAVE_KEYNAME_ID]]);
+        if($this->service->deleteProject($project->id)) {
+            return new HTTPNoContentResponse("project deleted", [ModelProject::PROJECT_KEYNAME_ID => $req->data[ModelProject::PROJECT_KEYNAME_ID]]);
         }
-        return new HTTPNotFoundResponse("save not deleted",[ModelSave::SAVE_KEYNAME_ID => $req->data[ModelSave::SAVE_KEYNAME_ID]]);
+        return new HTTPNotFoundResponse("project not deleted",[ModelProject::PROJECT_KEYNAME_ID => $req->data[ModelProject::PROJECT_KEYNAME_ID]]);
     }
 
     public function getLogs(HTTPRequest $req): HTTPResponseInterface
@@ -1232,9 +1232,6 @@ final class Service implements ServiceInterface
 
         if (! is_null($data)) {
             $nodes = [];
-            // echo "data1\n";
-            // print_r($data);
-            // exit();
             foreach($data['nodes'] as $n) {
                 $nodes[] = $n;
             }
@@ -1258,14 +1255,12 @@ final class Service implements ServiceInterface
         $this->logger->debug("getting projects");
         $this->verify();
         $projectsData = $this->database->getProjects();
+        
         $projects     = [];
 
         foreach ($projectsData as $data) {
-            echo "data2\n";
-            print_r($data);
-            exit();
             $nodes = [];
-            foreach($data['nodes'] as $n) {
+            foreach($data['data']['nodes'] as $n) {
                 $nodes[] = $n;
             }
 
@@ -1470,6 +1465,16 @@ final class Database implements DatabaseInterface
         return null;
     }
 
+    public function getUsers(): array
+    {
+        $this->logger->debug("fetching users");
+        $sql = "SELECT id, user_group as \"group\" FROM users";
+        $stmt  = $this->pdo->query($sql);
+        $rows  = $stmt->fetchAll();
+        $this->logger->info("users fetched", ['rows' => $rows]);
+        return $rows;
+    }
+
     public function insertUser(string $id, string $group): bool
     {
         $this->logger->debug("inserting new user", ['id' => $id, 'group' => $group]);
@@ -1477,6 +1482,19 @@ final class Database implements DatabaseInterface
         $params = [':id' => $id, ':group' => $group];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
+        return true;
+    }
+
+    public function batchInsertUsers(array $users): bool
+    {
+        $this->logger->debug("batch inserting users", ['users' => $users]);
+        $sql = "INSERT INTO users (id, user_group) VALUES (:id, :group)";
+        $stmt = $this->pdo->prepare($sql);
+        foreach ($users as $user) {
+            $params = [':id' => $user['id'], ':group' => $user['group']];
+            $stmt->execute($params);
+        }
+        $this->logger->info("batch users inserted", ['users' => $users]);
         return true;
     }
 
@@ -1493,6 +1511,37 @@ final class Database implements DatabaseInterface
         }
         $this->logger->info("user not updated", ['params' => $params]);
         return false;
+    }
+
+    public function deleteUser(string $id): bool
+    {
+        $this->logger->debug("deleting user", ['id' => $id]);
+        $sql = "DELETE FROM users WHERE id = :id";
+        $params = [':id' => $id];
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        if($stmt->rowCount() > 0) {
+            $this->logger->info("user deleted", ['params' => $params]);
+            return true;
+        }
+        $this->logger->info("user not deleted", ['params' => $params]);
+        return false;
+    }
+
+    public function getCategory(string $id): ?array
+    {
+        $this->logger->debug("fetching category", ['id' => $id]);
+        $sql = "SELECT * FROM categories WHERE id = :id";
+        $params = [':id' => $id];
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $row = $stmt->fetch();
+        if ($row) {
+            $this->logger->info("category fetched", ['params' => $params, 'row' => $row]);
+            return $row;
+        }
+        $this->logger->info("category not found", ['params' => $params]);
+        return null;
     }
 
     public function getCategories(): array
@@ -1515,6 +1564,52 @@ final class Database implements DatabaseInterface
         $this->logger->info("category inserted", ['params' => $params]);
         return true;
     }
+
+    public function updateCategory(string $id, string $name, string $shape, int $width, int $height): bool
+    {
+        $this->logger->debug("updating category", ['id' => $id, 'name' => $name, 'shape' => $shape, 'width' => $width, 'height' => $height]);
+        $sql = "UPDATE categories SET name = :name, shape = :shape, width = :width, height = :height WHERE id = :id";
+        $params = [':id' => $id, ':name' => $name, ':shape' => $shape, ':width' => $width, ':height' => $height];
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        if ($stmt->rowCount() > 0) {
+            $this->logger->info("category updated", ['params' => $params]);
+            return true;
+        }
+        $this->logger->error("category not updated", ['params' => $params]);
+        return false;
+    }
+
+    public function deleteCategory(string $id): bool
+    {
+        $this->logger->debug('deleting category', ['id' => $id]);
+        $sql = "DELETE FROM categories WHERE id = :id";
+        $params = [':id' => $id];
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        if ($stmt->rowCount() > 0) {
+            $this->logger->info("category deleted", ['params' => $params]);
+            return true;
+        }
+        $this->logger->error("category not deleted", ['params' => $params]);
+        return false;
+    }
+
+    public function getType(string $id): ?array
+    {
+        $this->logger->debug("fetching type", ['id' => $id]);
+        $sql = "SELECT * FROM types WHERE id = :id";
+        $params = [':id' => $id];
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $row = $stmt->fetch();
+        if ($row) {
+            $this->logger->info("type fetched", ['params' => $params, 'row' => $row]);
+            return $row;
+        }
+        $this->logger->info("type not found", ['params' => $params]);
+        return null;
+    }
     
     public function getTypes(): array
     {
@@ -1535,6 +1630,36 @@ final class Database implements DatabaseInterface
         $stmt->execute($params);
         $this->logger->info("type inserted", ['params' => $params]);
         return true;
+    }
+
+    public function updateType(string $id, string $name): bool
+    {
+        $this->logger->debug("updating type", ['id' => $id, 'name' => $name]);
+        $sql = "UPDATE types SET name = :name WHERE id = :id";
+        $params = [':id' => $id, ':name' => $name];
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        if ($stmt->rowCount() > 0) {
+            $this->logger->info("type updated", ['params' => $params]);
+            return true;
+        }
+        $this->logger->error("type not updated", ['params' => $params]);
+        return false;
+    }
+
+    public function deleteType(string $id): bool
+    {
+        $this->logger->debug("deleting type", ['id' => $id]);
+        $sql = "DELETE FROM types WHERE id = :id";
+        $params = [':id' => $id];
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        if ($stmt->rowCount() > 0) {
+            $this->logger->info("type deleted", ['params' => $params]);
+            return true;
+        }
+        $this->logger->error("type not deleted", ['params' => $params]);
+        return false;
     }
 
     public function getNode(string $id): ?array
@@ -1624,6 +1749,27 @@ final class Database implements DatabaseInterface
         return true;
     }
 
+    public function batchInsertNodes(array $nodes): bool
+    {
+        $this->logger->debug("batch inserting nodes", ['nodes' => $nodes]);
+        $sql = "INSERT INTO nodes (id, label, category, type, user_created, data) VALUES (:id, :label, :category, :type, :user_created, :data)";
+        $stmt = $this->pdo->prepare($sql);
+        foreach ($nodes as $node) {
+            $data = json_encode($node['data'] ?? [], JSON_UNESCAPED_UNICODE);
+            $params = [
+                ':id' => $node['id'],
+                ':label' => $node['label'],
+                ':category' => $node['category'],
+                ':type' => $node['type'],
+                ':user_created' => $node['user_created'] ?? false,
+                ':data' => $data
+            ];
+            $stmt->execute($params);
+        }
+        $this->logger->info("batch nodes inserted", ['nodes' => $nodes]);
+        return true;
+    }
+
     public function updateNode(string $id, string $label, string $category, string $type, array $data = []): bool
     {
         $this->logger->debug("updating node", ['id' => $id, 'label' => $label, 'category' => $category, 'type' => $type, 'data' => $data]);
@@ -1638,6 +1784,19 @@ final class Database implements DatabaseInterface
         }
         $this->logger->error("node not updated", ['params' => $params]);
         return false;
+    }
+
+    public function batchUpdateNodeStatus(array $statuses): bool
+    {
+        $this->logger->debug("batch updating node statuses", ['statuses' => $statuses]);
+        $sql = "REPLACE INTO status (node_id, status) VALUES (:node_id, :status)";
+        $stmt = $this->pdo->prepare($sql);
+        foreach ($statuses as $status) {
+            $params = [':node_id' => $status['node_id'], ':status' => $status['status']];
+            $stmt->execute($params);
+        }
+        $this->logger->info("batch node statuses updated", ['statuses' => $statuses]);
+        return true;
     }
 
     public function deleteNode(string $id): bool
@@ -1699,6 +1858,31 @@ final class Database implements DatabaseInterface
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         $this->logger->info("edge inserted", ['params' => $params]);
+        return true;
+    }
+
+    public function batchInsertEdges(array $edges): bool
+    {
+        $this->logger->debug("batch inserting edges", ['edges' => $edges]);
+        $sql = "INSERT INTO edges(id, source, target, label, data) VALUES (:id, :source, :target, :label, :data)";
+        $stmt = $this->pdo->prepare($sql);
+        foreach ($edges as $edge) {
+            $edgeData = $this->getEdge($edge['target'], $edge['source']);
+            if (! is_null($edgeData)) {
+                $this->logger->error("cicle detected", $edgeData);
+                continue;
+            }
+            $data = json_encode($edge['data'] ?? [], JSON_UNESCAPED_UNICODE);
+            $params = [
+                ':id' => $edge['id'],
+                ':source' => $edge['source'],
+                ':target' => $edge['target'],
+                ':label' => $edge['label'],
+                ':data' => $data
+            ];
+            $stmt->execute($params);
+        }
+        $this->logger->info("batch edges inserted", ['edges' => $edges]);
         return true;
     }
 
@@ -1789,8 +1973,7 @@ final class Database implements DatabaseInterface
             ];
 
             $depNodes = $this->getDependentNodesOf($save['data']['nodes'] ?? []);
-            print_r($depNodes);
-
+            
             unset($save['data']);
 
             $save['nodes'] = [];
@@ -1921,7 +2104,8 @@ final class Database implements DatabaseInterface
             CREATE TABLE IF NOT EXISTS users (
                 id TEXT PRIMARY KEY,
                 user_group TEXT NOT NULL
-            )');
+            );
+        ');
 
         $this->pdo->exec('INSERT OR IGNORE INTO users VALUES(\'admin\', \'admin\')');
 
@@ -1932,7 +2116,8 @@ final class Database implements DatabaseInterface
                 shape TEXT NOT NULL,
                 width INTEGER NOT NULL,
                 height INTEGER NOT NULL
-            )');
+            );
+        ');
         
         $this->pdo->exec("INSERT OR IGNORE INTO categories VALUES
             ('business',       'Business',       'round-rectangle', 80, 80),
@@ -1943,7 +2128,8 @@ final class Database implements DatabaseInterface
             CREATE TABLE IF NOT EXISTS types (
                 id TEXT PRIMARY KEY,
                 name TEXT NOT NULL
-            )');
+            );
+        ');
 
         $this->pdo->exec("INSERT OR IGNORE INTO types VALUES
             ('business', 'Business'),
@@ -1962,7 +2148,8 @@ final class Database implements DatabaseInterface
                 data TEXT NOT NULL,
                 FOREIGN KEY (category) REFERENCES categories(id),
                 FOREIGN KEY (type) REFERENCES types(id)
-            )');
+            );
+        ');
 
         $this->pdo->exec('
             CREATE TABLE IF NOT EXISTS edges (
@@ -1973,7 +2160,8 @@ final class Database implements DatabaseInterface
                 data TEXT,
                 FOREIGN KEY (source) REFERENCES nodes(id) ON DELETE CASCADE,
                 FOREIGN KEY (target) REFERENCES nodes(id) ON DELETE CASCADE
-            )');
+            );
+        ');
 
         $this->pdo->exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_edges_source_target ON edges (source, target)');
 
@@ -1983,7 +2171,8 @@ final class Database implements DatabaseInterface
                 status     TEXT NOT NULL,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (node_id) REFERENCES nodes(id) ON DELETE CASCADE
-            )');
+            );
+        ');
         $this->pdo->exec('CREATE INDEX IF NOT EXISTS idx_node_status_node_id ON status (node_id)');
 
         $this->pdo->exec('
@@ -1994,7 +2183,18 @@ final class Database implements DatabaseInterface
                 data       TEXT NOT NULL,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            );');
+            );
+        ');
+        
+        $this->pdo->exec('
+            CREATE TABLE IF NOT EXISTS project_nodes (
+                project_id TEXT NOT NULL,
+                node_id    TEXT NOT NULL,
+                PRIMARY KEY (project_id, node_id),
+                FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+                FOREIGN KEY (node_id) REFERENCES nodes(id) ON DELETE CASCADE
+            );
+        ');
         
         $this->pdo->exec('
             CREATE TABLE IF NOT EXISTS audit (
@@ -2007,7 +2207,8 @@ final class Database implements DatabaseInterface
                 user_id TEXT NOT NULL,
                 ip_address TEXT NOT NULL,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )');
+            );
+        ');
     }
 
     public static function createConnection(string $dsn): PDO
@@ -2145,12 +2346,11 @@ interface HTTPControllerInterface
     public function getNodeStatus(HTTPRequest $req): HTTPResponseInterface;
     public function updateNodeStatus(HTTPRequest $req): HTTPResponseInterface;
 
-    public function getSave(HTTPRequest $req): HTTPResponseInterface;
-    public function getSaves(HTTPRequest $req): HTTPResponseInterface;
-    public function insertSave(HTTPRequest $req): HTTPResponseInterface;
-    public function updateSave(HTTPRequest $req): HTTPResponseInterface;
-    public function deleteSave(HTTPRequest $req): HTTPResponseInterface;
-
+    public function getProject(HTTPRequest $req): HTTPResponseInterface;
+    public function getProjects(HTTPRequest $req): HTTPResponseInterface;
+    public function insertProject(HTTPRequest $req): HTTPResponseInterface;
+    public function updateProject(HTTPRequest $req): HTTPResponseInterface;
+    public function deleteProject(HTTPRequest $req): HTTPResponseInterface;
     public function getLogs(HTTPRequest $req): HTTPResponseInterface;
 }
 #####################################
@@ -2191,30 +2391,42 @@ interface DatabaseInterface
     public const DATABASE_KEYWORD_LIMIT = "limit";
 
     public function getUser(string $id): ?array;
+    public function getUsers(): array;
     public function insertUser(string $id, string $group): bool;
+    public function batchInsertUsers(array $users): bool;
     public function updateUser(string $id, string $group): bool;
+    public function deleteUser(string $id): bool;
 
+    public function getCategory(string $id): ?array;
     public function getCategories(): array;
     public function insertCategory(string $id, string $name, string $shape, int $width, int $height): bool;
-    
+    public function updateCategory(string $id, string $name, string $shape, int $width, int $height): bool;
+    public function deleteCategory(string $id): bool;
+
+    public function getType(string $id): ?array;
     public function getTypes(): array;
     public function insertType(string $id, string $name): bool;
+    public function updateType(string $id, string $name): bool;
+    public function deleteType(string $id): bool;
 
     public function getNode(string $id): ?array;
     public function getNodes(): array;
     public function insertNode(string $id, string $label, string $category, string $type, bool $userCreated = false, array $data = []): bool;
+    public function batchInsertNodes(array $nodes): bool;
     public function updateNode(string $id, string $label, string $category, string $type, array $data = []): bool;
     public function deleteNode(string $id): bool;
 
     public function getEdge(string $source, string $target): ?array;
     public function getEdges(): array;
     public function insertEdge(string $id, string $source, string $target, string $label, array $data = []): bool;
+    public function batchInsertEdges(array $edges): bool;
     public function updateEdge(string $id, string $label, array $data = []): bool;
     public function deleteEdge(string $id): bool;
 
     public function getStatus(): array;
     public function getNodeStatus(string $id): ?array;
     public function updateNodeStatus(string $id, string $status): bool;
+    public function batchUpdateNodeStatus(array $statuses): bool;
 
     public function getProject(string $id): ?array;
     public function getProjects(): array;
@@ -2531,7 +2743,7 @@ abstract class TestAbstractTest
             $this->$testName();
             $this->down();
         } catch(Exception $e) {
-            print("{$class} {$testName}\n");
+            echo "{$class} {$testName}\n";
             throw new Exception("Exception found in test '{$testName}'. ({$e->getMessage()})\n");
         }
     }

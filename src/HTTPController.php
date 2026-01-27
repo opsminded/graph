@@ -312,39 +312,39 @@ final class HTTPController implements HTTPControllerInterface
         return new HTTPOKResponse("node found", $data);
     }
 
-    public function getSave(HTTPRequest $req): HTTPResponseInterface
+    public function getProject(HTTPRequest $req): HTTPResponseInterface
     {
         if($req->method !== HTTPRequest::METHOD_GET) {
             return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
         try {
-            $id = $req->getParam(ModelSave::SAVE_KEYNAME_ID);
+            $id = $req->getParam(ModelProject::PROJECT_KEYNAME_ID);
         } catch(HTTPRequestException $e) {
             return new HTTPBadRequestResponse($e->getMessage(), []);
         }
-        $save = $this->service->getSave($id);
+        $project = $this->service->getProject($id);
         
-        if(!is_null($save)) {
-            $data = $save->toArray();
-            return new HTTPOKResponse("save found", $data);
+        if(!is_null($project)) {
+            $data = $project->toArray();
+            return new HTTPOKResponse("project found", $data);
         }
-        return new HTTPNotFoundResponse("save not found", [ModelSave::SAVE_KEYNAME_ID => $id]);
+        return new HTTPNotFoundResponse("project not found", [ModelProject::PROJECT_KEYNAME_ID => $id]);
     }
 
-    public function getSaves(HTTPRequest $req): HTTPResponseInterface
+    public function getProjects(HTTPRequest $req): HTTPResponseInterface
     {
         if($req->method !== HTTPRequest::METHOD_GET) {
             return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
-        $savesData = $this->service->getSaves();
+        $projectsData = $this->service->getProjects();
         $data = [];
-        foreach($savesData as $save) {
-            $data[] = $save->toArray();
+        foreach($projectsData as $project) {
+            $data[] = $project->toArray();
         }
-        return new HTTPOKResponse("saves found", $data);
+        return new HTTPOKResponse("projects found", $data);
     }
 
-    public function insertSave(HTTPRequest $req): HTTPResponseInterface
+    public function insertProject(HTTPRequest $req): HTTPResponseInterface
     {
         $creator = HelperContext::getUser();
 
@@ -352,28 +352,28 @@ final class HTTPController implements HTTPControllerInterface
             return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
 
-        if (! array_key_exists(ModelSave::SAVE_KEYNAME_NODES, $req->data)) {
-            return new HTTPBadRequestResponse("key " . ModelSave::SAVE_KEYNAME_NODES . " not found in data", $req->data);
+        if (! array_key_exists(ModelProject::PROJECT_KEYNAME_NODES, $req->data)) {
+            return new HTTPBadRequestResponse("key " . ModelProject::PROJECT_KEYNAME_NODES . " not found in data", $req->data);
         }
 
         $now = new DateTimeImmutable();
 
-        $id = $this->createSlug($req->data[ModelSave::SAVE_KEYNAME_NAME] ?? 'save');
+        $id = $this->createSlug($req->data[ModelProject::PROJECT_KEYNAME_NAME] ?? 'project');
 
-        $save = new ModelSave(
+        $project = new ModelProject(
             $id,
-            $req->data[ModelSave::SAVE_KEYNAME_NAME],
+            $req->data[ModelProject::PROJECT_KEYNAME_NAME],
             $creator,
             $now,
             $now,
-            $req->data[ModelSave::SAVE_KEYNAME_NODES],
+            $req->data[ModelProject::PROJECT_KEYNAME_NODES],
         );
-        $this->service->insertSave($save);
-        $data = $save->toArray();
-        return new HTTPCreatedResponse("save created", $data);
+        $this->service->insertProject($project);
+        $data = $project->toArray();
+        return new HTTPCreatedResponse("project created", $data);
     }
 
-    public function updateSave(HTTPRequest $req): HTTPResponseInterface
+    public function updateProject(HTTPRequest $req): HTTPResponseInterface
     {
         $creator = HelperContext::getUser();
 
@@ -381,42 +381,42 @@ final class HTTPController implements HTTPControllerInterface
             return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
 
-        $nodes = $req->data[ModelSave::SAVE_KEYNAME_NODES];
+        $nodes = $req->data[ModelProject::PROJECT_KEYNAME_NODES];
 
         $now = new DateTimeImmutable();
 
-        $save = new ModelSave(
-            $req->data[ModelSave::SAVE_KEYNAME_ID],
-            $req->data[ModelSave::SAVE_KEYNAME_NAME],
+        $project = new ModelProject(
+            $req->data[ModelProject::PROJECT_KEYNAME_ID],
+            $req->data[ModelProject::PROJECT_KEYNAME_NAME],
             $creator,
             $now,
             $now,
             $nodes,
         );
-        if($this->service->updateSave($save)) {
-            $data = $save->toArray();
-            return new HTTPOKResponse("save updated", $data);
+        if($this->service->updateProject($project)) {
+            $data = $project->toArray();
+            return new HTTPOKResponse("project updated", $data);
         }
-        return new HTTPNotFoundResponse("save not updated", [ModelSave::SAVE_KEYNAME_ID => $req->data[ModelSave::SAVE_KEYNAME_ID]]);
+        return new HTTPNotFoundResponse("project not updated", [ModelProject::PROJECT_KEYNAME_ID => $req->data[ModelProject::PROJECT_KEYNAME_ID]]);
     }
-    public function deleteSave(HTTPRequest $req): HTTPResponseInterface
+    public function deleteProject(HTTPRequest $req): HTTPResponseInterface
     {
         if($req->method !== HTTPRequest::METHOD_DELETE) {
             return new HTTPMethodNotAllowedResponse($req->method, __METHOD__);
         }
 
-        $save = new ModelSave(
-            $req->data[ModelSave::SAVE_KEYNAME_ID],
+        $project = new ModelProject(
+            $req->data[ModelProject::PROJECT_KEYNAME_ID],
             '',
             '',
             new DateTimeImmutable(),
             new DateTimeImmutable(),
             [],
         );
-        if($this->service->deleteSave($save->id)) {
-            return new HTTPNoContentResponse("save deleted", [ModelSave::SAVE_KEYNAME_ID => $req->data[ModelSave::SAVE_KEYNAME_ID]]);
+        if($this->service->deleteProject($project->id)) {
+            return new HTTPNoContentResponse("project deleted", [ModelProject::PROJECT_KEYNAME_ID => $req->data[ModelProject::PROJECT_KEYNAME_ID]]);
         }
-        return new HTTPNotFoundResponse("save not deleted",[ModelSave::SAVE_KEYNAME_ID => $req->data[ModelSave::SAVE_KEYNAME_ID]]);
+        return new HTTPNotFoundResponse("project not deleted",[ModelProject::PROJECT_KEYNAME_ID => $req->data[ModelProject::PROJECT_KEYNAME_ID]]);
     }
 
     public function getLogs(HTTPRequest $req): HTTPResponseInterface

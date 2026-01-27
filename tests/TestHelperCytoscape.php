@@ -41,7 +41,5 @@ class TestHelperCytoscape extends TestAbstractTest
 
         $graph = new ModelGraph($nodes, $edges);
         $data = $cy->toArray($graph);
-        // print_r($data);
-        // exit();
     }
 }
