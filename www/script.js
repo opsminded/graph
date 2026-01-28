@@ -11,12 +11,11 @@ var COSELAYOUT = {
 
 // API Endpoints
 const API = {
-    GET_GRAPH:      '#BASE_PATH#/getCytoscapeGraph',
-    GET_SAVES:      '#BASE_PATH#/getSaves',
-    GET_SAVE:       '#BASE_PATH#/getSave',
+    GET_PROJECTS:   '#BASE_PATH#/getProjects',
+    GET_PROJECT:    '#BASE_PATH#/getProject',
+    UPDATE_PROJECT: '#BASE_PATH#/updateProject',
+    INSERT_PROJECT: '#BASE_PATH#/insertProject',
     GET_STATUS:     '#BASE_PATH#/getStatus',
-    UPDATE_SAVE:    '#BASE_PATH#/updateSave',
-    INSERT_SAVE:    '#BASE_PATH#/insertSave',
     GET_CATEGORIES: '#BASE_PATH#/getCategories',
     GET_TYPES:      '#BASE_PATH#/getTypes',
     INSERT_EDGE:    '#BASE_PATH#/insertEdge',
@@ -25,6 +24,7 @@ const API = {
 
 // Utility Functions
 function createOptionElement(value, text) {
+    console.log('Creating option element with value:', value, 'and text:', text);
     const option = document.createElement('option');
     option.value = value;
     option.text = text;
@@ -34,6 +34,7 @@ function createOptionElement(value, text) {
 // Notification System
 class Notification {
     static show(message, type = 'error', duration = 5000) {
+        console.log(`Showing ${type} notification:`, message);
         const notification = document.createElement('div');
         notification.className = `notification notification-${type}`;
         notification.textContent = message;
@@ -61,14 +62,17 @@ class Notification {
     }
     
     static error(message, duration) {
+        console.error('Error notification:', message);
         this.show(message, 'error', duration);
     }
     
     static success(message, duration) {
+        console.log('Success notification:', message);
         this.show(message, 'success', duration);
     }
     
     static info(message, duration) {
+        console.info('Info notification:', message);
         this.show(message, 'info', duration);
     }
 }
@@ -76,22 +80,24 @@ class Notification {
 // State Management Store
 class Store {
     constructor() {
+        console.log('Initializing Store');
+
         this.state = {
-            graph: null,
-            nodes: [],
-            saves: [],
-            currentSave: null,
+            projects: [],
+            currentProject: null,
             selection: [],
             selectedEdge: null,
             cy: null,
             currentNodeSelectionForInfo: null
         };
+
         this.subscribers = [];
         this.isInitializing = true;
     }
 
     // Subscribe to state changes
     subscribe(callback) {
+        console.log('New subscriber added to Store');
         this.subscribers.push(callback);
         return () => {
             this.subscribers = this.subscribers.filter(sub => sub !== callback);
@@ -101,76 +107,83 @@ class Store {
     // Notify all subscribers of state change
     notify(changedKeys = []) {
         if (this.isInitializing) return;
+        console.log('Notifying subscribers of state change:', changedKeys);
         this.subscribers.forEach(callback => callback(this.state, changedKeys));
     }
 
     // Update state and notify subscribers
     setState(updates) {
+        console.log('Updating Store state with:', updates);
         const changedKeys = Object.keys(updates);
         this.state = { ...this.state, ...updates };
         this.notify(changedKeys);
     }
 
     // Getters
-    getState() {
-        return this.state;
-    }
-
-    getCurrentSave() {
-        return this.state.currentSave;
+    getCurrentProject() {
+        console.log('Getting current project from Store');
+        return this.state.currentProject;
     }
 
     getSelection() {
+        console.log('getting selection from Store');
         return this.state.selection;
     }
 
-    getNodes() {
-        return this.state.nodes;
-    }
-
     getCy() {
+        console.log('Getting Cytoscape instance from Store');
         return this.state.cy;
     }
 
     // Actions
     setGraph(graph) {
+        console.log('Setting graph in Store');
         this.setState({ graph, nodes: graph?.elements?.nodes || [] });
     }
 
-    setSaves(saves) {
-        this.setState({ saves });
+    setProjects(projects) {
+        console.log('Setting projects in Store');
+        this.setState({ projects });
     }
 
-    setCurrentSave(save) {
-        this.setState({ currentSave: save });
+    setCurrentProject(project) {
+        console.log('Setting current project in Store');
+        this.setState({ currentProject: project });
     }
 
     setCy(cy) {
+        console.log('Setting Cytoscape instance in Store');
         this.setState({ cy });
     }
 
     setSelection(selection) {
+        console.log('Setting selection in Store:', selection);
         this.setState({ selection });
     }
 
     getSelectedEdge() {
+        console.log('Getting selected edge from Store');
         return this.state.selectedEdge;
     }
 
     addToSelection(nodeId) {
+        console.log('Adding to selection in Store:', nodeId);
         const selection = [...this.state.selection, nodeId];
         this.setState({ selection });
     }
 
     clearSelection() {
+        console.log('Clearing selection in Store');
         this.setState({ selection: [] });
     }
 
     setSelectedEdge(edgeId) {
+        console.log('Setting selected edge in Store:', edgeId);
         this.setState({ selectedEdge: edgeId });
     }
 
     addNodeToSave(nodeId) {
+        console.log('Adding node to current project in Store:', nodeId);
         if (!this.state.currentSave) return;
         if (this.state.currentSave.nodes.includes(nodeId)) return;
         
@@ -182,6 +195,7 @@ class Store {
     }
 
     finishInitialization() {
+        console.log('Finishing Store initialization');
         this.isInitializing = false;
     }
 }
@@ -189,43 +203,51 @@ class Store {
 class Graph
 {
     constructor(store) {
-        this.store = store;
-        this.cydiv = document.getElementById('cy');
-        
-        this.htmlTitleElement = document.getElementById('graph-title');
-        this.htmlAuthorElement = document.getElementById('graph-author');
-        this.htmlCreatedElement = document.getElementById('graph-created');
+        console.log('Initializing Graph');
 
-        this.htmlExportBtnElement = document.getElementById('export-btn');
-        this.htmlFitBtnElement = document.getElementById('fit-btn');
+        this.store                        = store;
+        this.cydiv                        = document.getElementById('cy');
+        this.htmlTitleElement             = document.getElementById('graph-title');
+        this.htmlAuthorElement            = document.getElementById('graph-author');
+        this.htmlCreatedElement           = document.getElementById('graph-created');
+        this.htmlExportBtnElement         = document.getElementById('export-btn');
+        this.htmlFitBtnElement            = document.getElementById('fit-btn');
         this.htmlOpenProjectFormIdElement = document.getElementById('open-doc-form-id');
 
-        this.menu = new Menu(store, this);
-        this.modals = new Modals(store);
+        this.menu      = new Menu(store, this);
+        this.modals    = new Modals(store);
         this.infoPanel = new InfoPanel(store);
 
         // Subscribe to state changes
         this.store.subscribe(async (state, changedKeys) => {
+            console.log('Graph detected Store state change:', changedKeys);
             // Auto-save when currentSave nodes change (but not on initial load)
             if (changedKeys.includes('currentSave') && state.currentSave) {
-                this.updateSave();
+                console.log('Current save changed, updating save on server');
+                await this.updateSave();
             }
             
             // Update view when graph or currentSave changes
             if (changedKeys.includes('currentSave') || changedKeys.includes('graph')) {
+                console.log('Graph or current save changed, updating view');
                 await this.updateView();
             }
         });
     }
 
     async init() {
+        console.log('Init');
+
         this.htmlFitBtnElement.addEventListener('click', () => {
+            console.log('Fit button clicked');
+
             const cy = this.store.getCy();
             cy.layout(COSELAYOUT).run();
             cy.fit();
         });
 
         this.htmlExportBtnElement.addEventListener('click', () => {
+            console.log('Export button clicked');
             const currentSave = this.store.getCurrentSave();
             if (!currentSave) {
                 alert('Não há projeto carregado para exportar.');
@@ -244,17 +266,18 @@ class Graph
         });
 
         document.addEventListener('mousemove', (e) => {
+            console.log('Mouse move event detected');
             this.menu.onMouseMove(e);
         });
 
         document.addEventListener('keydown', async (e) => {
+            console.log('Key down event detected:', e.key);
             await this.removeNode(e);
             await this.removeEdge(e);
             this.modals.onKeydown(e);
         });
 
-        await this.fetchGraph();
-        await this.fetchSaves();
+        await this.fetchProjects();
         await this.fetchSave();
         
         // Finish initialization and enable reactive updates
@@ -268,22 +291,9 @@ class Graph
         cy.fit();
     }
 
-    async fetchGraph() {
+    async fetchProjects() {
         try {
-            const response = await fetch(API.GET_GRAPH);
-            if (!response.ok) {
-                throw new Error(`Erro ao carregar o grafo: ${response.status}`);
-            }
-            const { data } = await response.json();
-            this.store.setGraph(data);
-        } catch (error) {
-            Notification.error('Falha ao carregar o grafo. Por favor, recarregue a página.');
-        }
-    }
-
-    async fetchSaves() {
-        try {
-            const response = await fetch(API.GET_SAVES);
+            const response = await fetch(API.GET_PROJECTS);
             if (!response.ok) {
                 throw new Error(`Erro ao carregar projetos: ${response.status}`);
             }
@@ -296,30 +306,30 @@ class Graph
                 );
             });
         } catch (error) {
-            console.error('[fetchSaves] Fetch error:', error);
+            console.error('[fetchProjects] Fetch error:', error);
             Notification.error('Falha ao carregar a lista de projetos.');
         }
     }
 
-    async fetchSave() {
+    async fetchProject() {
         const urlParams = new URLSearchParams(window.location.search);
-        const saveID = urlParams.get('save');
+        const projectID = urlParams.get('project');
         
-        if (!saveID) {
-            console.log('No save ID provided in URL parameters.');
+        if (!projectID) {
+            console.log('No project ID provided in URL parameters.');
             return;
         }
 
         try {
-            const response = await fetch(`${API.GET_SAVE}?id=${encodeURIComponent(saveID)}`);
+            const response = await fetch(`${API.GET_PROJECT}?id=${encodeURIComponent(projectID)}`);
             if (!response.ok) {
                 throw new Error(`Erro ao carregar projeto: ${response.status}`);
             }
             const { data } = await response.json();
-            this.store.setCurrentSave(data);
+            this.store.setCurrentProject(data);
         } catch (error) {
-            console.error('[fetchSave] Fetch error:', error);
-            Notification.error(`Falha ao carregar o projeto. ID: ${saveID}`);
+            console.error('[fetchProject] Fetch error:', error);
+            Notification.error(`Falha ao carregar o projeto. ID: ${projectID}`);
         }
     }
 
@@ -348,17 +358,17 @@ class Graph
         }
     }
 
-    async updateSave() {
-        const currentSave = this.store.getCurrentSave();
-        if (!currentSave) return;
+    async updateProject() {
+        const currentProject = this.store.getCurrentProject();
+        if (!currentProject) return;
 
         try {
-            const response = await fetch(API.UPDATE_SAVE, {
+            const response = await fetch(API.UPDATE_PROJECT, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(currentSave)
+                body: JSON.stringify(currentProject)
             });
             
             if (!response.ok) {
@@ -367,7 +377,7 @@ class Graph
 
             Notification.success('Projeto salvo com sucesso!', 2000);
         } catch (error) {
-            console.error('[updateSave] Fetch error:', error);
+            console.error('[updateProject] Fetch error:', error);
             Notification.error('Falha ao salvar o projeto. Tente novamente.');
         }
     }
@@ -434,7 +444,6 @@ class Graph
 
                 this.store.setSelectedEdge(null);
                 Notification.success('Aresta removida com sucesso!', 2000);
-                await this.fetchGraph();
             } catch (error) {
                 console.error('[updateSave] Fetch error:', error);
                 Notification.error('Falha ao remover a aresta. Tente novamente.');
@@ -804,9 +813,6 @@ class AddEdgeForm {
             // Clear selection
             this.store.clearSelection();
             if (cy) cy.elements().unselect();
-            
-            // Re-fetch graph to get the new edge - will trigger reactive update
-            await this.graph.fetchGraph();
         } catch (error) {
             // Error already handled in insertEdge
         }
