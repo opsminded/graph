@@ -15,6 +15,7 @@ class TestDatabase extends TestAbstractTest
         $this->logger = new Logger(1);
         $this->database = new Database($this->pdo, $this->logger, $SQL_SCHEMA);
 
+        $this->pdo->exec('delete from audit');
         $this->pdo->exec('delete from nodes');
         $this->pdo->exec('delete from edges');
         $this->pdo->exec('delete from projects');
@@ -899,8 +900,17 @@ class TestDatabase extends TestAbstractTest
 
     public function testUpdateProject(): void
     {
+        $this->pdo->exec('insert into nodes (id, label, category, type, data) values ("a", "Node A", "business", "service", \'{}\')');
+        $this->pdo->exec('insert into nodes (id, label, category, type, data) values ("b", "Node B", "business", "service", \'{}\')');
+        $this->pdo->exec('insert into edges (id, source, target, label, data) values ("a-b", "a", "b", "connects", \'{}\')');
         $this->pdo->exec('insert into projects (id, name, author, data) values ("initial", "Initial Project", "admin", \'{}\')');
+        $this->pdo->exec('insert into nodes_projects (node_id, project_id) values ("a", "initial")');
+        
+        $p = $this->database->getProject('initial');
+        print_r($p);
 
+        echo "gol\n";
+        
         $this->database->updateProject(
             new ProjectDTO(
                 'initial',
@@ -954,6 +964,43 @@ class TestDatabase extends TestAbstractTest
 
         if ($this->database->deleteProject('nonexistent')) {
             throw new Exception('error on testDeleteProject 3');
+        }
+    }
+
+    public function testInsertProjectNode(): void
+    {
+        $this->pdo->exec('insert into nodes (id, label, category, type, data) values ("a", "Node A", "business", "service", \'{}\')');
+        $this->pdo->exec('insert into projects (id, name, author, data) values ("initial", "Initial Project", "admin", \'{}\')');
+
+        if (! $this->database->insertProjectNode('initial', 'a')) {
+            throw new Exception('error on testInsertProjectNode 1');
+        }
+
+        $stmt = $this->pdo->prepare('select * from nodes_projects');
+        $stmt->execute();
+        $rows = $stmt->fetchAll();
+        if(count($rows) !== 1) {
+            throw new Exception('error on testInsertProjectNode 2');
+        }
+    }
+
+    public function testDeleteProjectNode(): void
+    {
+        $this->pdo->exec('insert into nodes (id, label, category, type, data) values ("a", "Node A", "business", "service", \'{}\')');
+        $this->pdo->exec('insert into nodes (id, label, category, type, data) values ("b", "Node B", "business", "service", \'{}\')');
+        $this->pdo->exec('insert into edges (id, source, target, label, data) values ("a-b", "a", "b", "connects", \'{}\')');
+        $this->pdo->exec('insert into projects (id, name, author, data) values ("initial", "Initial Project", "admin", \'{}\')');
+        $this->pdo->exec('insert into nodes_projects (node_id, project_id) values ("a", "initial")');
+
+        if (! $this->database->deleteProjectNode('initial', 'a')) {
+            throw new Exception('error on testDeleteProjectNode 1');
+        }
+
+        $stmt = $this->pdo->prepare('select * from nodes_projects');
+        $stmt->execute();
+        $rows = $stmt->fetchAll();
+        if(count($rows) !== 0) {
+            throw new Exception('error on testDeleteProjectNode 2');
         }
     }
 

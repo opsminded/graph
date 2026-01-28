@@ -1993,6 +1993,41 @@ final class Database implements DatabaseInterface
         return false;
     }
 
+    public function insertProjectNode(string $projectId, string $nodeId): bool
+    {
+        $this->logger->debug('inserting project node', ['project_id' => $projectId, 'node_id' => $nodeId]);
+        $sql = "INSERT INTO nodes_projects (project_id, node_id) VALUES (:project_id, :node_id)";
+        $params = [':project_id' => $projectId, ':node_id' => $nodeId];
+        $stmt = $this->pdo->prepare($sql);
+        try {
+            $stmt->execute($params);
+            $this->logger->info("project node inserted", ['params' => $params]);
+            return true;
+        } catch (PDOException $exception) {
+            $complementary = "";
+            if ($exception->getCode() === self::SQLSTATE_CONSTRAINT_VIOLATION) {
+                $this->logger->error("Project node already exists", ['params' => $params]);
+                return false;
+            }
+            throw new DatabaseException("Failed to insert project node. " . $complementary, $exception);
+        }
+    }
+
+    public function deleteProjectNode(string $projectId, string $nodeId): bool
+    {
+        $this->logger->debug('deleting project node', ['project_id' => $projectId, 'node_id' => $nodeId]);
+        $sql = "DELETE FROM nodes_projects WHERE project_id = :project_id AND node_id = :node_id";
+        $params = [':project_id' => $projectId, ':node_id' => $nodeId];
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        if ($stmt->rowCount() > 0) {
+            $this->logger->info("project node deleted", ['params' => $params]);
+            return true;
+        }
+        $this->logger->error("project node not deleted", ['params' => $params]);
+        return false;
+    }
+
     /**
      * @return LogDTO[]
      */
@@ -2256,6 +2291,8 @@ interface DatabaseInterface
     public function insertProject(ProjectDTO $project): bool;
     public function updateProject(ProjectDTO $project): bool;
     public function deleteProject(string $id): bool;
+    public function insertProjectNode(string $projectId, string $nodeId): bool;
+    public function deleteProjectNode(string $projectId, string $nodeId): bool;
 
     /**
      * @return LogDTO[]

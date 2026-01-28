@@ -97,6 +97,8 @@ interface DatabaseInterface
     public function insertProject(ProjectDTO $project): bool;
     public function updateProject(ProjectDTO $project): bool;
     public function deleteProject(string $id): bool;
+    public function insertProjectNode(string $projectId, string $nodeId): bool;
+    public function deleteProjectNode(string $projectId, string $nodeId): bool;
 
     /**
      * @return LogDTO[]
