@@ -3,6 +3,7 @@
 compile:
 	php bin/compile_images.php
 	php bin/compile_templates.php
+	php bin/compile_schema.php
 
 # Empacotamento (depende de compile)
 build: compile

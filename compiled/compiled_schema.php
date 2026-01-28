@@ -1,3 +1,4 @@
+$SQL_SCHEMA = "
 CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
     user_group TEXT NOT NULL
@@ -106,74 +107,8 @@ insert into edges values ('e3-4', 'connects_to', 'n3', 'n4', '{}', current_times
 insert into edges values ('e2-5', 'connects_to', 'n2', 'n5', '{}', current_timestamp, current_timestamp);
 insert into edges values ('e4-5', 'connects_to', 'n4', 'n5', '{}', current_timestamp, current_timestamp);
 
-insert into projects values ('p1', 'Projeto 1', 'admin', '', current_timestamp, current_timestamp);
+insert into projects values ('p1', 'Projeto 1', 'admin', '{}', current_timestamp, current_timestamp);
 
 insert into nodes_projects values ('n1', 'p1', current_timestamp);
 insert into nodes_projects values ('n3', 'p1', current_timestamp);
-
-.headers on
-.mode column
-
-WITH RECURSIVE descendants AS (
-    SELECT     e.id,
-               e.label,
-               e.source as source_id,
-               e.target as target_id,
-               e.data,
-               0 as depth
-    FROM       edges e
-    INNER JOIN nodes_projects np
-    ON         e.source = np.node_id
-    WHERE      np.project_id = 'p1'
-    
-    UNION ALL
-    
-    SELECT      e.id,
-                e.label,
-                e.source as source_id,
-                e.target as target_id,
-                e.data,
-                d.depth + 1
-    FROM        descendants d
-    INNER JOIN  edges e ON d.target_id = e.source
-    WHERE       d.depth < 100
-)
-SELECT DISTINCT d.id as edge_id,
-                d.label as edge_label,
-                d.data as edge_data,
-                d.source_id,
-                s.label as source_label,
-                s.category as source_category,
-                s.type as source_type,
-                s.user_created as source_user_created,
-                s.data as source_data,
-                d.target_id,
-                t.label as target_label,
-                t.category as target_category,
-                t.type as target_type,
-                t.user_created as target_user_created,
-                t.data as target_data,
-                min(d.depth) as depth
-FROM            descendants d
-INNER JOIN      nodes s
-ON              d.source_id = s.id
-INNER JOIN      nodes t
-ON              d.target_id = t.id
-GROUP BY        d.id,
-                d.label,
-                d.data,
-                d.source_id,
-                s.label,
-                s.category,
-                s.type,
-                s.user_created,
-                s.data,
-                d.target_id,
-                t.label,
-                t.category,
-                t.type,
-                t.user_created,
-                t.data
-ORDER BY        depth,
-                d.id;
-
+";

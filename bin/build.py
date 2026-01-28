@@ -45,6 +45,10 @@ compiled_templates = ''
 with open('compiled/compiled_templates.php', 'r') as file:
     compiled_templates = file.read()
 
+compiled_schema = ''
+with open('compiled/compiled_schema.php', 'r') as file:
+    compiled_schema = file.read()
+
 filenames = []
 folder = Path('src')
 for file in folder.rglob('*.php'):
@@ -83,7 +87,12 @@ with open('compiled/graph.php', 'w') as outputfile:
     outputfile.write(compiled_templates)
     outputfile.write("\n")
     
-    # Write cytoscapejs third
+    # Write compiled schema third
+    outputfile.write("\n")
+    outputfile.write(compiled_schema)
+    outputfile.write("\n")
+    
+    # Write cytoscapejs fourth
     outputfile.write("\n")
     outputfile.write(f"$DATA_CYTOSCAPE = '{str(cytoscapejs)}';\n")
     outputfile.write(f"$DATA_STYLE_CSS = '{str(stylesheet)}';\n")
