@@ -21,6 +21,11 @@ class TestService extends TestAbstractTest
         $this->database = new Database($this->pdo, $this->databaseLogger, $SQL_SCHEMA);
         $this->serviceLogger = new Logger();
         $this->service = new Service($this->database, $this->serviceLogger);
+
+        $this->pdo->exec('delete from audit');
+        $this->pdo->exec('delete from nodes');
+        $this->pdo->exec('delete from edges');
+        $this->pdo->exec('delete from projects');
     }
 
     public function down(): void

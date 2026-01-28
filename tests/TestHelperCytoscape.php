@@ -10,9 +10,15 @@ class TestHelperCytoscape extends TestAbstractTest
 
     public function up(): void
     {
+        global $SQL_SCHEMA;
         $this->pdo = Database::createConnection('sqlite::memory:');
         $this->logger = new Logger();
-        $this->database = new Database($this->pdo, $this->logger);
+        $this->database = new Database($this->pdo, $this->logger, $SQL_SCHEMA);
+
+        $this->pdo->exec('delete from audit');
+        $this->pdo->exec('delete from nodes');
+        $this->pdo->exec('delete from edges');
+        $this->pdo->exec('delete from projects');
     }
 
     public function down(): void
