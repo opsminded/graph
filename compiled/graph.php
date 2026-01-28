@@ -1361,8 +1361,8 @@ final class Database implements DatabaseInterface
     {
         $this->logger->debug("fetching users");
         $sql = "SELECT id, user_group as \"group\" FROM users";
-        $stmt  = $this->pdo->query($sql);
-        $rows  = $stmt->fetchAll();
+        $stmt = $this->pdo->query($sql);
+        $rows = $stmt->fetchAll();
         $this->logger->info("users fetched", ['rows' => $rows]);
         return array_map(fn($row) => new UserDTO($row['id'], $row['group']), $rows);
     }
@@ -1372,7 +1372,6 @@ final class Database implements DatabaseInterface
         $this->logger->debug("inserting new user", ['id' => $user->id, 'group' => $user->group]);
         $sql = "INSERT INTO users (id, user_group) VALUES (:id, :group)";
         $params = [':id' => $user->id, ':group' => $user->group];
-
         try {
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute($params);
@@ -1383,7 +1382,6 @@ final class Database implements DatabaseInterface
                 $this->logger->error("user already exists", ['params' => $params]);
                 $complementary = " - user already exists";
             }
-
             throw new DatabaseException("Failed to insert user" . $complementary, $exception);
         }
     }
@@ -1421,7 +1419,7 @@ final class Database implements DatabaseInterface
         $params = [':id' => $user->id, ':group' => $user->group];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
-        if($stmt->rowCount() > 0) {
+        if ($stmt->rowCount() > 0) {
             $this->logger->info("user updated", ['params' => $params]);
             return true;
         }
@@ -1436,7 +1434,7 @@ final class Database implements DatabaseInterface
         $params = [':id' => $id];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
-        if($stmt->rowCount() > 0) {
+        if ($stmt->rowCount() > 0) {
             $this->logger->info("user deleted", ['params' => $params]);
             return true;
         }
@@ -1467,8 +1465,8 @@ final class Database implements DatabaseInterface
     {
         $this->logger->debug("fetching categories");
         $sql = "SELECT * FROM categories";
-        $stmt  = $this->pdo->query($sql);
-        $rows  = $stmt->fetchAll();
+        $stmt = $this->pdo->query($sql);
+        $rows = $stmt->fetchAll();
         $this->logger->info("categories fetched", ['rows' => $rows]);
         return array_map(fn($row) => new CategoryDTO($row['id'], $row['name'], $row['shape'], (int)$row['width'], (int)$row['height']), $rows);
     }
@@ -1546,8 +1544,8 @@ final class Database implements DatabaseInterface
     {
         $this->logger->debug("fetching types");
         $sql = "SELECT * FROM types";
-        $stmt  = $this->pdo->query($sql);
-        $rows  = $stmt->fetchAll();
+        $stmt = $this->pdo->query($sql);
+        $rows = $stmt->fetchAll();
         $this->logger->info("types fetched", ['rows' => $rows]);
         return array_map(fn($row) => new TypeDTO($row['id'], $row['name']), $rows);
     }
@@ -1629,7 +1627,7 @@ final class Database implements DatabaseInterface
         $sql = "SELECT * FROM nodes";
         $stmt = $this->pdo->query($sql);
         $rows = $stmt->fetchAll();
-        foreach($rows as &$row) {
+        foreach ($rows as &$row) {
             $row[Node::NODE_KEYNAME_USERCREATED] = (bool)$row[Node::NODE_KEYNAME_USERCREATED];
             $row['data'] = json_decode($row['data'], true);
         }
@@ -1715,7 +1713,7 @@ final class Database implements DatabaseInterface
         $params = [':id' => $id];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
-        if($stmt->rowCount() > 0) {
+        if ($stmt->rowCount() > 0) {
             $this->logger->debug("node deleted", ['params' => $params]);
             return true;
         }
@@ -1747,11 +1745,11 @@ final class Database implements DatabaseInterface
     {
         $this->logger->debug("fetching edges");
         $sql = "SELECT * FROM edges";
-        $stmt  = $this->pdo->query($sql);
-        $rows  = $stmt->fetchAll();
+        $stmt = $this->pdo->query($sql);
+        $rows = $stmt->fetchAll();
 
         $edges = [];
-        foreach($rows as &$row) {
+        foreach ($rows as &$row) {
             $row['data'] = json_decode($row['data'], true);
             $edges[] = new EdgeDTO($row['id'], $row['source'], $row['target'], $row['label'], $row['data']);
         }
@@ -1822,7 +1820,7 @@ final class Database implements DatabaseInterface
         $params = [':id' => $edge->id, ':label' => $edge->label, ':data' => $data];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
-        if($stmt->rowCount() > 0) {
+        if ($stmt->rowCount() > 0) {
             $this->logger->info("edge updated", ['params' => $params]);
             return true;
         }
@@ -1853,7 +1851,7 @@ final class Database implements DatabaseInterface
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         $row = $stmt->fetch();
-        if($row) {
+        if ($row) {
             $this->logger->info("node status fetched", ['params' => $params, 'row' => $row]);
             return new StatusDTO($row['id'], $row['status']);
         }
@@ -1866,7 +1864,6 @@ final class Database implements DatabaseInterface
         $sql = "REPLACE INTO status (node_id, status) VALUES (:node_id, :status)";
         $params = [':node_id' => $status->node_id, ':status' => $status->status];
         $stmt = $this->pdo->prepare($sql);
-
         try {
             $stmt->execute($params);
         } catch (PDOException $exception) {
@@ -1906,9 +1903,7 @@ final class Database implements DatabaseInterface
         $stmt->execute($params);
         $row = $stmt->fetch();
         if ($row) {
-
             $graph = $this->getProjectGraph($id);
-
             $project = new ProjectDTO(
                 $row['id'],
                 $row['name'],
@@ -1932,10 +1927,10 @@ final class Database implements DatabaseInterface
     {
         $this->logger->debug("fetching projects");
         $sql = "SELECT * FROM projects";
-        $stmt  = $this->pdo->query($sql);
-        $rows  = $stmt->fetchAll();
+        $stmt = $this->pdo->query($sql);
+        $rows = $stmt->fetchAll();
         $projects = [];
-        foreach($rows as $row) {
+        foreach ($rows as $row) {
             $row['data'] = json_decode($row['data'], true);
             $projects[] = new ProjectDTO(
                 $row['id'],
@@ -1958,7 +1953,6 @@ final class Database implements DatabaseInterface
         $data = json_encode($project->data, JSON_UNESCAPED_UNICODE);
         $params = [':id' => $project->id, ':name' => $project->name, ':author' => $project->author, ':data' => $data];
         $stmt = $this->pdo->prepare($sql);
-
         try {
             $stmt->execute($params);
             $this->logger->info("project inserted", ['params' => $params]);
@@ -2012,7 +2006,7 @@ final class Database implements DatabaseInterface
         $rows = $stmt->fetchAll();
 
         $logs = [];
-        foreach($rows as $row) {
+        foreach ($rows as $row) {
             $logs[] = new LogDTO(
                 $row['entity_type'],
                 $row['entity_id'],
@@ -2045,7 +2039,6 @@ final class Database implements DatabaseInterface
     private function getProjectGraph(string $projectId): GraphDTO
     {
         $this->logger->debug("fetching project graph", ['project_id' => $projectId]);
-
         $sql = '
         WITH RECURSIVE descendants AS (
             SELECT      p.id     as project_id,
@@ -2114,16 +2107,14 @@ final class Database implements DatabaseInterface
         ORDER BY        depth,
                         d.project_id;
         ';
-
         $params = [':project_id' => $projectId];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         $rows = $stmt->fetchAll();
         $this->logger->info("project Graph fetched", ['params' => $params, 'rows' => $rows]);
-
         $nodes = [];
         $edges = [];
-        foreach($rows as $row) {
+        foreach ($rows as $row) {
             $nodes[] = new NodeDTO(
                 $row['edge_source_id'], 
                 $row['source_label'], 

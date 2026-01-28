@@ -48,7 +48,6 @@ final class Database implements DatabaseInterface
         $this->logger->debug("inserting new user", ['id' => $user->id, 'group' => $user->group]);
         $sql = "INSERT INTO users (id, user_group) VALUES (:id, :group)";
         $params = [':id' => $user->id, ':group' => $user->group];
-
         try {
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute($params);
@@ -59,7 +58,6 @@ final class Database implements DatabaseInterface
                 $this->logger->error("user already exists", ['params' => $params]);
                 $complementary = " - user already exists";
             }
-
             throw new DatabaseException("Failed to insert user" . $complementary, $exception);
         }
     }
@@ -542,7 +540,6 @@ final class Database implements DatabaseInterface
         $sql = "REPLACE INTO status (node_id, status) VALUES (:node_id, :status)";
         $params = [':node_id' => $status->node_id, ':status' => $status->status];
         $stmt = $this->pdo->prepare($sql);
-
         try {
             $stmt->execute($params);
         } catch (PDOException $exception) {
@@ -582,9 +579,7 @@ final class Database implements DatabaseInterface
         $stmt->execute($params);
         $row = $stmt->fetch();
         if ($row) {
-
             $graph = $this->getProjectGraph($id);
-
             $project = new ProjectDTO(
                 $row['id'],
                 $row['name'],
@@ -634,7 +629,6 @@ final class Database implements DatabaseInterface
         $data = json_encode($project->data, JSON_UNESCAPED_UNICODE);
         $params = [':id' => $project->id, ':name' => $project->name, ':author' => $project->author, ':data' => $data];
         $stmt = $this->pdo->prepare($sql);
-
         try {
             $stmt->execute($params);
             $this->logger->info("project inserted", ['params' => $params]);
@@ -721,7 +715,6 @@ final class Database implements DatabaseInterface
     private function getProjectGraph(string $projectId): GraphDTO
     {
         $this->logger->debug("fetching project graph", ['project_id' => $projectId]);
-
         $sql = '
         WITH RECURSIVE descendants AS (
             SELECT      p.id     as project_id,
@@ -790,13 +783,11 @@ final class Database implements DatabaseInterface
         ORDER BY        depth,
                         d.project_id;
         ';
-
         $params = [':project_id' => $projectId];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         $rows = $stmt->fetchAll();
         $this->logger->info("project Graph fetched", ['params' => $params, 'rows' => $rows]);
-
         $nodes = [];
         $edges = [];
         foreach ($rows as $row) {
