@@ -213,11 +213,11 @@ final class HelperCytoscape
         
         foreach($this->categories as $category) {
             $style[] = [
-                "selector" => "node.node-category-" . $category['id'],
+                "selector" => "node.node-category-" . $category->id,
                 "style" => [
-                    "shape" => $category['shape'],
-                    "width" => $category['width'],
-                    "height" => $category['height'],
+                    "shape" => $category->shape,
+                    "width" => $category->width,
+                    "height" => $category->height,
                 ],
             ];
         }

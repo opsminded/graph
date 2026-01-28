@@ -91,16 +91,6 @@ final class Controller implements ControllerInterface
         return new OKResponse("types found", $data);
     }
 
-    public function getCytoscapeGraph(Request $req): ResponseInterface
-    {
-        if($req->method !== Request::METHOD_GET) {
-            return new MethodNotAllowedResponse($req->method, __METHOD__);
-        }
-        $g = $this->service->getGraph();
-        $data = $this->cytoscapeHelper->toArray($g);
-        return new OKResponse("get graph", $data);
-    }
-
     public function getNode(Request $req): ResponseInterface
     {
         if($req->method !== Request::METHOD_GET) {
@@ -175,8 +165,8 @@ final class Controller implements ControllerInterface
         if($req->method !== Request::METHOD_DELETE) {
             return new MethodNotAllowedResponse($req->method, __METHOD__);
         }
-        $node = new Node($req->data[Node::NODE_KEYNAME_ID], "label", "application", "database", false, []);
-        if($this->service->deleteNode($node)) {
+        $id = $req->data[Node::NODE_KEYNAME_ID];
+        if($this->service->deleteNode($id)) {
             return new NoContentResponse("node deleted", [Node::NODE_KEYNAME_ID => $req->data[Node::NODE_KEYNAME_ID]]);
         }
         return new NotFoundResponse("node not found",[Node::NODE_KEYNAME_ID => $req->data[Node::NODE_KEYNAME_ID]]);
@@ -258,30 +248,26 @@ final class Controller implements ControllerInterface
             return new MethodNotAllowedResponse($req->method, __METHOD__);
         }
         
-        $edge = new Edge(
-            $req->data[Edge::EDGE_KEYNAME_SOURCE],
-            $req->data[Edge::EDGE_KEYNAME_TARGET],
-            '',
-            [],
-        );
+        $source = $req->data[Edge::EDGE_KEYNAME_SOURCE];
+        $target = $req->data[Edge::EDGE_KEYNAME_TARGET];
 
-        $this->service->deleteEdge($edge);
+        $this->service->deleteEdge($source, $target);
         $data = $req->data;
         return new NoContentResponse("edge deleted", $data);
     }
 
-    public function getStatus(Request $req): ResponseInterface
-    {
-        if($req->method !== Request::METHOD_GET) {
-            return new MethodNotAllowedResponse($req->method, __METHOD__);
-        }
-        $statusData = $this->service->getStatus();
-        $data = [];
-        foreach($statusData as $status) {
-            $data[] = $status->toArray();
-        }
-        return new OKResponse("nodes found", $data);
-    }
+    // public function getStatus(Request $req): ResponseInterface
+    // {
+    //     if($req->method !== Request::METHOD_GET) {
+    //         return new MethodNotAllowedResponse($req->method, __METHOD__);
+    //     }
+    //     $statusData = $this->service->getStatus();
+    //     $data = [];
+    //     foreach($statusData as $status) {
+    //         $data[] = $status->toArray();
+    //     }
+    //     return new OKResponse("nodes found", $data);
+    // }
     
     public function getNodeStatus(Request $req): ResponseInterface
     {
@@ -366,6 +352,7 @@ final class Controller implements ControllerInterface
             $creator,
             $now,
             $now,
+            null,
             $req->data[Project::PROJECT_KEYNAME_NODES],
         );
         $this->service->insertProject($project);
@@ -391,6 +378,7 @@ final class Controller implements ControllerInterface
             $creator,
             $now,
             $now,
+            null,
             $nodes,
         );
         if($this->service->updateProject($project)) {
@@ -411,9 +399,10 @@ final class Controller implements ControllerInterface
             '',
             new DateTimeImmutable(),
             new DateTimeImmutable(),
+            null,
             [],
         );
-        if($this->service->deleteProject($project->id)) {
+        if($this->service->deleteProject($project->getId())) {
             return new NoContentResponse("project deleted", [Project::PROJECT_KEYNAME_ID => $req->data[Project::PROJECT_KEYNAME_ID]]);
         }
         return new NotFoundResponse("project not deleted",[Project::PROJECT_KEYNAME_ID => $req->data[Project::PROJECT_KEYNAME_ID]]);

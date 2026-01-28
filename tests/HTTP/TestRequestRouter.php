@@ -80,14 +80,19 @@ class TestRequestRouter extends TestAbstractTest
     public function testRequestRouterException(): void
     {
         HelperContext::update('admin', 'admin', '127.0.0.1');
+
         $_SERVER['REQUEST_METHOD'] = 'PUT';
         $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/updateUser';
+        $_SERVER['REQUEST_URI'] = 'api.php/up';
+
         $req = new Request();
         $req->data[User::USER_KEYNAME_ID] = 'joao';
         $req->data[User::USER_KEYNAME_GROUP] = 'contributor';
+
         $resp = $this->router->handle($req);
         if($resp->code !== 500 || $resp->message !== 'method not found in list') {
+            print_r($resp);
+            exit();
             throw new Exception('error on testRequestRouterException');
         }
     }

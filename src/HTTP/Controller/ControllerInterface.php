@@ -11,8 +11,6 @@ interface ControllerInterface
     public function getCategories(Request $req): ResponseInterface;
     public function getTypes(Request $req): ResponseInterface;
 
-    public function getCytoscapeGraph(Request $req): ResponseInterface;
-
     public function getNode(Request $req): ResponseInterface;
     public function getNodes(Request $req): ResponseInterface;
     public function insertNode(Request $req): ResponseInterface;
@@ -25,7 +23,7 @@ interface ControllerInterface
     public function updateEdge(Request $req): ResponseInterface;
     public function deleteEdge(Request $req): ResponseInterface;
 
-    public function getStatus(Request $req): ResponseInterface;
+    //public function getStatus(Request $req): ResponseInterface;
     public function getNodeStatus(Request $req): ResponseInterface;
     public function updateNodeStatus(Request $req): ResponseInterface;
 
