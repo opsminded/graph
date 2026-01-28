@@ -60,6 +60,9 @@ class TestDatabase extends TestAbstractTest
         try {
             $this->database->insertUser('maria', 'contributor');
         } catch(Exception $e) {
+            if ($e->getMessage() !== "Database Error: Failed to insert user - user already exists. Exception: SQLSTATE[23000]: Integrity constraint violation: 19 UNIQUE constraint failed: users.id") {
+                throw new Exception('unique constraint expected');
+            }
             return;
         }
         throw new Exception('error expected');
@@ -71,7 +74,23 @@ class TestDatabase extends TestAbstractTest
             ['id' => 'joao', 'group' => 'admin'],
             ['id' => 'ana', 'group' => 'contributor'],
             ['id' => 'carlos', 'group' => 'viewer'],
+            ['id' => 'joao', 'group' => 'admin'],
         ];
+
+        try {
+            $this->database->batchInsertUsers($users);
+        } catch(Exception $e) {
+            if ($e->getMessage() !== "Database Error: Failed to insert user in batch: user already exists: joao. Exception: SQLSTATE[23000]: Integrity constraint violation: 19 UNIQUE constraint failed: users.id") {
+                throw new Exception('unique constraint expected');
+            }
+        }
+
+        $users = [
+            ['id' => 'j', 'group' => 'admin'],
+            ['id' => 'a', 'group' => 'contributor'],
+            ['id' => 'c', 'group' => 'viewer'],
+        ];
+
         $this->database->batchInsertUsers($users);
 
         foreach ($users as $u) {
@@ -183,6 +202,16 @@ class TestDatabase extends TestAbstractTest
         if ($category['id'] !== 'cat1' || $category['name'] !== 'Category 1' || $category['shape'] !== 'box' || $category['width'] !== 100 || $category['height'] !== 50) {
             throw new Exception('error on insert category cat1');
         }
+
+        try {
+            $this->database->insertCategory('cat1', 'Category 1', 'box', 100, 50);
+        } catch(DatabaseException $e) {
+            if ($e->getMessage() !== "Database Error: Failed to insert category - category already exists: cat1. Exception: SQLSTATE[23000]: Integrity constraint violation: 19 UNIQUE constraint failed: categories.id") {
+                throw new Exception('unique constraint expected');
+            }
+            return;
+        }
+        throw new Exception('error expected');
     }
 
     public function testUpdateCategory(): void
@@ -279,6 +308,15 @@ class TestDatabase extends TestAbstractTest
         $type = $stmt->fetch();
         if ($type['id'] !== 'type1' || $type['name'] !== 'Type 1') {
             throw new Exception('error on insert type type1');
+        }
+
+        try {
+            $this->database->insertType('type1', 'Type 1');
+        } catch(DatabaseException $e) {
+            if ($e->getMessage() !== "Database Error: Failed to insert type. Type already exists: type1. Exception: SQLSTATE[23000]: Integrity constraint violation: 19 UNIQUE constraint failed: types.id") {
+                throw new Exception('unique constraint expected');
+            }
+            return;
         }
     }
 
@@ -420,6 +458,9 @@ class TestDatabase extends TestAbstractTest
         try {
             $this->database->insertNode('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']);
         } catch(Exception $e) {
+            if ($e->getMessage() !== "Database Error: Failed to insert node. Node already exists: node1. Exception: SQLSTATE[23000]: Integrity constraint violation: 19 UNIQUE constraint failed: nodes.id") {
+                throw new Exception('unique constraint expected');
+            }
             return;
         }
         throw new Exception('error on testInsertNode');
@@ -430,6 +471,21 @@ class TestDatabase extends TestAbstractTest
             ['id' => 'node1', 'label' => 'Node 01', 'category' => 'business', 'type' => 'service', 'user_created' => false, 'data' => ['running_on' => 'SRV01OP']],
             ['id' => 'node2', 'label' => 'Node 02', 'category' => 'application', 'type' => 'database', 'user_created' => false, 'data' => ['running_on' => 'SRV011P']],
             ['id' => 'node3', 'label' => 'Node 03', 'category' => 'application', 'type' => 'service', 'user_created' => false, 'data' => ['running_on' => 'SRV012P']],
+            ['id' => 'node1', 'label' => 'Node 01', 'category' => 'business', 'type' => 'service', 'user_created' => false, 'data' => ['running_on' => 'SRV01OP']],
+        ];
+
+        try {
+            $this->database->batchInsertNodes($nodes);
+        } catch (Exception $e) {
+            if ($e->getMessage() !== "Database Error: Failed to batch insert nodes. Node already exists: node1. Exception: SQLSTATE[23000]: Integrity constraint violation: 19 UNIQUE constraint failed: nodes.id") {
+                throw new Exception('unique constraint expected');
+            }
+        }
+
+        $nodes = [
+            ['id' => 'node4', 'label' => 'Node 04', 'category' => 'business', 'type' => 'service', 'user_created' => false, 'data' => ['running_on' => 'SRV01OP']],
+            ['id' => 'node5', 'label' => 'Node 05', 'category' => 'application', 'type' => 'database', 'user_created' => false, 'data' => ['running_on' => 'SRV011P']],
+            ['id' => 'node6', 'label' => 'Node 06', 'category' => 'application', 'type' => 'service', 'user_created' => false, 'data' => ['running_on' => 'SRV012P']],
         ];
 
         $this->database->batchInsertNodes($nodes);
@@ -558,6 +614,17 @@ class TestDatabase extends TestAbstractTest
         if (json_decode($dbEdge['data'], true)['a'] !== 'b') {
             throw new Exception('error on testInsertEdge 2');
         }
+
+        try {
+            $this->database->insertEdge('edge1', 'node1', 'node2', 'label', ['a' => 'b']);
+        } catch(Exception $e) {
+            if ($e->getMessage() !== "Database Error: Failed to insert edge. Edge already exists: edge1. Exception: SQLSTATE[23000]: Integrity constraint violation: 19 UNIQUE constraint failed: edges.source, edges.target") {
+                throw new Exception('unique constraint expected');
+            }
+            return;
+        }
+
+        throw new Exception('error on testInsertEdge 3');
     }
 
     public function testBatchInsertEdges(): void
@@ -587,6 +654,16 @@ class TestDatabase extends TestAbstractTest
                 if (json_decode($edge['data'], true)[$key] !== $value) {
                     throw new Exception('error on batchInsertEdges 2');
                 }
+            }
+        }
+
+        $edge = ['id' => 'edge1', 'source' => 'node1', 'target' => 'node2', 'label' => 'label1', 'data' => ['a' => 'b']];
+
+        try {
+            $this->database->batchInsertEdges([$edge]);
+        } catch (Exception $e) {
+            if ($e->getMessage() !== "Database Error: Failed to batch insert edges. Edge already exists: edge1. Exception: SQLSTATE[23000]: Integrity constraint violation: 19 UNIQUE constraint failed: edges.source, edges.target") {
+                throw new Exception('unique constraint expected');
             }
         }
     }

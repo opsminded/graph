@@ -45,9 +45,20 @@ final class Database implements DatabaseInterface
         $this->logger->debug("inserting new user", ['id' => $id, 'group' => $group]);
         $sql = "INSERT INTO users (id, user_group) VALUES (:id, :group)";
         $params = [':id' => $id, ':group' => $group];
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($params);
-        return true;
+
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            return true;
+        } catch (PDOException $exception) {
+            $complementary = "";
+            if ($exception->getCode() === '23000') {
+                $this->logger->error("user already exists", ['params' => $params]);
+                $complementary = " - user already exists";
+            }
+
+            throw new DatabaseException("Failed to insert user" . $complementary, $exception);
+        }
     }
 
     public function batchInsertUsers(array $users): bool
@@ -57,7 +68,17 @@ final class Database implements DatabaseInterface
         $stmt = $this->pdo->prepare($sql);
         foreach ($users as $user) {
             $params = [':id' => $user['id'], ':group' => $user['group']];
-            $stmt->execute($params);
+            try {
+                $stmt->execute($params);
+            } catch (PDOException $exception) {
+                $complementary = "";
+                if ($exception->getCode() === '23000') {
+                    $complementary = "user already exists: ";
+                    $complementary .= $user['id'];
+                    $this->logger->error("user already exists in batch", ['params' => $params]);
+                }
+                throw new DatabaseException("Failed to insert user in batch: " . $complementary, $exception);
+            }
         }
         $this->logger->info("batch users inserted", ['users' => $users]);
         return true;
@@ -125,9 +146,18 @@ final class Database implements DatabaseInterface
         $sql = "INSERT INTO categories (id, name, shape, width, height) VALUES (:id, :name, :shape, :width, :height)";
         $params = [':id' => $id, ':name' => $name, ':shape' => $shape, ':width' => $width, ':height' => $height];
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($params);
-        $this->logger->info("category inserted", ['params' => $params]);
-        return true;
+        try {
+            $stmt->execute($params);
+            $this->logger->info("category inserted", ['params' => $params]);
+            return true;
+        } catch (PDOException $exception) {
+            $complementary = "";
+            if ($exception->getCode() === '23000') {
+                $this->logger->error("category already exists", ['params' => $params]);
+                $complementary = " - category already exists: " . $id;
+            }
+            throw new DatabaseException("Failed to insert category" . $complementary, $exception);
+        }
     }
 
     public function updateCategory(string $id, string $name, string $shape, int $width, int $height): bool
@@ -192,9 +222,18 @@ final class Database implements DatabaseInterface
         $sql = "INSERT INTO types (id, name) VALUES (:id, :name)";
         $params = [':id' => $id, ':name' => $name];
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($params);
-        $this->logger->info("type inserted", ['params' => $params]);
-        return true;
+        try {
+            $stmt->execute($params);
+            $this->logger->info("type inserted", ['params' => $params]);
+            return true;
+        } catch (PDOException $exception) {
+            $complementary = "";
+            if ($exception->getCode() === '23000') {
+                $this->logger->error("Type already exists", ['params' => $params]);
+                $complementary = "Type already exists: " . $id;
+            }
+            throw new DatabaseException("Failed to insert type. " . $complementary, $exception);
+        }
     }
 
     public function updateType(string $id, string $name): bool
@@ -266,9 +305,18 @@ final class Database implements DatabaseInterface
         $data = json_encode($data, JSON_UNESCAPED_UNICODE);
         $params = [':id' => $id, ':label' => $label, ':category' => $category, ':type' => $type, ':user_created' => $userCreated, ':data' => $data];
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($params);
-        $this->logger->info("node inserted", ['params' => $params]);
-        return true;
+        try {
+            $stmt->execute($params);
+            $this->logger->info("node inserted", ['params' => $params]);
+            return true;
+        } catch (PDOException $exception) {
+            $complementary = "";
+            if ($exception->getCode() === '23000') {
+                $this->logger->error("Node already exists", ['params' => $params]);
+                $complementary = "Node already exists: " . $id;
+            }
+            throw new DatabaseException("Failed to insert node. " . $complementary, $exception);
+        }
     }
 
     public function batchInsertNodes(array $nodes): bool
@@ -286,7 +334,17 @@ final class Database implements DatabaseInterface
                 ':user_created' => $node['user_created'] ?? false,
                 ':data' => $data
             ];
-            $stmt->execute($params);
+            try {
+                $stmt->execute($params);
+            } catch (PDOException $exception) {
+                $complementary = "";
+                if ($exception->getCode() === '23000') {
+                    $complementary = "Node already exists: ";
+                    $complementary .= $node['id'];
+                    $this->logger->error("node already exists in batch", ['params' => $params]);
+                }
+                throw new DatabaseException("Failed to batch insert nodes. " . $complementary, $exception);
+            }
         }
         $this->logger->info("batch nodes inserted", ['nodes' => $nodes]);
         return true;
@@ -373,9 +431,19 @@ final class Database implements DatabaseInterface
         $data = json_encode($data, JSON_UNESCAPED_UNICODE);
         $params = [':id' => $id, ':source' => $source, ':target' => $target, ':label' => $label, ':data' => $data];
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($params);
-        $this->logger->info("edge inserted", ['params' => $params]);
-        return true;
+
+        try {
+            $stmt->execute($params);
+            $this->logger->info("edge inserted", ['params' => $params]);
+            return true;
+        } catch (PDOException $exception) {
+            $complementary = "";
+            if ($exception->getCode() === '23000') {
+                $this->logger->error("Edge already exists", ['params' => $params]);
+                $complementary = "Edge already exists: " . $id;
+            }
+            throw new DatabaseException("Failed to insert edge. " . $complementary, $exception);
+        }
     }
 
     public function batchInsertEdges(array $edges): bool
@@ -392,7 +460,17 @@ final class Database implements DatabaseInterface
                 ':label' => $edge['label'],
                 ':data' => $data
             ];
-            $stmt->execute($params);
+            try {
+                $stmt->execute($params);
+            } catch (PDOException $exception) {
+                $complementary = "";
+                if ($exception->getCode() === '23000') {
+                    $complementary = "Edge already exists: ";
+                    $complementary .= $edge['id'];
+                    $this->logger->error("edge already exists in batch", ['params' => $params]);
+                }
+                throw new DatabaseException("Failed to batch insert edges. " . $complementary, $exception);
+            }
         }
         $this->logger->info("batch edges inserted", ['edges' => $edges]);
         return true;
@@ -510,9 +588,14 @@ final class Database implements DatabaseInterface
         $data = json_encode($data, JSON_UNESCAPED_UNICODE);
         $params = [':id' => $id, ':name' => $name, ':author' => $author, ':data' => $data];
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($params);
-        $this->logger->info("project inserted", ['params' => $params]);
-        return true;
+
+        try {
+            $stmt->execute($params);
+            $this->logger->info("project inserted", ['params' => $params]);
+            return true;
+        } catch (PDOException $exception) {
+            throw new DatabaseException("Failed to insert project", $exception);
+        }
     }
 
     public function updateProject(string $id, string $name, string $author, array $data): bool
@@ -545,35 +628,6 @@ final class Database implements DatabaseInterface
         $this->logger->error("project not deleted", ['params' => $params]);
         return false;
     }
-
-    // public function getSuccessors(string $id): array
-    // {
-    //     $this->logger->debug("fetching successors", ['id' => $id]);
-    //     $sql = "
-    //     WITH RECURSIVE successors AS (
-    //         SELECT id, 0 as depth
-    //         FROM nodes
-    //         WHERE id = :id
-    //         UNION ALL
-    //         SELECT n.id, s.depth + 1
-    //         FROM nodes n
-    //         INNER JOIN edges e ON n.id = e.target
-    //         INNER JOIN successors s ON e.source = s.id
-    //     )
-    //     SELECT     id,
-    //                depth
-    //     FROM       successors
-    //     WHERE      id != :id
-    //     ORDER BY   depth,
-    //                id;
-    //     ";
-    //     $params = [':id' => $id];
-    //     $stmt = $this->pdo->prepare($sql);
-    //     $stmt->execute($params);
-    //     $rows = $stmt->fetchAll();
-    //     $this->logger->info("successors fetched", ['params' => $params, 'rows' => $rows]);
-    //     return $rows;
-    // }
 
     public function getLogs(int $limit): array
     {
