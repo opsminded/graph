@@ -3006,7 +3006,7 @@ final class TestController extends TestAbstractTest
         $req->data['id'] = 'project1';
         $req->data['name'] = 'My Project 1';
         $req->data['creator'] = 'admin';
-        $req->data['nodes'] = ['a', 'b'];
+        $req->data['data'] = ['a', 'b'];
         $resp = $this->controller->insertProject($req);
         if($resp->code !== 201 || $resp->message !== 'project created') {
             print_r($resp);
@@ -3045,7 +3045,7 @@ final class TestController extends TestAbstractTest
         $req->data['id'] = 'project1';
         $req->data['name'] = 'My Project 1 Updated';
         $req->data['creator'] = 'admin';
-        $req->data['nodes'] = [];
+        $req->data['data'] = [];
         $resp = $this->controller->updateProject($req);
         if ($resp->code !== 404 || $resp->message !== 'project not updated' || $resp->data['id'] !== 'project1') {
             print_r($resp);
@@ -3057,7 +3057,7 @@ final class TestController extends TestAbstractTest
         $req->data['id'] = 'project1';
         $req->data['name'] = 'My Project 1 Updated';
         $req->data['creator'] = 'admin';
-        $req->data['nodes'] = ['node1', 'node2'];
+        $req->data['data'] = ['node1', 'node2'];
         $resp = $this->controller->updateProject($req);
         
         if ($resp->code !== 200 || $resp->message !== 'project updated' || $resp->data['name'] !== 'My Project 1 Updated') {

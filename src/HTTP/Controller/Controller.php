@@ -338,10 +338,6 @@ final class Controller implements ControllerInterface
             return new MethodNotAllowedResponse($req->method, __METHOD__);
         }
 
-        if (! array_key_exists(Project::PROJECT_KEYNAME_NODES, $req->data)) {
-            return new BadRequestResponse("key " . Project::PROJECT_KEYNAME_NODES . " not found in data", $req->data);
-        }
-
         $now = new DateTimeImmutable();
 
         $id = $this->createSlug($req->data[Project::PROJECT_KEYNAME_NAME] ?? 'project');
@@ -353,7 +349,7 @@ final class Controller implements ControllerInterface
             $now,
             $now,
             null,
-            $req->data[Project::PROJECT_KEYNAME_NODES],
+            $req->data['data'],
         );
         $this->service->insertProject($project);
         $data = $project->toArray();
@@ -368,8 +364,6 @@ final class Controller implements ControllerInterface
             return new MethodNotAllowedResponse($req->method, __METHOD__);
         }
 
-        $nodes = $req->data[Project::PROJECT_KEYNAME_NODES];
-
         $now = new DateTimeImmutable();
 
         $project = new Project(
@@ -379,7 +373,7 @@ final class Controller implements ControllerInterface
             $now,
             $now,
             null,
-            $nodes,
+            $req->data['data'],
         );
         if($this->service->updateProject($project)) {
             $data = $project->toArray();

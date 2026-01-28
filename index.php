@@ -12,9 +12,8 @@ HelperContext::update($username, $usergroup, $ip);
 
 $pdo              = Database::createConnection('sqlite:database.sqlite');
 //$pdo              = Database::createConnection('sqlite::memory:');
-$logger           = new Logger();
-$controllerLogger = new Logger();
-$database         = new Database($pdo, $logger);
+$logger           = new Logger(1);
+$database         = new Database($pdo, $logger, $SQL_SCHEMA);
 $service          = new Service($database, $logger);
 $imageHelper      = new HelperImages($DATA_IMAGES);
 $cytoscapeHelper  = new HelperCytoscape($database, $imageHelper, '/index.php/getImage');

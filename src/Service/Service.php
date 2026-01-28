@@ -371,13 +371,15 @@ final class Service implements ServiceInterface
         $dbProject = $this->database->getProject($id);
 
         if (! is_null($dbProject)) {
+            $graph = new Graph([], []);
+
             $project = new Project(
                 $dbProject->id,
                 $dbProject->name,
                 $dbProject->author,
                 $dbProject->createdAt,
                 $dbProject->updatedAt,
-                null
+                $graph
             );
             $this->logger->info("project found", ["project" => $project]);
             return $project;

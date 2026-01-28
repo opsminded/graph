@@ -9,7 +9,7 @@ final class Project
     const PROJECT_KEYNAME_AUTHOR = "author";
     const PROJECT_KEYNAME_CREATED_AT = "created_at";
     const PROJECT_KEYNAME_UPDATED_AT = "updated_at";
-    const PROJECT_KEYNAME_NODES = "nodes";
+    const PROJECT_KEYNAME_GRAPH = "graph";
     
     private string $id;
     private string $name;
@@ -82,7 +82,7 @@ final class Project
             self::PROJECT_KEYNAME_AUTHOR => $this->author,
             self::PROJECT_KEYNAME_CREATED_AT => $this->createdAt->format(DateTime::ATOM),
             self::PROJECT_KEYNAME_UPDATED_AT => $this->updatedAt->format(DateTime::ATOM),
-            self::PROJECT_KEYNAME_NODES => $this->graph,
+            self::PROJECT_KEYNAME_GRAPH => $this->graph,
         ];
     }
 }

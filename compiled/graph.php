@@ -527,6 +527,9 @@ final class RequestRouter
         ["method" => Request::METHOD_GET,    "class_method" => "getNodeStatus"],
         ["method" => Request::METHOD_PUT,    "class_method" => "updateNodeStatus"],
 
+        ["method" => Request::METHOD_GET,    "class_method" => "getProject"],
+        ["method" => Request::METHOD_GET,    "class_method" => "getProjects"],
+
         ["method" => Request::METHOD_GET,    "class_method" => "getSave"],
         ["method" => Request::METHOD_GET,    "class_method" => "getSaves"],
         ["method" => Request::METHOD_POST,   "class_method" => "insertSave"],
@@ -826,7 +829,7 @@ final class Project
     const PROJECT_KEYNAME_AUTHOR = "author";
     const PROJECT_KEYNAME_CREATED_AT = "created_at";
     const PROJECT_KEYNAME_UPDATED_AT = "updated_at";
-    const PROJECT_KEYNAME_NODES = "nodes";
+    const PROJECT_KEYNAME_GRAPH = "graph";
     
     private string $id;
     private string $name;
@@ -899,7 +902,7 @@ final class Project
             self::PROJECT_KEYNAME_AUTHOR => $this->author,
             self::PROJECT_KEYNAME_CREATED_AT => $this->createdAt->format(DateTime::ATOM),
             self::PROJECT_KEYNAME_UPDATED_AT => $this->updatedAt->format(DateTime::ATOM),
-            self::PROJECT_KEYNAME_NODES => $this->graph,
+            self::PROJECT_KEYNAME_GRAPH => $this->graph,
         ];
     }
 }
@@ -2735,13 +2738,15 @@ final class Service implements ServiceInterface
         $dbProject = $this->database->getProject($id);
 
         if (! is_null($dbProject)) {
+            $graph = new Graph([], []);
+
             $project = new Project(
                 $dbProject->id,
                 $dbProject->name,
                 $dbProject->author,
                 $dbProject->createdAt,
                 $dbProject->updatedAt,
-                null
+                $graph
             );
             $this->logger->info("project found", ["project" => $project]);
             return $project;
@@ -3494,10 +3499,6 @@ final class Controller implements ControllerInterface
             return new MethodNotAllowedResponse($req->method, __METHOD__);
         }
 
-        if (! array_key_exists(Project::PROJECT_KEYNAME_NODES, $req->data)) {
-            return new BadRequestResponse("key " . Project::PROJECT_KEYNAME_NODES . " not found in data", $req->data);
-        }
-
         $now = new DateTimeImmutable();
 
         $id = $this->createSlug($req->data[Project::PROJECT_KEYNAME_NAME] ?? 'project');
@@ -3509,7 +3510,7 @@ final class Controller implements ControllerInterface
             $now,
             $now,
             null,
-            $req->data[Project::PROJECT_KEYNAME_NODES],
+            $req->data['data'],
         );
         $this->service->insertProject($project);
         $data = $project->toArray();
@@ -3524,8 +3525,6 @@ final class Controller implements ControllerInterface
             return new MethodNotAllowedResponse($req->method, __METHOD__);
         }
 
-        $nodes = $req->data[Project::PROJECT_KEYNAME_NODES];
-
         $now = new DateTimeImmutable();
 
         $project = new Project(
@@ -3535,7 +3534,7 @@ final class Controller implements ControllerInterface
             $now,
             $now,
             null,
-            $nodes,
+            $req->data['data'],
         );
         if($this->service->updateProject($project)) {
             $data = $project->toArray();
