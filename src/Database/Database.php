@@ -14,7 +14,7 @@ final class Database implements DatabaseInterface
         $this->initSchema();
     }
 
-    public function getUser(string $id): ?array
+    public function getUser(string $id): ?UserDTO
     {
         $this->logger->debug("getting user id", ['id' => $id]);
         $sql = "SELECT id, user_group as \"group\" FROM users WHERE id = :id";
@@ -24,7 +24,7 @@ final class Database implements DatabaseInterface
         $row = $stmt->fetch();
         if ($row) {
             $this->logger->info("user found", ['params' => $params, 'row' => $row]);
-            return $row;
+            return new UserDTO($row['id'], $row['group']);
         }
         $this->logger->info("user not found", ['params' => $params]);
         return null;
@@ -37,14 +37,14 @@ final class Database implements DatabaseInterface
         $stmt  = $this->pdo->query($sql);
         $rows  = $stmt->fetchAll();
         $this->logger->info("users fetched", ['rows' => $rows]);
-        return $rows;
+        return array_map(fn($row) => new UserDTO($row['id'], $row['group']), $rows);
     }
 
-    public function insertUser(string $id, string $group): bool
+    public function insertUser(UserDTO $user): bool
     {
-        $this->logger->debug("inserting new user", ['id' => $id, 'group' => $group]);
+        $this->logger->debug("inserting new user", ['id' => $user->id, 'group' => $user->group]);
         $sql = "INSERT INTO users (id, user_group) VALUES (:id, :group)";
-        $params = [':id' => $id, ':group' => $group];
+        $params = [':id' => $user->id, ':group' => $user->group];
 
         try {
             $stmt = $this->pdo->prepare($sql);
@@ -84,11 +84,11 @@ final class Database implements DatabaseInterface
         return true;
     }
 
-    public function updateUser(string $id, string $group): bool
+    public function updateUser(UserDTO $user): bool
     {
-        $this->logger->debug("updating new user", ['id' => $id, 'group' => $group]);
+        $this->logger->debug("updating new user", ['id' => $user->id, 'group' => $user->group]);
         $sql = "UPDATE users SET user_group = :group WHERE id = :id";
-        $params = [':id' => $id, ':group' => $group];
+        $params = [':id' => $user->id, ':group' => $user->group];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         if($stmt->rowCount() > 0) {
@@ -114,7 +114,7 @@ final class Database implements DatabaseInterface
         return false;
     }
 
-    public function getCategory(string $id): ?array
+    public function getCategory(string $id): ?CategoryDTO
     {
         $this->logger->debug("fetching category", ['id' => $id]);
         $sql = "SELECT * FROM categories WHERE id = :id";
@@ -124,7 +124,7 @@ final class Database implements DatabaseInterface
         $row = $stmt->fetch();
         if ($row) {
             $this->logger->info("category fetched", ['params' => $params, 'row' => $row]);
-            return $row;
+            return new CategoryDTO($row['id'], $row['name'], $row['shape'], (int)$row['width'], (int)$row['height']);
         }
         $this->logger->info("category not found", ['params' => $params]);
         return null;
@@ -137,14 +137,14 @@ final class Database implements DatabaseInterface
         $stmt  = $this->pdo->query($sql);
         $rows  = $stmt->fetchAll();
         $this->logger->info("categories fetched", ['rows' => $rows]);
-        return $rows;
+        return array_map(fn($row) => new CategoryDTO($row['id'], $row['name'], $row['shape'], (int)$row['width'], (int)$row['height']), $rows);
     }
 
-    public function insertCategory(string $id, string $name, string $shape, int $width, int $height): bool
+    public function insertCategory(CategoryDTO $category): bool
     {
-        $this->logger->debug("inserting new category", ['id' => $id, 'name' => $name]);
+        $this->logger->debug("inserting new category", ['id' => $category->id, 'name' => $category->name]);
         $sql = "INSERT INTO categories (id, name, shape, width, height) VALUES (:id, :name, :shape, :width, :height)";
-        $params = [':id' => $id, ':name' => $name, ':shape' => $shape, ':width' => $width, ':height' => $height];
+        $params = [':id' => $category->id, ':name' => $category->name, ':shape' => $category->shape, ':width' => $category->width, ':height' => $category->height];
         $stmt = $this->pdo->prepare($sql);
         try {
             $stmt->execute($params);
@@ -154,17 +154,17 @@ final class Database implements DatabaseInterface
             $complementary = "";
             if ($exception->getCode() === '23000') {
                 $this->logger->error("category already exists", ['params' => $params]);
-                $complementary = " - category already exists: " . $id;
+                $complementary = " - category already exists: " . $category->id;
             }
             throw new DatabaseException("Failed to insert category" . $complementary, $exception);
         }
     }
 
-    public function updateCategory(string $id, string $name, string $shape, int $width, int $height): bool
+    public function updateCategory(CategoryDTO $category): bool
     {
-        $this->logger->debug("updating category", ['id' => $id, 'name' => $name, 'shape' => $shape, 'width' => $width, 'height' => $height]);
+        $this->logger->debug("updating category", ['id' => $category->id, 'name' => $category->name, 'shape' => $category->shape, 'width' => $category->width, 'height' => $category->height]);
         $sql = "UPDATE categories SET name = :name, shape = :shape, width = :width, height = :height WHERE id = :id";
-        $params = [':id' => $id, ':name' => $name, ':shape' => $shape, ':width' => $width, ':height' => $height];
+        $params = [':id' => $category->id, ':name' => $category->name, ':shape' => $category->shape, ':width' => $category->width, ':height' => $category->height];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         if ($stmt->rowCount() > 0) {
@@ -190,7 +190,7 @@ final class Database implements DatabaseInterface
         return false;
     }
 
-    public function getType(string $id): ?array
+    public function getType(string $id): ?TypeDTO
     {
         $this->logger->debug("fetching type", ['id' => $id]);
         $sql = "SELECT * FROM types WHERE id = :id";
@@ -200,7 +200,7 @@ final class Database implements DatabaseInterface
         $row = $stmt->fetch();
         if ($row) {
             $this->logger->info("type fetched", ['params' => $params, 'row' => $row]);
-            return $row;
+            return new TypeDTO($row['id'], $row['name']);
         }
         $this->logger->info("type not found", ['params' => $params]);
         return null;
@@ -213,14 +213,14 @@ final class Database implements DatabaseInterface
         $stmt  = $this->pdo->query($sql);
         $rows  = $stmt->fetchAll();
         $this->logger->info("types fetched", ['rows' => $rows]);
-        return $rows;
+        return array_map(fn($row) => new TypeDTO($row['id'], $row['name']), $rows);
     }
 
-    public function insertType(string $id, string $name): bool
+    public function insertType(TypeDTO $type): bool
     {
-        $this->logger->debug("inserting new type", ['id' => $id, 'name' => $name]);
+        $this->logger->debug("inserting new type", ['id' => $type->id, 'name' => $type->name]);
         $sql = "INSERT INTO types (id, name) VALUES (:id, :name)";
-        $params = [':id' => $id, ':name' => $name];
+        $params = [':id' => $type->id, ':name' => $type->name];
         $stmt = $this->pdo->prepare($sql);
         try {
             $stmt->execute($params);
@@ -230,17 +230,17 @@ final class Database implements DatabaseInterface
             $complementary = "";
             if ($exception->getCode() === '23000') {
                 $this->logger->error("Type already exists", ['params' => $params]);
-                $complementary = "Type already exists: " . $id;
+                $complementary = "Type already exists: " . $type->id;
             }
             throw new DatabaseException("Failed to insert type. " . $complementary, $exception);
         }
     }
 
-    public function updateType(string $id, string $name): bool
+    public function updateType(TypeDTO $type): bool
     {
-        $this->logger->debug("updating type", ['id' => $id, 'name' => $name]);
+        $this->logger->debug("updating type", ['id' => $type->id, 'name' => $type->name]);
         $sql = "UPDATE types SET name = :name WHERE id = :id";
-        $params = [':id' => $id, ':name' => $name];
+        $params = [':id' => $type->id, ':name' => $type->name];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         if ($stmt->rowCount() > 0) {
@@ -266,7 +266,7 @@ final class Database implements DatabaseInterface
         return false;
     }
 
-    public function getNode(string $id): ?array
+    public function getNode(string $id): ?NodeDTO
     {
         $this->logger->debug("fetching node", ['id' => $id]);
         $sql = "SELECT * FROM nodes WHERE id = :id";
@@ -278,7 +278,7 @@ final class Database implements DatabaseInterface
             $row[Node::NODE_KEYNAME_USERCREATED] = (bool)$row[Node::NODE_KEYNAME_USERCREATED];
             $row['data'] = json_decode($row['data'], true);
             $this->logger->info("node fetched", ['params' => $params, 'row' => $row]);
-            return $row;
+            return new NodeDTO($row['id'], $row['label'], $row['category'], $row['type'], $row[Node::NODE_KEYNAME_USERCREATED], $row['data']);
         }
         $this->logger->info("node not found", ['params' => $params]);
         return null;
@@ -295,15 +295,15 @@ final class Database implements DatabaseInterface
             $row['data'] = json_decode($row['data'], true);
         }
         $this->logger->info("nodes fetched", ['rows' => $rows]);
-        return $rows;
+        return array_map(fn($row) => new NodeDTO($row['id'], $row['label'], $row['category'], $row['type'], $row[Node::NODE_KEYNAME_USERCREATED], $row['data']), $rows);
     }
 
-    public function insertNode(string $id, string $label, string $category, string $type, bool $userCreated = false, array $data = []): bool
+    public function insertNode(NodeDTO $node): bool
     {
-        $this->logger->debug("inserting new node", ['id' => $id, 'label' => $label, 'category' => $category, 'type' => $type, 'userCreated' => $userCreated, 'data' => $data]);
+        $this->logger->debug("inserting new node", ['id' => $node->id, 'label' => $node->label, 'category' => $node->category, 'type' => $node->type, 'userCreated' => $node->userCreated, 'data' => $node->data]);
         $sql = "INSERT INTO nodes (id, label, category, type, user_created, data) VALUES (:id, :label, :category, :type, :user_created, :data)";
-        $data = json_encode($data, JSON_UNESCAPED_UNICODE);
-        $params = [':id' => $id, ':label' => $label, ':category' => $category, ':type' => $type, ':user_created' => $userCreated, ':data' => $data];
+        $data = json_encode($node->data, JSON_UNESCAPED_UNICODE);
+        $params = [':id' => $node->id, ':label' => $node->label, ':category' => $node->category, ':type' => $node->type, ':user_created' => $node->userCreated, ':data' => $data];
         $stmt = $this->pdo->prepare($sql);
         try {
             $stmt->execute($params);
@@ -313,7 +313,7 @@ final class Database implements DatabaseInterface
             $complementary = "";
             if ($exception->getCode() === '23000') {
                 $this->logger->error("Node already exists", ['params' => $params]);
-                $complementary = "Node already exists: " . $id;
+                $complementary = "Node already exists: " . $node->id;
             }
             throw new DatabaseException("Failed to insert node. " . $complementary, $exception);
         }
@@ -325,13 +325,13 @@ final class Database implements DatabaseInterface
         $sql = "INSERT INTO nodes (id, label, category, type, user_created, data) VALUES (:id, :label, :category, :type, :user_created, :data)";
         $stmt = $this->pdo->prepare($sql);
         foreach ($nodes as $node) {
-            $data = json_encode($node['data'] ?? [], JSON_UNESCAPED_UNICODE);
+            $data = json_encode($node->data ?? [], JSON_UNESCAPED_UNICODE);
             $params = [
-                ':id' => $node['id'],
-                ':label' => $node['label'],
-                ':category' => $node['category'],
-                ':type' => $node['type'],
-                ':user_created' => $node['user_created'] ?? false,
+                ':id' => $node->id,
+                ':label' => $node->label,
+                ':category' => $node->category,
+                ':type' => $node->type,
+                ':user_created' => $node->userCreated ?? false,
                 ':data' => $data
             ];
             try {
@@ -340,7 +340,7 @@ final class Database implements DatabaseInterface
                 $complementary = "";
                 if ($exception->getCode() === '23000') {
                     $complementary = "Node already exists: ";
-                    $complementary .= $node['id'];
+                    $complementary .= $node->id;
                     $this->logger->error("node already exists in batch", ['params' => $params]);
                 }
                 throw new DatabaseException("Failed to batch insert nodes. " . $complementary, $exception);
@@ -350,12 +350,12 @@ final class Database implements DatabaseInterface
         return true;
     }
 
-    public function updateNode(string $id, string $label, string $category, string $type, array $data = []): bool
+    public function updateNode(NodeDTO $node): bool
     {
-        $this->logger->debug("updating node", ['id' => $id, 'label' => $label, 'category' => $category, 'type' => $type, 'data' => $data]);
+        $this->logger->debug("updating node", ['id' => $node->id, 'label' => $node->label, 'category' => $node->category, 'type' => $node->type, 'data' => $node->data]);
         $sql = "UPDATE nodes SET label = :label, category = :category, type = :type, data = :data WHERE id = :id";
-        $data = json_encode($data, JSON_UNESCAPED_UNICODE);
-        $params = [':id' => $id, ':label' => $label, ':category' => $category, ':type' => $type, ':data' => $data];
+        $data = json_encode($node->data, JSON_UNESCAPED_UNICODE);
+        $params = [':id' => $node->id, ':label' => $node->label, ':category' => $node->category, ':type' => $node->type, ':data' => $data];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         if ($stmt->rowCount() > 0) {
@@ -364,19 +364,6 @@ final class Database implements DatabaseInterface
         }
         $this->logger->error("node not updated", ['params' => $params]);
         return false;
-    }
-
-    public function batchUpdateNodeStatus(array $statuses): bool
-    {
-        $this->logger->debug("batch updating node statuses", ['statuses' => $statuses]);
-        $sql = "REPLACE INTO status (node_id, status) VALUES (:node_id, :status)";
-        $stmt = $this->pdo->prepare($sql);
-        foreach ($statuses as $status) {
-            $params = [':node_id' => $status['node_id'], ':status' => $status['status']];
-            $stmt->execute($params);
-        }
-        $this->logger->info("batch node statuses updated", ['statuses' => $statuses]);
-        return true;
     }
 
     public function deleteNode(string $id): bool
@@ -394,18 +381,18 @@ final class Database implements DatabaseInterface
         return false;
     }
 
-    public function getEdge(string $source, string $target): ?array
+    public function getEdge(string $id): ?EdgeDTO
     {
-        $this->logger->debug("getting edge", ['source' => $source, 'target' => $target]);
-        $sql = "SELECT * FROM edges WHERE source = :source AND target = :target";
-        $params = [':source' => $source, ':target' => $target];
+        $this->logger->debug("getting edge", ['id' => $id]);
+        $sql = "SELECT * FROM edges WHERE id = :id";
+        $params = [':id' => $id];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         $row = $stmt->fetch();
         if ($row) {
             $row['data'] = json_decode($row['data'], true);
             $this->logger->info("edge found", ['params' => $params, 'row' => $row]);
-            return $row;
+            return new EdgeDTO($row['id'], $row['source'], $row['target'], $row['label'], $row['data']);
         }
         $this->logger->info("edge not found", ['params' => $params]);
         return null;
@@ -424,12 +411,12 @@ final class Database implements DatabaseInterface
         return $rows;
     }
 
-    public function insertEdge(string $id, string $source, string $target, string $label, array $data = []): bool
+    public function insertEdge(EdgeDTO $edge): bool
     {
-        $this->logger->debug("inserting edge", ['id' => $id, 'source' => $source, 'target' => $target, 'label' => $label, 'data' => $data]);
+        $this->logger->debug("inserting edge", ['id' => $edge->id, 'source' => $edge->source, 'target' => $edge->target, 'label' => $edge->label, 'data' => $edge->data]);
         $sql = "INSERT INTO edges(id, source, target, label, data) VALUES (:id, :source, :target, :label, :data)";
-        $data = json_encode($data, JSON_UNESCAPED_UNICODE);
-        $params = [':id' => $id, ':source' => $source, ':target' => $target, ':label' => $label, ':data' => $data];
+        $data = json_encode($edge->data, JSON_UNESCAPED_UNICODE);
+        $params = [':id' => $edge->id, ':source' => $edge->source, ':target' => $edge->target, ':label' => $edge->label, ':data' => $data];
         $stmt = $this->pdo->prepare($sql);
 
         try {
@@ -440,7 +427,7 @@ final class Database implements DatabaseInterface
             $complementary = "";
             if ($exception->getCode() === '23000') {
                 $this->logger->error("Edge already exists", ['params' => $params]);
-                $complementary = "Edge already exists: " . $id;
+                $complementary = "Edge already exists: " . $edge->id;
             }
             throw new DatabaseException("Failed to insert edge. " . $complementary, $exception);
         }
@@ -476,12 +463,12 @@ final class Database implements DatabaseInterface
         return true;
     }
 
-    public function updateEdge(string $id, string $label, array $data = []): bool
+    public function updateEdge(EdgeDTO $edge): bool
     {
-        $this->logger->debug("updating edge", ['id' => $id, 'label' => $label, 'data' => $data]);
+        $this->logger->debug("updating edge", ['id' => $edge->id, 'label' => $edge->label, 'data' => $edge->data]);
         $sql = "UPDATE edges SET label = :label, data = :data WHERE id = :id";
-        $data = json_encode($data, JSON_UNESCAPED_UNICODE);
-        $params = [':id' => $id, ':label' => $label, ':data' => $data];
+        $data = json_encode($edge->data, JSON_UNESCAPED_UNICODE);
+        $params = [':id' => $edge->id, ':label' => $edge->label, ':data' => $data];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         if($stmt->rowCount() > 0) {
@@ -517,7 +504,7 @@ final class Database implements DatabaseInterface
         return $rows;
     }
 
-    public function getNodeStatus(string $id): ?array
+    public function getNodeStatus(string $id): ?NodeStatusDTO
     {
         $this->logger->debug("fetching node status", ['id' => $id]);
         $sql = "SELECT n.id, s.status FROM nodes n LEFT JOIN status s ON n.id = s.node_id WHERE n.id = :id";
@@ -527,23 +514,46 @@ final class Database implements DatabaseInterface
         $row = $stmt->fetch();
         if($row) {
             $this->logger->info("node status fetched", ['params' => $params, 'row' => $row]);
-            return $row;
+            return new NodeStatusDTO($row['id'], $row['status']);
         }
         return null;
     }
 
-    public function updateNodeStatus(string $id, string $status): bool
+    public function updateNodeStatus(NodeStatusDTO $nodeStatus): bool
     {
-        $this->logger->debug("updating node status", ['id' => $id, 'status' => $status]);
+        $this->logger->debug("updating node status", ['id' => $nodeStatus->node_id, 'status' => $nodeStatus->status]);
         $sql = "REPLACE INTO status (node_id, status) VALUES (:node_id, :status)";
-        $params = [':node_id' => $id, ':status' => $status];
+        $params = [':node_id' => $nodeStatus->node_id, ':status' => $nodeStatus->status];
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($params);
+
+        try {
+            $stmt->execute($params);
+        } catch (PDOException $exception) {
+            $complementary = "";
+            if ($exception->errorInfo[1] == 19) {
+                $complementary .= "node not found for status update: " . $nodeStatus->node_id;
+                $this->logger->error("Node not found for status update", ['params' => $params]);
+            }
+            throw new DatabaseException("Failed to update node status: " . $complementary, $exception);
+        }
         $this->logger->info("node status updated", ['params' => $params]);
         return true;
     }
 
-    public function getProject(string $id): ?array
+    public function batchUpdateNodeStatus(array $statuses): bool
+    {
+        $this->logger->debug("batch updating node statuses", ['statuses' => $statuses]);
+        $sql = "REPLACE INTO status (node_id, status) VALUES (:node_id, :status)";
+        $stmt = $this->pdo->prepare($sql);
+        foreach ($statuses as $status) {
+            $params = [':node_id' => $status->node_id, ':status' => $status->status];
+            $stmt->execute($params);
+        }
+        $this->logger->info("batch node statuses updated", ['statuses' => $statuses]);
+        return true;
+    }
+
+    public function getProject(string $id): ?ProjectDTO
     {
         $this->logger->debug("fetching project", ['id' => $id]);
         $sql = "SELECT * FROM projects WHERE id = :id";
@@ -553,14 +563,14 @@ final class Database implements DatabaseInterface
         $row = $stmt->fetch();
         if ($row) {
 
-            $project = [
-                'id' => $row['id'],
-                'name' => $row['name'],
-                'author' => $row['author'],
-                'data' => json_decode($row['data'], true),
-                'created_at' => $row['created_at'],
-                'updated_at' => $row['updated_at'],
-            ];
+            $project = new ProjectDTO(
+                $row['id'],
+                $row['name'],
+                $row['author'],
+                json_decode($row['data'], true),
+                $row['created_at'],
+                $row['updated_at'],
+            );
 
             return $project;
         }
@@ -581,12 +591,12 @@ final class Database implements DatabaseInterface
         return $rows;
     }
 
-    public function insertProject(string $id, string $name, string $author, array $data): bool
+    public function insertProject(ProjectDTO $project): bool
     {
-        $this->logger->debug("inserting new project", ['id' => $id, 'name' => $name, 'author' => $author, 'data' => $data]);
+        $this->logger->debug("inserting new project", ['id' => $project->id, 'name' => $project->name, 'author' => $project->author, 'data' => $project->data]);
         $sql = "INSERT INTO projects (id, name, author, data) VALUES (:id, :name, :author, :data)";
-        $data = json_encode($data, JSON_UNESCAPED_UNICODE);
-        $params = [':id' => $id, ':name' => $name, ':author' => $author, ':data' => $data];
+        $data = json_encode($project->data, JSON_UNESCAPED_UNICODE);
+        $params = [':id' => $project->id, ':name' => $project->name, ':author' => $project->author, ':data' => $data];
         $stmt = $this->pdo->prepare($sql);
 
         try {
@@ -598,12 +608,12 @@ final class Database implements DatabaseInterface
         }
     }
 
-    public function updateProject(string $id, string $name, string $author, array $data): bool
+    public function updateProject(ProjectDTO $project): bool
     {
-        $this->logger->debug("updating project", ['id' => $id, 'name' => $name, 'author' => $author, 'data' => $data]);
+        $this->logger->debug("updating project", ['id' => $project->id, 'name' => $project->name, 'author' => $project->author, 'data' => $project->data]);
         $sql = "UPDATE projects SET name = :name, author = :author, data = :data, updated_at = CURRENT_TIMESTAMP WHERE id = :id";
-        $data = json_encode($data, JSON_UNESCAPED_UNICODE);
-        $params = [':id' => $id, ':name' => $name, ':author' => $author, ':data' => $data];
+        $data = json_encode($project->data, JSON_UNESCAPED_UNICODE);
+        $params = [':id' => $project->id, ':name' => $project->name, ':author' => $project->author, ':data' => $data];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         if ($stmt->rowCount() > 0) {
@@ -641,13 +651,13 @@ final class Database implements DatabaseInterface
         return $rows;
     }
 
-    public function insertLog(string $entity_type, string $entity_id, string $action, ?array $old_data = null, ?array $new_data = null, string $user_id, string $ip_address): bool
+    public function insertLog(LogDTO $log): bool
     {
-        $this->logger->debug("inserting audit log", ['entity_type' => $entity_type, 'entity_id' => $entity_id, 'action' => $action, 'old_data' => $old_data, 'new_data' => $new_data, 'user_id' => $user_id, 'ip_address' => $ip_address]);
+        $this->logger->debug("inserting audit log", ['entity_type' => $log->entityType, 'entity_id' => $log->entityId, 'action' => $log->action, 'old_data' => $log->oldData, 'new_data' => $log->newData, 'user_id' => $log->userId, 'ip_address' => $log->ipAddress]);
         $sql = "INSERT INTO audit (entity_type, entity_id, action, old_data, new_data, user_id, ip_address) VALUES (:entity_type, :entity_id, :action, :old_data, :new_data, :user_id, :ip_address)";
-        $old_data = $old_data !== null ? json_encode($old_data, JSON_UNESCAPED_UNICODE) : null;
-        $new_data = $new_data !== null ? json_encode($new_data, JSON_UNESCAPED_UNICODE) : null;
-        $params = [':entity_type' => $entity_type, ':entity_id' => $entity_id, ':action' => $action, ':old_data' => $old_data, ':new_data' => $new_data, ':user_id' => $user_id, ':ip_address' => $ip_address];
+        $old_data = $log->oldData !== null ? json_encode($log->oldData, JSON_UNESCAPED_UNICODE) : null;
+        $new_data = $log->newData !== null ? json_encode($log->newData, JSON_UNESCAPED_UNICODE) : null;
+        $params = [':entity_type' => $log->entityType, ':entity_id' => $log->entityId, ':action' => $log->action, ':old_data' => $old_data, ':new_data' => $new_data, ':user_id' => $log->userId, ':ip_address' => $log->ipAddress];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         $this->logger->info("audit log inserted", ['params' => $params]);
@@ -729,12 +739,12 @@ final class Database implements DatabaseInterface
         ');
         
         $this->pdo->exec('
-            CREATE TABLE IF NOT EXISTS project_nodes (
-                project_id TEXT NOT NULL,
+            CREATE TABLE IF NOT EXISTS nodes_projects (
                 node_id    TEXT NOT NULL,
-                PRIMARY KEY (project_id, node_id),
-                FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
-                FOREIGN KEY (node_id) REFERENCES nodes(id) ON DELETE CASCADE
+                project_id TEXT NOT NULL,
+                PRIMARY KEY (node_id, project_id),
+                FOREIGN KEY (node_id) REFERENCES nodes(id) ON DELETE CASCADE,
+                FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
             );
         ');
         

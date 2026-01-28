@@ -1517,7 +1517,7 @@ class TestDatabase extends TestAbstractTest
         }
 
         $user = $this->database->getUser('admin');
-        if ($user['id'] !== 'admin' || $user['group'] !== 'admin') {
+        if ($user->id !== 'admin' || $user->group !== 'admin') {
             print_r($user);
             throw new Exception('admin expected');
         }
@@ -1529,14 +1529,14 @@ class TestDatabase extends TestAbstractTest
         if (count($users) !== 1) {
             throw new Exception('should have one user');
         }
-        if ($users[0]['id'] !== 'admin' || $users[0]['group'] !== 'admin') {
+        if ($users[0]->id !== 'admin' || $users[0]->group !== 'admin') {
             throw new Exception('admin expected');
         }
     }
 
     public function testInsertUser(): void
     {
-        $this->database->insertUser('maria', 'contributor');
+        $this->database->insertUser(new UserDTO('maria', 'contributor'));
         $stmt = $this->pdo->prepare('select * from users where id = :id');
         $stmt->execute([':id' => 'maria']);
         $user = $stmt->fetch();
@@ -1545,7 +1545,7 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('maria expected');
         }
         try {
-            $this->database->insertUser('maria', 'contributor');
+            $this->database->insertUser(new UserDTO('maria', 'contributor'));
         } catch(Exception $e) {
             if ($e->getMessage() !== "Database Error: Failed to insert user - user already exists. Exception: SQLSTATE[23000]: Integrity constraint violation: 19 UNIQUE constraint failed: users.id") {
                 throw new Exception('unique constraint expected');
@@ -1596,7 +1596,7 @@ class TestDatabase extends TestAbstractTest
         $stmt = $this->pdo->prepare('insert into users (id, user_group) values (:id, :user_group)');
         $stmt->execute([':id' => 'maria', ':user_group' => 'contributor']);
         
-        $this->database->updateUser('maria', 'admin');
+        $this->database->updateUser(new UserDTO('maria', 'admin'));
         
         $stmt = $this->pdo->prepare('select * from users where id = :id');
         $stmt->execute([':id' => 'maria']);
@@ -1605,7 +1605,7 @@ class TestDatabase extends TestAbstractTest
         if ($user['id'] !== 'maria' || $user['user_group'] !== 'admin') {
             throw new Exception('expected maria admin');
         }
-        if ($this->database->updateUser('joao', 'contributor')) {
+        if ($this->database->updateUser(new UserDTO('joao', 'contributor'))) {
             throw new Exception('expected joao not found');
         }
     }
@@ -1639,7 +1639,7 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('should return null');
         }
         $category = $this->database->getCategory('business');
-        if ($category['id'] !== 'business' || $category['name'] !== 'Negócios') {
+        if ($category->id !== 'business' || $category->name !== 'Negócios') {
             throw new Exception('business expected');
         }
     }
@@ -1663,7 +1663,7 @@ class TestDatabase extends TestAbstractTest
         }
 
         foreach ($categories as $key => $cat) {
-            if ($cat['id'] !== 'cat1' && $cat['id'] !== 'cat2') {
+            if ($cat->id !== 'cat1' && $cat->id !== 'cat2') {
                 unset($categories[$key]);
             }
         }
@@ -1671,18 +1671,18 @@ class TestDatabase extends TestAbstractTest
         $categories = array_values($categories);
 
 
-        if ($categories[0]['id'] !== 'cat1' || $categories[0]['name'] !== 'Category 1') {
+        if ($categories[0]->id !== 'cat1' || $categories[0]->name !== 'Category 1') {
             throw new Exception('error on category cat1');
         }
 
-        if ($categories[1]['id'] !== 'cat2' || $categories[1]['name'] !== 'Category 2') {
+        if ($categories[1]->id !== 'cat2' || $categories[1]->name !== 'Category 2') {
             throw new Exception('error on category cat2');
         }
     }
 
     public function testInsertCategory(): void
     {
-        $this->database->insertCategory('cat1', 'Category 1', 'box', 100, 50);
+        $this->database->insertCategory(new CategoryDTO('cat1', 'Category 1', 'box', 100, 50));
         $stmt = $this->pdo->prepare('select * from categories where id = :id');
         $stmt->execute([':id' => 'cat1']);
         $category = $stmt->fetch();
@@ -1691,7 +1691,7 @@ class TestDatabase extends TestAbstractTest
         }
 
         try {
-            $this->database->insertCategory('cat1', 'Category 1', 'box', 100, 50);
+            $this->database->insertCategory(new CategoryDTO('cat1', 'Category 1', 'box', 100, 50));
         } catch(DatabaseException $e) {
             if ($e->getMessage() !== "Database Error: Failed to insert category - category already exists: cat1. Exception: SQLSTATE[23000]: Integrity constraint violation: 19 UNIQUE constraint failed: categories.id") {
                 throw new Exception('unique constraint expected');
@@ -1704,7 +1704,7 @@ class TestDatabase extends TestAbstractTest
     public function testUpdateCategory(): void
     {
         $this->pdo->exec('insert into categories (id, name, shape, width, height) values ("cat1", "Category 1", "box", 100, 50)');
-        $this->database->updateCategory('cat1', 'Updated Category 1', 'circle', 150, 75);
+        $this->database->updateCategory(new CategoryDTO('cat1', 'Updated Category 1', 'circle', 150, 75));
 
         $stmt = $this->pdo->prepare('select * from categories where id = :id');
         $stmt->execute([':id' => 'cat1']);
@@ -1714,7 +1714,7 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('error on update category cat1');
         }
 
-        $result = $this->database->updateCategory('nonexistent', 'Name', 'box', 100, 50);
+        $result = $this->database->updateCategory(new CategoryDTO('nonexistent', 'Name', 'box', 100, 50));
         if ($result) {
             throw new Exception('error on update nonexistent category');
         }
@@ -1743,7 +1743,7 @@ class TestDatabase extends TestAbstractTest
     public function testGetType(): void
     {
         $type = $this->database->getType('service');
-        if ($type['id'] !== 'service' || $type['name'] !== 'Serviço') {
+        if ($type->id !== 'service' || $type->name !== 'Serviço') {
             throw new Exception('service expected');
         }
 
@@ -1771,25 +1771,25 @@ class TestDatabase extends TestAbstractTest
         }
 
         foreach ($types as $key => $type) {
-            if ($type['id'] !== 'type1' && $type['id'] !== 'type2') {
+            if ($type->id !== 'type1' && $type->id !== 'type2') {
                 unset($types[$key]);
             }
         }
 
         $types = array_values($types);
 
-        if ($types[0]['id'] !== 'type1' || $types[0]['name'] !== 'Type 1') {
+        if ($types[0]->id !== 'type1' || $types[0]->name !== 'Type 1') {
             throw new Exception('error on type type1');
         }
 
-        if ($types[1]['id'] !== 'type2' || $types[1]['name'] !== 'Type 2') {
+        if ($types[1]->id !== 'type2' || $types[1]->name !== 'Type 2') {
             throw new Exception('error on type type2');
         }
     }
 
     public function testInsertType(): void
     {
-        $this->database->insertType('type1', 'Type 1');
+        $this->database->insertType(new TypeDTO('type1', 'Type 1'));
         $stmt = $this->pdo->prepare('select * from types where id = :id');
         $stmt->execute([':id' => 'type1']);
         $type = $stmt->fetch();
@@ -1798,7 +1798,7 @@ class TestDatabase extends TestAbstractTest
         }
 
         try {
-            $this->database->insertType('type1', 'Type 1');
+            $this->database->insertType(new TypeDTO('type1', 'Type 1'));
         } catch(DatabaseException $e) {
             if ($e->getMessage() !== "Database Error: Failed to insert type. Type already exists: type1. Exception: SQLSTATE[23000]: Integrity constraint violation: 19 UNIQUE constraint failed: types.id") {
                 throw new Exception('unique constraint expected');
@@ -1810,7 +1810,7 @@ class TestDatabase extends TestAbstractTest
     public function testUpdateType(): void
     {
         $this->pdo->exec('insert into types (id, name) values ("type1", "Type 1")');
-        $this->database->updateType('type1', 'Updated Type 1');
+        $this->database->updateType(new TypeDTO('type1', 'Updated Type 1'));
 
         $stmt = $this->pdo->prepare('select * from types where id = :id');
         $stmt->execute([':id' => 'type1']);
@@ -1820,7 +1820,7 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('error on update type type1');
         }
 
-        $result = $this->database->updateType('nonexistent', 'Name');
+        $result = $this->database->updateType(new TypeDTO('nonexistent', 'Name'));
         if ($result) {
             throw new Exception('error on update nonexistent type');
         }
@@ -1857,11 +1857,11 @@ class TestDatabase extends TestAbstractTest
 
         $node = $this->database->getNode('node1');
         
-        if ($node['id'] !== 'node1' || $node['label'] !== 'Node 01' || $node['category'] !== 'business' || $node['type'] !== 'service') {
+        if ($node->id !== 'node1' || $node->label !== 'Node 01' || $node->category !== 'business' || $node->type !== 'service') {
             throw new Exception('error on getNode');
         }
 
-        if ($node['data']['running_on'] !== 'SRV01OP') {
+        if ($node->data['running_on'] !== 'SRV01OP') {
             throw new Exception('error on getNode');
         }
 
@@ -1900,25 +1900,25 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('error on testGetNodes');
         }
 
-        if ($nodes[0]['id'] !== 'node1') {
+        if ($nodes[0]->id !== 'node1') {
             throw new Exception('error on getNode');
         }
 
-        if ($nodes[0]['data']['running_on'] !== 'SRV01OP') {
+        if ($nodes[0]->data['running_on'] !== 'SRV01OP') {
             throw new Exception('error on getNode');
         }
 
-        if ($nodes[1]['id'] !== 'node2') {
+        if ($nodes[1]->id !== 'node2') {
             throw new Exception('error on getNode');
         }
 
-        if ($nodes[1]['data']['running_on'] !== 'SRV011P') {
+        if ($nodes[1]->data['running_on'] !== 'SRV011P') {
             throw new Exception('error on getNode');
         }
     }
 
     public function testInsertNode(): void {
-        $this->database->insertNode('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']);
+        $this->database->insertNode(new NodeDTO('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']));
         
 
         $stmt = $this->pdo->prepare('select * from nodes where id = :id');
@@ -1932,7 +1932,7 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('error on testInsertNode');
         }
 
-        $this->database->insertNode('user_created', 'User Created', 'application', 'database', true, ['created_by' => 'admin']);
+        $this->database->insertNode(new NodeDTO('user_created', 'User Created', 'application', 'database', true, ['created_by' => 'admin']));
         
         $stmt->execute([':id' => 'user_created']);
         $dbNode = $stmt->fetch();
@@ -1943,7 +1943,7 @@ class TestDatabase extends TestAbstractTest
         }
 
         try {
-            $this->database->insertNode('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']);
+            $this->database->insertNode(new NodeDTO('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']));
         } catch(Exception $e) {
             if ($e->getMessage() !== "Database Error: Failed to insert node. Node already exists: node1. Exception: SQLSTATE[23000]: Integrity constraint violation: 19 UNIQUE constraint failed: nodes.id") {
                 throw new Exception('unique constraint expected');
@@ -1955,10 +1955,10 @@ class TestDatabase extends TestAbstractTest
 
     public function testBatchInsertNodes(): void {
         $nodes = [
-            ['id' => 'node1', 'label' => 'Node 01', 'category' => 'business', 'type' => 'service', 'user_created' => false, 'data' => ['running_on' => 'SRV01OP']],
-            ['id' => 'node2', 'label' => 'Node 02', 'category' => 'application', 'type' => 'database', 'user_created' => false, 'data' => ['running_on' => 'SRV011P']],
-            ['id' => 'node3', 'label' => 'Node 03', 'category' => 'application', 'type' => 'service', 'user_created' => false, 'data' => ['running_on' => 'SRV012P']],
-            ['id' => 'node1', 'label' => 'Node 01', 'category' => 'business', 'type' => 'service', 'user_created' => false, 'data' => ['running_on' => 'SRV01OP']],
+            new NodeDTO('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']),
+            new NodeDTO('node2', 'Node 02', 'application', 'database', false, ['running_on' => 'SRV011P']),
+            new NodeDTO('node3', 'Node 03', 'application', 'service', false, ['running_on' => 'SRV012P']),
+            new NodeDTO('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']),
         ];
 
         try {
@@ -1970,9 +1970,9 @@ class TestDatabase extends TestAbstractTest
         }
 
         $nodes = [
-            ['id' => 'node4', 'label' => 'Node 04', 'category' => 'business', 'type' => 'service', 'user_created' => false, 'data' => ['running_on' => 'SRV01OP']],
-            ['id' => 'node5', 'label' => 'Node 05', 'category' => 'application', 'type' => 'database', 'user_created' => false, 'data' => ['running_on' => 'SRV011P']],
-            ['id' => 'node6', 'label' => 'Node 06', 'category' => 'application', 'type' => 'service', 'user_created' => false, 'data' => ['running_on' => 'SRV012P']],
+            new NodeDTO('node4', 'Node 04', 'business', 'service', false, ['running_on' => 'SRV01OP']),
+            new NodeDTO('node5', 'Node 05', 'application', 'database', false, ['running_on' => 'SRV011P']),
+            new NodeDTO('node6', 'Node 06', 'application', 'service', false, ['running_on' => 'SRV012P']),
         ];
 
         $this->database->batchInsertNodes($nodes);
@@ -1980,13 +1980,13 @@ class TestDatabase extends TestAbstractTest
         $stmt = $this->pdo->prepare('select * from nodes where id = :id');
         
         foreach ($nodes as $n) {
-            $stmt->execute([':id' => $n['id']]);
+            $stmt->execute([':id' => $n->id]);
             $node = $stmt->fetch();
 
-            if ($node['id'] !== $n['id'] || $node['label'] !== $n['label'] || $node['category'] !== $n['category'] || $node['type'] !== $n['type']) {
+            if ($node['id'] !== $n->id || $node['label'] !== $n->label || $node['category'] !== $n->category || $node['type'] !== $n->type) {
                 throw new Exception('error on batchInsertNodes');
             }
-            if (json_decode($node['data'], true)['running_on'] !== $n['data']['running_on']) {
+            if (json_decode($node['data'], true)['running_on'] !== $n->data['running_on']) {
                 throw new Exception('error on batchInsertNodes');
             }
         }
@@ -1996,7 +1996,7 @@ class TestDatabase extends TestAbstractTest
         $this->pdo->exec('insert into nodes (id, label, category, type, data) values ("node1", "Node 01", "business", "service", \'{"running_on":"SRV011P"}\')');
         $this->pdo->exec('insert into nodes (id, label, category, type, data) values ("node2", "Node 02", "application", "database", \'{"running_on":"SRV012P"}\')');
         
-        $this->database->updateNode('node1', 'Novo Label', 'application', 'database', ['other' => 'diff']);
+        $this->database->updateNode(new NodeDTO('node1', 'Novo Label', 'application', 'database', false, ['other' => 'diff']));
 
         $stmt = $this->pdo->prepare('select * from nodes where id = :id');
         $stmt->execute([':id' => 'node1']);
@@ -2009,7 +2009,7 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('error on testUpdateNode 1');
         }
 
-        if ($this->database->updateNode('node3', 'Novo Label', 'application', 'database', ['other' => 'diff'])) {
+        if ($this->database->updateNode(new NodeDTO('node3', 'Novo Label', 'application', 'database', false, ['other' => 'diff']))) {
             throw new Exception('error on testUpdateNode 2');
         }
     }
@@ -2042,17 +2042,16 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('error on testGetEdge');
         }
 
-        $this->pdo->exec('insert into nodes (id, label, category, type, data) values ("node1", "Node 01", "application", "service", \'{"running_on":"SRV01OP"}\')');
-        $this->pdo->exec('insert into nodes (id, label, category, type, data) values ("node2", "Node 02", "business", "database", \'{"running_on":"SRV011P"}\')');
-
+        $this->pdo->exec('insert into nodes (id, label, category, type, data) values ("node1", "Node 01", "application", "service", \'{}\')');
+        $this->pdo->exec('insert into nodes (id, label, category, type, data) values ("node2", "Node 02", "business", "database", \'{}\')');
         $this->pdo->exec('insert into edges (id, source, target, label, data) values ("edge1", "node1", "node2", "label", \'{"a":"b"}\')');
         
-        $edge = $this->database->getEdge('node1', 'node2');
+        $edge = $this->database->getEdge('edge1');
         
-        if ($edge['id'] !== 'edge1' || $edge['source'] !== 'node1' || $edge['target'] !== 'node2') {
+        if ($edge->id !== 'edge1' || $edge->source !== 'node1' || $edge->target !== 'node2') {
             throw new Exception('error on testGetEdge');
         }
-        if ($edge['data']['a'] !== 'b') {
+        if ($edge->data['a'] !== 'b') {
             throw new Exception('error on testGetEdge');
         }
     }
@@ -2088,7 +2087,7 @@ class TestDatabase extends TestAbstractTest
         $stmt->execute([':id' => 'node1', ':label' => 'Node 01', ':category' => 'application', ':type' => 'service', ':data' => json_encode(['running_on' => 'SRV01OP'])]);
         $stmt->execute([':id' => 'node2', ':label' => 'Node 02', ':category' => 'business', ':type' => 'database', ':data' => json_encode(['running_on' => 'SRV011P'])]);
 
-        $this->database->insertEdge('edge1', 'node1', 'node2', 'label', ['a' => 'b']);
+        $this->database->insertEdge(new EdgeDTO('edge1', 'node1', 'node2', 'label', ['a' => 'b']));
 
         $stmt = $this->pdo->query('select * from edges where id = :id');
         $stmt->execute([':id' => 'edge1']);
@@ -2103,7 +2102,7 @@ class TestDatabase extends TestAbstractTest
         }
 
         try {
-            $this->database->insertEdge('edge1', 'node1', 'node2', 'label', ['a' => 'b']);
+            $this->database->insertEdge(new EdgeDTO('edge1', 'node1', 'node2', 'label', ['a' => 'b']));
         } catch(Exception $e) {
             if ($e->getMessage() !== "Database Error: Failed to insert edge. Edge already exists: edge1. Exception: SQLSTATE[23000]: Integrity constraint violation: 19 UNIQUE constraint failed: edges.source, edges.target") {
                 throw new Exception('unique constraint expected');
@@ -2165,7 +2164,7 @@ class TestDatabase extends TestAbstractTest
         $stmt->execute([':id' => 'edge1', ':source' => 'node1', ':target' => 'node2', ':label' => 'label', ':data' => json_encode(['a' => 'b'])]);
 
 
-        $this->database->updateEdge('edge1', 'label', ['x' => 'y']);
+        $this->database->updateEdge(new EdgeDTO('edge1', 'node1', 'node2', 'label', ['x' => 'y']));
 
         $stmt = $this->pdo->prepare('select * from edges where id = :id');
         $stmt->execute([':id' => 'edge1']);
@@ -2180,7 +2179,7 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('error on testUpdateEdge');
         }
 
-        if ($this->database->updateEdge('edge3', 'label', ['x' => 'y'])) {
+        if ($this->database->updateEdge(new EdgeDTO('edge3', 'node3', 'node4', 'label', ['x' => 'y']))) {
             throw new Exception('error on testUpdateEdge');
         }
     }
@@ -2241,9 +2240,10 @@ class TestDatabase extends TestAbstractTest
         $stmt = $this->pdo->prepare('insert into nodes (id, label, category, type, data) values (:id, :label, :category, :type, :data)');
         $stmt->execute([':id' => 'node1', ':label' => 'Node 01', ':category' => 'business', ':type' => 'service', ':data' => json_encode(['running_on' => 'SRV01OP'])]);
 
+        // Test node with no status
         $s = $this->database->getNodeStatus('node1');
 
-        if ($s['id'] !== 'node1' || $s['status'] !== null) {
+        if ($s->node_id !== 'node1' || $s->status !== null) {
             throw new Exception('error on testGetStatus');
         }
 
@@ -2253,24 +2253,28 @@ class TestDatabase extends TestAbstractTest
     }
 
     public function testUpdateNodeStatus(): void {
-        $s = $this->database->getStatus();
-
-        if (count($s) !== 0) {
-            throw new Exception('error on testUpdateNodeStatus');
+        
+        try {
+            $this->database->updateNodeStatus(new NodeStatusDTO('node1', 'healthy'));
+        } catch(Exception $e) {
+            if ($e->getMessage() !== "Database Error: Failed to update node status: node not found for status update: node1. Exception: SQLSTATE[23000]: Integrity constraint violation: 19 FOREIGN KEY constraint failed") {
+                throw new Exception('error on testUpdateNodeStatus - node should not exist');
+            }
         }
 
-        $this->database->insertNode('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']);
+        $this->pdo->exec('insert into nodes (id, label, category, type, data) values ("node1", "Node 01", "business", "service", \'{"running_on":"SRV01OP"}\')');
+        $this->database->updateNodeStatus(new NodeStatusDTO('node1', 'healthy'));
 
-        $this->database->updateNodeStatus('node1', 'healthy');
+        $stmt = $this->pdo->prepare('select * from status where node_id = :node_id');
+        $stmt->execute([':node_id' => 'node1']);
+        $s = $stmt->fetch();
 
-        $s = $this->database->getNodeStatus('node1');
-
-        if ($s['id'] !== 'node1' || $s['status'] !== 'healthy') {
+        if ($s['node_id'] !== 'node1' || $s['status'] !== 'healthy') {
             throw new Exception('error on testUpdateNodeStatus');
         }
 
         try {
-            $this->database->updateNodeStatus('node101', 'healthy');
+            $this->database->updateNodeStatus(new NodeStatusDTO('node2', 'unhealthy'));
         } catch(Exception $e) {
             return;
         }
@@ -2278,29 +2282,27 @@ class TestDatabase extends TestAbstractTest
     }
 
     public function testBatchUpdateNodeStatus(): void {
-        $s = $this->database->getStatus();
-
-        if (count($s) !== 0) {
-            throw new Exception('error on testBatchUpdateNodeStatus');
-        }
-
-        $this->database->insertNode('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']);
-        $this->database->insertNode('node2', 'Node 02', 'application', 'database', false, ['running_on' => 'SRV011P']);
+        $this->pdo->exec('insert into nodes (id, label, category, type, data) values ("node1", "Node 01", "business", "service", \'{"running_on":"SRV01OP"}\')');
+        $this->pdo->exec('insert into nodes (id, label, category, type, data) values ("node2", "Node 02", "application", "database", \'{"running_on":"SRV011P"}\')');
 
         $statuses = [
-            ['node_id' => 'node1', 'status' => 'healthy'],
-            ['node_id' => 'node2', 'status' => 'unhealthy'],
+            new NodeStatusDTO('node1', 'healthy'),
+            new NodeStatusDTO('node2', 'unhealthy'),
         ];
 
         $this->database->batchUpdateNodeStatus($statuses);
 
-        $s1 = $this->database->getNodeStatus('node1');
-        if ($s1['id'] !== 'node1' || $s1['status'] !== 'healthy') {
+        $stmt = $this->pdo->prepare('select * from status where node_id = :node_id');
+        $stmt->execute([':node_id' => 'node1']);
+        $s1 = $stmt->fetch();
+        if ($s1['node_id'] !== 'node1' || $s1['status'] !== 'healthy') {
             throw new Exception('error on testBatchUpdateNodeStatus');
         }
 
-        $s2 = $this->database->getNodeStatus('node2');
-        if ($s2['id'] !== 'node2' || $s2['status'] !== 'unhealthy') {
+        $stmt = $this->pdo->prepare('select * from status where node_id = :node_id');
+        $stmt->execute([':node_id' => 'node2']);
+        $s2 = $stmt->fetch();
+        if ($s2['node_id'] !== 'node2' || $s2['status'] !== 'unhealthy') {
             throw new Exception('error on testBatchUpdateNodeStatus');
         }
     }
@@ -2312,17 +2314,20 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('error on testGetProject');
         }
 
-        $this->database->insertNode('a', 'Node A', 'business', 'service', false, []);
-        $this->database->insertNode('b', 'Node B', 'business', 'service', false, []);
-        $this->database->insertNode('c', 'Node C', 'business', 'service', false, []);
-        $this->database->insertNode('d', 'Node D', 'business', 'service', false, []);
-
-        $this->database->insertEdge('a-b', 'a', 'b', 'connects', []);
-        $this->database->insertEdge('c-d', 'c', 'd', 'connects', []);
+        $this->pdo->exec('insert into nodes (id, label, category, type, data) values ("a", "Node A", "business", "service", \'{}\')');
+        $this->pdo->exec('insert into nodes (id, label, category, type, data) values ("b", "Node B", "business", "service", \'{}\')');
+        $this->pdo->exec('insert into nodes (id, label, category, type, data) values ("c", "Node C", "business", "service", \'{}\')');
+        $this->pdo->exec('insert into nodes (id, label, category, type, data) values ("d", "Node D", "business", "service", \'{}\')');
         
-        $this->database->insertProject('initial', 'Initial Project', 'admin', ['nodes' => ['a', 'c']]);
+        $this->pdo->exec('insert into edges (id, source, target, label, data) values ("a-b", "a", "b", "connects", \'{}\')');
+        $this->pdo->exec('insert into edges (id, source, target, label, data) values ("c-d", "c", "d", "connects", \'{}\')');
 
+        $this->pdo->exec('insert into projects (id, name, author, data) values ("initial", "Initial Project", "admin", \'{"nodes":["a","b"],"edges":["a-b"]}\')');
+        
+        $this->pdo->exec('insert into nodes_projects (node_id, project_id) values ("a", "initial")');
+        $this->pdo->exec('insert into nodes_projects (node_id, project_id) values ("c", "initial")');
         $project = $this->database->getProject('initial');
+        //print_r($project);
     }
 
     public function testGetProjects(): void
@@ -2332,7 +2337,7 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('error on testGetProjects');
         }
 
-        $this->database->insertProject('initial', 'Initial Project', 'admin', ['nodes' => ['a', 'b']]);
+        $this->pdo->exec('insert into projects (id, name, author, data) values ("initial", "Initial Project", "admin", \'{"nodes":["a","b"]}\')');
 
         $projects = $this->database->getProjects();
         if (count($projects) !== 1) {
@@ -2346,19 +2351,14 @@ class TestDatabase extends TestAbstractTest
 
     public function testInsertProject(): void
     {
-        $this->database->insertProject('initial', 'Initial Project', 'admin', ['nodes' => ['a', 'b']]);
+        $this->database->insertProject(new ProjectDTO('initial', 'Initial Project', 'admin', ['nodes' => ['a', 'b']]));
 
-        $projects = $this->database->getProjects();
-        if (count($projects) !== 1) {
-            throw new Exception('error on testInsertProject');
-        }
-
-        if ($projects[0]['id'] !== 'initial' || $projects[0]['name'] !== 'Initial Project' || $projects[0]['author'] !== 'admin') {
-            throw new Exception('error on testInsertProject');
-        }
-
+        $stmt = $this->pdo->prepare('select * from projects where id = :id');
+        $stmt->execute([':id' => 'initial']);
+        $project = $stmt->fetch();
+        
         try {
-            $this->database->insertProject('initial', 'Initial Project', 'admin', ['nodes' => ['a', 'b']]);
+            $this->database->insertProject(new ProjectDTO('initial', 'Initial Project', 'admin', ['nodes' => ['a', 'b']]));
         } catch(Exception $e) {
             return;
         }
@@ -2367,11 +2367,15 @@ class TestDatabase extends TestAbstractTest
 
     public function testUpdateProject(): void
     {
-        $this->database->insertProject('initial', 'Initial Project', 'admin', ['nodes' => ['a', 'b']]);
+        $this->pdo->exec('insert into projects (id, name, author, data) values ("initial", "Initial Project", "admin", \'{"nodes":["a","b"]}\')');
 
-        $this->database->updateProject('initial', 'Updated Project', 'admin', ['nodes' => ['c', 'd']]);
+        $this->database->updateProject(new ProjectDTO('initial', 'Updated Project', 'admin', ['nodes' => ['c', 'd']]));
 
-        $projects = $this->database->getProjects();
+        
+        $stmt = $this->pdo->prepare('select * from projects where id = :id');
+        $stmt->execute([':id' => 'initial']);
+        $projects = $stmt->fetchAll();
+
         if (count($projects) !== 1) {
             throw new Exception('error on testUpdateProject 1');
         }
@@ -2380,19 +2384,14 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('error on testUpdateProject 2');
         }
 
-        if ($this->database->updateProject('nonexistent', 'Name', 'admin', ['nodes' => []])) {
+        if ($this->database->updateProject(new ProjectDTO('nonexistent', 'Name', 'admin', ['nodes' => []]))) {
             throw new Exception('error on testUpdateProject 3');
         }
     }
 
     public function testDeleteProject(): void
     {
-        $this->database->insertProject('initial', 'Initial Project', 'admin', ['nodes' => ['a', 'b']]);
-
-        $projects = $this->database->getProjects();
-        if (count($projects) !== 1) {
-            throw new Exception('error on testDeleteProject 1');
-        }
+        $this->pdo->exec('insert into projects (id, name, author, data) values ("initial", "Initial Project", "admin", \'{"nodes":["a","b"]}\')');
 
         if (! $this->database->deleteProject('initial')) {
             throw new Exception('error on testDeleteProject 1');
@@ -2414,9 +2413,9 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('error on testGetLogs');
         }
 
-        $this->database->insertLog('node', 'node1', 'update', null, null, 'admin', '127.0.0.1');
+        $this->database->insertLog(new LogDTO('node', 'node1', 'update', null, null, 'admin', '127.0.0.1', new DateTimeImmutable()));
         sleep(1);
-        $this->database->insertLog('node', 'node2', 'update', null, null, 'admin', '127.0.0.1');
+        $this->database->insertLog(new LogDTO('node', 'node2', 'update', null, null, 'admin', '127.0.0.1', new DateTimeImmutable()));
 
         $logs = $this->database->getLogs(2);
         if (count($logs) !== 2) {
@@ -2433,7 +2432,7 @@ class TestDatabase extends TestAbstractTest
     }
 
     public function testInsertAuditLog(): void {
-        $this->database->insertLog('node', 'node1', 'update', null, null, 'admin', '127.0.0.1');
+        $this->database->insertLog(new LogDTO('node', 'node1', 'update', null, null, 'admin', '127.0.0.1', new DateTimeImmutable()));
         $logs = $this->database->getLogs(2);
         if (count($logs) !== 1) {
             throw new Exception('error on testInsertAuditLog');
