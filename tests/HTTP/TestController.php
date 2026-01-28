@@ -57,6 +57,8 @@ final class TestController extends TestAbstractTest
 
     public function testGetUser(): void
     {
+        HelperContext::update('tester', 'admin', '127.0.0.1');
+        
         $_SERVER['REQUEST_METHOD'] = 'POST';
         $_SERVER['SCRIPT_NAME'] = 'api.php';
         $_SERVER['REQUEST_URI'] = 'api.php/getUser';
