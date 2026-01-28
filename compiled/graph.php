@@ -1328,13 +1328,13 @@ final class DatabaseException extends RuntimeException
 
 final class Database implements DatabaseInterface
 {
-    private PDO $pdo;
-    private LoggerInterface $logger;
+    private const SQLSTATE_CONSTRAINT_VIOLATION = '23000';
 
-    public function __construct(PDO $pdo, LoggerInterface $logger)
-    {
-        $this->pdo = $pdo;
-        $this->logger = $logger;
+    public function __construct(
+        private PDO $pdo,
+        private LoggerInterface $logger,
+        private string $sqlSchema
+    ) {
         $this->initSchema();
     }
 
@@ -1354,6 +1354,9 @@ final class Database implements DatabaseInterface
         return null;
     }
 
+    /**                                                                                                                                                                                    
+     * @return UserDTO[]                                                                                                                                                                   
+     */ 
     public function getUsers(): array
     {
         $this->logger->debug("fetching users");
@@ -1376,7 +1379,7 @@ final class Database implements DatabaseInterface
             return true;
         } catch (PDOException $exception) {
             $complementary = "";
-            if ($exception->getCode() === '23000') {
+            if ($exception->getCode() === self::SQLSTATE_CONSTRAINT_VIOLATION) {
                 $this->logger->error("user already exists", ['params' => $params]);
                 $complementary = " - user already exists";
             }
@@ -1385,20 +1388,23 @@ final class Database implements DatabaseInterface
         }
     }
 
+    /**
+     * @param UserDTO[] $users
+     */
     public function batchInsertUsers(array $users): bool
     {
         $this->logger->debug("batch inserting users", ['users' => $users]);
         $sql = "INSERT INTO users (id, user_group) VALUES (:id, :group)";
         $stmt = $this->pdo->prepare($sql);
         foreach ($users as $user) {
-            $params = [':id' => $user['id'], ':group' => $user['group']];
+            $params = [':id' => $user->id, ':group' => $user->group];
             try {
                 $stmt->execute($params);
             } catch (PDOException $exception) {
                 $complementary = "";
-                if ($exception->getCode() === '23000') {
+                if ($exception->getCode() === self::SQLSTATE_CONSTRAINT_VIOLATION) {
                     $complementary = "user already exists: ";
-                    $complementary .= $user['id'];
+                    $complementary .= $user->id;
                     $this->logger->error("user already exists in batch", ['params' => $params]);
                 }
                 throw new DatabaseException("Failed to insert user in batch: " . $complementary, $exception);
@@ -1410,7 +1416,7 @@ final class Database implements DatabaseInterface
 
     public function updateUser(UserDTO $user): bool
     {
-        $this->logger->debug("updating new user", ['id' => $user->id, 'group' => $user->group]);
+        $this->logger->debug("updating user", ['id' => $user->id, 'group' => $user->group]);
         $sql = "UPDATE users SET user_group = :group WHERE id = :id";
         $params = [':id' => $user->id, ':group' => $user->group];
         $stmt = $this->pdo->prepare($sql);
@@ -1454,6 +1460,9 @@ final class Database implements DatabaseInterface
         return null;
     }
 
+    /**
+     * @return CategoryDTO[]
+     */
     public function getCategories(): array
     {
         $this->logger->debug("fetching categories");
@@ -1476,11 +1485,11 @@ final class Database implements DatabaseInterface
             return true;
         } catch (PDOException $exception) {
             $complementary = "";
-            if ($exception->getCode() === '23000') {
+            if ($exception->getCode() === self::SQLSTATE_CONSTRAINT_VIOLATION) {
                 $this->logger->error("category already exists", ['params' => $params]);
-                $complementary = " - category already exists: " . $category->id;
+                $complementary = "category already exists: " . $category->id;
             }
-            throw new DatabaseException("Failed to insert category" . $complementary, $exception);
+            throw new DatabaseException("Failed to insert category. " . $complementary, $exception);
         }
     }
 
@@ -1530,6 +1539,9 @@ final class Database implements DatabaseInterface
         return null;
     }
     
+    /**
+     * @return TypeDTO[]
+     */
     public function getTypes(): array
     {
         $this->logger->debug("fetching types");
@@ -1552,7 +1564,7 @@ final class Database implements DatabaseInterface
             return true;
         } catch (PDOException $exception) {
             $complementary = "";
-            if ($exception->getCode() === '23000') {
+            if ($exception->getCode() === self::SQLSTATE_CONSTRAINT_VIOLATION) {
                 $this->logger->error("Type already exists", ['params' => $params]);
                 $complementary = "Type already exists: " . $type->id;
             }
@@ -1608,6 +1620,9 @@ final class Database implements DatabaseInterface
         return null;
     }
 
+    /**
+     * @return NodeDTO[]
+     */
     public function getNodes(): array
     {
         $this->logger->debug("fetching nodes");
@@ -1635,7 +1650,7 @@ final class Database implements DatabaseInterface
             return true;
         } catch (PDOException $exception) {
             $complementary = "";
-            if ($exception->getCode() === '23000') {
+            if ($exception->getCode() === self::SQLSTATE_CONSTRAINT_VIOLATION) {
                 $this->logger->error("Node already exists", ['params' => $params]);
                 $complementary = "Node already exists: " . $node->id;
             }
@@ -1643,6 +1658,9 @@ final class Database implements DatabaseInterface
         }
     }
 
+    /**
+     * @param NodeDTO[] $nodes
+     */
     public function batchInsertNodes(array $nodes): bool
     {
         $this->logger->debug("batch inserting nodes", ['nodes' => $nodes]);
@@ -1662,7 +1680,7 @@ final class Database implements DatabaseInterface
                 $stmt->execute($params);
             } catch (PDOException $exception) {
                 $complementary = "";
-                if ($exception->getCode() === '23000') {
+                if ($exception->getCode() === self::SQLSTATE_CONSTRAINT_VIOLATION) {
                     $complementary = "Node already exists: ";
                     $complementary .= $node->id;
                     $this->logger->error("node already exists in batch", ['params' => $params]);
@@ -1722,6 +1740,9 @@ final class Database implements DatabaseInterface
         return null;
     }
 
+    /**
+     * @return EdgeDTO[]
+     */
     public function getEdges(): array
     {
         $this->logger->debug("fetching edges");
@@ -1749,7 +1770,7 @@ final class Database implements DatabaseInterface
             return true;
         } catch (PDOException $exception) {
             $complementary = "";
-            if ($exception->getCode() === '23000') {
+            if ($exception->getCode() === self::SQLSTATE_CONSTRAINT_VIOLATION) {
                 $this->logger->error("Edge already exists", ['params' => $params]);
                 $complementary = "Edge already exists: " . $edge->id;
             }
@@ -1757,27 +1778,30 @@ final class Database implements DatabaseInterface
         }
     }
 
+    /**
+     * @param EdgeDTO[] $edges
+     */
     public function batchInsertEdges(array $edges): bool
     {
         $this->logger->debug("batch inserting edges", ['edges' => $edges]);
         $sql = "INSERT INTO edges(id, source, target, label, data) VALUES (:id, :source, :target, :label, :data)";
         $stmt = $this->pdo->prepare($sql);
         foreach ($edges as $edge) {
-            $data = json_encode($edge['data'] ?? [], JSON_UNESCAPED_UNICODE);
+            $data = json_encode($edge->data ?? [], JSON_UNESCAPED_UNICODE);
             $params = [
-                ':id' => $edge['id'],
-                ':source' => $edge['source'],
-                ':target' => $edge['target'],
-                ':label' => $edge['label'],
+                ':id' => $edge->id,
+                ':source' => $edge->source,
+                ':target' => $edge->target,
+                ':label' => $edge->label,
                 ':data' => $data
             ];
             try {
                 $stmt->execute($params);
             } catch (PDOException $exception) {
                 $complementary = "";
-                if ($exception->getCode() === '23000') {
+                if ($exception->getCode() === self::SQLSTATE_CONSTRAINT_VIOLATION) {
                     $complementary = "Edge already exists: ";
-                    $complementary .= $edge['id'];
+                    $complementary .= $edge->id;
                     $this->logger->error("edge already exists in batch", ['params' => $params]);
                 }
                 throw new DatabaseException("Failed to batch insert edges. " . $complementary, $exception);
@@ -1844,7 +1868,7 @@ final class Database implements DatabaseInterface
             $stmt->execute($params);
         } catch (PDOException $exception) {
             $complementary = "";
-            if ($exception->errorInfo[1] == 19) {
+            if ($exception->getCode() === self::SQLSTATE_CONSTRAINT_VIOLATION) {
                 $complementary .= "node not found for status update: " . $status->node_id;
                 $this->logger->error("Node not found for status update", ['params' => $params]);
             }
@@ -1854,6 +1878,9 @@ final class Database implements DatabaseInterface
         return true;
     }
 
+    /**
+     * @param StatusDTO[] $statuses
+     */
     public function batchUpdateNodeStatus(array $statuses): bool
     {
         $this->logger->debug("batch updating node statuses", ['statuses' => $statuses]);
@@ -1895,6 +1922,9 @@ final class Database implements DatabaseInterface
         return null;
     }
 
+    /**
+     * @return ProjectDTO[]
+     */
     public function getProjects(): array
     {
         $this->logger->debug("fetching projects");
@@ -1966,6 +1996,9 @@ final class Database implements DatabaseInterface
         return false;
     }
 
+    /**
+     * @return LogDTO[]
+     */
     public function getLogs(int $limit): array
     {
         $this->logger->debug("fetching logs", ['limit' => $limit]);
@@ -2105,8 +2138,7 @@ final class Database implements DatabaseInterface
 
     private function initSchema(): void
     {
-        global $SQL_SCHEMA;
-        $this->pdo->exec($SQL_SCHEMA);
+        $this->pdo->exec($this->sqlSchema);
     }
 
     public static function createConnection(string $dsn): PDO
@@ -2125,49 +2157,102 @@ interface DatabaseInterface
     public const DATABASE_KEYWORD_LIMIT = "limit";
 
     public function getUser(string $id): ?UserDTO;
+
+    /**
+     * @return UserDTO[]
+     */
     public function getUsers(): array;
+
     public function insertUser(UserDTO $user): bool;
+
+    /**
+     * @param UserDTO[] $users
+     */
     public function batchInsertUsers(array $users): bool;
+
     public function updateUser(UserDTO $user): bool;
     public function deleteUser(string $id): bool;
 
     public function getCategory(string $id): ?CategoryDTO;
+
+    /**
+     * @return CategoryDTO[]
+     */
     public function getCategories(): array;
+
     public function insertCategory(CategoryDTO $category): bool;
     public function updateCategory(CategoryDTO $category): bool;
     public function deleteCategory(string $id): bool;
 
     public function getType(string $id): ?TypeDTO;
+
+    /**
+     * @return TypeDTO[]
+     */
     public function getTypes(): array;
+
     public function insertType(TypeDTO $type): bool;
     public function updateType(TypeDTO $type): bool;
     public function deleteType(string $id): bool;
 
     public function getNode(string $id): ?NodeDTO;
+
+    /**
+     * @return NodeDTO[]
+     */
     public function getNodes(): array;
+
     public function insertNode(NodeDTO $node): bool;
+
+    /**
+     * @param NodeDTO[] $nodes
+     */
     public function batchInsertNodes(array $nodes): bool;
+
     public function updateNode(NodeDTO $node): bool;
     public function deleteNode(string $id): bool;
 
     public function getEdge(string $id): ?EdgeDTO;
+
+    /**
+     * @return EdgeDTO[]
+     */
     public function getEdges(): array;
+
     public function insertEdge(EdgeDTO $edge): bool;
+
+    /**
+     * @param EdgeDTO[] $edges
+     */
     public function batchInsertEdges(array $edges): bool;
+
     public function updateEdge(EdgeDTO $edge): bool;
     public function deleteEdge(string $id): bool;
 
     public function getNodeStatus(string $id): ?StatusDTO;
     public function updateNodeStatus(StatusDTO $status): bool;
+
+    /**
+     * @param StatusDTO[] $statuses
+     */
     public function batchUpdateNodeStatus(array $statuses): bool;
 
     public function getProject(string $id): ?ProjectDTO;
+
+    /**
+     * @return ProjectDTO[]
+     */
     public function getProjects(): array;
+    
     public function insertProject(ProjectDTO $project): bool;
     public function updateProject(ProjectDTO $project): bool;
     public function deleteProject(string $id): bool;
 
+    /**
+     * @return LogDTO[]
+     */
     public function getLogs(int $limit): array;
+
     public function insertLog(LogDTO $log): bool;
 }
 #####################################

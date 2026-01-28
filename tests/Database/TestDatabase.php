@@ -10,9 +10,14 @@ class TestDatabase extends TestAbstractTest
 
     public function up(): void
     {
+        global $SQL_SCHEMA;
         $this->pdo = Database::createConnection('sqlite::memory:');
         $this->logger = new Logger(1);
-        $this->database = new Database($this->pdo, $this->logger);
+        $this->database = new Database($this->pdo, $this->logger, $SQL_SCHEMA);
+
+        $this->pdo->exec('delete from nodes');
+        $this->pdo->exec('delete from edges');
+        $this->pdo->exec('delete from projects');
     }
 
     public function down(): void
@@ -71,10 +76,10 @@ class TestDatabase extends TestAbstractTest
     public function testBatchInsertUsers(): void
     {
         $users = [
-            ['id' => 'joao', 'group' => 'admin'],
-            ['id' => 'ana', 'group' => 'contributor'],
-            ['id' => 'carlos', 'group' => 'viewer'],
-            ['id' => 'joao', 'group' => 'admin'],
+            new UserDTO('joao', 'admin'),
+            new UserDTO('ana', 'contributor'),
+            new UserDTO('carlos', 'viewer'),
+            new UserDTO('joao', 'admin'),
         ];
 
         try {
@@ -86,20 +91,20 @@ class TestDatabase extends TestAbstractTest
         }
 
         $users = [
-            ['id' => 'j', 'group' => 'admin'],
-            ['id' => 'a', 'group' => 'contributor'],
-            ['id' => 'c', 'group' => 'viewer'],
+            new UserDTO('j', 'admin'),
+            new UserDTO('a', 'contributor'),
+            new UserDTO('c', 'viewer'),
         ];
 
         $this->database->batchInsertUsers($users);
 
         foreach ($users as $u) {
             $stmt = $this->pdo->prepare('select * from users where id = :id');
-            $stmt->execute([':id' => $u['id']]);
+            $stmt->execute([':id' => $u->id]);
             $user = $stmt->fetch();
 
-            if ($user['id'] !== $u['id'] || $user['user_group'] !== $u['group']) {
-                throw new Exception($u['id'] . ' expected');
+            if ($user['id'] !== $u->id || $user['user_group'] !== $u->group) {
+                throw new Exception($u->id . ' expected');
             }
         }
     }
@@ -206,7 +211,7 @@ class TestDatabase extends TestAbstractTest
         try {
             $this->database->insertCategory(new CategoryDTO('cat1', 'Category 1', 'box', 100, 50));
         } catch(DatabaseException $e) {
-            if ($e->getMessage() !== "Database Error: Failed to insert category - category already exists: cat1. Exception: SQLSTATE[23000]: Integrity constraint violation: 19 UNIQUE constraint failed: categories.id") {
+            if ($e->getMessage() !== "Database Error: Failed to insert category. category already exists: cat1. Exception: SQLSTATE[23000]: Integrity constraint violation: 19 UNIQUE constraint failed: categories.id") {
                 throw new Exception('unique constraint expected');
             }
             return;
@@ -384,9 +389,6 @@ class TestDatabase extends TestAbstractTest
     }
 
     public function testGetNodes(): void {
-        $this->pdo->exec('delete from nodes');
-        $this->pdo->exec('delete from edges');
-
         $this->pdo->exec('insert into categories (id, name, shape, width, height) values ("cat1", "Category 1", "box", 100, 50)');
         $this->pdo->exec('insert into categories (id, name, shape, width, height) values ("cat2", "Category 2", "box", 100, 50)');
         $this->pdo->exec('insert into types (id, name) values ("app", "Application")');
@@ -553,9 +555,6 @@ class TestDatabase extends TestAbstractTest
     }
 
     public function testGetEdge(): void {
-        $this->pdo->exec('delete from nodes');
-        $this->pdo->exec('delete from edges');
-
         $edge = $this->database->getEdge('node1', 'node2');
         if ($edge !== null) {
             throw new Exception('error on testGetEdge');
@@ -576,9 +575,6 @@ class TestDatabase extends TestAbstractTest
     }
 
     public function testGetEdges(): void {
-        $this->pdo->exec('delete from nodes');
-        $this->pdo->exec('delete from edges');
-
         $stmt = $this->pdo->prepare('insert into nodes (id, label, category, type, data) values (:id, :label, :category, :type, :data)');
         $stmt->execute([':id' => 'node1', ':label' => 'Node 01', ':category' => 'business', ':type' => 'service', ':data' => json_encode(['running_on' => 'SRV01'])]);
         $stmt->execute([':id' => 'node2', ':label' => 'Node 02', ':category' => 'business', ':type' => 'service', ':data' => json_encode(['running_on' => 'SRV02'])]);
@@ -647,8 +643,8 @@ class TestDatabase extends TestAbstractTest
         $stmt->execute([':id' => 'node3', ':label' => 'Node 03', ':category' => 'application', ':type' => 'service', ':data' => json_encode(['running_on' => 'SRV012P'])]);
         
         $edges = [
-            ['id' => 'edge1', 'source' => 'node1', 'target' => 'node2', 'label' => 'label1', 'data' => ['a' => 'b']],
-            ['id' => 'edge2', 'source' => 'node2', 'target' => 'node3', 'label' => 'label2', 'data' => ['b' => 'c']],
+            new EdgeDTO('edge1', 'node1', 'node2', 'label1', ['a' => 'b']),
+            new EdgeDTO('edge2', 'node2', 'node3', 'label2', ['b' => 'c']),
         ];
 
         $this->database->batchInsertEdges($edges);
@@ -656,20 +652,20 @@ class TestDatabase extends TestAbstractTest
         $stmt = $this->pdo->prepare('select * from edges where source = :source and target = :target');
         
         foreach ($edges as $e) {
-            $stmt->execute([':source' => $e['source'], ':target' => $e['target']]);
+            $stmt->execute([':source' => $e->source, ':target' => $e->target]);
             $edge = $stmt->fetch();
 
-            if ($edge['id'] !== $e['id'] || $edge['source'] !== $e['source'] || $edge['target'] !== $e['target']) {
+            if ($edge['id'] !== $e->id || $edge['source'] !== $e->source || $edge['target'] !== $e->target) {
                 throw new Exception('error on batchInsertEdges 1');
             }
-            foreach ($e['data'] as $key => $value) {
+            foreach ($e->data as $key => $value) {
                 if (json_decode($edge['data'], true)[$key] !== $value) {
                     throw new Exception('error on batchInsertEdges 2');
                 }
             }
         }
 
-        $edge = ['id' => 'edge1', 'source' => 'node1', 'target' => 'node2', 'label' => 'label1', 'data' => ['a' => 'b']];
+        $edge = new EdgeDTO('edge1', 'node1', 'node2', 'label1', ['a' => 'b']);
 
         try {
             $this->database->batchInsertEdges([$edge]);
@@ -857,7 +853,6 @@ class TestDatabase extends TestAbstractTest
 
     public function testGetProjects(): void
     {
-        $this->pdo->exec('delete from projects;');
         $this->pdo->exec('insert into projects (id, name, author, data) values ("initial", "Initial Project", "admin", \'{}\')');
 
         $projects = $this->database->getProjects();
@@ -946,7 +941,6 @@ class TestDatabase extends TestAbstractTest
 
     public function testDeleteProject(): void
     {
-        $this->pdo->exec('delete from projects;');
         $this->pdo->exec('insert into projects (id, name, author, data) values ("initial", "Initial Project", "admin", \'{}\')');
 
         if (! $this->database->deleteProject('initial')) {
