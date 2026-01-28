@@ -9,25 +9,25 @@ class TestService extends TestAbstractTest
     private ?Logger $databaseLogger;
     private ?Logger $serviceLogger;
 
-    private ?DatabaseInterface $graphDB;
+    private ?DatabaseInterface $database;
     private ?ServiceInterface $service;
 
     public function up(): void
     {
+        global $SQL_SCHEMA;
         $this->pdo = Database::createConnection('sqlite::memory:');
         
         $this->databaseLogger = new Logger();
-        $this->graphDB = new Database($this->pdo, $this->databaseLogger);
-
+        $this->database = new Database($this->pdo, $this->databaseLogger, $SQL_SCHEMA);
         $this->serviceLogger = new Logger();
-        $this->service = new Service($this->graphDB, $this->serviceLogger);
+        $this->service = new Service($this->database, $this->serviceLogger);
     }
 
     public function down(): void
     {
         $this->service = null;
         $this->serviceLogger = null;
-        $this->graphDB = null;
+        $this->database = null;
         $this->databaseLogger = null;
         $this->pdo = null;
     }
@@ -425,7 +425,7 @@ class TestService extends TestAbstractTest
         $this->service->insertNode($node1);
         $this->service->updateNodeStatus(new Status('node1', 'healthy'));
         
-        $dbStatus = $this->graphDB->getNodeStatus('node1');
+        $dbStatus = $this->database->getNodeStatus('node1');
         if ($dbStatus === null) {
             throw new Exception('error on testUpdateNodeStatus - node not found');
         }
@@ -435,7 +435,7 @@ class TestService extends TestAbstractTest
         }
         $this->service->updateNodeStatus(new Status('node1', 'maintenance'));
         
-        $dbStatus = $this->graphDB->getNodeStatus('node1');
+        $dbStatus = $this->database->getNodeStatus('node1');
         if ($dbStatus === null) {
             throw new Exception('error on testUpdateNodeStatus - node not found');
         }

@@ -32,7 +32,7 @@ require_once dirname(__DIR__) . '/compiled/tests.php';
 
 $tests = [
     new TestDatabase(),
-    // new TestService(),
+    new TestService(),
     // new TestHelperContext(),
     // new TestHelperLogger(),
     // new TestHelperCytoscape(),

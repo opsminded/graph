@@ -2634,14 +2634,14 @@ final class Service implements ServiceInterface
         $this->logger->debug("getting edges");
         $this->verify();
 
-        $edgesData = $this->database->getEdges();
+        $dbEdges = $this->database->getEdges();
         $edges     = [];
-        foreach ($edgesData as $data) {
+        foreach ($dbEdges as $edge) {
             $edge = new Edge(
-                $data[Edge::EDGE_KEYNAME_SOURCE],
-                $data[Edge::EDGE_KEYNAME_TARGET],
-                $data[Edge::EDGE_KEYNAME_LABEL],
-                $data[Edge::EDGE_KEYNAME_DATA]
+                $edge->source,
+                $edge->target,
+                $edge->label,
+                $edge->data
             );
             $edges[] = $edge;
         }
@@ -2818,20 +2818,20 @@ final class Service implements ServiceInterface
     {
         $this->logger->debug("getting logs", ["limit" => $limit]);
         $this->verify();
+        
+        $dbLogs = $this->database->getLogs($limit);
+        
         $logs = [];
-        $rows = $this->database->getLogs($limit);
-        foreach ($rows as $row) {
-            $oldData = $row["old_data"] ? json_decode($row["old_data"], true) : [];
-            $newData = $row["new_data"] ? json_decode($row["new_data"], true) : [];
+        foreach ($dbLogs as $log) {
             $log = new Log(
-                $row["entity_type"],
-                $row["entity_id"],
-                $row["action"],
-                $oldData,
-                $newData,
-                $row['user_id'],
-                $row['ip_address'],
-                new DateTimeImmutable($row['created_at'])
+                $log->entityType,
+                $log->entityId,
+                $log->action,
+                $log->oldData,
+                $log->newData,
+                $log->userId,
+                $log->ipAddress,
+                $log->timestamp
             );
 
             $logs[] = $log;
