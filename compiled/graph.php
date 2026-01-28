@@ -1646,10 +1646,13 @@ final class Database implements DatabaseInterface
         $row = $stmt->fetch();
         if ($row) {
 
+            $graph = $this->getProjectGraph($id);
+
             $project = new ProjectDTO(
                 $row['id'],
                 $row['name'],
                 $row['author'],
+                $graph,
                 json_decode($row['data'], true),
                 $row['created_at'],
                 $row['updated_at'],
@@ -1745,6 +1748,13 @@ final class Database implements DatabaseInterface
         $stmt->execute($params);
         $this->logger->info("audit log inserted", ['params' => $params]);
         return true;
+    }
+
+    private function getProjectGraph(string $projectId): GraphDTO
+    {
+        $this->logger->debug("fetching project graph", ['project_id' => $projectId]);
+
+        return new GraphDTO([], []);
     }
 
     private function initSchema(): void
@@ -3264,6 +3274,16 @@ final class NodeDTO
 }
 #####################################
 
+final class GraphDTO
+{
+    public function __construct(
+        public readonly array $nodes,
+        public readonly array $edges
+    ) {
+    }
+}
+#####################################
+
 final class EdgeDTO
 {
     public function __construct(
@@ -3296,6 +3316,7 @@ final class ProjectDTO
         public readonly string $id,
         public readonly string $name,
         public readonly string $author,
+        public readonly GraphDTO $graph,
         public readonly array $data,
     ) {
     }

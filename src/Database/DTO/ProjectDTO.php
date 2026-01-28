@@ -8,6 +8,7 @@ final class ProjectDTO
         public readonly string $id,
         public readonly string $name,
         public readonly string $author,
+        public readonly GraphDTO $graph,
         public readonly array $data,
     ) {
     }

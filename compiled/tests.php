@@ -2322,16 +2322,21 @@ class TestDatabase extends TestAbstractTest
         $this->pdo->exec('insert into edges (id, source, target, label, data) values ("a-b", "a", "b", "connects", \'{}\')');
         $this->pdo->exec('insert into edges (id, source, target, label, data) values ("c-d", "c", "d", "connects", \'{}\')');
 
-        $this->pdo->exec('insert into projects (id, name, author, data) values ("initial", "Initial Project", "admin", \'{"nodes":["a","b"],"edges":["a-b"]}\')');
+        $this->pdo->exec('insert into projects (id, name, author, data) values ("initial", "Initial Project", "admin", \'{}\')');
         
         $this->pdo->exec('insert into nodes_projects (node_id, project_id) values ("a", "initial")');
         $this->pdo->exec('insert into nodes_projects (node_id, project_id) values ("c", "initial")');
         $project = $this->database->getProject('initial');
+        print_r($project);
+        exit();
+
+        // TODO: verify project content
         //print_r($project);
     }
 
     public function testGetProjects(): void
     {
+        // TODO: 
         $projects = $this->database->getProjects();
         if (count($projects) !== 0) {
             throw new Exception('error on testGetProjects');
@@ -2367,7 +2372,7 @@ class TestDatabase extends TestAbstractTest
 
     public function testUpdateProject(): void
     {
-        $this->pdo->exec('insert into projects (id, name, author, data) values ("initial", "Initial Project", "admin", \'{"nodes":["a","b"]}\')');
+        $this->pdo->exec('insert into projects (id, name, author, data) values ("initial", "Initial Project", "admin", \'{}\')');
 
         $this->database->updateProject(new ProjectDTO('initial', 'Updated Project', 'admin', ['nodes' => ['c', 'd']]));
 
@@ -2391,7 +2396,7 @@ class TestDatabase extends TestAbstractTest
 
     public function testDeleteProject(): void
     {
-        $this->pdo->exec('insert into projects (id, name, author, data) values ("initial", "Initial Project", "admin", \'{"nodes":["a","b"]}\')');
+        $this->pdo->exec('insert into projects (id, name, author, data) values ("initial", "Initial Project", "admin", \'{}\')');
 
         if (! $this->database->deleteProject('initial')) {
             throw new Exception('error on testDeleteProject 1');

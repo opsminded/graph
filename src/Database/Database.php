@@ -563,10 +563,13 @@ final class Database implements DatabaseInterface
         $row = $stmt->fetch();
         if ($row) {
 
+            $graph = $this->getProjectGraph($id);
+
             $project = new ProjectDTO(
                 $row['id'],
                 $row['name'],
                 $row['author'],
+                $graph,
                 json_decode($row['data'], true),
                 $row['created_at'],
                 $row['updated_at'],
@@ -664,117 +667,18 @@ final class Database implements DatabaseInterface
         return true;
     }
 
+    private function getProjectGraph(string $projectId): GraphDTO
+    {
+        $this->logger->debug("fetching project graph", ['project_id' => $projectId]);
+
+        
+
+        return new GraphDTO([], []);
+    }
+
     private function initSchema(): void
     {
-        $this->pdo->exec('
-            CREATE TABLE IF NOT EXISTS users (
-                id TEXT PRIMARY KEY,
-                user_group TEXT NOT NULL
-            );
-        ');
-
-        $this->pdo->exec('
-            CREATE TABLE IF NOT EXISTS categories (
-                id TEXT PRIMARY KEY,
-                name TEXT NOT NULL,
-                shape TEXT NOT NULL,
-                width INTEGER NOT NULL,
-                height INTEGER NOT NULL
-            );
-        ');
         
-        $this->pdo->exec('
-            CREATE TABLE IF NOT EXISTS types (
-                id TEXT PRIMARY KEY,
-                name TEXT NOT NULL
-            );
-        ');
-
-        $this->pdo->exec('
-            CREATE TABLE IF NOT EXISTS nodes (
-                id TEXT PRIMARY KEY,
-                label TEXT NOT NULL,
-                category TEXT NOT NULL,
-                type TEXT NOT NULL,
-                user_created BOOLEAN NOT NULL DEFAULT 0,
-                data TEXT NOT NULL,
-                FOREIGN KEY (category) REFERENCES categories(id),
-                FOREIGN KEY (type) REFERENCES types(id)
-            );
-        ');
-
-        $this->pdo->exec('
-            CREATE TABLE IF NOT EXISTS edges (
-                id TEXT PRIMARY KEY,
-                label TEXT NOT NULL DEFAULT "not defined",
-                source TEXT NOT NULL,
-                target TEXT NOT NULL,
-                data TEXT,
-                FOREIGN KEY (source) REFERENCES nodes(id) ON DELETE CASCADE,
-                FOREIGN KEY (target) REFERENCES nodes(id) ON DELETE CASCADE
-            );
-        ');
-
-        $this->pdo->exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_edges_source_target ON edges (source, target)');
-
-        $this->pdo->exec('
-            CREATE TABLE IF NOT EXISTS status (
-                node_id    TEXT PRIMARY KEY NOT NULL,
-                status     TEXT NOT NULL,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (node_id) REFERENCES nodes(id) ON DELETE CASCADE
-            );
-        ');
-        $this->pdo->exec('CREATE INDEX IF NOT EXISTS idx_node_status_node_id ON status (node_id)');
-
-        $this->pdo->exec('
-            CREATE TABLE IF NOT EXISTS projects (
-                id         TEXT PRIMARY KEY NOT NULL,
-                name       TEXT NOT NULL,
-                author     TEXT NOT NULL,
-                data       TEXT NOT NULL,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            );
-        ');
-        
-        $this->pdo->exec('
-            CREATE TABLE IF NOT EXISTS nodes_projects (
-                node_id    TEXT NOT NULL,
-                project_id TEXT NOT NULL,
-                PRIMARY KEY (node_id, project_id),
-                FOREIGN KEY (node_id) REFERENCES nodes(id) ON DELETE CASCADE,
-                FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
-            );
-        ');
-        
-        $this->pdo->exec('
-            CREATE TABLE IF NOT EXISTS audit (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                entity_type TEXT NOT NULL,
-                entity_id TEXT NOT NULL,
-                action TEXT NOT NULL,
-                old_data TEXT,
-                new_data TEXT,
-                user_id TEXT NOT NULL,
-                ip_address TEXT NOT NULL,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            );
-        ');
-
-        $this->pdo->exec('INSERT OR IGNORE INTO users VALUES(\'admin\', \'admin\')');
-        
-        $this->pdo->exec("INSERT OR IGNORE INTO categories VALUES
-            ('business',       'Negócios',       'round-rectangle', 80, 80),
-            ('application',    'Aplicação',      'ellipse',         60, 60),
-            ('infrastructure', 'Infraestrutura', 'round-hexagon',   60, 53)");
-
-        $this->pdo->exec("INSERT OR IGNORE INTO types VALUES
-            ('business',      'Negócios'),
-            ('business_case', 'Caso de Uso'),
-            ('service',       'Serviço'),
-            ('server',        'Servidor'),
-            ('database',      'Banco de Dados')");
     }
 
     public static function createConnection(string $dsn): PDO
