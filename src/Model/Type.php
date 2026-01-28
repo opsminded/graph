@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 final class Type
 {
-    public string $id;
-    public string $name;
+    private string $id;
+    private string $name;
 
     public const TYPE_KEYNAME_ID = "id";
     public const TYPE_KEYNAME_NAME = "name";
@@ -14,6 +14,16 @@ final class Type
     {
         $this->id = $id;
         $this->name = $name;
+    }
+
+    public function getId(): string
+    {
+        return $this->id;
+    }
+
+    public function getName(): string
+    {
+        return $this->name;
     }
 
     public function toArray(): array

@@ -725,8 +725,8 @@ final class Graph
 
 final class Type
 {
-    public string $id;
-    public string $name;
+    private string $id;
+    private string $name;
 
     public const TYPE_KEYNAME_ID = "id";
     public const TYPE_KEYNAME_NAME = "name";
@@ -735,6 +735,16 @@ final class Type
     {
         $this->id = $id;
         $this->name = $name;
+    }
+
+    public function getId(): string
+    {
+        return $this->id;
+    }
+
+    public function getName(): string
+    {
+        return $this->name;
     }
 
     public function toArray(): array
@@ -756,11 +766,11 @@ final class Category
     public const CATEGORY_KEYNAME_WIDTH  = "width";
     public const CATEGORY_KEYNAME_HEIGHT = "height";
 
-    public string $id;
-    public string $name;
-    public string $shape;
-    public int $width;
-    public int $height;
+    private string $id;
+    private string $name;
+    private string $shape;
+    private int $width;
+    private int $height;
 
     public function __construct(string $id, string $name, string $shape, int $width, int $height)
     {
@@ -781,6 +791,31 @@ final class Category
             (int)self::CATEGORY_KEYNAME_HEIGHT => $this->height,
         ];
     }
+
+    public function getId(): string
+    {
+        return $this->id;
+    }
+
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
+    public function getShape(): string
+    {
+        return $this->shape;
+    }
+
+    public function getWidth(): int
+    {
+        return $this->width;
+    }
+
+    public function getHeight(): int
+    {
+        return $this->height;
+    }
 }
 #####################################
 
@@ -793,13 +828,15 @@ final class Project
     const PROJECT_KEYNAME_UPDATED_AT = "updated_at";
     const PROJECT_KEYNAME_NODES = "nodes";
     
-    public string $id;
-    public string $name;
-    public string $author;
-    public DateTimeImmutable $createdAt;
-    public DateTimeImmutable $updatedAt;
+    private string $id;
+    private string $name;
+    private string $author;
+    private DateTimeImmutable $createdAt;
+    private DateTimeImmutable $updatedAt;
     
-    public array $nodes = [];
+    private ?Graph $graph;
+
+    private array $data = [];
 
     public function __construct(
         string $id,
@@ -807,14 +844,51 @@ final class Project
         string $author,
         DateTimeImmutable $createdAt,
         DateTimeImmutable $updatedAt,
-        array $nodes
+        ?Graph $graph,
+        array $data = [],
     ) {
         $this->id = $id;
         $this->name = $name;
         $this->author = $author;
         $this->createdAt = $createdAt;
         $this->updatedAt = $updatedAt;
-        $this->nodes = $nodes;
+        $this->graph = $graph;
+        $this->data = $data;
+    }
+
+    public function getId(): string
+    {
+        return $this->id;
+    }
+
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
+    public function getAuthor(): string
+    {
+        return $this->author;
+    }
+
+    public function getCreatedAt(): DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
+
+    public function getUpdatedAt(): DateTimeImmutable
+    {
+        return $this->updatedAt;
+    }
+
+    public function getGraph(): ?Graph
+    {
+        return $this->graph;
+    }
+
+    public function getData(): array
+    {
+        return $this->data;
     }
 
     public function toArray(): array
@@ -825,7 +899,7 @@ final class Project
             self::PROJECT_KEYNAME_AUTHOR => $this->author,
             self::PROJECT_KEYNAME_CREATED_AT => $this->createdAt->format(DateTime::ATOM),
             self::PROJECT_KEYNAME_UPDATED_AT => $this->updatedAt->format(DateTime::ATOM),
-            self::PROJECT_KEYNAME_NODES => $this->nodes,
+            self::PROJECT_KEYNAME_NODES => $this->graph,
         ];
     }
 }
@@ -1114,22 +1188,73 @@ final class Log
     public const LOG_KEYNAME_IP_ADDRESS  = "ipAddress";
     public const LOG_KEYNAME_CREATED_AT  = "createdAt";
 
-    public string $entityType;
-    public string $entityId;
-    public string $action;
-    public ?array $oldData;
-    public ?array $newData;
-    public string $userId;
-    public string $ipAddress;
-    public string $createdAt;
+    private string            $entityType;
+    private string            $entityId;
+    private string            $action;
+    private ?array            $oldData;
+    private ?array            $newData;
+    private string            $userId;
+    private string            $ipAddress;
+    private DateTimeImmutable $createdAt;
 
-    public function __construct(string $entityType, string $entityId, string $action, ?array $oldData = null, ?array $newData = null)
-    {
+    public function __construct(
+        string $entityType,
+        string $entityId,
+        string $action,
+        ?array $oldData = null,
+        ?array $newData = null,
+        string $userId,
+        string $ipAddress,
+        DateTimeImmutable $createdAt
+    ) {
         $this->entityType = $entityType;
         $this->entityId   = $entityId;
         $this->action     = $action;
         $this->oldData    = $oldData;
         $this->newData    = $newData;
+        $this->userId     = $userId;
+        $this->ipAddress  = $ipAddress;
+        $this->createdAt  = $createdAt;
+    }
+
+    public function getEntityType(): string
+    {
+        return $this->entityType;
+    }
+
+    public function getEntityId(): string
+    {
+        return $this->entityId;
+    }
+
+    public function getAction(): string
+    {
+        return $this->action;
+    }
+
+    public function getOldData(): ?array
+    {
+        return $this->oldData;
+    }
+
+    public function getNewData(): ?array
+    {
+        return $this->newData;
+    }
+
+    public function getUserId(): string
+    {
+        return $this->userId;
+    }
+
+    public function getIpAddress(): string
+    {
+        return $this->ipAddress;
+    }
+
+    public function getCreatedAt(): DateTimeImmutable
+    {
+        return $this->createdAt;
     }
 
     public function toArray(): array
@@ -1693,17 +1818,7 @@ final class Database implements DatabaseInterface
         return false;
     }
 
-    public function getStatus(): array
-    {
-        $this->logger->debug("fetching status");
-        $sql = "SELECT n.id as node_id, s.status FROM nodes n LEFT JOIN status s ON n.id = s.node_id";
-        $stmt   = $this->pdo->query($sql);
-        $rows = $stmt->fetchAll();
-        $this->logger->info("status fetched", ['rows' => $rows]);
-        return $rows;
-    }
-
-    public function getNodeStatus(string $id): ?NodeStatusDTO
+    public function getNodeStatus(string $id): ?StatusDTO
     {
         $this->logger->debug("fetching node status", ['id' => $id]);
         $sql = "SELECT n.id, s.status FROM nodes n LEFT JOIN status s ON n.id = s.node_id WHERE n.id = :id";
@@ -1713,16 +1828,16 @@ final class Database implements DatabaseInterface
         $row = $stmt->fetch();
         if($row) {
             $this->logger->info("node status fetched", ['params' => $params, 'row' => $row]);
-            return new NodeStatusDTO($row['id'], $row['status']);
+            return new StatusDTO($row['id'], $row['status']);
         }
         return null;
     }
 
-    public function updateNodeStatus(NodeStatusDTO $nodeStatus): bool
+    public function updateNodeStatus(StatusDTO $status): bool
     {
-        $this->logger->debug("updating node status", ['id' => $nodeStatus->node_id, 'status' => $nodeStatus->status]);
+        $this->logger->debug("updating node status", ['id' => $status->node_id, 'status' => $status->status]);
         $sql = "REPLACE INTO status (node_id, status) VALUES (:node_id, :status)";
-        $params = [':node_id' => $nodeStatus->node_id, ':status' => $nodeStatus->status];
+        $params = [':node_id' => $status->node_id, ':status' => $status->status];
         $stmt = $this->pdo->prepare($sql);
 
         try {
@@ -1730,7 +1845,7 @@ final class Database implements DatabaseInterface
         } catch (PDOException $exception) {
             $complementary = "";
             if ($exception->errorInfo[1] == 19) {
-                $complementary .= "node not found for status update: " . $nodeStatus->node_id;
+                $complementary .= "node not found for status update: " . $status->node_id;
                 $this->logger->error("Node not found for status update", ['params' => $params]);
             }
             throw new DatabaseException("Failed to update node status: " . $complementary, $exception);
@@ -1768,10 +1883,10 @@ final class Database implements DatabaseInterface
                 $row['id'],
                 $row['name'],
                 $row['author'],
+                new DateTimeImmutable($row['created_at']),
+                new DateTimeImmutable($row['updated_at']),
                 $graph,
-                json_decode($row['data'], true),
-                $row['created_at'],
-                $row['updated_at'],
+                json_decode($row['data'], true)
             );
 
             return $project;
@@ -1789,7 +1904,15 @@ final class Database implements DatabaseInterface
         $projects = [];
         foreach($rows as $row) {
             $row['data'] = json_decode($row['data'], true);
-            $projects[] = new ProjectDTO($row['id'], $row['name'], $row['author'], new GraphDTO([], []), $row['data']);
+            $projects[] = new ProjectDTO(
+                $row['id'],
+                $row['name'],
+                $row['author'],
+                new DateTimeImmutable($row['created_at']),
+                new DateTimeImmutable($row['updated_at']),
+                new GraphDTO([], []),
+                $row['data']
+            );
         }
         $this->logger->info("projects fetched", ['rows' => $rows]);
         return $projects;
@@ -2034,9 +2157,8 @@ interface DatabaseInterface
     public function updateEdge(EdgeDTO $edge): bool;
     public function deleteEdge(string $id): bool;
 
-    public function getStatus(): array;
-    public function getNodeStatus(string $id): ?NodeStatusDTO;
-    public function updateNodeStatus(NodeStatusDTO $status): bool;
+    public function getNodeStatus(string $id): ?StatusDTO;
+    public function updateNodeStatus(StatusDTO $status): bool;
     public function batchUpdateNodeStatus(array $statuses): bool;
 
     public function getProject(string $id): ?ProjectDTO;
@@ -2119,7 +2241,6 @@ final class Service implements ServiceInterface
         "Service::getUser"             => true,
         "Service::getCategories"       => true,
         "Service::getTypes"            => true,
-        "Service::getGraph"            => true,
         "Service::getNode"             => true,
         "Service::getNodes"            => true,
         "Service::getNodeParentOf"     => true,
@@ -2168,11 +2289,11 @@ final class Service implements ServiceInterface
     {
         $this->logger->debug("getting user", [User::USER_KEYNAME_ID => $id]);
         $this->verify();
-        $data = $this->database->getUser($id);
-        if (! is_null($data)) {
-            $g = new Group($data[User::USER_KEYNAME_GROUP]);
+        $dbUser = $this->database->getUser($id);
+        if (! is_null($dbUser)) {
+            $g = new Group($dbUser->group);
             $user = new User($id, $g);
-            $this->logger->debug("user found", [User::USER_KEYNAME_ID => $id, "user" => $data]);
+            $this->logger->debug("user found", [User::USER_KEYNAME_ID => $id, "user" => $dbUser]);
             return $user;
         }
         $this->logger->debug("user not found", [User::USER_KEYNAME_ID => $id]);
@@ -2183,7 +2304,10 @@ final class Service implements ServiceInterface
     {
         $this->logger->debug("inserting user", ["user" => $user->toArray()]);
         $this->verify();
-        $this->database->insertUser($user->getId(), $user->getGroup()->getId());
+
+        $dto = new UserDTO($user->getId(), $user->getGroup()->getId());
+
+        $this->database->insertUser($dto);
         $this->logger->debug("user inserted", ["user" => $user->toArray()]);
         return true;
     }
@@ -2192,7 +2316,10 @@ final class Service implements ServiceInterface
     {
         $this->logger->debug("updating user", ["user" => $user->toArray()]);
         $this->verify();
-        if ($this->database->updateUser($user->getId(), $user->getGroup()->getId())) {
+
+        $dto = new UserDTO($user->getId(), $user->getGroup()->getId());
+
+        if ($this->database->updateUser($dto)) {
             $this->logger->debug("user updated", ["user" => $user->toArray()]);
             return true;
         }
@@ -2203,15 +2330,15 @@ final class Service implements ServiceInterface
     {
         $this->logger->debug("getting categories");
         $this->verify();
-        $categoriesData = $this->database->getCategories();
+        $dbCategories = $this->database->getCategories();
         $categories     = [];
-        foreach ($categoriesData as $data) {
+        foreach ($dbCategories as $ctg) {
             $category = new Category(
-                $data[Category::CATEGORY_KEYNAME_ID],
-                $data[Category::CATEGORY_KEYNAME_NAME],
-                $data[Category::CATEGORY_KEYNAME_SHAPE],
-                (int)$data[Category::CATEGORY_KEYNAME_WIDTH],
-                (int)$data[Category::CATEGORY_KEYNAME_HEIGHT],
+                $ctg->id,
+                $ctg->name,
+                $ctg->shape,
+                $ctg->width,
+                $ctg->height
             );
             $categories[] = $category;
         }
@@ -2222,7 +2349,8 @@ final class Service implements ServiceInterface
     {
         $this->logger->debug("inserting category", ["category" => $category->toArray()]);
         $this->verify();
-        if ($this->database->insertCategory($category->id, $category->name, $category->shape, $category->width, $category->height)) {
+        $dto = new CategoryDTO($category->getId(), $category->getName(), $category->getShape(), $category->getWidth(), $category->getHeight());
+        if ($this->database->insertCategory($dto)) {
             $this->logger->info("category inserted", ["category" => $category->toArray()]);
             return true;
         }
@@ -2233,12 +2361,12 @@ final class Service implements ServiceInterface
     {
         $this->logger->debug("getting types");
         $this->verify();
-        $typesData = $this->database->getTypes();
+        $dbTypes = $this->database->getTypes();
         $types     = [];
-        foreach ($typesData as $data) {
+        foreach ($dbTypes as $tp) {
             $type = new Type(
-                $data[Type::TYPE_KEYNAME_ID],
-                $data[Type::TYPE_KEYNAME_NAME],
+                $tp->id,
+                $tp->name
             );
             $types[] = $type;
         }
@@ -2248,37 +2376,27 @@ final class Service implements ServiceInterface
     {
         $this->logger->debug("inserting type", ["type" => $type->toArray()]);
         $this->verify();
-        if ($this->database->insertType($type->id, $type->name)) {
+        $dto = new TypeDTO($type->getId(), $type->getName());
+        if ($this->database->insertType($dto)) {
             $this->logger->info("type inserted", ["type" => $type->toArray()]);
             return true;
         }
         return false;
     }
 
-    public function getGraph(): Graph
-    {
-        $this->logger->debug("getting graph");
-        $this->verify();
-        $nodes = $this->getNodes();
-        $edges = $this->getEdges();
-        $graph = new Graph($nodes, $edges);
-        $this->logger->debug("returning graph", $graph->toArray());
-        return $graph;
-    }
-
     public function getNode(string $id): ?Node
     {
         $this->logger->debug("getting node", ["id" => $id]);
         $this->verify();
-        $data = $this->database->getNode($id);
-        if (! is_null($data)) {
+        $node = $this->database->getNode($id);
+        if (! is_null($node)) {
             return new Node(
-                $data[Node::NODE_KEYNAME_ID],
-                $data[Node::NODE_KEYNAME_LABEL],
-                $data[Node::NODE_KEYNAME_CATEGORY],
-                $data[Node::NODE_KEYNAME_TYPE],
-                $data[Node::NODE_KEYNAME_USERCREATED],
-                $data[Node::NODE_KEYNAME_DATA]
+                $node->id,
+                $node->label,
+                $node->category,
+                $node->type,
+                $node->userCreated,
+                $node->data
             );
         }
         return null;
@@ -2290,17 +2408,16 @@ final class Service implements ServiceInterface
         $this->verify();
         $nodesData = $this->database->getNodes();
         $nodes     = [];
-        foreach ($nodesData as $data) {
-            
-            $node = new Node(
-                $data[Node::NODE_KEYNAME_ID],
-                $data[Node::NODE_KEYNAME_LABEL],
-                $data[Node::NODE_KEYNAME_CATEGORY],
-                $data[Node::NODE_KEYNAME_TYPE],
-                $data[Node::NODE_KEYNAME_USERCREATED],
-                $data[Node::NODE_KEYNAME_DATA]
+        foreach ($nodesData as $node) {
+            $new = new Node(
+                $node->id,
+                $node->label,
+                $node->category,
+                $node->type,
+                $node->userCreated,
+                $node->data
             );
-            $nodes[] = $node;
+            $nodes[] = $new;
         }
         return $nodes;
     }
@@ -2310,8 +2427,11 @@ final class Service implements ServiceInterface
         $this->logger->debug("inserting node", $node->toArray());
         $this->verify();
         $this->logger->debug("permission allowed", $node->toArray());
-        $this->insertLog(new Log("node", $node->getId(), "insert", null, $node->toArray()));
-        if ($this->database->insertNode($node->getId(), $node->getLabel(), $node->getCategory(), $node->getType(), $node->getUserCreated(), $node->getData())) {
+        $this->insertLog("node", $node->getId(), "insert", null, $node->toArray());
+
+        $dto = new NodeDTO($node->getId(), $node->getLabel(), $node->getCategory(), $node->getType(), $node->getUserCreated(), $node->getData());
+
+        if ($this->database->insertNode($dto)) {
             $this->logger->info("node inserted", $node->toArray());
             return true;
         }
@@ -2328,27 +2448,28 @@ final class Service implements ServiceInterface
             return false;
         }
         $old = $this->getNode($node->getId());
-        $this->insertLog(new Log("node", $node->getId(), "update", $old->toArray(), $node->toArray()));
-        if ($this->database->updateNode($node->getId(), $node->getLabel(), $node->getCategory(), $node->getType(), $node->getData())) {
+        $this->insertLog("node", $node->getId(), "update", $old->toArray(), $node->toArray());
+        $dto = new NodeDTO($node->getId(), $node->getLabel(), $node->getCategory(), $node->getType(), $node->getUserCreated(), $node->getData());
+        if ($this->database->updateNode($dto)) {
             $this->logger->info("node updated", $node->toArray());
             return true;
         }
         throw new RuntimeException("unexpected error on Service::updateNode");
     }
 
-    public function deleteNode(Node $node): bool
+    public function deleteNode(string $id): bool
     {
-        $this->logger->debug("deleting node", ["node" => $node->toArray()]);
+        $this->logger->debug("deleting node", ["id" => $id]);
         $this->verify();
-        $exists = $this->database->getNode($node->getId());
+        $exists = $this->database->getNode($id);
         if (is_null($exists)) {
-            $this->logger->error("node not found", $node->toArray());
+            $this->logger->error("node not found", ["id" => $id]);
             return false;
         }
-        $old = $this->getNode($node->getId());
-        $this->insertLog(new Log( "node", $node->getId(), "delete", $old->toArray(), null));
-        if ($this->database->deleteNode($node->getId())) {
-            $this->logger->info("node deleted", $node->toArray());
+        $old = $this->getNode($id);
+        $this->insertLog("node", $id, "delete", $old->toArray(), null);
+        if ($this->database->deleteNode($id)) {
+            $this->logger->info("node deleted", ['id' => $id]);
             return true;
         }
         throw new RuntimeException("unexpected error on Service::deleteNode");
@@ -2358,13 +2479,15 @@ final class Service implements ServiceInterface
     {
         $this->logger->debug("getting edge", [Edge::EDGE_KEYNAME_SOURCE => $source, Edge::EDGE_KEYNAME_TARGET => $target]);
         $this->verify();
-        $edgeData = $this->database->getEdge($source, $target);
-        if (! is_null($edgeData)) {
+        $id = "{$source}-{$target}";
+        $dbEdge = $this->database->getEdge($id);
+        
+        if (! is_null($dbEdge)) {
             $edge = new Edge(
-                $edgeData[Edge::EDGE_KEYNAME_SOURCE],
-                $edgeData[Edge::EDGE_KEYNAME_TARGET],
-                $edgeData[Edge::EDGE_KEYNAME_LABEL],
-                $edgeData[Edge::EDGE_KEYNAME_DATA]
+                $dbEdge->source,
+                $dbEdge->target,
+                $dbEdge->label,
+                $dbEdge->data
             );
             
             $data = $edge->toArray();
@@ -2398,8 +2521,9 @@ final class Service implements ServiceInterface
     {
         $this->logger->debug("inserting edge", ["edge" => $edge->toArray()]);
         $this->verify();
-        $this->insertLog(new Log( "edge", $edge->getId(), "insert", null, $edge->toArray()));
-        if ($this->database->insertEdge($edge->getId(), $edge->getSource(), $edge->getTarget(), $edge->getLabel(), $edge->getData())) {
+        $this->insertLog("edge", $edge->getId(), "insert", null, $edge->toArray());
+        $dto = new EdgeDTO($edge->getId(), $edge->getSource(), $edge->getTarget(), $edge->getLabel(), $edge->getData());
+        if ($this->database->insertEdge($dto)) {
             $this->logger->info("edge inserted", ["edge" => $edge->toArray()]);
             return true;
         }
@@ -2410,61 +2534,51 @@ final class Service implements ServiceInterface
     {
         $this->logger->debug("updating edge", ["edge" => $edge->toArray()]);
         $this->verify();
-        $exists = $this->database->getEdge($edge->getSource(), $edge->getTarget());
+        $exists = $this->database->getEdge($edge->getId());
         if (is_null($exists)) {
             $this->logger->error("edge not found", ["edge" => $edge->toArray()]);
             return false;
         }
 
         $old = $this->getEdge($edge->getSource(), $edge->getTarget());
-        $this->insertLog(new Log("edge", $edge->getId(), "update", $old->toArray(), $edge->toArray()));
-        if ($this->database->updateEdge($edge->getId(), $edge->getLabel(), $edge->getData())) {
+        $this->insertLog("edge", $edge->getId(), "update", $old->toArray(), $edge->toArray());
+        $dto = new EdgeDTO($edge->getId(), $edge->getSource(), $edge->getTarget(), $edge->getLabel(), $edge->getData());
+        if ($this->database->updateEdge($dto)) {
             $this->logger->info("edge updated", ["edge" => $edge->toArray()]);
             return true;
         }
         throw new RuntimeException("unexpected error on Service::updateEdge");
     }
 
-    public function deleteEdge(Edge $edge): bool
+    public function deleteEdge(string $source, string $target): bool
     {
-        $this->logger->debug("deleting edge", ["edge" => $edge->toArray()]);
+        $this->logger->debug("deleting edge", ["source" => $source, "target" => $target]);
         $this->verify();
-        $exists = $this->database->getEdge($edge->getSource(), $edge->getTarget());
+        $id = "{$source}-{$target}";
+        $exists = $this->database->getEdge($id);
         if (is_null($exists)) {
-            $this->logger->error("edge not found", ["edge" => $edge->toArray()]);
+            $this->logger->error("edge not found", ["source" => $source, "target" => $target]);
             return false;
         }
-        $old = $this->getEdge($edge->getSource(), $edge->getTarget());
-        $this->insertLog(new Log("edge", $edge->getId(), "delete", $old->toArray(), null));
-        if ($this->database->deleteEdge($edge->getId())) {
-            $this->logger->info("edge deleted", ["edge" => $edge->toArray()]);
+        $old = $this->getEdge($source, $target);
+        $this->insertLog("edge", "{$source}-{$target}", "delete", $old->toArray(), null);
+        $id = "{$source}-{$target}";
+        if ($this->database->deleteEdge($id)) {
+            $this->logger->info("edge deleted", ["source" => $source, "target" => $target]);
             return true;
         }
         throw new RuntimeException("unexpected error on Service::deleteEdge");
-    }
-
-    public function getStatus(): array
-    {
-        $this->logger->debug("getting status");
-        $this->verify();
-        $statusData = $this->database->getStatus();
-        $nodeStatus = [];
-        foreach ($statusData as $status) {
-            $status = new Status($status[Status::STATUS_KEYNAME_NODE_ID], $status[Status::STATUS_KEYNAME_STATUS] ?? "unknown");
-            $nodeStatus[] = $status;
-        }
-        $this->logger->info("status found", ["status" => $nodeStatus]);
-        return $nodeStatus;
     }
 
     public function getNodeStatus(string $id): ?Status
     {
         $this->logger->debug("getting node status", ["id" => $id]);
         $this->verify();
-        $statusData = $this->database->getNodeStatus($id);
-        if (! is_null($statusData)) {
-            $this->logger->info("status found", $statusData);
-            return new Status($id, $statusData[Status::STATUS_KEYNAME_STATUS] ?? "unknown");
+        $nodeStatus = $this->database->getNodeStatus($id);
+
+        if (! is_null($nodeStatus)) {
+            $this->logger->info("status found", ['id' => $id]);
+            return new Status($id, $nodeStatus->status ?? "unknown");
         }
         $this->logger->info("status not found", ["id" => $id]);
         return null;
@@ -2475,7 +2589,8 @@ final class Service implements ServiceInterface
         $this->logger->debug("updating node status", ["status" => $status->toArray()]);
         $this->verify();
         $data = $status->toArray();
-        if ($this->database->updateNodeStatus($status->getNodeId(), $status->getStatus())) {
+        $dto = new StatusDTO($status->getNodeId(), $status->getStatus());
+        if ($this->database->updateNodeStatus($dto)) {
             $this->logger->info("node status updated", $data);
             return true;
         }
@@ -2486,20 +2601,16 @@ final class Service implements ServiceInterface
     {
         $this->logger->debug("getting project", ["id" => $id]);
         $this->verify();
-        $data = $this->database->getProject($id);
+        $dbProject = $this->database->getProject($id);
 
-        if (! is_null($data)) {
-            $nodes = [];
-            foreach($data['nodes'] as $n) {
-                $nodes[] = $n;
-            }
+        if (! is_null($dbProject)) {
             $project = new Project(
-                $data[Project::PROJECT_KEYNAME_ID],
-                $data[Project::PROJECT_KEYNAME_NAME],
-                $data[Project::PROJECT_KEYNAME_AUTHOR],
-                new DateTimeImmutable($data[Project::PROJECT_KEYNAME_CREATED_AT]),
-                new DateTimeImmutable($data[Project::PROJECT_KEYNAME_UPDATED_AT]),
-                $nodes
+                $dbProject->id,
+                $dbProject->name,
+                $dbProject->author,
+                $dbProject->createdAt,
+                $dbProject->updatedAt,
+                null
             );
             $this->logger->info("project found", ["project" => $project]);
             return $project;
@@ -2512,23 +2623,18 @@ final class Service implements ServiceInterface
     {
         $this->logger->debug("getting projects");
         $this->verify();
-        $projectsData = $this->database->getProjects();
+        $dbProjects = $this->database->getProjects();
         
         $projects     = [];
 
-        foreach ($projectsData as $data) {
-            $nodes = [];
-            foreach($data['data']['nodes'] as $n) {
-                $nodes[] = $n;
-            }
-
+        foreach ($dbProjects as $project) {
             $project = new Project(
-                $data[Project::PROJECT_KEYNAME_ID],
-                $data[Project::PROJECT_KEYNAME_NAME],
-                $data[Project::PROJECT_KEYNAME_AUTHOR],
-                new DateTimeImmutable($data[Project::PROJECT_KEYNAME_CREATED_AT]),
-                new DateTimeImmutable($data[Project::PROJECT_KEYNAME_UPDATED_AT]),
-                $nodes
+                $project->id,
+                $project->name,
+                $project->author,
+                $project->createdAt,
+                $project->updatedAt,
+                null
             );
             $projects[] = $project;
         }
@@ -2540,15 +2646,16 @@ final class Service implements ServiceInterface
         $this->logger->debug("inserting project", ["project" => $project->toArray()]);
         $this->verify();
 
-        $data = [
-            'nodes' => []
-        ];
-
-        foreach($project->nodes as $node) {
-            $data['nodes'][] = $node;
-        }
-
-        return $this->database->insertProject($project->id, $project->name, $project->author, $data);
+        $dto = new ProjectDTO(
+            $project->getId(),
+            $project->getName(),
+            $project->getAuthor(),
+            $project->getCreatedAt(),
+            $project->getUpdatedAt(),
+            null,
+            $project->getData()
+        );
+        return $this->database->insertProject($dto);
     }
 
     public function updateProject(Project $project): bool
@@ -2556,15 +2663,17 @@ final class Service implements ServiceInterface
         $this->logger->debug("updating project", ["project" => $project->toArray()]);
         $this->verify();
 
-        $data = [
-            'nodes' => []
-        ];
+        $dto = new ProjectDTO(
+            $project->getId(),
+            $project->getName(),
+            $project->getAuthor(),
+            new DateTimeImmutable(),
+            new DateTimeImmutable(),
+            null,
+            $project->getData()
+        );
 
-        foreach($project->nodes as $node) {
-            $data['nodes'][] = $node;
-        }
-
-        return $this->database->updateProject($project->id, $project->name, $project->author, $data);
+        return $this->database->updateProject($dto);
     }
 
     public function deleteProject(string $id): bool
@@ -2589,21 +2698,39 @@ final class Service implements ServiceInterface
                 $row["action"],
                 $oldData,
                 $newData,
+                $row['user_id'],
+                $row['ip_address'],
+                new DateTimeImmutable($row['created_at'])
             );
-            $log->userId    = $row["user_id"];
-            $log->ipAddress = $row["ip_address"];
-            $log->createdAt = $row["created_at"];
+
             $logs[] = $log;
         }
         return $logs;
     }
 
-    private function insertLog(Log $log): void
+    private function insertLog(
+        string $entityType,
+        string $entityId,
+        string $action,
+        ?array $oldData = null,
+        ?array $newData = null
+    ): void
     {
-        $this->logger->debug("insert log", ["log" => $log]);
         $userId   = HelperContext::getUser();
         $ipAddress = HelperContext::getClientIP();
-        $this->database->insertLog($log->entityType, $log->entityId, $log->action, $log->oldData, $log->newData, $userId, $ipAddress);
+
+        $dto = new LogDTO(
+            $entityType,
+            $entityId,
+            $action,
+            $oldData,
+            $newData,
+            $userId,
+            $ipAddress,
+            new DateTimeImmutable()
+        );
+        
+        $this->database->insertLog($dto);
     }
 
     private function verify(): void
@@ -2654,22 +2781,18 @@ interface ServiceInterface
     public function getTypes(): array;
     public function insertType(Type $type): bool;
 
-    public function getGraph(): Graph;
-
     public function getNode(string $id): ?Node;
     public function getNodes(): array;
     public function insertNode(Node $node): bool;
     public function updateNode(Node $node): bool;
-    public function deleteNode(Node $node): bool;
+    public function deleteNode(string $id): bool;
 
     public function getEdge(string $source, string $target): ?Edge;
     public function getEdges(): array;
     public function insertEdge(Edge $edge): bool;
     public function updateEdge(Edge $edge): bool;
-    public function deleteEdge(Edge $edge): bool;
+    public function deleteEdge(string $source, string $target): bool;
 
-    public function getStatus(): array;
-    public function getNodeStatus(string $id): ?Status;
     public function updateNodeStatus(Status $status): bool;
 
     public function getProject(string $id): ?Project;
@@ -2680,6 +2803,17 @@ interface ServiceInterface
 
     public function getLogs(int $limit): array;
 }
+#####################################
+
+final class ServiceException extends RuntimeException
+{
+    public function __construct(string $message, PDOException $exception)
+    {
+        $message = "Service Error: " . $message  .". Exception: ". $exception->getMessage();
+        parent::__construct($message, 0, $exception);
+    }
+}
+
 #####################################
 
 interface ResponseInterface
@@ -3432,6 +3566,8 @@ final class ProjectDTO
         public readonly string $id,
         public readonly string $name,
         public readonly string $author,
+        public readonly DateTimeImmutable $createdAt,
+        public readonly DateTimeImmutable $updatedAt,
         public readonly ?GraphDTO $graph,
         public readonly array $data,
     ) {
@@ -3449,15 +3585,6 @@ final class TypeDTO
 }
 #####################################
 
-final class NodeStatusDTO
-{
-    public function __construct(
-        public string $node_id,
-        public ?string $status
-    ) {}
-}
-#####################################
-
 final class LogDTO
 {
     public function __construct(
@@ -3469,6 +3596,15 @@ final class LogDTO
         public readonly string $userId,
         public readonly string $ipAddress,
         public readonly DateTimeImmutable $timestamp,
+    ) {}
+}
+#####################################
+
+final class StatusDTO
+{
+    public function __construct(
+        public string $node_id,
+        public ?string $status
     ) {}
 }
 #####################################

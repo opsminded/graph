@@ -742,30 +742,6 @@ class TestDatabase extends TestAbstractTest
         }
     }
 
-    public function testGetStatus(): void {
-        $this->pdo->exec('delete from nodes');
-        $this->pdo->exec('delete from edges');
-        
-        $s = $this->database->getStatus();
-
-        if (count($s) !== 0) {
-            throw new Exception('error on testGetStatus');
-        }
-
-        $stmt = $this->pdo->prepare('insert into nodes (id, label, category, type, data) values (:id, :label, :category, :type, :data)');
-        $stmt->execute([':id' => 'node2', ':label' => 'Node 02', ':category' => 'application', ':type' => 'database', ':data' => json_encode(['running_on' => 'SRV011P'])]);
-
-        $s = $this->database->getStatus();
-
-        if (count($s) !== 1) {
-            throw new Exception('error on testGetStatus');
-        }
-
-        if ($s[0][Status::STATUS_KEYNAME_NODE_ID] !== 'node2' || $s[0][Status::STATUS_KEYNAME_STATUS] !== null) {
-            throw new Exception('error on testGetStatus');
-        }
-    }
-
     public function testGetNodeStatus(): void {
         $stmt = $this->pdo->prepare('insert into nodes (id, label, category, type, data) values (:id, :label, :category, :type, :data)');
         $stmt->execute([':id' => 'node1', ':label' => 'Node 01', ':category' => 'business', ':type' => 'service', ':data' => json_encode(['running_on' => 'SRV01OP'])]);
@@ -785,7 +761,7 @@ class TestDatabase extends TestAbstractTest
     public function testUpdateNodeStatus(): void {
         
         try {
-            $this->database->updateNodeStatus(new NodeStatusDTO('node1', 'healthy'));
+            $this->database->updateNodeStatus(new StatusDTO('node1', 'healthy'));
         } catch(Exception $e) {
             if ($e->getMessage() !== "Database Error: Failed to update node status: node not found for status update: node1. Exception: SQLSTATE[23000]: Integrity constraint violation: 19 FOREIGN KEY constraint failed") {
                 throw new Exception('error on testUpdateNodeStatus - node should not exist');
@@ -793,7 +769,7 @@ class TestDatabase extends TestAbstractTest
         }
 
         $this->pdo->exec('insert into nodes (id, label, category, type, data) values ("node1", "Node 01", "business", "service", \'{"running_on":"SRV01OP"}\')');
-        $this->database->updateNodeStatus(new NodeStatusDTO('node1', 'healthy'));
+        $this->database->updateNodeStatus(new StatusDTO('node1', 'healthy'));
 
         $stmt = $this->pdo->prepare('select * from status where node_id = :node_id');
         $stmt->execute([':node_id' => 'node1']);
@@ -804,7 +780,7 @@ class TestDatabase extends TestAbstractTest
         }
 
         try {
-            $this->database->updateNodeStatus(new NodeStatusDTO('node2', 'unhealthy'));
+            $this->database->updateNodeStatus(new StatusDTO('node2', 'unhealthy'));
         } catch(Exception $e) {
             return;
         }
@@ -816,8 +792,8 @@ class TestDatabase extends TestAbstractTest
         $this->pdo->exec('insert into nodes (id, label, category, type, data) values ("node2", "Node 02", "application", "database", \'{"running_on":"SRV011P"}\')');
 
         $statuses = [
-            new NodeStatusDTO('node1', 'healthy'),
-            new NodeStatusDTO('node2', 'unhealthy'),
+            new StatusDTO('node1', 'healthy'),
+            new StatusDTO('node2', 'unhealthy'),
         ];
 
         $this->database->batchUpdateNodeStatus($statuses);
@@ -893,14 +869,33 @@ class TestDatabase extends TestAbstractTest
 
     public function testInsertProject(): void
     {
-        $this->database->insertProject(new ProjectDTO('initial', 'Initial Project', 'admin', null, ['nodes' => ['a', 'b']]));
+        $this->database->insertProject(
+            new ProjectDTO(
+                'initial',
+                'Initial Project',
+                'admin',
+                new DateTimeImmutable(),
+                new DateTimeImmutable(),
+                null,
+                ['nodes' => ['a', 'b']])
+            );
 
         $stmt = $this->pdo->prepare('select * from projects where id = :id');
         $stmt->execute([':id' => 'initial']);
         $project = $stmt->fetch();
         
         try {
-            $this->database->insertProject(new ProjectDTO('initial', 'Initial Project', 'admin', null, ['nodes' => ['a', 'b']]));
+            $this->database->insertProject(
+                new ProjectDTO(
+                    'initial',
+                    'Initial Project',
+                    'admin',
+                    new DateTimeImmutable(),
+                    new DateTimeImmutable(),
+                    null,
+                    ['nodes' => ['a', 'b']]
+                )
+            );
         } catch(Exception $e) {
             return;
         }
@@ -911,8 +906,17 @@ class TestDatabase extends TestAbstractTest
     {
         $this->pdo->exec('insert into projects (id, name, author, data) values ("initial", "Initial Project", "admin", \'{}\')');
 
-        $this->database->updateProject(new ProjectDTO('initial', 'Updated Project', 'admin', null, ['nodes' => ['c', 'd']]));
-
+        $this->database->updateProject(
+            new ProjectDTO(
+                'initial',
+                'Updated Project',
+                'admin',
+                new DateTimeImmutable(),
+                new DateTimeImmutable(),
+                null,
+                ['nodes' => []]
+            )
+        );
         
         $stmt = $this->pdo->prepare('select * from projects where id = :id');
         $stmt->execute([':id' => 'initial']);
@@ -926,7 +930,16 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('error on testUpdateProject 2');
         }
 
-        if ($this->database->updateProject(new ProjectDTO('nonexistent', 'Name', 'admin', null, ['nodes' => []]))) {
+        if ($this->database->updateProject(
+            new ProjectDTO(
+                'nonexistent', 
+                'Name', 
+                'admin', 
+                new DateTimeImmutable(), 
+                new DateTimeImmutable(),
+                null, 
+                ['nodes' => []]))
+        ) {
             throw new Exception('error on testUpdateProject 3');
         }
     }

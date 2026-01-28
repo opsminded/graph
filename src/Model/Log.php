@@ -14,22 +14,73 @@ final class Log
     public const LOG_KEYNAME_IP_ADDRESS  = "ipAddress";
     public const LOG_KEYNAME_CREATED_AT  = "createdAt";
 
-    public string $entityType;
-    public string $entityId;
-    public string $action;
-    public ?array $oldData;
-    public ?array $newData;
-    public string $userId;
-    public string $ipAddress;
-    public string $createdAt;
+    private string            $entityType;
+    private string            $entityId;
+    private string            $action;
+    private ?array            $oldData;
+    private ?array            $newData;
+    private string            $userId;
+    private string            $ipAddress;
+    private DateTimeImmutable $createdAt;
 
-    public function __construct(string $entityType, string $entityId, string $action, ?array $oldData = null, ?array $newData = null)
-    {
+    public function __construct(
+        string $entityType,
+        string $entityId,
+        string $action,
+        ?array $oldData = null,
+        ?array $newData = null,
+        string $userId,
+        string $ipAddress,
+        DateTimeImmutable $createdAt
+    ) {
         $this->entityType = $entityType;
         $this->entityId   = $entityId;
         $this->action     = $action;
         $this->oldData    = $oldData;
         $this->newData    = $newData;
+        $this->userId     = $userId;
+        $this->ipAddress  = $ipAddress;
+        $this->createdAt  = $createdAt;
+    }
+
+    public function getEntityType(): string
+    {
+        return $this->entityType;
+    }
+
+    public function getEntityId(): string
+    {
+        return $this->entityId;
+    }
+
+    public function getAction(): string
+    {
+        return $this->action;
+    }
+
+    public function getOldData(): ?array
+    {
+        return $this->oldData;
+    }
+
+    public function getNewData(): ?array
+    {
+        return $this->newData;
+    }
+
+    public function getUserId(): string
+    {
+        return $this->userId;
+    }
+
+    public function getIpAddress(): string
+    {
+        return $this->ipAddress;
+    }
+
+    public function getCreatedAt(): DateTimeImmutable
+    {
+        return $this->createdAt;
     }
 
     public function toArray(): array

@@ -82,13 +82,15 @@ class TestService extends TestAbstractTest
     public function testGetCategories(): void
     {
         HelperContext::update('admin', 'admin', '127.0.0.1');
+
         $categories = $this->service->getCategories();
         if (count($categories) === 0) {
             throw new Exception('error on testGetCategories - should not be empty');
         }
+
         $foundBusiness = false;
         foreach ($categories as $category) {
-            if ($category->id === 'business') {
+            if ($category->getId() === 'business') {
                 $foundBusiness = true;
                 break;
             }
@@ -101,7 +103,7 @@ class TestService extends TestAbstractTest
         $categories = $this->service->getCategories();
         $foundCustom = false;
         foreach ($categories as $category) {
-            if ($category->id === 'custom' && $category->name === 'Custom Category') {
+            if ($category->getId() === 'custom' && $category->getName() === 'Custom Category') {
                 $foundCustom = true;
                 break;
             }
@@ -120,7 +122,7 @@ class TestService extends TestAbstractTest
         }
         $foundService = false;
         foreach ($types as $type) {
-            if ($type->id === 'service') {
+            if ($type->getId() === 'service') {
                 $foundService = true;
                 break;
             }
@@ -133,31 +135,13 @@ class TestService extends TestAbstractTest
         $types = $this->service->getTypes();
         $foundCustomType = false;
         foreach ($types as $type) {
-            if ($type->id === 'customType' && $type->name === 'Custom Type') {
+            if ($type->getId() === 'customType' && $type->getName() === 'Custom Type') {
                 $foundCustomType = true;
                 break;
             }
         }
         if (!$foundCustomType) {
             throw new Exception('error on testGetTypes - custom type not found after insertion');
-        }
-    }
-    
-    public function testGetGraph(): void
-    {
-        HelperContext::update('admin', 'admin', '127.0.0.1');
-        $node1 = new Node('n1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
-        $node2 = new Node('n2', 'Node 02', 'business', 'service', false, ['key' => 'value2']);
-        $this->service->insertNode($node1);
-        $this->service->insertNode($node2);
-        $edge1 = new Edge('n1', 'n2', 'label', ['weight' => '10']);
-        $this->service->insertEdge($edge1);
-        $graph = $this->service->getGraph();
-        if (count($graph->getNodes()) !== 2) {
-            throw new Exception('error on testGetGraph - expected 2 nodes');
-        }
-        if (count($graph->getEdges()) !== 1) {
-            throw new Exception('error on testGetGraph - expected 1 edge');
         }
     }
     
@@ -182,11 +166,10 @@ class TestService extends TestAbstractTest
     
     public function testGetNodes(): void
     {
+        $this->pdo->exec('delete from nodes');
+        $this->pdo->exec('delete from edges');
         HelperContext::update('admin', 'admin', '127.0.0.1');
-        $nodes = $this->service->getNodes();
-        if (count($nodes) !== 0) {
-            throw new Exception('error on testGetNodes - should be empty');
-        }
+        
         $node1 = new Node('node1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
         $node2 = new Node('node2', 'Node 02', 'business', 'database', false, ['key' => 'value2']);
         $this->service->insertNode($node1);
@@ -252,7 +235,9 @@ class TestService extends TestAbstractTest
     {
         HelperContext::update('admin', 'admin', '127.0.0.1');
 
-        $this->service->deleteNode(new Node('id', 'one node', 'application', 'database', false, []));
+        if ($this->service->deleteNode('id')) {
+            throw new Exception('false expected');
+        }
 
         $node1 = new Node('node1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
         $this->service->insertNode($node1);
@@ -262,7 +247,7 @@ class TestService extends TestAbstractTest
             throw new Exception('error on testDeleteNode');
         }
 
-        $this->service->deleteNode($node1);
+        $this->service->deleteNode($node1->getID());
 
         $node = $this->service->getNode('node1');
         if (! is_null($node)) {
@@ -272,21 +257,29 @@ class TestService extends TestAbstractTest
     
     public function testGetEdge(): void
     {
+        $this->pdo->exec('delete from nodes');
+        $this->pdo->exec('delete from edges');
+
         HelperContext::update('admin', 'admin', '127.0.0.1');
-        $node1 = new Node('node1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
-        $node2 = new Node('node2', 'Node 02', 'application', 'database', false, ['key' => 'value2']);
+
+        $node1 = new Node('node1', 'Node 01', 'business', 'service', true, ['key' => 'value1']);
+        $node2 = new Node('node2', 'Node 02', 'application', 'database', true, ['key' => 'value2']);
+        $edge  = new Edge('node1', 'node2', 'label', ['weight' => '10']);
         $this->service->insertNode($node1);
         $this->service->insertNode($node2);
-        $edge = $this->service->getEdge('node1', 'node2');
+        $this->service->insertEdge($edge);
+        
+        $edge = $this->service->getEdge('node1', 'node3');
         if ($edge !== null) {
-            throw new Exception('error on testGetEdge - should be null');
+            throw new Exception('error on testGetEdge. should be null');
         }
-        $newEdge = new Edge('node1', 'node2', 'label', ['weight' => '10']);
-        $this->service->insertEdge($newEdge);
+        
         $edge = $this->service->getEdge('node1', 'node2');
+        
         if ($edge->getId() !== 'node1-node2' || $edge->getSource() !== 'node1' || $edge->getTarget() !== 'node2') {
             throw new Exception('error on testGetEdge');
         }
+        
         $data = $edge->getData();
         if ($data['weight'] !== '10') {
             throw new Exception('error on testGetEdge - data mismatch');
@@ -294,7 +287,11 @@ class TestService extends TestAbstractTest
     }
     
     public function testGetEdges(): void {
+        $this->pdo->exec('delete from nodes');
+        $this->pdo->exec('delete from edges');
+
         HelperContext::update('admin', 'admin', '127.0.0.1');
+
         $edges = $this->service->getEdges();
         if (count($edges) !== 0) {
             throw new Exception('error on testGetEdges - should be empty');
@@ -337,6 +334,9 @@ class TestService extends TestAbstractTest
     
     public function testUpdateEdge(): void
     {
+        $this->pdo->exec('delete from nodes');
+        $this->pdo->exec('delete from edges');
+
         HelperContext::update('admin', 'admin', '127.0.0.1');
 
         $node1 = new Node('node1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
@@ -370,48 +370,34 @@ class TestService extends TestAbstractTest
     
     public function testDeleteEdge(): void
     {
+        $this->pdo->exec('delete from nodes');
+        $this->pdo->exec('delete from edges');
+
         HelperContext::update('admin', 'admin', '127.0.0.1');
+        
         $node1 = new Node('node1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
         $node2 = new Node('node2', 'Node 02', 'application', 'database', false, ['key' => 'value2']);
         $this->service->insertNode($node1);
         $this->service->insertNode($node2);
+        
         $edge = new Edge('node1', 'node2', 'label', ['weight' => '10']);
         $this->service->insertEdge($edge);
+
         $retrievedEdge = $this->service->getEdge('node1', 'node2');
         if ($retrievedEdge === null) {
             throw new Exception('error on testDeleteEdge - edge not inserted');
         }
-        $this->service->deleteEdge(new Edge('node1', 'node2', 'label'));
+
+        $this->service->deleteEdge('node1', 'node2');
         $edges = $this->service->getEdges();
         if (count($edges) !== 0) {
+            print_r($edges);
             throw new Exception('error on testDeleteEdge - edge not deleted');
         }
 
         // Test deleting non-existent edge
-        if ($this->service->deleteEdge(new Edge('node1', 'node2', 'label'))) {
+        if ($this->service->deleteEdge('node1', 'node2')) {
             throw new Exception('error on testDeleteEdge - should return false for non-existent edge');
-        }
-    }
-    
-    public function testGetStatus(): void
-    {
-        HelperContext::update('admin', 'admin', '127.0.0.1');
-        $status = $this->service->getStatus();
-
-        if (count($status) !== 0) {
-            throw new Exception('error on testGetStatus - should be empty');
-        }
-        
-        $node1 = new Node('node1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
-        $node2 = new Node('node2', 'Node 02', 'application', 'database', false, ['key' => 'value2']);
-        $this->service->insertNode($node1);
-        $this->service->insertNode($node2);
-        $this->service->updateNodeStatus(new Status('node1', 'healthy'));
-        $this->service->updateNodeStatus(new Status('node2', 'unhealthy'));
-        
-        $status = $this->service->getStatus();
-        if (count($status) !== 2) {
-            throw new Exception('error on testGetStatus - expected 2 status');
         }
     }
     
@@ -434,22 +420,32 @@ class TestService extends TestAbstractTest
     public function testUpdateNodeStatus(): void
     {
         HelperContext::update('admin', 'admin', '127.0.0.1');
-        $node1 = new Node('node1', 'Node 01', 'business', 'service', false, ['key' => 'value1']);
+
+        $node1 = new Node('node1', 'Node 01', 'business', 'service', true, ['key' => 'value1']);
         $this->service->insertNode($node1);
         $this->service->updateNodeStatus(new Status('node1', 'healthy'));
-        $status = $this->service->getNodeStatus('node1');
-        if ($status->getStatus() !== 'healthy') {
+        
+        $dbStatus = $this->graphDB->getNodeStatus('node1');
+        if ($dbStatus === null) {
+            throw new Exception('error on testUpdateNodeStatus - node not found');
+        }
+
+        if ($dbStatus->status !== 'healthy') {
             throw new Exception('error on testUpdateNodeStatus - status not set');
         }
         $this->service->updateNodeStatus(new Status('node1', 'maintenance'));
-        $status = $this->service->getNodeStatus('node1');
-        if ($status->getStatus() !== 'maintenance') {
+        
+        $dbStatus = $this->graphDB->getNodeStatus('node1');
+        if ($dbStatus === null) {
+            throw new Exception('error on testUpdateNodeStatus - node not found');
+        }
+        
+        if ($dbStatus->status !== 'maintenance') {
             throw new Exception('error on testUpdateNodeStatus - status not updated');
         }
-
         try {
             $this->service->updateNodeStatus(new Status('node6', 'healthy'));
-        } catch (PDOException $e) {
+        } catch (DatabaseException $e) {
             return;
         }
         throw new Exception('error on testUpdateNodeStatus');
@@ -462,21 +458,41 @@ class TestService extends TestAbstractTest
             throw new Exception('error on testGetProject - should be null for nonexistent project');
         }
 
-        $this->service->insertProject(new Project('project1', 'First Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), ['a', 'b']));
+
+        $this->service->insertProject(
+            new Project(
+                'project1',
+                'First Project',
+                'admin',
+                new DateTimeImmutable(),
+                new DateTimeImmutable(),
+                null));
         $project = $this->service->getProject('project1');
-        if( $project === null || $project->id !== 'project1' || $project->name !== 'First Project') {
+        if( $project === null || $project->getId() !== 'project1' || $project->getName() !== 'First Project') {
             throw new Exception('error on testGetProject - project data mismatch');
         }
     }
 
     public function testGetProjects(): void
     {
+        $this->pdo->exec('delete from projects');
+        HelperContext::update('admin', 'admin', '127.0.0.1');
+
         $projects = $this->service->getProjects();
         if (count($projects) !== 0) {
             throw new Exception('error on getProjects - should be empty');
         }
 
-        $this->service->insertProject(new Project('project1', 'First Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), []));
+        $this->service->insertProject(
+            new Project(
+                'project1',
+                'First Project',
+                'admin',
+                new DateTimeImmutable(),
+                new DateTimeImmutable(),
+                null
+            )
+        );
 
         $projects = $this->service->getProjects();
         if (count($projects) !== 1) {
@@ -486,19 +502,21 @@ class TestService extends TestAbstractTest
 
     public function testInsertProject(): void
     {
+        $this->pdo->exec('delete from projects');
+        
         HelperContext::update('admin', 'admin', '127.0.0.1');
-        $this->service->insertProject(new Project('project1', 'First Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), []));
+        $this->service->insertProject(new Project('project1', 'First Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), null));
         $projects = $this->service->getProjects();
         if (count($projects) !== 1) {
             throw new Exception('error on testInsertProject - should have 1 project');
         }
 
-        if($projects[0]->id !== 'project1' || $projects[0]->name !== 'First Project') {
+        if($projects[0]->getId() !== 'project1' || $projects[0]->getName() !== 'First Project') {
             throw new Exception('error on testInsertProject - project data mismatch');
         }
 
         try {
-            $this->service->insertProject(new Project('project1', 'Duplicate Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), []));
+            $this->service->insertProject(new Project('project1', 'Duplicate Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), null));
         } catch (Exception $e) {
             return;
         }
@@ -507,27 +525,33 @@ class TestService extends TestAbstractTest
 
     public function testUpdateProject(): void
     {
+        $this->pdo->exec('delete from projects');
+
         HelperContext::update('admin', 'admin', '127.0.0.1');
-        $this->service->insertProject(new Project('project1', 'First Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), []));
-        $this->service->updateProject(new Project('project1', 'Updated Project Name', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), []));
+        
+        $this->service->insertProject(new Project('project1', 'First Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), null));
+        $this->service->updateProject(new Project('project1', 'Updated Project Name', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), null));
         $projects = $this->service->getProjects();
         if (count($projects) !== 1) {
             throw new Exception('error on testUpdateProject - should have 1 project');
         }
 
-        if($projects[0]->name !== 'Updated Project Name') {
+        if($projects[0]->getName() !== 'Updated Project Name') {
             throw new Exception('error on testUpdateProject - project name not updated');
         }
         
-        if($this->service->updateProject(new Project('project2', 'Non-existent Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), []))) {
+        if($this->service->updateProject(new Project('project2', 'Non-existent Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), null))) {
             throw new Exception('error on testUpdateProject - should return false for non-existent project');
         }
     }
 
     public function testDeleteProject(): void
     {
+        $this->pdo->exec('delete from projects');
+
         HelperContext::update('admin', 'admin', '127.0.0.1');
-        $this->service->insertProject(new Project('project1', 'First Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), []));
+        
+        $this->service->insertProject(new Project('project1', 'First Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), null));
         $this->service->deleteProject('project1');
         $projects = $this->service->getProjects();
         if (count($projects) !== 0) {
@@ -538,6 +562,7 @@ class TestService extends TestAbstractTest
     public function testGetLogs(): void
     {
         HelperContext::update('admin', 'admin', '127.0.0.1');
+        
         $logs = $this->service->getLogs(10);
         if (count($logs) !== 0) {
             throw new Exception('error on testGetLogs - should be empty');
@@ -549,19 +574,19 @@ class TestService extends TestAbstractTest
         $updatedNode = new Node('node1', 'Updated Node', 'application', 'database', false, ['key' => 'newvalue']);
         $this->service->updateNode($updatedNode);
         sleep(1);
-        $this->service->deleteNode($node1);
+        $this->service->deleteNode($node1->getId());
         sleep(1);
         $logs = $this->service->getLogs(10);
         if (count($logs) !== 3) {
             throw new Exception('error on testGetLogs - expected 3 log entries (insert, update, delete)');
         }
-        if ($logs[0]->action !== 'delete' || $logs[0]->entityType !== 'node') {
+        if ($logs[0]->getAction() !== 'delete' || $logs[0]->getEntityType() !== 'node') {
             throw new Exception('error on testGetLogs - first log should be delete');
         }
-        if ($logs[1]->action !== 'update' || $logs[1]->entityType !== 'node') {
+        if ($logs[1]->getAction() !== 'update' || $logs[1]->getEntityType() !== 'node') {
             throw new Exception('error on testGetLogs - second log should be update');
         }
-        if ($logs[2]->action !== 'insert' || $logs[2]->entityType !== 'node') {
+        if ($logs[2]->getAction() !== 'insert' || $logs[2]->getEntityType() !== 'node') {
             throw new Exception('error on testGetLogs - third log should be insert');
         }
     }

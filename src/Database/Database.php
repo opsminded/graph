@@ -494,17 +494,7 @@ final class Database implements DatabaseInterface
         return false;
     }
 
-    public function getStatus(): array
-    {
-        $this->logger->debug("fetching status");
-        $sql = "SELECT n.id as node_id, s.status FROM nodes n LEFT JOIN status s ON n.id = s.node_id";
-        $stmt   = $this->pdo->query($sql);
-        $rows = $stmt->fetchAll();
-        $this->logger->info("status fetched", ['rows' => $rows]);
-        return $rows;
-    }
-
-    public function getNodeStatus(string $id): ?NodeStatusDTO
+    public function getNodeStatus(string $id): ?StatusDTO
     {
         $this->logger->debug("fetching node status", ['id' => $id]);
         $sql = "SELECT n.id, s.status FROM nodes n LEFT JOIN status s ON n.id = s.node_id WHERE n.id = :id";
@@ -514,16 +504,16 @@ final class Database implements DatabaseInterface
         $row = $stmt->fetch();
         if($row) {
             $this->logger->info("node status fetched", ['params' => $params, 'row' => $row]);
-            return new NodeStatusDTO($row['id'], $row['status']);
+            return new StatusDTO($row['id'], $row['status']);
         }
         return null;
     }
 
-    public function updateNodeStatus(NodeStatusDTO $nodeStatus): bool
+    public function updateNodeStatus(StatusDTO $status): bool
     {
-        $this->logger->debug("updating node status", ['id' => $nodeStatus->node_id, 'status' => $nodeStatus->status]);
+        $this->logger->debug("updating node status", ['id' => $status->node_id, 'status' => $status->status]);
         $sql = "REPLACE INTO status (node_id, status) VALUES (:node_id, :status)";
-        $params = [':node_id' => $nodeStatus->node_id, ':status' => $nodeStatus->status];
+        $params = [':node_id' => $status->node_id, ':status' => $status->status];
         $stmt = $this->pdo->prepare($sql);
 
         try {
@@ -531,7 +521,7 @@ final class Database implements DatabaseInterface
         } catch (PDOException $exception) {
             $complementary = "";
             if ($exception->errorInfo[1] == 19) {
-                $complementary .= "node not found for status update: " . $nodeStatus->node_id;
+                $complementary .= "node not found for status update: " . $status->node_id;
                 $this->logger->error("Node not found for status update", ['params' => $params]);
             }
             throw new DatabaseException("Failed to update node status: " . $complementary, $exception);
@@ -569,10 +559,10 @@ final class Database implements DatabaseInterface
                 $row['id'],
                 $row['name'],
                 $row['author'],
+                new DateTimeImmutable($row['created_at']),
+                new DateTimeImmutable($row['updated_at']),
                 $graph,
-                json_decode($row['data'], true),
-                $row['created_at'],
-                $row['updated_at'],
+                json_decode($row['data'], true)
             );
 
             return $project;
@@ -590,7 +580,15 @@ final class Database implements DatabaseInterface
         $projects = [];
         foreach($rows as $row) {
             $row['data'] = json_decode($row['data'], true);
-            $projects[] = new ProjectDTO($row['id'], $row['name'], $row['author'], new GraphDTO([], []), $row['data']);
+            $projects[] = new ProjectDTO(
+                $row['id'],
+                $row['name'],
+                $row['author'],
+                new DateTimeImmutable($row['created_at']),
+                new DateTimeImmutable($row['updated_at']),
+                new GraphDTO([], []),
+                $row['data']
+            );
         }
         $this->logger->info("projects fetched", ['rows' => $rows]);
         return $projects;

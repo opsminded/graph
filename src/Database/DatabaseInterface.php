@@ -39,9 +39,8 @@ interface DatabaseInterface
     public function updateEdge(EdgeDTO $edge): bool;
     public function deleteEdge(string $id): bool;
 
-    public function getStatus(): array;
-    public function getNodeStatus(string $id): ?NodeStatusDTO;
-    public function updateNodeStatus(NodeStatusDTO $status): bool;
+    public function getNodeStatus(string $id): ?StatusDTO;
+    public function updateNodeStatus(StatusDTO $status): bool;
     public function batchUpdateNodeStatus(array $statuses): bool;
 
     public function getProject(string $id): ?ProjectDTO;

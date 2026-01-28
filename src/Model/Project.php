@@ -11,13 +11,15 @@ final class Project
     const PROJECT_KEYNAME_UPDATED_AT = "updated_at";
     const PROJECT_KEYNAME_NODES = "nodes";
     
-    public string $id;
-    public string $name;
-    public string $author;
-    public DateTimeImmutable $createdAt;
-    public DateTimeImmutable $updatedAt;
+    private string $id;
+    private string $name;
+    private string $author;
+    private DateTimeImmutable $createdAt;
+    private DateTimeImmutable $updatedAt;
     
-    public array $nodes = [];
+    private ?Graph $graph;
+
+    private array $data = [];
 
     public function __construct(
         string $id,
@@ -25,14 +27,51 @@ final class Project
         string $author,
         DateTimeImmutable $createdAt,
         DateTimeImmutable $updatedAt,
-        array $nodes
+        ?Graph $graph,
+        array $data = [],
     ) {
         $this->id = $id;
         $this->name = $name;
         $this->author = $author;
         $this->createdAt = $createdAt;
         $this->updatedAt = $updatedAt;
-        $this->nodes = $nodes;
+        $this->graph = $graph;
+        $this->data = $data;
+    }
+
+    public function getId(): string
+    {
+        return $this->id;
+    }
+
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
+    public function getAuthor(): string
+    {
+        return $this->author;
+    }
+
+    public function getCreatedAt(): DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
+
+    public function getUpdatedAt(): DateTimeImmutable
+    {
+        return $this->updatedAt;
+    }
+
+    public function getGraph(): ?Graph
+    {
+        return $this->graph;
+    }
+
+    public function getData(): array
+    {
+        return $this->data;
     }
 
     public function toArray(): array
@@ -43,7 +82,7 @@ final class Project
             self::PROJECT_KEYNAME_AUTHOR => $this->author,
             self::PROJECT_KEYNAME_CREATED_AT => $this->createdAt->format(DateTime::ATOM),
             self::PROJECT_KEYNAME_UPDATED_AT => $this->updatedAt->format(DateTime::ATOM),
-            self::PROJECT_KEYNAME_NODES => $this->nodes,
+            self::PROJECT_KEYNAME_NODES => $this->graph,
         ];
     }
 }
