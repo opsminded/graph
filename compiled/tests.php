@@ -985,11 +985,11 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('error on testGetEdges');
         }
 
-        if ($edges[0]['id'] !== 'edge1' || $edges[0]['source'] !== 'node1' || $edges[0]['target'] !== 'node2' || $edges[0]['data']['a'] !== 'b') {
+        if ($edges[0]->id !== 'edge1' || $edges[0]->source !== 'node1' || $edges[0]->target !== 'node2' || $edges[0]->data['a'] !== 'b') {
             throw new Exception('error on testGetEdges');
         }
 
-        if ($edges[1]['id'] !== 'edge2' || $edges[1]['source'] !== 'node2' || $edges[1]['target'] !== 'node3' || $edges[1]['data']['b'] !== 'c') {
+        if ($edges[1]->id !== 'edge2' || $edges[1]->source !== 'node2' || $edges[1]->target !== 'node3' || $edges[1]->data['b'] !== 'c') {
             throw new Exception('error on testGetEdges');
         }
     }
@@ -1365,11 +1365,11 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('error on testGetLogs');
         }
 
-        if ($logs[0]['entity_id'] !== 'node2') {
+        if ($logs[0]->entityId !== 'node2') {
             throw new Exception('error on testGetLogs');
         }
 
-        if ($logs[1]['entity_id'] !== 'node1') {
+        if ($logs[1]->entityId !== 'node1') {
             throw new Exception('error on testGetLogs');
         }
     }
@@ -1381,7 +1381,7 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('error on testInsertAuditLog');
         }
 
-        if ($logs[0]['entity_id'] !== 'node1') {
+        if ($logs[0]->entityId !== 'node1') {
             throw new Exception('error on testInsertAuditLog');
         }
     }

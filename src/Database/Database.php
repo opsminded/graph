@@ -425,11 +425,14 @@ final class Database implements DatabaseInterface
         $sql = "SELECT * FROM edges";
         $stmt  = $this->pdo->query($sql);
         $rows  = $stmt->fetchAll();
+
+        $edges = [];
         foreach($rows as &$row) {
             $row['data'] = json_decode($row['data'], true);
+            $edges[] = new EdgeDTO($row['id'], $row['source'], $row['target'], $row['label'], $row['data']);
         }
         $this->logger->info("edges fetched", ['rows' => $rows]);
-        return $rows;
+        return $edges;
     }
 
     public function insertEdge(EdgeDTO $edge): bool
@@ -683,8 +686,23 @@ final class Database implements DatabaseInterface
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         $rows = $stmt->fetchAll();
+
+        $logs = [];
+        foreach($rows as $row) {
+            $logs[] = new LogDTO(
+                $row['entity_type'],
+                $row['entity_id'],
+                $row['action'],
+                $row['old_data'] !== null ? json_decode($row['old_data'], true) : null,
+                $row['new_data'] !== null ? json_decode($row['new_data'], true) : null,
+                $row['user_id'],
+                $row['ip_address'],
+                new DateTimeImmutable($row['created_at'])
+            );
+        }
+
         $this->logger->info("logs fetched", ['params' => $params, 'rows' => $rows]);
-        return $rows;
+        return $logs;
     }
 
     public function insertLog(LogDTO $log): bool
