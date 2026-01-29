@@ -6,12 +6,191 @@ $basePath = rtrim(dirname($requestUri), "/\\");
 ?>
 <html lang="pt-BR">
     <head>
-        <meta charset="UTF-8">
         <meta http-equiv="content-type" content="text/html; charset=UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Bradesketch</title>
-        <script src="<?php echo $basePath; ?>/index.php/cytoscape.js"></script>
-        <link rel="stylesheet" href="<?php echo $basePath; ?>/index.php/style.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.33.1/cytoscape.min.js" integrity="sha512-kHAY8XzRfLVMcLuowdk91552RD+Nb2/1uHamfHMdLejNqlZnbEJLl1wYnsNnqIFCEZ++WaOcOlfokC6p9JWrLw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+        
+        <style>
+            html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+                overflow: hidden;
+                font-family: Verdana, Geneva, Tahoma, sans-serif;
+            }
+
+            body {
+                background-color: #FAF9F5;
+            }
+
+            #graph-header {
+                position: absolute;
+
+                border: 1px solid #CCC;
+                box-shadow: rgba(9, 30, 66, 0.25) 0px 4px 8px -2px, rgba(9, 30, 66, 0.08) 0px 0px 0px 1px;
+                color: #787878;
+
+                top: 50px;
+                right: 2%;
+                margin: 0;
+                padding: 10px;
+
+                font-size: 32px;
+                font-weight: bold;
+
+                z-index: 300;
+            }
+
+            #graph-header h1 {
+                font-size: 24px;
+                font-weight: bold;
+                margin: 0;
+                padding: 0;
+            }
+
+            #graph-header p {
+                font-size: 10px;
+                font-weight: normal;
+                margin: 0;
+                padding: 0;
+            }
+
+            #menu {
+                position: absolute;
+
+                left: 0;
+                top: 0;
+                width: 270px;
+                height: 100%;
+                padding: 10px 0;
+
+                text-align: center;
+
+                background-color: #FAF9F5;
+
+                border-right: 1px solid #CCC;
+                z-index: 200;
+            }
+
+            #menu h2 {
+                font-size: 24px;
+                line-height: 24px;
+                margin: 10px 0;
+                padding: 0;
+            }
+
+            #menu.hide {
+                display: none;
+            }
+
+            #menu > div:first-of-type {
+                text-align: right;
+                padding: 0 10px;
+            }
+
+            #user-panel {
+                background-color: #FFFFFF;
+                border-top: 1px solid #CCC;
+                border-bottom: 1px solid #CCC;
+                padding-bottom: 20px;
+            }
+
+            #add-node-form {
+                display: block;
+            }
+
+            #add-node-form.hide {
+                display: none;
+            }
+
+            #add-edge-form {
+                display: none;
+            }
+
+            #add-edge-form.show {
+                display: block;
+            }
+
+            /* Info panel on the right side */
+
+            #info-panel {
+                position: absolute;
+
+                right: 0;
+                top: 0;
+
+                width: 40%;
+                height: 100%;
+                
+                background-color: #fff;
+                border-left: 1px solid #CCC;
+                padding: 10px;
+                
+                display: none;
+                z-index: 400;
+            }
+
+            #info-panel.show {
+                display: block;
+            }
+
+            #cy {
+                position: absolute;
+
+                left: 0;
+                top: 32px;
+                bottom: 0;
+                right: 0;
+
+                width: 100%;
+                height: 100%;
+                
+                z-index: 100;
+            }
+
+            #modal {
+                position: absolute;
+
+                border: 2px solid #CCC;
+                background-color: #fff;
+
+                left: 25%;
+                top: 8%;
+                width: 50%;
+                height: 70%;
+
+                padding: 10px;
+
+                display: none;
+                z-index: 200;
+            }
+
+            #modal.show {
+                display: block;
+            }
+
+            #modal-new-doc {
+                display: none;
+            }
+
+            #modal-new-doc.show {
+                display: block;
+            }
+
+            #modal-open-doc {
+                display: none;
+            }
+
+            #modal-open-doc.show {
+                display: block;
+            }
+        </style>
+
+        <script>
+            const basePath = "<?php echo $basePath; ?>";
+        </script>
     </head>
     <body>
         <div id="graph-header">
@@ -44,7 +223,7 @@ $basePath = rtrim(dirname($requestUri), "/\\");
 
                 <p>
                     <label for="add-node-form-type">Tipo:<br>
-                        <select id="add-node-form-type" required>
+                        <select id="add-node-form-type" name="type" required>
                             <option>Selecione</option>
                         </select>
                     </label>
@@ -117,6 +296,183 @@ $basePath = rtrim(dirname($requestUri), "/\\");
         </div>
         
         <div id="cy"></div>
+    
+    <script type="module">
+        const API = {
+            GET_PROJECTS:   basePath + '/getProjects',
+            GET_PROJECT:    basePath + '/getProject',
+            UPDATE_PROJECT: basePath + '/updateProject',
+            INSERT_PROJECT: basePath + '/insertProject',
+            GET_STATUS:     basePath + '/getStatus',
+            GET_CATEGORIES: basePath + '/getCategories',
+            GET_TYPES:      basePath + '/getTypes',
+            INSERT_EDGE:    basePath + '/insertEdge',
+            DELETE_EDGE:    basePath + '/deleteEdge'
+        };
+
+        const EVENTS = {
+            INITIAL_LOAD: "INITIAL_LOAD",
+            PROJECTS_UPDATED: "PROJECTS_UPDATED",
+            PROJECT_SELECTED: "PROJECT_SELECTED"
+        };
+
+        // Utility Functions
+        function createOptionElement(value, text) {
+            console.log('Creating option element with value:', value, 'and text:', text);
+            const option = document.createElement('option');
+            option.value = value;
+            option.text = text;
+            return option;
+        }
+
+        // Store class to manage application state
+        class Store {
+            constructor(initialState = {}) {
+                this.state = initialState;
+                this.subscribers = {}; // mapa de eventos para listas de callbacks de inscrição
+                this.handlers = {};    // mapa de eventos para handlers;
+            }
+
+            subscribe(event, callback) {
+                if (!this.subscribers[event]) {
+                    this.subscribers[event] = [];
+                }
+                this.subscribers[event].push(callback);
+            }
+
+            // Notify all subscribers of state change
+            notify(event) {
+                if (this.subscribers[event]) {
+                    this.subscribers[event].forEach(callback => callback(this.state));
+                }
+            }
+
+            // Register an event handler
+            register(event, handler){
+                this.handlers[event] = handler;
+            }
+
+            // Dispatch an event to update state
+            dispatch(event, payload) {
+                if (this.handlers[event]) {
+                    this.state = this.handlers[event](this.state, payload);
+                    this.notify(event);
+                } else {
+                    console.warn(`Evento não registrado: ${event}`);
+                }
+            }
+        }
+
+        async function fetchProjects() {
+            try {
+                const response = await fetch(API.GET_PROJECTS);
+                if (!response.ok) {
+                    throw new Error(`Erro ao carregar projetos: ${response.status}`);
+                }
+                const { data } = await response.json();
+                return data;
+            } catch (error) {
+                console.error('[fetchProjects] Fetch error:', error);
+                return [];
+            }
+        }
+        
+        class Graph
+        {
+            constructor(store) {
+                console.log('Initializing Graph');
+                this.store = store;
+
+                this.OpenProjectModal = new OpenProjectModal(this.store);
+
+                this.store.register(EVENTS.INITIAL_LOAD, (state, payload) => ({
+                    ...state,
+                    initialLoad: payload.initialLoad
+                }));
+
+                this.store.register(EVENTS.PROJECTS_UPDATED, (state, payload) => ({
+                    ...state,
+                    projects: payload.projects
+                }));
+
+                this.store.subscribe(EVENTS.INITIAL_LOAD, async (state) => {
+                    if (state.initialLoad) {
+                        const projects = await fetchProjects();
+                        console.log('Fetched projects:', projects);
+                        this.store.dispatch(EVENTS.PROJECTS_UPDATED, { projects });
+                        this.store.dispatch(EVENTS.INITIAL_LOAD, { initialLoad: false });
+                    }
+                });
+
+                this.store.subscribe(EVENTS.PROJECTS_UPDATED, async (state) => {
+                    console.log('Projects updated in store:', state);
+                });
+
+                this.store.dispatch(EVENTS.INITIAL_LOAD, { initialLoad: true });
+            }
+        }
+
+        class OpenProjectModal
+        {
+            constructor(store)
+            {
+                this.store = store;
+                this.htmlElement = document.getElementById('modal-open-doc');
+                this.htmlElementModal = document.getElementById('modal');
+                this.htmlOpenProjectFormElement = document.getElementById('open-doc-form');
+                this.htmlOpenProjectFormIdElement = document.getElementById('open-doc-form-id');
+                this.setupSubscription();
+            }
+
+            setupSubscription() {
+                this.htmlOpenProjectFormElement.addEventListener('submit', (event) => {
+                    event.preventDefault();
+                    const selectedProjectId = this.htmlOpenProjectFormIdElement.value;
+                    this.store.dispatch(EVENTS.PROJECT_SELECTED, { project: selectedProjectId });
+                });
+
+                this.store.register(EVENTS.PROJECT_SELECTED, (state, payload) => ({
+                    ...state,
+                    currentProject: payload.project
+                }));
+
+                this.store.subscribe(EVENTS.PROJECT_SELECTED, async (state) => {
+                    console.log('Project selected:', state.currentProject);
+                    this.hide();
+                });
+
+                this.store.subscribe(EVENTS.PROJECTS_UPDATED, async (state) => {
+                    console.log('OpenProjectModal received projects update:', state.projects);
+                    this.loadProjects(state.projects);
+                    this.show();
+                });
+            }
+
+            loadProjects(projects) {
+                // Logic to load projects into the modal
+                this.htmlOpenProjectFormIdElement.innerHTML = ''; // Clear existing options
+                projects.forEach((project) => {
+                    this.htmlOpenProjectFormIdElement.appendChild(
+                        createOptionElement(project.id, project.name)
+                    );
+                });
+            }
+
+            show() {
+                this.htmlElement.classList.add('show');
+                this.htmlElementModal.classList.add('show');
+            }
+
+            hide() {
+                this.htmlElement.classList.remove('show');
+                this.htmlElementModal.classList.remove('show');
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", async function() {
+            const store = new Store();
+            const graph = new Graph(store);
+        });
+    </script>
     </body>
-    <script type="module" src="<?php echo $basePath; ?>/index.php/script.js"></script>
 </html>

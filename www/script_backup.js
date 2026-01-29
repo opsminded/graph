@@ -182,16 +182,16 @@ class Store {
         this.setState({ selectedEdge: edgeId });
     }
 
-    addNodeToSave(nodeId) {
+    addNodeToProject(nodeId) {
         console.log('Adding node to current project in Store:', nodeId);
-        if (!this.state.currentSave) return;
-        if (this.state.currentSave.nodes.includes(nodeId)) return;
+        if (!this.state.currentProject) return;
+        if (this.state.currentProject.nodes.includes(nodeId)) return;
         
-        const currentSave = {
-            ...this.state.currentSave,
-            nodes: [...this.state.currentSave.nodes, nodeId]
+        const currentProject = {
+            ...this.state.currentProject,
+            nodes: [...this.state.currentProject.nodes, nodeId]
         };
-        this.setState({ currentSave });
+        this.setState({ currentProject });
     }
 
     finishInitialization() {
@@ -221,75 +221,74 @@ class Graph
         // Subscribe to state changes
         this.store.subscribe(async (state, changedKeys) => {
             console.log('Graph detected Store state change:', changedKeys);
-            // Auto-save when currentSave nodes change (but not on initial load)
-            if (changedKeys.includes('currentSave') && state.currentSave) {
-                console.log('Current save changed, updating save on server');
-                await this.updateSave();
+            // Auto when currentProject nodes change (but not on initial load)
+            if (changedKeys.includes('currentProject') && state.currentProject) {
+                console.log('Current project changed, updating project on server');
+                //await this.updateProject();
             }
             
-            // Update view when graph or currentSave changes
-            if (changedKeys.includes('currentSave') || changedKeys.includes('graph')) {
-                console.log('Graph or current save changed, updating view');
-                await this.updateView();
+            // Update view when graph or currentProject changes
+            if (changedKeys.includes('currentProject') || changedKeys.includes('graph')) {
+                console.log('Graph or current project changed, updating view');
+                //await this.updateView();
             }
         });
-    }
 
-    async init() {
-        console.log('Init');
-
-        this.htmlFitBtnElement.addEventListener('click', () => {
-            console.log('Fit button clicked');
-
-            const cy = this.store.getCy();
-            cy.layout(COSELAYOUT).run();
-            cy.fit();
-        });
-
-        this.htmlExportBtnElement.addEventListener('click', () => {
-            console.log('Export button clicked');
-            const currentSave = this.store.getCurrentSave();
-            if (!currentSave) {
-                alert('Não há projeto carregado para exportar.');
-                return;
-            }
-
-            const cy = this.store.getCy();
-            const base64Image = cy.png({'bg': '#ffffff'});
-            
-            const downloadAnchorNode = document.createElement('a');
-            downloadAnchorNode.setAttribute("href", base64Image);
-            downloadAnchorNode.setAttribute("download", `${currentSave.name ?? 'save'}.png`);
-            document.body.appendChild(downloadAnchorNode);
-            downloadAnchorNode.click();
-            downloadAnchorNode.remove();
-        });
-
-        document.addEventListener('mousemove', (e) => {
-            console.log('Mouse move event detected');
-            this.menu.onMouseMove(e);
-        });
-
-        document.addEventListener('keydown', async (e) => {
-            console.log('Key down event detected:', e.key);
-            await this.removeNode(e);
-            await this.removeEdge(e);
-            this.modals.onKeydown(e);
-        });
-
-        await this.fetchProjects();
-        await this.fetchSave();
-        
-        // Finish initialization and enable reactive updates
         this.store.finishInitialization();
-        
-        // Initial view update
-        await this.updateView();
-
-        const cy = this.store.getCy();
-        cy.layout(COSELAYOUT).run();
-        cy.fit();
     }
+
+    // async init() {
+    //     console.log('Init');
+
+    //     this.htmlFitBtnElement.addEventListener('click', () => {
+    //         console.log('Fit button clicked');
+
+    //         const cy = this.store.getCy();
+    //         cy.layout(COSELAYOUT).run();
+    //         cy.fit();
+    //     });
+
+    //     this.htmlExportBtnElement.addEventListener('click', () => {
+    //         console.log('Export button clicked');
+    //         const currentProject = this.store.getCurrentProject();
+    //         if (!currentProject) {
+    //             alert('Não há projeto carregado para exportar.');
+    //             return;
+    //         }
+
+    //         const cy = this.store.getCy();
+    //         const base64Image = cy.png({'bg': '#ffffff'});
+            
+    //         const downloadAnchorNode = document.createElement('a');
+    //         downloadAnchorNode.setAttribute("href", base64Image);
+    //         downloadAnchorNode.setAttribute("download", `${currentProject.name ?? 'project'}.png`);
+    //         document.body.appendChild(downloadAnchorNode);
+    //         downloadAnchorNode.click();
+    //         downloadAnchorNode.remove();
+    //     });
+
+    //     document.addEventListener('mousemove', (e) => {
+    //         console.log('Mouse move event detected');
+    //         this.menu.onMouseMove(e);
+    //     });
+
+    //     document.addEventListener('keydown', async (e) => {
+    //         console.log('Key down event detected:', e.key);
+    //         await this.removeNode(e);
+    //         await this.removeEdge(e);
+    //         this.modals.onKeydown(e);
+    //     });
+
+    //     // Finish initialization and enable reactive updates
+    //     this.store.finishInitialization();
+        
+    //     // Initial view update
+    //     await this.updateView();
+
+    //     const cy = this.store.getCy();
+    //     cy.layout(COSELAYOUT).run();
+    //     cy.fit();
+    // }
 
     async fetchProjects() {
         try {
@@ -298,11 +297,12 @@ class Graph
                 throw new Error(`Erro ao carregar projetos: ${response.status}`);
             }
             const { data } = await response.json();
-            this.store.setSaves(data);
+            console.log('projects', data);
+            this.store.setProjects(data);
             
-            data.forEach((save) => {
+            data.forEach((project) => {
                 this.htmlOpenProjectFormIdElement.appendChild(
-                    createOptionElement(save.id, save.name)
+                    createOptionElement(project.id, project.name)
                 );
             });
         } catch (error) {
@@ -396,23 +396,23 @@ class Graph
                 return;
             }
             const node = selection[0];
-            const currentSave = this.store.getCurrentSave();
+            const currentProject = this.store.getCurrentProject();
             
-            if (!currentSave) {
+            if (!currentProject) {
                 Notification.error('Nenhum projeto carregado.');
                 return;
             }
             
-            if (!currentSave.nodes.includes(node)) {
+            if (!currentProject.nodes.includes(node)) {
                 Notification.error('O nó selecionado é uma dependência obrigatória.');
                 return;
             }
             
-            const updatedNodes = currentSave.nodes.filter(nodeId => nodeId !== node);
+            const updatedNodes = currentProject.nodes.filter(nodeId => nodeId !== node);
 
-            currentSave.nodes = updatedNodes;
+            currentProject.nodes = updatedNodes;
             this.store.clearSelection();
-            this.store.setCurrentSave(currentSave);
+            this.store.setCurrentProject(currentProject);
             return;
         }
     }
@@ -445,24 +445,23 @@ class Graph
                 this.store.setSelectedEdge(null);
                 Notification.success('Aresta removida com sucesso!', 2000);
             } catch (error) {
-                console.error('[updateSave] Fetch error:', error);
+                console.error('[removeEdge] Fetch error:', error);
                 Notification.error('Falha ao remover a aresta. Tente novamente.');
             }
         }
     }
 
     async updateView() {
-        const currentSave = this.store.getCurrentSave();
-        const graphData = this.store.getState().graph;
-
-        if (!currentSave) {
+        const currentProject = this.store.getCurrentProject();
+        
+        if (!currentProject) {
             this.modals.displayOpenProjectModal();
             return;
         }
 
-        this.htmlTitleElement.textContent = currentSave?.name ?? 'Untitled';
-        this.htmlAuthorElement.textContent = currentSave?.creator ?? 'Unknown';
-        this.htmlCreatedElement.textContent = new Date(currentSave?.created_at).toLocaleString() ?? 'Unknown';
+        this.htmlTitleElement.textContent = currentProject?.name ?? 'Untitled';
+        this.htmlAuthorElement.textContent = currentProject?.creator ?? 'Unknown';
+        this.htmlCreatedElement.textContent = new Date(currentProject?.created_at).toLocaleString() ?? 'Unknown';
 
         if (!graphData) {
             console.log('No graph data available, cannot update view.');
@@ -521,7 +520,7 @@ class Graph
         });
         
         const startNodes = cy.nodes().filter(node => 
-            currentSave.nodes.includes(node.id())
+            currentProject.nodes.includes(node.id())
         );
         
         const descendants = startNodes.successors();
@@ -560,7 +559,6 @@ class Menu {
         this.AddNodeForm = new AddNodeForm(store);
         this.AddEdgeForm = new AddEdgeForm(store, graph);
 
-        this.init();
         this.setupSubscriptions();
     }
 
@@ -636,8 +634,6 @@ class AddNodeForm {
         this.htmlAddNodeFormCategory = document.getElementById('add-node-form-category');
         this.htmlAddNodeFormType = document.getElementById('add-node-form-type');
         this.htmlAddNodeFormNode = document.getElementById('add-node-form-node');
-
-        this.init();
     }
 
     init() {
@@ -722,19 +718,19 @@ class AddNodeForm {
         e.preventDefault();
 
         const id = this.htmlAddNodeFormNode.value;
-        const currentSave = this.store.getCurrentSave();
+        const currentProject = this.store.getCurrentProject();
         
         if (!id) {
             alert('Por favor, selecione um nó para adicionar.');
             return;
         }
         
-        if (currentSave.nodes.includes(id)) {
-            console.log('Node already in save, not adding:', id);
+        if (currentProject.nodes.includes(id)) {
+            console.log('Node already in project, not adding:', id);
             return;
         }
 
-        this.store.addNodeToSave(id);
+        this.store.addNodeToProject(id);
     }
 }
 
@@ -744,8 +740,6 @@ class AddEdgeForm {
         this.graph = graph;
         this.htmlElement = document.getElementById('add-edge-form');
         this.htmlAddEdgeFormSubmit = document.getElementById('add-edge-form-submit');
-
-        this.init();
     }
 
     init() {
@@ -827,8 +821,6 @@ class NewProjectModal {
         this.htmlNewDocFormNameElement = document.getElementById('new-doc-form-name');
         this.htmlOpenProjectFormElement = document.getElementById('open-doc-form');
         this.htmlOpenProjectFormIdElement = document.getElementById('open-doc-form-id');
-
-        this.init();
     }
 
     init() {
@@ -865,7 +857,7 @@ class NewProjectModal {
         };
         
         try {
-            const response = await fetch(API.INSERT_SAVE, {
+            const response = await fetch(API.INSERT_PROJECT, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -884,7 +876,7 @@ class NewProjectModal {
             
             Notification.success('Projeto criado com sucesso!');
             setTimeout(() => {
-                window.location.href = `#BASE_PATH#/?save=${result.data.id}`;
+                window.location.href = `#BASE_PATH#/?project=${result.data.id}`;
             }, 500);
             
         } catch (error) {
@@ -896,7 +888,7 @@ class NewProjectModal {
     async openProject(e) {
         e.preventDefault();
         const id = this.htmlOpenProjectFormIdElement.value;
-        window.location.href = `#BASE_PATH#/?save=${id}`;
+        window.location.href = `#BASE_PATH#/?project=${id}`;
     }
 }
 
@@ -925,8 +917,6 @@ class Modals {
         this.htmlNewProjectBtnElement = document.getElementById('new-doc-btn');
         this.htmlOpenProjectBtnElement = document.getElementById('open-doc-btn');
         this.htmlCloseBtnElement = document.getElementById('close-modal-btn');
-
-        this.init();
     }
 
     init() {
@@ -1050,5 +1040,4 @@ class InfoPanel {
 document.addEventListener("DOMContentLoaded", async function() {
     const store = new Store();
     const graph = new Graph(store);
-    await graph.init();
 });

@@ -55,24 +55,6 @@ for file in folder.rglob('*.php'):
     filenames.append(str(file))
 
 
-cytoscapejs = ''
-with open('www/cytoscape.min.js', 'r') as file:
-    cytoscapejs = file.read()
-    cytoscapejs = base64.b64encode(cytoscapejs.encode('utf-8')).decode('utf-8')
-
-stylesheet = ''
-with open('www/stylesheet.css', 'r') as file:
-    stylesheet = file.read()
-    stylesheet = base64.b64encode(stylesheet.encode('utf-8')).decode('utf-8')
-
-javascript = ''
-with open('www/script.js', 'r') as file:
-    javascript = file.read()
-    javascript = base64.b64encode(javascript.encode('utf-8')).decode('utf-8')
-
-
-######################################################
-
 with open('compiled/graph.php', 'w') as outputfile:
     
     outputfile.write("".join(init))
@@ -90,13 +72,6 @@ with open('compiled/graph.php', 'w') as outputfile:
     # Write compiled schema third
     outputfile.write("\n")
     outputfile.write(compiled_schema)
-    outputfile.write("\n")
-    
-    # Write cytoscapejs fourth
-    outputfile.write("\n")
-    outputfile.write(f"$DATA_CYTOSCAPE = '{str(cytoscapejs)}';\n")
-    outputfile.write(f"$DATA_STYLE_CSS = '{str(stylesheet)}';\n")
-    outputfile.write(f"$DATA_JAVASCRIPT = '{str(javascript)}';\n")
     outputfile.write("\n")
     
     print_file(outputfile, 'src/HTTP/Response/Response.php')

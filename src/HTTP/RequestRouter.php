@@ -61,42 +61,10 @@ final class RequestRouter
 
     private function tryIrregularRoutes(Request $req): ?Response
     {
-        global $DATA_CYTOSCAPE;
-        global $DATA_STYLE_CSS;
-        global $DATA_JAVASCRIPT;
-
         if($req->method == Request::METHOD_GET && $req->path == "/")
         {
             $resp = new OKResponse("welcome to the API", []);
             $resp->template = 'editor';
-            return $resp;
-        }
-
-        if ($req->method == Request::METHOD_GET && $req->path == "/cytoscape.js")
-        {
-            $resp = new OKResponse("cytoscape.js", []);
-            $resp->contentType = 'Content-Type: text/javascript; charset=UTF-8';
-            $resp->binaryContent = $DATA_CYTOSCAPE;
-            return $resp;
-        }
-
-        if ($req->method == Request::METHOD_GET && $req->path == "/style.css")
-        {
-            $resp = new OKResponse("style.css", []);
-            $resp->contentType = 'Content-Type: text/css; charset=UTF-8';
-            $resp->binaryContent = $DATA_STYLE_CSS;
-            return $resp;
-        }
-
-        if($req->method == Request::METHOD_GET && $req->path == "/script.js")
-        {
-            $resp = new OKResponse("script.js", []);
-            $resp->contentType = 'Content-Type: text/javascript; charset=UTF-8';
-            
-            $content = base64_decode($DATA_JAVASCRIPT);
-            $content = str_replace('#BASE_PATH#', $req->basePath, $content);
-            
-            $resp->binaryContent = base64_encode($content);
             return $resp;
         }
 
