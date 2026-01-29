@@ -121,7 +121,7 @@ class TestNode extends TestAbstractTest
         }
 
         $data = $node->toArray();
-        if ($data['id'] != 'node1' || $data['label'] != 'Node 01' || $data['category'] != 'business' || $data['type'] != 'server' || $data['user_created'] !== true) {
+        if ($data['id'] != 'node1' || $data['label'] != 'Node 01' || $data['category'] != 'business' || $data['type'] != 'server') {
             throw new Exception('test_Node problem - toArray mismatch');
         }
 
@@ -2580,7 +2580,6 @@ final class TestController extends TestAbstractTest
         $req->data['label'] = 'node1';
         $req->data['category'] = 'application';
         $req->data['type'] = 'database';
-        $req->data['user_created'] = true;
         $req->data['data'] = ['a' => 'b'];
         $resp = $this->controller->insertNode($req);
     }

@@ -1178,31 +1178,6 @@ final class Database implements DatabaseInterface
         return $edges;
     }
 
-    public function wouldCreateCycle(string $source, string $target): bool
-    {
-        if ($source === $target) {
-            return true;
-        }
-
-        $sql = '
-        WITH RECURSIVE path AS (
-            SELECT target as node_id, 1 as depth
-            FROM edges
-            WHERE source = :target
-            UNION ALL
-            SELECT e.target, p.depth + 1
-            FROM edges e
-            INNER JOIN path p ON e.source = p.node_id
-        )
-        SELECT 1 FROM path WHERE node_id = :source LIMIT 1
-        ';
-
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([':target' => $target, ':source' => $source]);
-
-        return $stmt->fetch() !== false;
-    }
-
     public function insertEdge(EdgeDTO $edge): bool
     {
         $this->logger->debug("inserting edge", ['id' => $edge->id, 'source' => $edge->source, 'target' => $edge->target, 'label' => $edge->label, 'data' => $edge->data]);
@@ -1629,6 +1604,31 @@ final class Database implements DatabaseInterface
         $stmt->execute($params);
         $this->logger->info("audit log inserted", ['params' => $params]);
         return true;
+    }
+
+    private function wouldCreateCycle(string $source, string $target): bool
+    {
+        if ($source === $target) {
+            return true;
+        }
+
+        $sql = '
+        WITH RECURSIVE path AS (
+            SELECT target as node_id, 1 as depth
+            FROM edges
+            WHERE source = :target
+            UNION ALL
+            SELECT e.target, p.depth + 1
+            FROM edges e
+            INNER JOIN path p ON e.source = p.node_id
+        )
+        SELECT 1 FROM path WHERE node_id = :source LIMIT 1
+        ';
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([':target' => $target, ':source' => $source]);
+
+        return $stmt->fetch() !== false;
     }
 
     private function initSchema(): void
