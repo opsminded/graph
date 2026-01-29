@@ -310,6 +310,8 @@ final class Controller implements ControllerInterface
         }
         $project = $this->service->getProject($id);
         
+        $this->logger->debug("getting project", [Project::PROJECT_KEYNAME_ID => $id, "project" => $project]);
+        
         if(!is_null($project)) {
             $data = $project->toArray();
             return new OKResponse("project found", $data);

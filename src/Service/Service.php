@@ -371,7 +371,33 @@ final class Service implements ServiceInterface
         $dbProject = $this->database->getProject($id);
 
         if (! is_null($dbProject)) {
-            $graph = new Graph([], []);
+
+            $nodes = [];
+            $edges = [];
+
+            foreach($dbProject->graph->nodes as $n) {
+                $node = new Node(
+                    $n->id,
+                    $n->label,
+                    $n->category,
+                    $n->type,
+                    $n->userCreated,
+                    $n->data
+                );
+                $nodes[] = $node;
+            }
+
+            foreach($dbProject->graph->edges as $e) {
+                $edge = new Edge(
+                    $e->source,
+                    $e->target,
+                    $e->label,
+                    $e->data
+                );
+                $edges[] = $edge;
+            }
+
+            $graph = new Graph($nodes, $edges);
 
             $project = new Project(
                 $dbProject->id,

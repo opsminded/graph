@@ -312,13 +312,114 @@ $basePath = rtrim(dirname($requestUri), "/\\");
 
         const EVENTS = {
             INITIAL_LOAD: "INITIAL_LOAD",
-            PROJECTS_UPDATED: "PROJECTS_UPDATED",
+            PROJECTS_LIST_LOADED: "PROJECTS_LIST_LOADED",
             PROJECT_SELECTED: "PROJECT_SELECTED"
         };
 
+        const COSELAYOUT = {
+            'name': 'cose',
+            'animate': false,
+            'fit': true,
+            'padding': 30,
+            'componentSpacing': 40
+        };
+
+        const STYLE = [
+            {
+                "selector": "node",
+                "style": {
+                    "background-clip": "none",
+                    "background-height": "32px",
+                    "background-width": "32px",
+                    "border-width": 2,
+                    "color": "#333",
+                    "font-family": "Tahoma, Geneva, Verdana, sans-serif",
+                    "font-size": 16,
+                    "label": "data(label)",
+                    "text-valign": "bottom",
+                    "text-halign": "center",
+                    "text-margin-y": 8,
+                },
+            },
+            {
+                "selector": "edge",
+                "style": {
+                    "color": "#333",
+                    "font-family": "Tahoma, Geneva, Verdana, sans-serif",
+                    "font-size": 14,
+                    //"label": "data(label)",
+                    "line-color": "#bebebe",
+                    "target-arrow-color": "#7d7d7d",
+                    "target-arrow-shape": "triangle",
+                    "target-arrow-fill": "filled",
+                    "target-arrow-width": 6,
+                    "target-endpoint": "outside-to-node-or-label",
+                    "target-distance-from-node": 5,
+                    "text-valign": "bottom",
+                    "text-halign": "center",
+                    "text-margin-y": 10,
+                    "width": 3,
+                    'curve-style': 'bezier',
+
+                    "line-style": 'dashed',
+                    'line-dash-pattern': [6, 3],
+                    'line-dash-offset': 0,
+                    'transition-property': 'line-dash-offset',
+                    'transition-duration': '1000ms',
+                    'transition-timing-function': 'linear'
+                },
+            },
+            {
+                "selector": "edge:selected",
+                "style": {
+                    "line-color": "#00ff00",
+                    "width": 5,
+                },
+            },
+            {
+                "selector" : "node.node-status-unknown",
+                "style" : {
+                    "border-color" : "#939393",
+                    "background-color" : "#cbcbcb",
+                    "color" : "#000000"
+                }
+            },
+            {
+                "selector" : "node.node-status-healthy",
+                "style" : {
+                    "border-color" : "#4CAF50",
+                    "background-color" : "#d0edd1",
+                    "color" : "#000000"
+                }
+            },
+            {
+                "selector" : "node.node-status-unhealthy",
+                "style" : {
+                    "border-color" : "#ff8178",
+                    "background-color" : "#ffe2e2",
+                    "color" : "#000000"
+                }
+            },
+            {
+                "selector" : "node.node-status-maintenance",
+                "style" : {
+                    "border-color" : "#43aeff",
+                    "background-color" : "#cde9ff",
+                    "color" : "#000000"
+                }
+            },
+            {
+                "selector" : "node.node-status-impacted",
+                "style" : {
+                    "border-color" : "#ae6ec0",
+                    "background-color" : "#ece5ee",
+                    "color" : "#000000"
+                }
+            }
+        ];
+
         // Utility Functions
         function createOptionElement(value, text) {
-            console.log('Creating option element with value:', value, 'and text:', text);
             const option = document.createElement('option');
             option.value = value;
             option.text = text;
@@ -358,7 +459,7 @@ $basePath = rtrim(dirname($requestUri), "/\\");
                     this.state = this.handlers[event](this.state, payload);
                     this.notify(event);
                 } else {
-                    console.warn(`Evento não registrado: ${event}`);
+                    console.error(`Evento não registrado: ${event}`);
                 }
             }
         }
@@ -376,39 +477,92 @@ $basePath = rtrim(dirname($requestUri), "/\\");
                 return [];
             }
         }
+
+        async function fetchProject(projectId) {
+            try {
+                const response = await fetch(`${API.GET_PROJECT}?id=${encodeURIComponent(projectId)}`);
+                if (!response.ok) {
+                    throw new Error(`Erro ao carregar projeto: ${response.status}`);
+                }
+                const { data } = await response.json();
+                return data;
+            } catch (error) {
+                console.error('[fetchProject] Fetch error:', error);
+                return null;
+            }
+        }
         
         class Graph
         {
             constructor(store) {
-                console.log('Initializing Graph');
                 this.store = store;
+                this.registerHandlers();
+                this.setupSubscription();
 
                 this.OpenProjectModal = new OpenProjectModal(this.store);
+                this.store.dispatch(EVENTS.INITIAL_LOAD, { initialLoad: true });
+            }
 
+            registerHandlers() {
                 this.store.register(EVENTS.INITIAL_LOAD, (state, payload) => ({
                     ...state,
                     initialLoad: payload.initialLoad
                 }));
 
-                this.store.register(EVENTS.PROJECTS_UPDATED, (state, payload) => ({
+                this.store.register(EVENTS.PROJECTS_LIST_LOADED, (state, payload) => ({
                     ...state,
                     projects: payload.projects
                 }));
 
+                this.store.register(EVENTS.PROJECT_SELECTED, (state, payload) => ({
+                    ...state,
+                    selectedProjectId: payload.selectedProjectId
+                }));
+            }
+
+            setupSubscription()
+            {
                 this.store.subscribe(EVENTS.INITIAL_LOAD, async (state) => {
                     if (state.initialLoad) {
                         const projects = await fetchProjects();
-                        console.log('Fetched projects:', projects);
-                        this.store.dispatch(EVENTS.PROJECTS_UPDATED, { projects });
-                        this.store.dispatch(EVENTS.INITIAL_LOAD, { initialLoad: false });
+                        this.store.dispatch(EVENTS.PROJECTS_LIST_LOADED, { projects });
                     }
                 });
 
-                this.store.subscribe(EVENTS.PROJECTS_UPDATED, async (state) => {
-                    console.log('Projects updated in store:', state);
+                this.store.subscribe(EVENTS.PROJECT_SELECTED, async (state) => {
+                    console.log('Project Selected. vai buscar:', state.selectedProjectId);
+                    const project = await fetchProject(state.selectedProjectId);
+                    console.log('Project data:', project);
+                    this.updateCY(project);
                 });
+            }
 
-                this.store.dispatch(EVENTS.INITIAL_LOAD, { initialLoad: true });
+            updateCY(project)
+            {
+                // Logic to update Cytoscape graph with the selected project data
+                console.log('Updating Cytoscape graph with new project data...');
+
+                var elements = {
+                    nodes: [],
+                    edges: []
+                };
+
+                for (const node of project.graph.nodes) {
+                    elements['nodes'].push({data: {...node}});
+                }
+
+                for (const edge of project.graph.edges) {
+                    elements['edges'].push({data: {...edge}});
+                }
+
+                console.log('Cytoscape elements:', elements);
+
+                this.cy = cytoscape({
+                    container: document.getElementById('cy'),
+                    elements: elements,
+                    styles: STYLE,
+                    layout: COSELAYOUT
+                });
             }
         }
 
@@ -421,28 +575,27 @@ $basePath = rtrim(dirname($requestUri), "/\\");
                 this.htmlElementModal = document.getElementById('modal');
                 this.htmlOpenProjectFormElement = document.getElementById('open-doc-form');
                 this.htmlOpenProjectFormIdElement = document.getElementById('open-doc-form-id');
+                this.setupEventListeners();
                 this.setupSubscription();
             }
 
-            setupSubscription() {
+            setupEventListeners()
+            {
                 this.htmlOpenProjectFormElement.addEventListener('submit', (event) => {
                     event.preventDefault();
                     const selectedProjectId = this.htmlOpenProjectFormIdElement.value;
-                    this.store.dispatch(EVENTS.PROJECT_SELECTED, { project: selectedProjectId });
+                    this.store.dispatch(EVENTS.PROJECT_SELECTED, { selectedProjectId: selectedProjectId });
                 });
+            }
 
-                this.store.register(EVENTS.PROJECT_SELECTED, (state, payload) => ({
-                    ...state,
-                    currentProject: payload.project
-                }));
-
+            setupSubscription()
+            {
                 this.store.subscribe(EVENTS.PROJECT_SELECTED, async (state) => {
-                    console.log('Project selected:', state.currentProject);
+                    console.log('Project selected:', state.selectedProjectId);
                     this.hide();
                 });
 
-                this.store.subscribe(EVENTS.PROJECTS_UPDATED, async (state) => {
-                    console.log('OpenProjectModal received projects update:', state.projects);
+                this.store.subscribe(EVENTS.PROJECTS_LIST_LOADED, async (state) => {
                     this.loadProjects(state.projects);
                     this.show();
                 });

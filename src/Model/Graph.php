@@ -28,9 +28,18 @@ final class Graph
 
     public function toArray(): array
     {
+        $nodes = [];
+        foreach ($this->nodes as $node) {
+            $nodes[] = $node->toArray();
+        }
+
+        $edges = [];
+        foreach ($this->edges as $edge) {
+            $edges[] = $edge->toArray();
+        }
         return [
-            self::KEYNAME_NODES => $this->nodes,
-            self::KEYNAME_EDGES => $this->edges,
+            self::KEYNAME_NODES => $nodes,
+            self::KEYNAME_EDGES => $edges,
         ];
     }
 }
