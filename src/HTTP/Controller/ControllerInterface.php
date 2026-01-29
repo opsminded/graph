@@ -23,8 +23,6 @@ interface ControllerInterface
     public function updateEdge(Request $req): ResponseInterface;
     public function deleteEdge(Request $req): ResponseInterface;
 
-    //public function getStatus(Request $req): ResponseInterface;
-    public function getNodeStatus(Request $req): ResponseInterface;
     public function updateNodeStatus(Request $req): ResponseInterface;
 
     public function getProject(Request $req): ResponseInterface;

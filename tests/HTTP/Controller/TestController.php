@@ -561,46 +561,7 @@ final class TestController extends TestAbstractTest
     //         throw new Exception('error on testGetStatus');
     //     }
     // }
-    
-    public function testGetNodeStatus(): void
-    {
-        $_SERVER['REQUEST_METHOD'] = 'POST';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/getNodeStatus';
-        $req = new Request();
-        $resp = $this->controller->getNodeStatus($req);
-        if ($resp->code != 405 || $resp->message != 'method \'POST\' not allowed in \'Controller::getNodeStatus\'') {
-            print_r($resp);
-            throw new Exception('error on testGetNodeStatus 1');
-        }
 
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['SCRIPT_NAME'] = 'api.php';
-        $_SERVER['REQUEST_URI'] = 'api.php/getNodeStatus';
-        $req = new Request();
-        $resp = $this->controller->getNodeStatus($req);
-        if ($resp->code !== 400 || $resp->status !== 'error' || $resp->message !== 'param \'node_id\' is missing') {
-            print_r($resp);
-            throw new Exception('error on testGetNodeStatus 2');
-        }
-
-        $_GET[Status::STATUS_KEYNAME_NODE_ID] = 'node1';
-        $req = new Request();
-        $resp = $this->controller->getNodeStatus($req);
-        if ($resp->code !== 404 || $resp->message !== 'node not found' || $resp->data[Status::STATUS_KEYNAME_NODE_ID] !== 'node1') {
-            print_r($resp);
-            throw new Exception('error on testGetNodeStatus 3');
-        }
-
-        $this->database->insertNode(new NodeDTO('node1', 'label 1', 'business', 'database', true, []));
-        $_GET[Status::STATUS_KEYNAME_NODE_ID] = 'node1';
-        $req = new Request();
-        $resp = $this->controller->getNodeStatus($req);
-        if ($resp->code !== 200 || $resp->message !== 'node found' || $resp->data[Status::STATUS_KEYNAME_NODE_ID] !== 'node1' || $resp->data['status'] !== 'unknown') {
-            throw new Exception('error on testGetNodeStatus');
-        }
-    }
-    
     public function testUpdateNodeStatus(): void
     {
         $_SERVER['REQUEST_METHOD'] = 'POST';

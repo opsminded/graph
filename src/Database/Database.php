@@ -285,10 +285,10 @@ final class Database implements DatabaseInterface
         $stmt->execute($params);
         $row = $stmt->fetch();
         if ($row) {
-            $row[Node::NODE_KEYNAME_USERCREATED] = (bool)$row[Node::NODE_KEYNAME_USERCREATED];
+            $row['user_created'] = (bool)$row['user_created'];
             $row['data'] = json_decode($row['data'], true);
             $this->logger->info("node fetched", ['params' => $params, 'row' => $row]);
-            return new NodeDTO($row['id'], $row['label'], $row['category'], $row['type'], $row[Node::NODE_KEYNAME_USERCREATED], $row['data']);
+            return new NodeDTO($row['id'], $row['label'], $row['category'], $row['type'], $row['user_created'], $row['data']);
         }
         $this->logger->info("node not found", ['params' => $params]);
         return null;
@@ -304,11 +304,11 @@ final class Database implements DatabaseInterface
         $stmt = $this->pdo->query($sql);
         $rows = $stmt->fetchAll();
         foreach ($rows as &$row) {
-            $row[Node::NODE_KEYNAME_USERCREATED] = (bool)$row[Node::NODE_KEYNAME_USERCREATED];
+            $row['user_created'] = (bool)$row['user_created'];
             $row['data'] = json_decode($row['data'], true);
         }
         $this->logger->info("nodes fetched", ['rows' => $rows]);
-        return array_map(fn($row) => new NodeDTO($row['id'], $row['label'], $row['category'], $row['type'], $row[Node::NODE_KEYNAME_USERCREATED], $row['data']), $rows);
+        return array_map(fn($row) => new NodeDTO($row['id'], $row['label'], $row['category'], $row['type'], $row['user_created'], $row['data']), $rows);
     }
 
     public function insertNode(NodeDTO $node): bool

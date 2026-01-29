@@ -283,11 +283,11 @@ final class HelperCytoscape
             $edge = $edge->toArray();
             $edges[] = [
                 "data" => [
-                    Edge::EDGE_KEYNAME_ID     => $edge[Edge::EDGE_KEYNAME_ID],
-                    Edge::EDGE_KEYNAME_SOURCE => $edge[Edge::EDGE_KEYNAME_SOURCE],
-                    Edge::EDGE_KEYNAME_TARGET => $edge[Edge::EDGE_KEYNAME_TARGET],
-                    Edge::EDGE_KEYNAME_LABEL  => $edge[Edge::EDGE_KEYNAME_LABEL],
-                    Edge::EDGE_KEYNAME_DATA   => $edge[Edge::EDGE_KEYNAME_DATA],
+                    'id'     => $edge['id'],
+                    'source' => $edge['source'],
+                    'target' => $edge['target'],
+                    'label'  => $edge['label'],
+                    'data'   => $edge['data'],
                 ]
             ];
         }
@@ -660,9 +660,6 @@ final class Graph
     private array $nodes = [];
     private array $edges = [];
 
-    public const KEYNAME_NODES = "nodes";
-    public const KEYNAME_EDGES = "edges";
-
     public function __construct(array $nodes, array $edges)
     {
         $this->nodes = $nodes;
@@ -691,8 +688,8 @@ final class Graph
             $edges[] = $edge->toArray();
         }
         return [
-            self::KEYNAME_NODES => $nodes,
-            self::KEYNAME_EDGES => $edges,
+            "nodes" => $nodes,
+            "edges" => $edges,
         ];
     }
 }
@@ -702,9 +699,6 @@ final class Type
 {
     private string $id;
     private string $name;
-
-    public const TYPE_KEYNAME_ID = "id";
-    public const TYPE_KEYNAME_NAME = "name";
 
     public function __construct(string $id, string $name)
     {
@@ -725,8 +719,8 @@ final class Type
     public function toArray(): array
     {
         return [
-            self::TYPE_KEYNAME_ID => $this->id,
-            self::TYPE_KEYNAME_NAME => $this->name,
+            'id' => $this->id,
+            'name' => $this->name,
         ];
     }
 }
@@ -734,13 +728,6 @@ final class Type
 
 final class Category
 {
-
-    public const CATEGORY_KEYNAME_ID     = "id";
-    public const CATEGORY_KEYNAME_NAME   = "name";
-    public const CATEGORY_KEYNAME_SHAPE  = "shape";
-    public const CATEGORY_KEYNAME_WIDTH  = "width";
-    public const CATEGORY_KEYNAME_HEIGHT = "height";
-
     private string $id;
     private string $name;
     private string $shape;
@@ -758,13 +745,7 @@ final class Category
 
     public function toArray(): array
     {
-        return [
-            self::CATEGORY_KEYNAME_ID     => $this->id,
-            self::CATEGORY_KEYNAME_NAME   => $this->name,
-            self::CATEGORY_KEYNAME_SHAPE  => $this->shape,
-            (int)self::CATEGORY_KEYNAME_WIDTH  => $this->width,
-            (int)self::CATEGORY_KEYNAME_HEIGHT => $this->height,
-        ];
+        return get_object_vars($this);
     }
 
     public function getId(): string
@@ -796,13 +777,6 @@ final class Category
 
 final class Project
 {
-    const PROJECT_KEYNAME_ID = "id";
-    const PROJECT_KEYNAME_NAME = "name";
-    const PROJECT_KEYNAME_AUTHOR = "author";
-    const PROJECT_KEYNAME_CREATED_AT = "created_at";
-    const PROJECT_KEYNAME_UPDATED_AT = "updated_at";
-    const PROJECT_KEYNAME_DATA = "data";
-    
     private string $id;
     private string $name;
     private string $author;
@@ -859,12 +833,12 @@ final class Project
     public function toArray(): array
     {
         return [
-            self::PROJECT_KEYNAME_ID => $this->id,
-            self::PROJECT_KEYNAME_NAME => $this->name,
-            self::PROJECT_KEYNAME_AUTHOR => $this->author,
-            self::PROJECT_KEYNAME_CREATED_AT => $this->createdAt->format(DateTime::ATOM),
-            self::PROJECT_KEYNAME_UPDATED_AT => $this->updatedAt->format(DateTime::ATOM),
-            self::PROJECT_KEYNAME_DATA => $this->data,
+            'id' => $this->id,
+            'name' => $this->name,
+            'author' => $this->author,
+            'created_at' => $this->createdAt->format(DateTime::ATOM),
+            'updated_at' => $this->updatedAt->format(DateTime::ATOM),
+            'data' => $this->data,
         ];
     }
 }
@@ -872,8 +846,6 @@ final class Project
 
 final class Group
 {
-    private const GROUP_KEYNAME_ID = "id";
-
     private const VALUE_ANONYMOUS   = "anonymous";
     private const VALUE_CONSUMER    = "consumer";
     private const VALUE_CONTRIBUTOR = "contributor";
@@ -904,7 +876,7 @@ final class Group
     public function toArray(): array
     {
         return [
-            self::GROUP_KEYNAME_ID => $this->id
+            'id' => $this->id
         ];
     }
 }
@@ -914,9 +886,6 @@ final class User
 {
     private string $id;
     private Group $group;
-
-    public const USER_KEYNAME_ID = "id";
-    public const USER_KEYNAME_GROUP = "group";
 
     public function __construct(string $id, Group $group)
     {
@@ -937,8 +906,8 @@ final class User
     public function toArray(): array
     {
         return [
-            self::USER_KEYNAME_ID    => $this->id,
-            self::USER_KEYNAME_GROUP => $this->group->toArray(),
+            'id'    => $this->id,
+            'group' => $this->group->toArray(),
         ];
     }
 }
@@ -957,13 +926,6 @@ final class Node
     private bool $userCreated;
 
     private array $data = [];
-
-    public const NODE_KEYNAME_ID = "id";
-    public const NODE_KEYNAME_LABEL = "label";
-    public const NODE_KEYNAME_CATEGORY = "category";
-    public const NODE_KEYNAME_TYPE = "type";
-    public const NODE_KEYNAME_USERCREATED = "user_created";
-    public const NODE_KEYNAME_DATA = "data";
 
     public function __construct(string $id, string $label, string $categoryID, string $typeID, bool $userCreated, array $data)
     {
@@ -1020,12 +982,12 @@ final class Node
     public function toArray(): array
     {
         return [
-            self::NODE_KEYNAME_ID       => $this->id,
-            self::NODE_KEYNAME_LABEL    => $this->label,
-            self::NODE_KEYNAME_CATEGORY => $this->categoryID,
-            self::NODE_KEYNAME_TYPE     => $this->typeID,
-            self::NODE_KEYNAME_USERCREATED => $this->userCreated,
-            self::NODE_KEYNAME_DATA     => $this->data
+            'id'       => $this->id,
+            'label'    => $this->label,
+            'category' => $this->categoryID,
+            'type'     => $this->typeID,
+            'user_created' => $this->userCreated,
+            'data'     => $this->data
         ];
     }
 }
@@ -1039,9 +1001,6 @@ final class Status
     public const STATUS_VALUE_MAINTENANCE = "maintenance";
     public const STATUS_VALUE_IMPACTED    = "impacted";
 
-    public const STATUS_KEYNAME_NODE_ID = "node_id";
-    public const STATUS_KEYNAME_STATUS = "status";
-    
     private const ALLOWED_NODE_STATUS = [
         self::STATUS_VALUE_UNKNOWN,
         self::STATUS_VALUE_HEALTHY,
@@ -1075,8 +1034,8 @@ final class Status
     public function toArray(): array
     {
         return [
-            self::STATUS_KEYNAME_NODE_ID => $this->nodeId,
-            self::STATUS_KEYNAME_STATUS  => $this->status,
+            'node_id' => $this->nodeId,
+            'status'  => $this->status,
         ];
     }
 }
@@ -1084,19 +1043,15 @@ final class Status
 
 final class Edge
 {
+    private string $id;
     private string $label;
     private string $source;
     private string $target;
     private array  $data;
 
-    public const EDGE_KEYNAME_ID     = "id";
-    public const EDGE_KEYNAME_LABEL  = "label";
-    public const EDGE_KEYNAME_SOURCE = "source";
-    public const EDGE_KEYNAME_TARGET = "target";
-    public const EDGE_KEYNAME_DATA   = "data";
-
     public function __construct(string $source, string $target, string $label, array $data = [])
     {
+        $this->id     = "{$source}-{$target}";
         $this->source = $source;
         $this->target = $target;
         $this->label  = $label;
@@ -1105,7 +1060,7 @@ final class Edge
 
     public function getId(): string
     {
-        return "{$this->source}-{$this->target}";
+        return $this->id;
     }
 
     public function getLabel(): string
@@ -1130,28 +1085,13 @@ final class Edge
 
     public function toArray(): array
     {
-        return [
-            self::EDGE_KEYNAME_ID     => $this->getId(),
-            self::EDGE_KEYNAME_LABEL  => $this->label,
-            self::EDGE_KEYNAME_SOURCE => $this->source,
-            self::EDGE_KEYNAME_TARGET => $this->target,
-            self::EDGE_KEYNAME_DATA   => $this->data
-        ];
+        return get_object_vars($this);
     }
 }
 #####################################
 
 final class Log
 {
-
-    public const LOG_KEYNAME_ENTITY_TYPE = "entityType";
-    public const LOG_KEYNAME_ENTITY_ID   = "entityId";
-    public const LOG_KEYNAME_ACTION      = "action";
-    public const LOG_KEYNAME_OLD_DATA    = "oldData";
-    public const LOG_KEYNAME_NEW_DATA    = "newData";
-    public const LOG_KEYNAME_USER_ID     = "userId";
-    public const LOG_KEYNAME_IP_ADDRESS  = "ipAddress";
-    public const LOG_KEYNAME_CREATED_AT  = "createdAt";
 
     private string            $entityType;
     private string            $entityId;
@@ -1225,14 +1165,14 @@ final class Log
     public function toArray(): array
     {
         return [
-            self::LOG_KEYNAME_ENTITY_TYPE => $this->entityType,
-            self::LOG_KEYNAME_ENTITY_ID   => $this->entityId,
-            self::LOG_KEYNAME_ACTION      => $this->action,
-            self::LOG_KEYNAME_OLD_DATA    => $this->oldData,
-            self::LOG_KEYNAME_NEW_DATA    => $this->newData,
-            self::LOG_KEYNAME_USER_ID     => $this->userId,
-            self::LOG_KEYNAME_IP_ADDRESS  => $this->ipAddress,
-            self::LOG_KEYNAME_CREATED_AT  => $this->createdAt,
+            'entityType' => $this->entityType,
+            'entityId'   => $this->entityId,
+            'action'      => $this->action,
+            'oldData'    => $this->oldData,
+            'newData'    => $this->newData,
+            'userId'     => $this->userId,
+            'ipAddress'  => $this->ipAddress,
+            'createdAt'  => $this->createdAt,
         ];
     }
 }
@@ -1574,10 +1514,10 @@ final class Database implements DatabaseInterface
         $stmt->execute($params);
         $row = $stmt->fetch();
         if ($row) {
-            $row[Node::NODE_KEYNAME_USERCREATED] = (bool)$row[Node::NODE_KEYNAME_USERCREATED];
+            $row['user_created'] = (bool)$row['user_created'];
             $row['data'] = json_decode($row['data'], true);
             $this->logger->info("node fetched", ['params' => $params, 'row' => $row]);
-            return new NodeDTO($row['id'], $row['label'], $row['category'], $row['type'], $row[Node::NODE_KEYNAME_USERCREATED], $row['data']);
+            return new NodeDTO($row['id'], $row['label'], $row['category'], $row['type'], $row['user_created'], $row['data']);
         }
         $this->logger->info("node not found", ['params' => $params]);
         return null;
@@ -1593,11 +1533,11 @@ final class Database implements DatabaseInterface
         $stmt = $this->pdo->query($sql);
         $rows = $stmt->fetchAll();
         foreach ($rows as &$row) {
-            $row[Node::NODE_KEYNAME_USERCREATED] = (bool)$row[Node::NODE_KEYNAME_USERCREATED];
+            $row['user_created'] = (bool)$row['user_created'];
             $row['data'] = json_decode($row['data'], true);
         }
         $this->logger->info("nodes fetched", ['rows' => $rows]);
-        return array_map(fn($row) => new NodeDTO($row['id'], $row['label'], $row['category'], $row['type'], $row[Node::NODE_KEYNAME_USERCREATED], $row['data']), $rows);
+        return array_map(fn($row) => new NodeDTO($row['id'], $row['label'], $row['category'], $row['type'], $row['user_created'], $row['data']), $rows);
     }
 
     public function insertNode(NodeDTO $node): bool
@@ -2421,16 +2361,16 @@ final class Service implements ServiceInterface
 
     public function getUser(string $id): ?User
     {
-        $this->logger->debug("getting user", [User::USER_KEYNAME_ID => $id]);
+        $this->logger->debug("getting user", ['id' => $id]);
         $this->verify();
         $dbUser = $this->database->getUser($id);
         if (! is_null($dbUser)) {
             $g = new Group($dbUser->group);
             $user = new User($id, $g);
-            $this->logger->debug("user found", [User::USER_KEYNAME_ID => $id, "user" => $dbUser]);
+            $this->logger->debug("user found", ['id' => $id, "user" => $dbUser]);
             return $user;
         }
-        $this->logger->debug("user not found", [User::USER_KEYNAME_ID => $id]);
+        $this->logger->debug("user not found", ['id' => $id]);
         return null;
     }
 
@@ -2611,7 +2551,7 @@ final class Service implements ServiceInterface
 
     public function getEdge(string $source, string $target): ?Edge
     {
-        $this->logger->debug("getting edge", [Edge::EDGE_KEYNAME_SOURCE => $source, Edge::EDGE_KEYNAME_TARGET => $target]);
+        $this->logger->debug("getting edge", ['source' => $source, 'target' => $target]);
         $this->verify();
         $id = "{$source}-{$target}";
         $dbEdge = $this->database->getEdge($id);
@@ -2628,7 +2568,7 @@ final class Service implements ServiceInterface
             $this->logger->info("edge found", $data);
             return $edge;
         }
-        $this->logger->info("edge not found", [Edge::EDGE_KEYNAME_SOURCE => $source, Edge::EDGE_KEYNAME_TARGET => $target]);
+        $this->logger->info("edge not found", ['source' => $source, 'target' => $target]);
         return null;
     }
 
@@ -3144,8 +3084,6 @@ interface ControllerInterface
     public function updateEdge(Request $req): ResponseInterface;
     public function deleteEdge(Request $req): ResponseInterface;
 
-    //public function getStatus(Request $req): ResponseInterface;
-    public function getNodeStatus(Request $req): ResponseInterface;
     public function updateNodeStatus(Request $req): ResponseInterface;
 
     public function getProject(Request $req): ResponseInterface;
@@ -3176,13 +3114,13 @@ final class Controller implements ControllerInterface
             return new MethodNotAllowedResponse($req->method, __METHOD__);
         }
         try {
-            $id = $req->getParam(User::USER_KEYNAME_ID);
+            $id = $req->getParam('id');
         } catch(RequestException $e) {
             return new BadRequestResponse($e->getMessage(), []);
         }
         $user = $this->service->getUser($id);
         if(is_null($user)) {
-            return new NotFoundResponse("user not found", [User::USER_KEYNAME_ID => $id]);
+            return new NotFoundResponse("user not found", ['id' => $id]);
         }
         $data = $user->toArray();
         return new OKResponse("user found", $data);
@@ -3193,13 +3131,13 @@ final class Controller implements ControllerInterface
         if($req->method !== Request::METHOD_POST) {
             return new MethodNotAllowedResponse($req->method, __METHOD__);
         }
-        if(! array_key_exists(User::USER_KEYNAME_ID, $req->data)) {
-            return new BadRequestResponse("key " . User::USER_KEYNAME_ID . " not found in data", $req->data);
+        if(! array_key_exists('id', $req->data)) {
+            return new BadRequestResponse("key id not found in data", $req->data);
         }
-        if(! array_key_exists(User::USER_KEYNAME_GROUP, $req->data)) {
-            return new BadRequestResponse("key " . User::USER_KEYNAME_GROUP . " not found in data", $req->data);
+        if(! array_key_exists('group', $req->data)) {
+            return new BadRequestResponse("key group not found in data", $req->data);
         }
-        $user = new User($req->data[User::USER_KEYNAME_ID], new Group($req->data[User::USER_KEYNAME_GROUP]));
+        $user = new User($req->data['id'], new Group($req->data['group']));
         $this->service->insertUser($user);
         $data = $user->toArray();
         return new CreatedResponse("user created", $data);
@@ -3210,7 +3148,7 @@ final class Controller implements ControllerInterface
         if($req->method !== Request::METHOD_PUT) {
             return new MethodNotAllowedResponse($req->method, __METHOD__);
         }
-        $user = new User($req->data[User::USER_KEYNAME_ID], new Group($req->data[User::USER_KEYNAME_GROUP]));
+        $user = new User($req->data['id'], new Group($req->data['group']));
         if($this->service->updateUser($user)) {
             return new OKResponse("user updated", $req->data);
         }
@@ -3252,13 +3190,13 @@ final class Controller implements ControllerInterface
             return new MethodNotAllowedResponse($req->method, __METHOD__);
         }
         try {
-            $id = $req->getParam(Node::NODE_KEYNAME_ID);
+            $id = $req->getParam('id');
         } catch(RequestException $e) {
             return new BadRequestResponse($e->getMessage(), []);
         }
         $node = $this->service->getNode($id);
         if(is_null($node)) {
-            return new NotFoundResponse("node not found", [Node::NODE_KEYNAME_ID => $id]);
+            return new NotFoundResponse("node not found", ['id' => $id]);
         }
         $data = $node->toArray();
         return new OKResponse("node found", $data);
@@ -3283,12 +3221,12 @@ final class Controller implements ControllerInterface
             return new  MethodNotAllowedResponse($req->method, __METHOD__);
         }
         $node = new Node(
-            $req->data[Node::NODE_KEYNAME_ID], 
-            $req->data[Node::NODE_KEYNAME_LABEL], 
-            $req->data[Node::NODE_KEYNAME_CATEGORY], 
-            $req->data[Node::NODE_KEYNAME_TYPE], 
-            $req->data[Node::NODE_KEYNAME_USERCREATED],
-            $req->data[Node::NODE_KEYNAME_DATA]
+            $req->data['id'], 
+            $req->data['label'], 
+            $req->data['category'], 
+            $req->data['type'], 
+            $req->data['user_created'],
+            $req->data['data']
         );
         $this->service->insertNode($node);
         $this->logger->info("node inserted", $req->data);
@@ -3302,12 +3240,12 @@ final class Controller implements ControllerInterface
         }
         $this->logger->debug("updating node", $req->data);
         $node = new Node(
-            $req->data[Node::NODE_KEYNAME_ID],
-            $req->data[Node::NODE_KEYNAME_LABEL],
-            $req->data[Node::NODE_KEYNAME_CATEGORY],
-            $req->data[Node::NODE_KEYNAME_TYPE],
+            $req->data['id'],
+            $req->data['label'],
+            $req->data['category'],
+            $req->data['type'],
             false,
-            $req->data[Node::NODE_KEYNAME_DATA]
+            $req->data['data']
         );
         $this->service->updateNode($node);
         $this->logger->info("node updated", $req->data);
@@ -3320,11 +3258,11 @@ final class Controller implements ControllerInterface
         if($req->method !== Request::METHOD_DELETE) {
             return new MethodNotAllowedResponse($req->method, __METHOD__);
         }
-        $id = $req->data[Node::NODE_KEYNAME_ID];
+        $id = $req->data['id'];
         if($this->service->deleteNode($id)) {
-            return new NoContentResponse("node deleted", [Node::NODE_KEYNAME_ID => $req->data[Node::NODE_KEYNAME_ID]]);
+            return new NoContentResponse("node deleted", ['id' => $req->data['id']]);
         }
-        return new NotFoundResponse("node not found",[Node::NODE_KEYNAME_ID => $req->data[Node::NODE_KEYNAME_ID]]);
+        return new NotFoundResponse("node not found",['id' => $req->data['id']]);
     }
 
     public function getEdge(Request $req): ResponseInterface
@@ -3333,18 +3271,18 @@ final class Controller implements ControllerInterface
             return new MethodNotAllowedResponse($req->method, __METHOD__);
         }
         try {
-            $source = $req->getParam(Edge::EDGE_KEYNAME_SOURCE);
+            $source = $req->getParam('source');
         } catch(RequestException $e) {
             return new BadRequestResponse($e->getMessage(), []);
         }
         try {
-            $target = $req->getParam(Edge::EDGE_KEYNAME_TARGET);
+            $target = $req->getParam('target');
         } catch(RequestException $e) {
             return new BadRequestResponse($e->getMessage(), []);
         }
         $edge = $this->service->getEdge($source, $target);
         if(is_null($edge)) {
-            return new NotFoundResponse("edge not found", [Edge::EDGE_KEYNAME_SOURCE => $source, Edge::EDGE_KEYNAME_TARGET => $target]);
+            return new NotFoundResponse("edge not found", ['source' => $source, 'target' => $target]);
         }
         $data = $edge->toArray();
         return new OKResponse("edge found", $data);
@@ -3369,10 +3307,10 @@ final class Controller implements ControllerInterface
             return new MethodNotAllowedResponse($req->method, __METHOD__);
         }
         $edge = new Edge(
-            $req->data[Edge::EDGE_KEYNAME_SOURCE],
-            $req->data[Edge::EDGE_KEYNAME_TARGET],
-            $req->data[Edge::EDGE_KEYNAME_LABEL],
-            $req->data[Edge::EDGE_KEYNAME_DATA],
+            $req->data['source'],
+            $req->data['target'],
+            $req->data['label'],
+            $req->data['data'],
         );
 
         $this->service->insertEdge($edge);
@@ -3386,10 +3324,10 @@ final class Controller implements ControllerInterface
             return new MethodNotAllowedResponse($req->method, __METHOD__);
         }
         $edge = new Edge(
-            $req->data[Edge::EDGE_KEYNAME_SOURCE], 
-            $req->data[Edge::EDGE_KEYNAME_TARGET], 
-            $req->data[Edge::EDGE_KEYNAME_LABEL],
-            $req->data[Edge::EDGE_KEYNAME_DATA],
+            $req->data['source'], 
+            $req->data['target'], 
+            $req->data['label'],
+            $req->data['data'],
         );
         
         $this->service->updateEdge($edge);
@@ -3403,8 +3341,8 @@ final class Controller implements ControllerInterface
             return new MethodNotAllowedResponse($req->method, __METHOD__);
         }
         
-        $source = $req->data[Edge::EDGE_KEYNAME_SOURCE];
-        $target = $req->data[Edge::EDGE_KEYNAME_TARGET];
+        $source = $req->data['source'];
+        $target = $req->data['target'];
 
         $this->service->deleteEdge($source, $target);
         $data = $req->data;
@@ -3424,30 +3362,12 @@ final class Controller implements ControllerInterface
     //     return new OKResponse("nodes found", $data);
     // }
     
-    public function getNodeStatus(Request $req): ResponseInterface
-    {
-        if($req->method !== Request::METHOD_GET) {
-            return new MethodNotAllowedResponse($req->method, __METHOD__);
-        }
-        try {
-            $id = $req->getParam(Status::STATUS_KEYNAME_NODE_ID);
-        } catch(RequestException $e) {
-            return new BadRequestResponse($e->getMessage(), []);
-        }
-        $status = $this->service->getNodeStatus($id);
-        if(!is_null($status)) {
-            $data = $status->toArray();
-            return new OKResponse("node found", $data);
-        }
-        return new NotFoundResponse("node not found", [Status::STATUS_KEYNAME_NODE_ID => $id]);
-    }
-    
     public function updateNodeStatus(Request $req): ResponseInterface
     {
         if($req->method !== Request::METHOD_PUT) {
             return new MethodNotAllowedResponse($req->method, __METHOD__);
         }
-        $status = new Status($req->data[Status::STATUS_KEYNAME_NODE_ID], $req->data[Status::STATUS_KEYNAME_STATUS]);
+        $status = new Status($req->data['node_id'], $req->data['status']);
         $this->service->updateNodeStatus($status);
         $data = $status->toArray();
         return new OKResponse("node found", $data);
@@ -3459,19 +3379,19 @@ final class Controller implements ControllerInterface
             return new MethodNotAllowedResponse($req->method, __METHOD__);
         }
         try {
-            $id = $req->getParam(Project::PROJECT_KEYNAME_ID);
+            $id = $req->getParam('id');
         } catch(RequestException $e) {
             return new BadRequestResponse($e->getMessage(), []);
         }
         $project = $this->service->getProject($id);
         
-        $this->logger->debug("getting project", [Project::PROJECT_KEYNAME_ID => $id, "project" => $project]);
+        $this->logger->debug("getting project", ['id' => $id, "project" => $project]);
         
         if(!is_null($project)) {
             $data = $project->toArray();
             return new OKResponse("project found", $data);
         }
-        return new NotFoundResponse("project not found", [Project::PROJECT_KEYNAME_ID => $id]);
+        return new NotFoundResponse("project not found", ['id' => $id]);
     }
 
     public function getProjects(Request $req): ResponseInterface
@@ -3497,11 +3417,11 @@ final class Controller implements ControllerInterface
 
         $now = new DateTimeImmutable();
 
-        $id = $this->createSlug($req->data[Project::PROJECT_KEYNAME_NAME] ?? 'project');
+        $id = $this->createSlug($req->data['name'] ?? 'project');
 
         $project = new Project(
             $id,
-            $req->data[Project::PROJECT_KEYNAME_NAME],
+            $req->data['name'],
             $creator,
             $now,
             $now,
@@ -3523,8 +3443,8 @@ final class Controller implements ControllerInterface
         $now = new DateTimeImmutable();
 
         $project = new Project(
-            $req->data[Project::PROJECT_KEYNAME_ID],
-            $req->data[Project::PROJECT_KEYNAME_NAME],
+            $req->data['id'],
+            $req->data['name'],
             $creator,
             $now,
             $now,
@@ -3534,7 +3454,7 @@ final class Controller implements ControllerInterface
             $data = $project->toArray();
             return new OKResponse("project updated", $data);
         }
-        return new NotFoundResponse("project not updated", [Project::PROJECT_KEYNAME_ID => $req->data[Project::PROJECT_KEYNAME_ID]]);
+        return new NotFoundResponse("project not updated", ['id' => $req->data['id']]);
     }
     public function deleteProject(Request $req): ResponseInterface
     {
@@ -3543,7 +3463,7 @@ final class Controller implements ControllerInterface
         }
 
         $project = new Project(
-            $req->data[Project::PROJECT_KEYNAME_ID],
+            $req->data['id'],
             '',
             '',
             new DateTimeImmutable(),
@@ -3551,9 +3471,9 @@ final class Controller implements ControllerInterface
             [],
         );
         if($this->service->deleteProject($project->getId())) {
-            return new NoContentResponse("project deleted", [Project::PROJECT_KEYNAME_ID => $req->data[Project::PROJECT_KEYNAME_ID]]);
+            return new NoContentResponse("project deleted", ['id' => $req->data['id']]);
         }
-        return new NotFoundResponse("project not deleted",[Project::PROJECT_KEYNAME_ID => $req->data[Project::PROJECT_KEYNAME_ID]]);
+        return new NotFoundResponse("project not deleted",['id' => $req->data['id']]);
     }
 
     public function getLogs(Request $req): ResponseInterface

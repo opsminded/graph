@@ -80,11 +80,11 @@ final class HelperCytoscape
             $edge = $edge->toArray();
             $edges[] = [
                 "data" => [
-                    Edge::EDGE_KEYNAME_ID     => $edge[Edge::EDGE_KEYNAME_ID],
-                    Edge::EDGE_KEYNAME_SOURCE => $edge[Edge::EDGE_KEYNAME_SOURCE],
-                    Edge::EDGE_KEYNAME_TARGET => $edge[Edge::EDGE_KEYNAME_TARGET],
-                    Edge::EDGE_KEYNAME_LABEL  => $edge[Edge::EDGE_KEYNAME_LABEL],
-                    Edge::EDGE_KEYNAME_DATA   => $edge[Edge::EDGE_KEYNAME_DATA],
+                    'id'     => $edge['id'],
+                    'source' => $edge['source'],
+                    'target' => $edge['target'],
+                    'label'  => $edge['label'],
+                    'data'   => $edge['data'],
                 ]
             ];
         }

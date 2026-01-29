@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 final class Group
 {
-    private const GROUP_KEYNAME_ID = "id";
-
     private const VALUE_ANONYMOUS   = "anonymous";
     private const VALUE_CONSUMER    = "consumer";
     private const VALUE_CONTRIBUTOR = "contributor";
@@ -36,7 +34,7 @@ final class Group
     public function toArray(): array
     {
         return [
-            self::GROUP_KEYNAME_ID => $this->id
+            'id' => $this->id
         ];
     }
 }

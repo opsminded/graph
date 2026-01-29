@@ -15,13 +15,6 @@ final class Node
 
     private array $data = [];
 
-    public const NODE_KEYNAME_ID = "id";
-    public const NODE_KEYNAME_LABEL = "label";
-    public const NODE_KEYNAME_CATEGORY = "category";
-    public const NODE_KEYNAME_TYPE = "type";
-    public const NODE_KEYNAME_USERCREATED = "user_created";
-    public const NODE_KEYNAME_DATA = "data";
-
     public function __construct(string $id, string $label, string $categoryID, string $typeID, bool $userCreated, array $data)
     {
         $this->validate($id, $label);
@@ -77,12 +70,12 @@ final class Node
     public function toArray(): array
     {
         return [
-            self::NODE_KEYNAME_ID       => $this->id,
-            self::NODE_KEYNAME_LABEL    => $this->label,
-            self::NODE_KEYNAME_CATEGORY => $this->categoryID,
-            self::NODE_KEYNAME_TYPE     => $this->typeID,
-            self::NODE_KEYNAME_USERCREATED => $this->userCreated,
-            self::NODE_KEYNAME_DATA     => $this->data
+            'id'       => $this->id,
+            'label'    => $this->label,
+            'category' => $this->categoryID,
+            'type'     => $this->typeID,
+            'user_created' => $this->userCreated,
+            'data'     => $this->data
         ];
     }
 }

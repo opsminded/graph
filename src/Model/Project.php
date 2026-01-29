@@ -4,13 +4,6 @@ declare(strict_types=1);
 
 final class Project
 {
-    const PROJECT_KEYNAME_ID = "id";
-    const PROJECT_KEYNAME_NAME = "name";
-    const PROJECT_KEYNAME_AUTHOR = "author";
-    const PROJECT_KEYNAME_CREATED_AT = "created_at";
-    const PROJECT_KEYNAME_UPDATED_AT = "updated_at";
-    const PROJECT_KEYNAME_DATA = "data";
-    
     private string $id;
     private string $name;
     private string $author;
@@ -67,12 +60,12 @@ final class Project
     public function toArray(): array
     {
         return [
-            self::PROJECT_KEYNAME_ID => $this->id,
-            self::PROJECT_KEYNAME_NAME => $this->name,
-            self::PROJECT_KEYNAME_AUTHOR => $this->author,
-            self::PROJECT_KEYNAME_CREATED_AT => $this->createdAt->format(DateTime::ATOM),
-            self::PROJECT_KEYNAME_UPDATED_AT => $this->updatedAt->format(DateTime::ATOM),
-            self::PROJECT_KEYNAME_DATA => $this->data,
+            'id' => $this->id,
+            'name' => $this->name,
+            'author' => $this->author,
+            'created_at' => $this->createdAt->format(DateTime::ATOM),
+            'updated_at' => $this->updatedAt->format(DateTime::ATOM),
+            'data' => $this->data,
         ];
     }
 }

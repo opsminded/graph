@@ -74,8 +74,8 @@ class TestRequestRouter extends TestAbstractTest
         $_SERVER['SCRIPT_NAME'] = 'api.php';
         $_SERVER['REQUEST_URI'] = 'api.php/insertUser';
         $req = new Request();
-        $req->data[User::USER_KEYNAME_ID] = 'joao';
-        $req->data[User::USER_KEYNAME_GROUP] = 'contributor';
+        $req->data['id'] = 'joao';
+        $req->data['group'] = 'contributor';
         $resp = $this->router->handle($req);
         if($resp->code !== 201 || $resp->message !== 'user created' || $resp->data['id'] !== 'joao' || $resp->data['group']['id'] !== 'contributor') {
             print_r($resp);
@@ -92,8 +92,8 @@ class TestRequestRouter extends TestAbstractTest
         $_SERVER['REQUEST_URI'] = 'api.php/up';
 
         $req = new Request();
-        $req->data[User::USER_KEYNAME_ID] = 'joao';
-        $req->data[User::USER_KEYNAME_GROUP] = 'contributor';
+        $req->data['id'] = 'joao';
+        $req->data['group'] = 'contributor';
 
         $resp = $this->router->handle($req);
         if($resp->code !== 500 || $resp->message !== 'method not found in list') {

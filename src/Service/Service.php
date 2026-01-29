@@ -54,16 +54,16 @@ final class Service implements ServiceInterface
 
     public function getUser(string $id): ?User
     {
-        $this->logger->debug("getting user", [User::USER_KEYNAME_ID => $id]);
+        $this->logger->debug("getting user", ['id' => $id]);
         $this->verify();
         $dbUser = $this->database->getUser($id);
         if (! is_null($dbUser)) {
             $g = new Group($dbUser->group);
             $user = new User($id, $g);
-            $this->logger->debug("user found", [User::USER_KEYNAME_ID => $id, "user" => $dbUser]);
+            $this->logger->debug("user found", ['id' => $id, "user" => $dbUser]);
             return $user;
         }
-        $this->logger->debug("user not found", [User::USER_KEYNAME_ID => $id]);
+        $this->logger->debug("user not found", ['id' => $id]);
         return null;
     }
 
@@ -244,7 +244,7 @@ final class Service implements ServiceInterface
 
     public function getEdge(string $source, string $target): ?Edge
     {
-        $this->logger->debug("getting edge", [Edge::EDGE_KEYNAME_SOURCE => $source, Edge::EDGE_KEYNAME_TARGET => $target]);
+        $this->logger->debug("getting edge", ['source' => $source, 'target' => $target]);
         $this->verify();
         $id = "{$source}-{$target}";
         $dbEdge = $this->database->getEdge($id);
@@ -261,7 +261,7 @@ final class Service implements ServiceInterface
             $this->logger->info("edge found", $data);
             return $edge;
         }
-        $this->logger->info("edge not found", [Edge::EDGE_KEYNAME_SOURCE => $source, Edge::EDGE_KEYNAME_TARGET => $target]);
+        $this->logger->info("edge not found", ['source' => $source, 'target' => $target]);
         return null;
     }
 

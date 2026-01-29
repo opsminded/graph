@@ -7,9 +7,6 @@ final class Type
     private string $id;
     private string $name;
 
-    public const TYPE_KEYNAME_ID = "id";
-    public const TYPE_KEYNAME_NAME = "name";
-
     public function __construct(string $id, string $name)
     {
         $this->id = $id;
@@ -29,8 +26,8 @@ final class Type
     public function toArray(): array
     {
         return [
-            self::TYPE_KEYNAME_ID => $this->id,
-            self::TYPE_KEYNAME_NAME => $this->name,
+            'id' => $this->id,
+            'name' => $this->name,
         ];
     }
 }

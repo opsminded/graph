@@ -4,19 +4,15 @@ declare(strict_types=1);
 
 final class Edge
 {
+    private string $id;
     private string $label;
     private string $source;
     private string $target;
     private array  $data;
 
-    public const EDGE_KEYNAME_ID     = "id";
-    public const EDGE_KEYNAME_LABEL  = "label";
-    public const EDGE_KEYNAME_SOURCE = "source";
-    public const EDGE_KEYNAME_TARGET = "target";
-    public const EDGE_KEYNAME_DATA   = "data";
-
     public function __construct(string $source, string $target, string $label, array $data = [])
     {
+        $this->id     = "{$source}-{$target}";
         $this->source = $source;
         $this->target = $target;
         $this->label  = $label;
@@ -25,7 +21,7 @@ final class Edge
 
     public function getId(): string
     {
-        return "{$this->source}-{$this->target}";
+        return $this->id;
     }
 
     public function getLabel(): string
@@ -50,12 +46,6 @@ final class Edge
 
     public function toArray(): array
     {
-        return [
-            self::EDGE_KEYNAME_ID     => $this->getId(),
-            self::EDGE_KEYNAME_LABEL  => $this->label,
-            self::EDGE_KEYNAME_SOURCE => $this->source,
-            self::EDGE_KEYNAME_TARGET => $this->target,
-            self::EDGE_KEYNAME_DATA   => $this->data
-        ];
+        return get_object_vars($this);
     }
 }

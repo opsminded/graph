@@ -21,13 +21,13 @@ final class Controller implements ControllerInterface
             return new MethodNotAllowedResponse($req->method, __METHOD__);
         }
         try {
-            $id = $req->getParam(User::USER_KEYNAME_ID);
+            $id = $req->getParam('id');
         } catch(RequestException $e) {
             return new BadRequestResponse($e->getMessage(), []);
         }
         $user = $this->service->getUser($id);
         if(is_null($user)) {
-            return new NotFoundResponse("user not found", [User::USER_KEYNAME_ID => $id]);
+            return new NotFoundResponse("user not found", ['id' => $id]);
         }
         $data = $user->toArray();
         return new OKResponse("user found", $data);
@@ -38,13 +38,13 @@ final class Controller implements ControllerInterface
         if($req->method !== Request::METHOD_POST) {
             return new MethodNotAllowedResponse($req->method, __METHOD__);
         }
-        if(! array_key_exists(User::USER_KEYNAME_ID, $req->data)) {
-            return new BadRequestResponse("key " . User::USER_KEYNAME_ID . " not found in data", $req->data);
+        if(! array_key_exists('id', $req->data)) {
+            return new BadRequestResponse("key id not found in data", $req->data);
         }
-        if(! array_key_exists(User::USER_KEYNAME_GROUP, $req->data)) {
-            return new BadRequestResponse("key " . User::USER_KEYNAME_GROUP . " not found in data", $req->data);
+        if(! array_key_exists('group', $req->data)) {
+            return new BadRequestResponse("key group not found in data", $req->data);
         }
-        $user = new User($req->data[User::USER_KEYNAME_ID], new Group($req->data[User::USER_KEYNAME_GROUP]));
+        $user = new User($req->data['id'], new Group($req->data['group']));
         $this->service->insertUser($user);
         $data = $user->toArray();
         return new CreatedResponse("user created", $data);
@@ -55,7 +55,7 @@ final class Controller implements ControllerInterface
         if($req->method !== Request::METHOD_PUT) {
             return new MethodNotAllowedResponse($req->method, __METHOD__);
         }
-        $user = new User($req->data[User::USER_KEYNAME_ID], new Group($req->data[User::USER_KEYNAME_GROUP]));
+        $user = new User($req->data['id'], new Group($req->data['group']));
         if($this->service->updateUser($user)) {
             return new OKResponse("user updated", $req->data);
         }
@@ -97,13 +97,13 @@ final class Controller implements ControllerInterface
             return new MethodNotAllowedResponse($req->method, __METHOD__);
         }
         try {
-            $id = $req->getParam(Node::NODE_KEYNAME_ID);
+            $id = $req->getParam('id');
         } catch(RequestException $e) {
             return new BadRequestResponse($e->getMessage(), []);
         }
         $node = $this->service->getNode($id);
         if(is_null($node)) {
-            return new NotFoundResponse("node not found", [Node::NODE_KEYNAME_ID => $id]);
+            return new NotFoundResponse("node not found", ['id' => $id]);
         }
         $data = $node->toArray();
         return new OKResponse("node found", $data);
@@ -128,12 +128,12 @@ final class Controller implements ControllerInterface
             return new  MethodNotAllowedResponse($req->method, __METHOD__);
         }
         $node = new Node(
-            $req->data[Node::NODE_KEYNAME_ID], 
-            $req->data[Node::NODE_KEYNAME_LABEL], 
-            $req->data[Node::NODE_KEYNAME_CATEGORY], 
-            $req->data[Node::NODE_KEYNAME_TYPE], 
-            $req->data[Node::NODE_KEYNAME_USERCREATED],
-            $req->data[Node::NODE_KEYNAME_DATA]
+            $req->data['id'], 
+            $req->data['label'], 
+            $req->data['category'], 
+            $req->data['type'], 
+            $req->data['user_created'],
+            $req->data['data']
         );
         $this->service->insertNode($node);
         $this->logger->info("node inserted", $req->data);
@@ -147,12 +147,12 @@ final class Controller implements ControllerInterface
         }
         $this->logger->debug("updating node", $req->data);
         $node = new Node(
-            $req->data[Node::NODE_KEYNAME_ID],
-            $req->data[Node::NODE_KEYNAME_LABEL],
-            $req->data[Node::NODE_KEYNAME_CATEGORY],
-            $req->data[Node::NODE_KEYNAME_TYPE],
+            $req->data['id'],
+            $req->data['label'],
+            $req->data['category'],
+            $req->data['type'],
             false,
-            $req->data[Node::NODE_KEYNAME_DATA]
+            $req->data['data']
         );
         $this->service->updateNode($node);
         $this->logger->info("node updated", $req->data);
@@ -165,11 +165,11 @@ final class Controller implements ControllerInterface
         if($req->method !== Request::METHOD_DELETE) {
             return new MethodNotAllowedResponse($req->method, __METHOD__);
         }
-        $id = $req->data[Node::NODE_KEYNAME_ID];
+        $id = $req->data['id'];
         if($this->service->deleteNode($id)) {
-            return new NoContentResponse("node deleted", [Node::NODE_KEYNAME_ID => $req->data[Node::NODE_KEYNAME_ID]]);
+            return new NoContentResponse("node deleted", ['id' => $req->data['id']]);
         }
-        return new NotFoundResponse("node not found",[Node::NODE_KEYNAME_ID => $req->data[Node::NODE_KEYNAME_ID]]);
+        return new NotFoundResponse("node not found",['id' => $req->data['id']]);
     }
 
     public function getEdge(Request $req): ResponseInterface
@@ -178,18 +178,18 @@ final class Controller implements ControllerInterface
             return new MethodNotAllowedResponse($req->method, __METHOD__);
         }
         try {
-            $source = $req->getParam(Edge::EDGE_KEYNAME_SOURCE);
+            $source = $req->getParam('source');
         } catch(RequestException $e) {
             return new BadRequestResponse($e->getMessage(), []);
         }
         try {
-            $target = $req->getParam(Edge::EDGE_KEYNAME_TARGET);
+            $target = $req->getParam('target');
         } catch(RequestException $e) {
             return new BadRequestResponse($e->getMessage(), []);
         }
         $edge = $this->service->getEdge($source, $target);
         if(is_null($edge)) {
-            return new NotFoundResponse("edge not found", [Edge::EDGE_KEYNAME_SOURCE => $source, Edge::EDGE_KEYNAME_TARGET => $target]);
+            return new NotFoundResponse("edge not found", ['source' => $source, 'target' => $target]);
         }
         $data = $edge->toArray();
         return new OKResponse("edge found", $data);
@@ -214,10 +214,10 @@ final class Controller implements ControllerInterface
             return new MethodNotAllowedResponse($req->method, __METHOD__);
         }
         $edge = new Edge(
-            $req->data[Edge::EDGE_KEYNAME_SOURCE],
-            $req->data[Edge::EDGE_KEYNAME_TARGET],
-            $req->data[Edge::EDGE_KEYNAME_LABEL],
-            $req->data[Edge::EDGE_KEYNAME_DATA],
+            $req->data['source'],
+            $req->data['target'],
+            $req->data['label'],
+            $req->data['data'],
         );
 
         $this->service->insertEdge($edge);
@@ -231,10 +231,10 @@ final class Controller implements ControllerInterface
             return new MethodNotAllowedResponse($req->method, __METHOD__);
         }
         $edge = new Edge(
-            $req->data[Edge::EDGE_KEYNAME_SOURCE], 
-            $req->data[Edge::EDGE_KEYNAME_TARGET], 
-            $req->data[Edge::EDGE_KEYNAME_LABEL],
-            $req->data[Edge::EDGE_KEYNAME_DATA],
+            $req->data['source'], 
+            $req->data['target'], 
+            $req->data['label'],
+            $req->data['data'],
         );
         
         $this->service->updateEdge($edge);
@@ -248,8 +248,8 @@ final class Controller implements ControllerInterface
             return new MethodNotAllowedResponse($req->method, __METHOD__);
         }
         
-        $source = $req->data[Edge::EDGE_KEYNAME_SOURCE];
-        $target = $req->data[Edge::EDGE_KEYNAME_TARGET];
+        $source = $req->data['source'];
+        $target = $req->data['target'];
 
         $this->service->deleteEdge($source, $target);
         $data = $req->data;
@@ -269,30 +269,12 @@ final class Controller implements ControllerInterface
     //     return new OKResponse("nodes found", $data);
     // }
     
-    public function getNodeStatus(Request $req): ResponseInterface
-    {
-        if($req->method !== Request::METHOD_GET) {
-            return new MethodNotAllowedResponse($req->method, __METHOD__);
-        }
-        try {
-            $id = $req->getParam(Status::STATUS_KEYNAME_NODE_ID);
-        } catch(RequestException $e) {
-            return new BadRequestResponse($e->getMessage(), []);
-        }
-        $status = $this->service->getNodeStatus($id);
-        if(!is_null($status)) {
-            $data = $status->toArray();
-            return new OKResponse("node found", $data);
-        }
-        return new NotFoundResponse("node not found", [Status::STATUS_KEYNAME_NODE_ID => $id]);
-    }
-    
     public function updateNodeStatus(Request $req): ResponseInterface
     {
         if($req->method !== Request::METHOD_PUT) {
             return new MethodNotAllowedResponse($req->method, __METHOD__);
         }
-        $status = new Status($req->data[Status::STATUS_KEYNAME_NODE_ID], $req->data[Status::STATUS_KEYNAME_STATUS]);
+        $status = new Status($req->data['node_id'], $req->data['status']);
         $this->service->updateNodeStatus($status);
         $data = $status->toArray();
         return new OKResponse("node found", $data);
@@ -304,19 +286,19 @@ final class Controller implements ControllerInterface
             return new MethodNotAllowedResponse($req->method, __METHOD__);
         }
         try {
-            $id = $req->getParam(Project::PROJECT_KEYNAME_ID);
+            $id = $req->getParam('id');
         } catch(RequestException $e) {
             return new BadRequestResponse($e->getMessage(), []);
         }
         $project = $this->service->getProject($id);
         
-        $this->logger->debug("getting project", [Project::PROJECT_KEYNAME_ID => $id, "project" => $project]);
+        $this->logger->debug("getting project", ['id' => $id, "project" => $project]);
         
         if(!is_null($project)) {
             $data = $project->toArray();
             return new OKResponse("project found", $data);
         }
-        return new NotFoundResponse("project not found", [Project::PROJECT_KEYNAME_ID => $id]);
+        return new NotFoundResponse("project not found", ['id' => $id]);
     }
 
     public function getProjects(Request $req): ResponseInterface
@@ -342,11 +324,11 @@ final class Controller implements ControllerInterface
 
         $now = new DateTimeImmutable();
 
-        $id = $this->createSlug($req->data[Project::PROJECT_KEYNAME_NAME] ?? 'project');
+        $id = $this->createSlug($req->data['name'] ?? 'project');
 
         $project = new Project(
             $id,
-            $req->data[Project::PROJECT_KEYNAME_NAME],
+            $req->data['name'],
             $creator,
             $now,
             $now,
@@ -368,8 +350,8 @@ final class Controller implements ControllerInterface
         $now = new DateTimeImmutable();
 
         $project = new Project(
-            $req->data[Project::PROJECT_KEYNAME_ID],
-            $req->data[Project::PROJECT_KEYNAME_NAME],
+            $req->data['id'],
+            $req->data['name'],
             $creator,
             $now,
             $now,
@@ -379,7 +361,7 @@ final class Controller implements ControllerInterface
             $data = $project->toArray();
             return new OKResponse("project updated", $data);
         }
-        return new NotFoundResponse("project not updated", [Project::PROJECT_KEYNAME_ID => $req->data[Project::PROJECT_KEYNAME_ID]]);
+        return new NotFoundResponse("project not updated", ['id' => $req->data['id']]);
     }
     public function deleteProject(Request $req): ResponseInterface
     {
@@ -388,7 +370,7 @@ final class Controller implements ControllerInterface
         }
 
         $project = new Project(
-            $req->data[Project::PROJECT_KEYNAME_ID],
+            $req->data['id'],
             '',
             '',
             new DateTimeImmutable(),
@@ -396,9 +378,9 @@ final class Controller implements ControllerInterface
             [],
         );
         if($this->service->deleteProject($project->getId())) {
-            return new NoContentResponse("project deleted", [Project::PROJECT_KEYNAME_ID => $req->data[Project::PROJECT_KEYNAME_ID]]);
+            return new NoContentResponse("project deleted", ['id' => $req->data['id']]);
         }
-        return new NotFoundResponse("project not deleted",[Project::PROJECT_KEYNAME_ID => $req->data[Project::PROJECT_KEYNAME_ID]]);
+        return new NotFoundResponse("project not deleted",['id' => $req->data['id']]);
     }
 
     public function getLogs(Request $req): ResponseInterface

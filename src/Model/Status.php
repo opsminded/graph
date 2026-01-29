@@ -10,9 +10,6 @@ final class Status
     public const STATUS_VALUE_MAINTENANCE = "maintenance";
     public const STATUS_VALUE_IMPACTED    = "impacted";
 
-    public const STATUS_KEYNAME_NODE_ID = "node_id";
-    public const STATUS_KEYNAME_STATUS = "status";
-    
     private const ALLOWED_NODE_STATUS = [
         self::STATUS_VALUE_UNKNOWN,
         self::STATUS_VALUE_HEALTHY,
@@ -46,8 +43,8 @@ final class Status
     public function toArray(): array
     {
         return [
-            self::STATUS_KEYNAME_NODE_ID => $this->nodeId,
-            self::STATUS_KEYNAME_STATUS  => $this->status,
+            'node_id' => $this->nodeId,
+            'status'  => $this->status,
         ];
     }
 }

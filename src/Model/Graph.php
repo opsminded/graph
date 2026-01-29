@@ -7,9 +7,6 @@ final class Graph
     private array $nodes = [];
     private array $edges = [];
 
-    public const KEYNAME_NODES = "nodes";
-    public const KEYNAME_EDGES = "edges";
-
     public function __construct(array $nodes, array $edges)
     {
         $this->nodes = $nodes;
@@ -38,8 +35,8 @@ final class Graph
             $edges[] = $edge->toArray();
         }
         return [
-            self::KEYNAME_NODES => $nodes,
-            self::KEYNAME_EDGES => $edges,
+            "nodes" => $nodes,
+            "edges" => $edges,
         ];
     }
 }
