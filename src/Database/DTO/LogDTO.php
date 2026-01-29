@@ -13,5 +13,6 @@ final class LogDTO
         public readonly string $userId,
         public readonly string $ipAddress,
         public readonly DateTimeImmutable $timestamp,
-    ) {}
+    ) {
+    }
 }

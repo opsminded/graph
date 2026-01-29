@@ -9,17 +9,13 @@ final class Project
     const PROJECT_KEYNAME_AUTHOR = "author";
     const PROJECT_KEYNAME_CREATED_AT = "created_at";
     const PROJECT_KEYNAME_UPDATED_AT = "updated_at";
-    const PROJECT_KEYNAME_GRAPH = "graph";
     const PROJECT_KEYNAME_DATA = "data";
     
     private string $id;
     private string $name;
     private string $author;
     private DateTimeImmutable $createdAt;
-    private DateTimeImmutable $updatedAt;
-    
-    private ?Graph $graph;
-
+    private DateTimeImmutable $updatedAt;    
     private array $data = [];
 
     public function __construct(
@@ -28,7 +24,6 @@ final class Project
         string $author,
         DateTimeImmutable $createdAt,
         DateTimeImmutable $updatedAt,
-        ?Graph $graph,
         array $data = [],
     ) {
         $this->id = $id;
@@ -36,7 +31,6 @@ final class Project
         $this->author = $author;
         $this->createdAt = $createdAt;
         $this->updatedAt = $updatedAt;
-        $this->graph = $graph;
         $this->data = $data;
     }
 
@@ -65,11 +59,6 @@ final class Project
         return $this->updatedAt;
     }
 
-    public function getGraph(): ?Graph
-    {
-        return $this->graph;
-    }
-
     public function getData(): array
     {
         return $this->data;
@@ -83,7 +72,6 @@ final class Project
             self::PROJECT_KEYNAME_AUTHOR => $this->author,
             self::PROJECT_KEYNAME_CREATED_AT => $this->createdAt->format(DateTime::ATOM),
             self::PROJECT_KEYNAME_UPDATED_AT => $this->updatedAt->format(DateTime::ATOM),
-            self::PROJECT_KEYNAME_GRAPH => $this->graph ? $this->graph->toArray() : [],
             self::PROJECT_KEYNAME_DATA => $this->data,
         ];
     }

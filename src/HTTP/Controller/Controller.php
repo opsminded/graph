@@ -350,7 +350,6 @@ final class Controller implements ControllerInterface
             $creator,
             $now,
             $now,
-            null,
             $req->data['data'],
         );
         $this->service->insertProject($project);
@@ -374,7 +373,6 @@ final class Controller implements ControllerInterface
             $creator,
             $now,
             $now,
-            null,
             $req->data['data'],
         );
         if($this->service->updateProject($project)) {
@@ -395,7 +393,6 @@ final class Controller implements ControllerInterface
             '',
             new DateTimeImmutable(),
             new DateTimeImmutable(),
-            null,
             [],
         );
         if($this->service->deleteProject($project->getId())) {

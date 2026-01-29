@@ -1239,22 +1239,6 @@ class TestDatabase extends TestAbstractTest
         if ($project->id !== 'initial' || $project->name !== 'Initial Project' || $project->author !== 'admin') {
             throw new Exception('error on validation of project');
         }
-
-        if(count($project->graph->nodes) !== 4) {
-            throw new Exception("unexpected number of nodes");
-        }
-
-        if (count($project->graph->edges) !== 2) {
-            throw new Exception("Unexpected number of edges");
-        }
-
-        if ($project->graph->nodes[0]->id !== 'a' || $project->graph->nodes[1]->id !== 'b') {
-            throw new Exception("Unexpected node");
-        }
-
-        if ($project->graph->edges[0]->id !== 'a-b' || $project->graph->edges[1]->id !== 'c-d') {
-            throw new Exception("Unexpected edge");
-        }
     }
 
     public function testGetProjects(): void
@@ -1277,7 +1261,6 @@ class TestDatabase extends TestAbstractTest
                 'admin',
                 new DateTimeImmutable(),
                 new DateTimeImmutable(),
-                null,
                 ['nodes' => ['a', 'b']])
             );
 
@@ -1293,7 +1276,6 @@ class TestDatabase extends TestAbstractTest
                     'admin',
                     new DateTimeImmutable(),
                     new DateTimeImmutable(),
-                    null,
                     ['nodes' => ['a', 'b']]
                 )
             );
@@ -1323,7 +1305,6 @@ class TestDatabase extends TestAbstractTest
                 'admin',
                 new DateTimeImmutable(),
                 new DateTimeImmutable(),
-                null,
                 ['nodes' => []]
             )
         );
@@ -1347,7 +1328,6 @@ class TestDatabase extends TestAbstractTest
                 'admin', 
                 new DateTimeImmutable(), 
                 new DateTimeImmutable(),
-                null, 
                 ['nodes' => []]))
         ) {
             throw new Exception('error on testUpdateProject 3');
@@ -1917,7 +1897,8 @@ class TestService extends TestAbstractTest
                 'admin',
                 new DateTimeImmutable(),
                 new DateTimeImmutable(),
-                null));
+            )
+        );
         $project = $this->service->getProject('project1');
         if( $project === null || $project->getId() !== 'project1' || $project->getName() !== 'First Project') {
             throw new Exception('error on testGetProject - project data mismatch');
@@ -1941,7 +1922,6 @@ class TestService extends TestAbstractTest
                 'admin',
                 new DateTimeImmutable(),
                 new DateTimeImmutable(),
-                null
             )
         );
 
@@ -1956,7 +1936,7 @@ class TestService extends TestAbstractTest
         $this->pdo->exec('delete from projects');
         
         HelperContext::update('admin', 'admin', '127.0.0.1');
-        $this->service->insertProject(new Project('project1', 'First Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), null));
+        $this->service->insertProject(new Project('project1', 'First Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable()));
         $projects = $this->service->getProjects();
         if (count($projects) !== 1) {
             throw new Exception('error on testInsertProject - should have 1 project');
@@ -1967,7 +1947,7 @@ class TestService extends TestAbstractTest
         }
 
         try {
-            $this->service->insertProject(new Project('project1', 'Duplicate Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), null));
+            $this->service->insertProject(new Project('project1', 'Duplicate Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable()));
         } catch (Exception $e) {
             return;
         }
@@ -1980,8 +1960,8 @@ class TestService extends TestAbstractTest
 
         HelperContext::update('admin', 'admin', '127.0.0.1');
         
-        $this->service->insertProject(new Project('project1', 'First Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), null));
-        $this->service->updateProject(new Project('project1', 'Updated Project Name', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), null));
+        $this->service->insertProject(new Project('project1', 'First Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable()));
+        $this->service->updateProject(new Project('project1', 'Updated Project Name', 'admin', new DateTimeImmutable(), new DateTimeImmutable()));
         $projects = $this->service->getProjects();
         if (count($projects) !== 1) {
             throw new Exception('error on testUpdateProject - should have 1 project');
@@ -1991,7 +1971,7 @@ class TestService extends TestAbstractTest
             throw new Exception('error on testUpdateProject - project name not updated');
         }
         
-        if($this->service->updateProject(new Project('project2', 'Non-existent Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), null))) {
+        if($this->service->updateProject(new Project('project2', 'Non-existent Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable()))) {
             throw new Exception('error on testUpdateProject - should return false for non-existent project');
         }
     }
@@ -2002,7 +1982,7 @@ class TestService extends TestAbstractTest
 
         HelperContext::update('admin', 'admin', '127.0.0.1');
         
-        $this->service->insertProject(new Project('project1', 'First Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), null));
+        $this->service->insertProject(new Project('project1', 'First Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable()));
         $this->service->deleteProject('project1');
         $projects = $this->service->getProjects();
         if (count($projects) !== 0) {
@@ -2940,7 +2920,7 @@ final class TestController extends TestAbstractTest
             throw new Exception('error on testGetProject 3');
         }
         
-        $this->database->insertProject(new ProjectDTO('meu-project', 'meu project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), null, ['nodes' => ['a', 'b']]));
+        $this->database->insertProject(new ProjectDTO('meu-project', 'meu project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), ['nodes' => ['a', 'b']]));
         
         $req = new Request();
         $resp = $this->controller->getProject($req);
@@ -2974,7 +2954,7 @@ final class TestController extends TestAbstractTest
             throw new Exception('error on testGetProjects 2');
         }
 
-        $this->database->insertProject(new ProjectDTO('meu-project', 'meu project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), null, ['nodes' => ['a', 'b']]));
+        $this->database->insertProject(new ProjectDTO('meu-project', 'meu project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), ['nodes' => ['a', 'b']]));
         
         $req = new Request();
         $resp = $this->controller->getProjects($req);
@@ -3052,7 +3032,7 @@ final class TestController extends TestAbstractTest
             throw new Exception('error on testUpdateProject 2');
         }
 
-        $this->database->insertProject(new ProjectDTO('project1', 'My Project 1', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), null, ['nodes' => [], 'edges' => []]));
+        $this->database->insertProject(new ProjectDTO('project1', 'My Project 1', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), ['nodes' => [], 'edges' => []]));
         $req = new Request();
         $req->data['id'] = 'project1';
         $req->data['name'] = 'My Project 1 Updated';
@@ -3089,7 +3069,7 @@ final class TestController extends TestAbstractTest
             throw new Exception('error on testDeleteProject 2');
         }
 
-        $this->database->insertProject(new ProjectDTO('project1', 'My Project 1', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), null, ['nodes' => [], 'edges' => []]));
+        $this->database->insertProject(new ProjectDTO('project1', 'My Project 1', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), ['nodes' => [], 'edges' => []]));
         $req = new Request();
         $req->data['id'] = 'project1';
         $resp = $this->controller->deleteProject($req);

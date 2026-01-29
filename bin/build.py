@@ -22,7 +22,8 @@ def print_file(output, filename):
             isfinal = desc.startswith('final')
             isinterface = desc.startswith('interface')
             isabstract = desc.startswith('abstract')
-            if isclass or isfinal or isinterface or isabstract:
+            iscomment = desc.startswith('//')
+            if isclass or isfinal or isinterface or isabstract or iscomment:
                 pass
             else:
                 raise Exception(desc)

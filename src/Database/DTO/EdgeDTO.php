@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+// Edge DTO join two nodes in a graph structure.
+// It contains identifiers for the source and target nodes, a label for the edge, and optional metadata.
 final class EdgeDTO
 {
     public function __construct(

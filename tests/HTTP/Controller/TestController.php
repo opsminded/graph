@@ -653,7 +653,7 @@ final class TestController extends TestAbstractTest
             throw new Exception('error on testGetProject 3');
         }
         
-        $this->database->insertProject(new ProjectDTO('meu-project', 'meu project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), null, ['nodes' => ['a', 'b']]));
+        $this->database->insertProject(new ProjectDTO('meu-project', 'meu project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), ['nodes' => ['a', 'b']]));
         
         $req = new Request();
         $resp = $this->controller->getProject($req);
@@ -687,7 +687,7 @@ final class TestController extends TestAbstractTest
             throw new Exception('error on testGetProjects 2');
         }
 
-        $this->database->insertProject(new ProjectDTO('meu-project', 'meu project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), null, ['nodes' => ['a', 'b']]));
+        $this->database->insertProject(new ProjectDTO('meu-project', 'meu project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), ['nodes' => ['a', 'b']]));
         
         $req = new Request();
         $resp = $this->controller->getProjects($req);
@@ -765,7 +765,7 @@ final class TestController extends TestAbstractTest
             throw new Exception('error on testUpdateProject 2');
         }
 
-        $this->database->insertProject(new ProjectDTO('project1', 'My Project 1', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), null, ['nodes' => [], 'edges' => []]));
+        $this->database->insertProject(new ProjectDTO('project1', 'My Project 1', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), ['nodes' => [], 'edges' => []]));
         $req = new Request();
         $req->data['id'] = 'project1';
         $req->data['name'] = 'My Project 1 Updated';
@@ -802,7 +802,7 @@ final class TestController extends TestAbstractTest
             throw new Exception('error on testDeleteProject 2');
         }
 
-        $this->database->insertProject(new ProjectDTO('project1', 'My Project 1', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), null, ['nodes' => [], 'edges' => []]));
+        $this->database->insertProject(new ProjectDTO('project1', 'My Project 1', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), ['nodes' => [], 'edges' => []]));
         $req = new Request();
         $req->data['id'] = 'project1';
         $resp = $this->controller->deleteProject($req);

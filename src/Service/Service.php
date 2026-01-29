@@ -371,41 +371,12 @@ final class Service implements ServiceInterface
         $dbProject = $this->database->getProject($id);
 
         if (! is_null($dbProject)) {
-
-            $nodes = [];
-            $edges = [];
-
-            foreach($dbProject->graph->nodes as $n) {
-                $node = new Node(
-                    $n->id,
-                    $n->label,
-                    $n->category,
-                    $n->type,
-                    $n->userCreated,
-                    $n->data
-                );
-                $nodes[] = $node;
-            }
-
-            foreach($dbProject->graph->edges as $e) {
-                $edge = new Edge(
-                    $e->source,
-                    $e->target,
-                    $e->label,
-                    $e->data
-                );
-                $edges[] = $edge;
-            }
-
-            $graph = new Graph($nodes, $edges);
-
             $project = new Project(
                 $dbProject->id,
                 $dbProject->name,
                 $dbProject->author,
                 $dbProject->createdAt,
-                $dbProject->updatedAt,
-                $graph
+                $dbProject->updatedAt
             );
             $this->logger->info("project found", ["project" => $project]);
             return $project;
@@ -428,8 +399,7 @@ final class Service implements ServiceInterface
                 $project->name,
                 $project->author,
                 $project->createdAt,
-                $project->updatedAt,
-                null
+                $project->updatedAt
             );
             $projects[] = $project;
         }
@@ -447,7 +417,6 @@ final class Service implements ServiceInterface
             $project->getAuthor(),
             $project->getCreatedAt(),
             $project->getUpdatedAt(),
-            null,
             $project->getData()
         );
         return $this->database->insertProject($dto);
@@ -464,7 +433,6 @@ final class Service implements ServiceInterface
             $project->getAuthor(),
             new DateTimeImmutable(),
             new DateTimeImmutable(),
-            null,
             $project->getData()
         );
 

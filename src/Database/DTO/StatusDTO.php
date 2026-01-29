@@ -5,7 +5,8 @@ declare(strict_types=1);
 final class StatusDTO
 {
     public function __construct(
-        public string $node_id,
-        public ?string $status
-    ) {}
+        public readonly string $node_id,
+        public readonly ?string $status
+    ) {
+    }
 }

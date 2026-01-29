@@ -89,6 +89,8 @@ interface DatabaseInterface
 
     public function getProject(string $id): ?ProjectDTO;
 
+    public function getProjectGraph(string $projectId): ?GraphDTO;
+
     /**
      * @return ProjectDTO[]
      */

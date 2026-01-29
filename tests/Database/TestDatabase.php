@@ -834,22 +834,6 @@ class TestDatabase extends TestAbstractTest
         if ($project->id !== 'initial' || $project->name !== 'Initial Project' || $project->author !== 'admin') {
             throw new Exception('error on validation of project');
         }
-
-        if(count($project->graph->nodes) !== 4) {
-            throw new Exception("unexpected number of nodes");
-        }
-
-        if (count($project->graph->edges) !== 2) {
-            throw new Exception("Unexpected number of edges");
-        }
-
-        if ($project->graph->nodes[0]->id !== 'a' || $project->graph->nodes[1]->id !== 'b') {
-            throw new Exception("Unexpected node");
-        }
-
-        if ($project->graph->edges[0]->id !== 'a-b' || $project->graph->edges[1]->id !== 'c-d') {
-            throw new Exception("Unexpected edge");
-        }
     }
 
     public function testGetProjects(): void
@@ -872,7 +856,6 @@ class TestDatabase extends TestAbstractTest
                 'admin',
                 new DateTimeImmutable(),
                 new DateTimeImmutable(),
-                null,
                 ['nodes' => ['a', 'b']])
             );
 
@@ -888,7 +871,6 @@ class TestDatabase extends TestAbstractTest
                     'admin',
                     new DateTimeImmutable(),
                     new DateTimeImmutable(),
-                    null,
                     ['nodes' => ['a', 'b']]
                 )
             );
@@ -918,7 +900,6 @@ class TestDatabase extends TestAbstractTest
                 'admin',
                 new DateTimeImmutable(),
                 new DateTimeImmutable(),
-                null,
                 ['nodes' => []]
             )
         );
@@ -942,7 +923,6 @@ class TestDatabase extends TestAbstractTest
                 'admin', 
                 new DateTimeImmutable(), 
                 new DateTimeImmutable(),
-                null, 
                 ['nodes' => []]))
         ) {
             throw new Exception('error on testUpdateProject 3');

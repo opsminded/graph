@@ -10,7 +10,6 @@ final class ProjectDTO
         public readonly string $author,
         public readonly DateTimeImmutable $createdAt,
         public readonly DateTimeImmutable $updatedAt,
-        public readonly ?GraphDTO $graph,
         public readonly array $data,
     ) {
     }

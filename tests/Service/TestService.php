@@ -471,7 +471,8 @@ class TestService extends TestAbstractTest
                 'admin',
                 new DateTimeImmutable(),
                 new DateTimeImmutable(),
-                null));
+            )
+        );
         $project = $this->service->getProject('project1');
         if( $project === null || $project->getId() !== 'project1' || $project->getName() !== 'First Project') {
             throw new Exception('error on testGetProject - project data mismatch');
@@ -495,7 +496,6 @@ class TestService extends TestAbstractTest
                 'admin',
                 new DateTimeImmutable(),
                 new DateTimeImmutable(),
-                null
             )
         );
 
@@ -510,7 +510,7 @@ class TestService extends TestAbstractTest
         $this->pdo->exec('delete from projects');
         
         HelperContext::update('admin', 'admin', '127.0.0.1');
-        $this->service->insertProject(new Project('project1', 'First Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), null));
+        $this->service->insertProject(new Project('project1', 'First Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable()));
         $projects = $this->service->getProjects();
         if (count($projects) !== 1) {
             throw new Exception('error on testInsertProject - should have 1 project');
@@ -521,7 +521,7 @@ class TestService extends TestAbstractTest
         }
 
         try {
-            $this->service->insertProject(new Project('project1', 'Duplicate Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), null));
+            $this->service->insertProject(new Project('project1', 'Duplicate Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable()));
         } catch (Exception $e) {
             return;
         }
@@ -534,8 +534,8 @@ class TestService extends TestAbstractTest
 
         HelperContext::update('admin', 'admin', '127.0.0.1');
         
-        $this->service->insertProject(new Project('project1', 'First Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), null));
-        $this->service->updateProject(new Project('project1', 'Updated Project Name', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), null));
+        $this->service->insertProject(new Project('project1', 'First Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable()));
+        $this->service->updateProject(new Project('project1', 'Updated Project Name', 'admin', new DateTimeImmutable(), new DateTimeImmutable()));
         $projects = $this->service->getProjects();
         if (count($projects) !== 1) {
             throw new Exception('error on testUpdateProject - should have 1 project');
@@ -545,7 +545,7 @@ class TestService extends TestAbstractTest
             throw new Exception('error on testUpdateProject - project name not updated');
         }
         
-        if($this->service->updateProject(new Project('project2', 'Non-existent Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), null))) {
+        if($this->service->updateProject(new Project('project2', 'Non-existent Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable()))) {
             throw new Exception('error on testUpdateProject - should return false for non-existent project');
         }
     }
@@ -556,7 +556,7 @@ class TestService extends TestAbstractTest
 
         HelperContext::update('admin', 'admin', '127.0.0.1');
         
-        $this->service->insertProject(new Project('project1', 'First Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable(), null));
+        $this->service->insertProject(new Project('project1', 'First Project', 'admin', new DateTimeImmutable(), new DateTimeImmutable()));
         $this->service->deleteProject('project1');
         $projects = $this->service->getProjects();
         if (count($projects) !== 0) {

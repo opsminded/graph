@@ -433,9 +433,40 @@ final class Database implements DatabaseInterface
         return $edges;
     }
 
+    public function wouldCreateCycle(string $source, string $target): bool
+    {
+        if ($source === $target) {
+            return true;
+        }
+
+        $sql = '
+        WITH RECURSIVE path AS (
+            SELECT target as node_id, 1 as depth
+            FROM edges
+            WHERE source = :target
+            UNION ALL
+            SELECT e.target, p.depth + 1
+            FROM edges e
+            INNER JOIN path p ON e.source = p.node_id
+        )
+        SELECT 1 FROM path WHERE node_id = :source LIMIT 1
+        ';
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([':target' => $target, ':source' => $source]);
+
+        return $stmt->fetch() !== false;
+    }
+
     public function insertEdge(EdgeDTO $edge): bool
     {
         $this->logger->debug("inserting edge", ['id' => $edge->id, 'source' => $edge->source, 'target' => $edge->target, 'label' => $edge->label, 'data' => $edge->data]);
+
+        if ($this->wouldCreateCycle($edge->source, $edge->target)) {
+            $this->logger->error("Circular reference detected", ['source' => $edge->source, 'target' => $edge->target]);
+            throw new DatabaseException("Cannot insert edge: would create circular reference", new Exception());
+        }
+
         $sql = "INSERT INTO edges(id, source, target, label, data) VALUES (:id, :source, :target, :label, :data)";
         $data = json_encode($edge->data, JSON_UNESCAPED_UNICODE);
         $params = [':id' => $edge->id, ':source' => $edge->source, ':target' => $edge->target, ':label' => $edge->label, ':data' => $data];
@@ -461,6 +492,14 @@ final class Database implements DatabaseInterface
     public function batchInsertEdges(array $edges): bool
     {
         $this->logger->debug("batch inserting edges", ['edges' => $edges]);
+
+        foreach ($edges as $edge) {
+            if ($this->wouldCreateCycle($edge->source, $edge->target)) {
+                $this->logger->error("Circular reference detected in batch", ['source' => $edge->source, 'target' => $edge->target]);
+                throw new DatabaseException("Cannot insert edge: would create circular reference", new Exception());
+            }
+        }
+
         $sql = "INSERT INTO edges(id, source, target, label, data) VALUES (:id, :source, :target, :label, :data)";
         $stmt = $this->pdo->prepare($sql);
         foreach ($edges as $edge) {
@@ -586,7 +625,6 @@ final class Database implements DatabaseInterface
                 $row['author'],
                 new DateTimeImmutable($row['created_at']),
                 new DateTimeImmutable($row['updated_at']),
-                $graph,
                 json_decode($row['data'], true)
             );
 
@@ -594,6 +632,114 @@ final class Database implements DatabaseInterface
         }
         $this->logger->info("project not found", ['params' => $params]);
         return null;
+    }
+
+    public function getProjectGraph(string $projectId): ?GraphDTO
+    {
+        $this->logger->debug("fetching project graph", ['project_id' => $projectId]);
+        $sql = '
+        WITH RECURSIVE descendants AS (
+            SELECT      p.id     as project_id,
+                        e.id     as edge_id,
+                        e.label  as edge_label,
+                        e.source as edge_source_id,
+                        e.target as edge_target_id,
+                        e.data   as edge_data,
+                        0        as edge_depth
+            FROM        edges e
+            INNER JOIN  nodes_projects np
+            ON          e.source = np.node_id
+            INNER JOIN  projects p
+            ON          np.project_id = p.id
+            WHERE       p.id = :project_id
+            UNION ALL
+            SELECT      d.project_id     as project_id,
+                        e.id             as edge_id,
+                        e.label          as edge_label,
+                        e.source         as edge_source_id,
+                        e.target         as edge_target_id,
+                        e.data           as edge_data,
+                        d.edge_depth + 1 as edge_depth
+            FROM        descendants d
+            INNER JOIN  edges e ON d.edge_target_id = e.source
+        )
+        SELECT DISTINCT d.project_id,
+                        d.edge_id,
+                        d.edge_label,
+                        d.edge_data,
+                        d.edge_source_id,
+                        s.label           as source_label,
+                        s.category        as source_category,
+                        s.type            as source_type,
+                        s.user_created    as source_user_created,
+                        s.data            as source_data,
+                        d.edge_target_id,
+                        t.label           as target_label,
+                        t.category        as target_category,
+                        t.type            as target_type,
+                        t.user_created    as target_user_created,
+                        t.data            as target_data,
+                        min(d.edge_depth) as depth
+        FROM            descendants d
+        INNER JOIN      nodes s
+        ON              d.edge_source_id = s.id
+        INNER JOIN      nodes t
+        ON              d.edge_target_id = t.id
+        GROUP BY        d.project_id,
+                        d.edge_id,
+                        d.edge_label,
+                        d.edge_data,
+                        d.edge_source_id,
+                        s.label,
+                        s.category,
+                        s.type,
+                        s.user_created,
+                        s.data,
+                        d.edge_target_id,
+                        t.label,
+                        t.category,
+                        t.type,
+                        t.user_created,
+                        t.data
+        ORDER BY        depth,
+                        d.project_id;
+        ';
+        $params = [':project_id' => $projectId];
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll();
+        $this->logger->info("project Graph fetched", ['params' => $params, 'rows' => $rows]);
+        $nodes = [];
+        $edges = [];
+        foreach ($rows as $row) {
+            $nodes[] = new NodeDTO(
+                $row['edge_source_id'], 
+                $row['source_label'], 
+                $row['source_category'],
+                $row['source_type'],
+                boolval($row['source_user_created']),
+                json_decode($row['source_data'], true)
+            );
+
+            $nodes[] = new NodeDTO(
+                $row['edge_target_id'], 
+                $row['target_label'], 
+                $row['target_category'],
+                $row['target_type'],
+                boolval($row['target_user_created']),
+                json_decode($row['target_data'], true)
+            );
+
+            $edges[] = new EdgeDTO(
+                $row['edge_id'],
+                $row['edge_source_id'],
+                $row['edge_target_id'],
+                $row['edge_label'],
+                json_decode($row['edge_data'], true)
+            );
+        }
+
+        return new GraphDTO($nodes, $edges);
     }
 
     /**
@@ -614,7 +760,6 @@ final class Database implements DatabaseInterface
                 $row['author'],
                 new DateTimeImmutable($row['created_at']),
                 new DateTimeImmutable($row['updated_at']),
-                new GraphDTO([], []),
                 $row['data']
             );
         }
@@ -745,115 +890,6 @@ final class Database implements DatabaseInterface
         $stmt->execute($params);
         $this->logger->info("audit log inserted", ['params' => $params]);
         return true;
-    }
-
-    private function getProjectGraph(string $projectId): GraphDTO
-    {
-        $this->logger->debug("fetching project graph", ['project_id' => $projectId]);
-        $sql = '
-        WITH RECURSIVE descendants AS (
-            SELECT      p.id     as project_id,
-                        e.id     as edge_id,
-                        e.label  as edge_label,
-                        e.source as edge_source_id,
-                        e.target as edge_target_id,
-                        e.data   as edge_data,
-                        0        as edge_depth
-            FROM        edges e
-            INNER JOIN  nodes_projects np
-            ON          e.source = np.node_id
-            INNER JOIN  projects p
-            ON          np.project_id = p.id
-            WHERE       p.id = :project_id
-            UNION ALL
-            SELECT      d.project_id     as project_id,
-                        e.id             as edge_id,
-                        e.label          as edge_label,
-                        e.source         as edge_source_id,
-                        e.target         as edge_target_id,
-                        e.data           as edge_data,
-                        d.edge_depth + 1 as edge_depth
-            FROM        descendants d
-            INNER JOIN  edges e ON d.edge_target_id = e.source
-            WHERE       d.edge_depth < 100
-        )
-        SELECT DISTINCT d.project_id,
-                        d.edge_id,
-                        d.edge_label,
-                        d.edge_data,
-                        d.edge_source_id,
-                        s.label           as source_label,
-                        s.category        as source_category,
-                        s.type            as source_type,
-                        s.user_created    as source_user_created,
-                        s.data            as source_data,
-                        d.edge_target_id,
-                        t.label           as target_label,
-                        t.category        as target_category,
-                        t.type            as target_type,
-                        t.user_created    as target_user_created,
-                        t.data            as target_data,
-                        min(d.edge_depth) as depth
-        FROM            descendants d
-        INNER JOIN      nodes s
-        ON              d.edge_source_id = s.id
-        INNER JOIN      nodes t
-        ON              d.edge_target_id = t.id
-        GROUP BY        d.project_id,
-                        d.edge_id,
-                        d.edge_label,
-                        d.edge_data,
-                        d.edge_source_id,
-                        s.label,
-                        s.category,
-                        s.type,
-                        s.user_created,
-                        s.data,
-                        d.edge_target_id,
-                        t.label,
-                        t.category,
-                        t.type,
-                        t.user_created,
-                        t.data
-        ORDER BY        depth,
-                        d.project_id;
-        ';
-        $params = [':project_id' => $projectId];
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($params);
-        $rows = $stmt->fetchAll();
-        $this->logger->info("project Graph fetched", ['params' => $params, 'rows' => $rows]);
-        $nodes = [];
-        $edges = [];
-        foreach ($rows as $row) {
-            $nodes[] = new NodeDTO(
-                $row['edge_source_id'], 
-                $row['source_label'], 
-                $row['source_category'],
-                $row['source_type'],
-                boolval($row['source_user_created']),
-                json_decode($row['source_data'], true)
-            );
-
-            $nodes[] = new NodeDTO(
-                $row['edge_target_id'], 
-                $row['target_label'], 
-                $row['target_category'],
-                $row['target_type'],
-                boolval($row['target_user_created']),
-                json_decode($row['target_data'], true)
-            );
-
-            $edges[] = new EdgeDTO(
-                $row['edge_id'],
-                $row['edge_source_id'],
-                $row['edge_target_id'],
-                $row['edge_label'],
-                json_decode($row['edge_data'], true)
-            );
-        }
-
-        return new GraphDTO($nodes, $edges);
     }
 
     private function initSchema(): void

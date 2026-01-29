@@ -801,17 +801,13 @@ final class Project
     const PROJECT_KEYNAME_AUTHOR = "author";
     const PROJECT_KEYNAME_CREATED_AT = "created_at";
     const PROJECT_KEYNAME_UPDATED_AT = "updated_at";
-    const PROJECT_KEYNAME_GRAPH = "graph";
     const PROJECT_KEYNAME_DATA = "data";
     
     private string $id;
     private string $name;
     private string $author;
     private DateTimeImmutable $createdAt;
-    private DateTimeImmutable $updatedAt;
-    
-    private ?Graph $graph;
-
+    private DateTimeImmutable $updatedAt;    
     private array $data = [];
 
     public function __construct(
@@ -820,7 +816,6 @@ final class Project
         string $author,
         DateTimeImmutable $createdAt,
         DateTimeImmutable $updatedAt,
-        ?Graph $graph,
         array $data = [],
     ) {
         $this->id = $id;
@@ -828,7 +823,6 @@ final class Project
         $this->author = $author;
         $this->createdAt = $createdAt;
         $this->updatedAt = $updatedAt;
-        $this->graph = $graph;
         $this->data = $data;
     }
 
@@ -857,11 +851,6 @@ final class Project
         return $this->updatedAt;
     }
 
-    public function getGraph(): ?Graph
-    {
-        return $this->graph;
-    }
-
     public function getData(): array
     {
         return $this->data;
@@ -875,7 +864,6 @@ final class Project
             self::PROJECT_KEYNAME_AUTHOR => $this->author,
             self::PROJECT_KEYNAME_CREATED_AT => $this->createdAt->format(DateTime::ATOM),
             self::PROJECT_KEYNAME_UPDATED_AT => $this->updatedAt->format(DateTime::ATOM),
-            self::PROJECT_KEYNAME_GRAPH => $this->graph ? $this->graph->toArray() : [],
             self::PROJECT_KEYNAME_DATA => $this->data,
         ];
     }
@@ -1734,9 +1722,40 @@ final class Database implements DatabaseInterface
         return $edges;
     }
 
+    public function wouldCreateCycle(string $source, string $target): bool
+    {
+        if ($source === $target) {
+            return true;
+        }
+
+        $sql = '
+        WITH RECURSIVE path AS (
+            SELECT target as node_id, 1 as depth
+            FROM edges
+            WHERE source = :target
+            UNION ALL
+            SELECT e.target, p.depth + 1
+            FROM edges e
+            INNER JOIN path p ON e.source = p.node_id
+        )
+        SELECT 1 FROM path WHERE node_id = :source LIMIT 1
+        ';
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([':target' => $target, ':source' => $source]);
+
+        return $stmt->fetch() !== false;
+    }
+
     public function insertEdge(EdgeDTO $edge): bool
     {
         $this->logger->debug("inserting edge", ['id' => $edge->id, 'source' => $edge->source, 'target' => $edge->target, 'label' => $edge->label, 'data' => $edge->data]);
+
+        if ($this->wouldCreateCycle($edge->source, $edge->target)) {
+            $this->logger->error("Circular reference detected", ['source' => $edge->source, 'target' => $edge->target]);
+            throw new DatabaseException("Cannot insert edge: would create circular reference", new Exception());
+        }
+
         $sql = "INSERT INTO edges(id, source, target, label, data) VALUES (:id, :source, :target, :label, :data)";
         $data = json_encode($edge->data, JSON_UNESCAPED_UNICODE);
         $params = [':id' => $edge->id, ':source' => $edge->source, ':target' => $edge->target, ':label' => $edge->label, ':data' => $data];
@@ -1762,6 +1781,14 @@ final class Database implements DatabaseInterface
     public function batchInsertEdges(array $edges): bool
     {
         $this->logger->debug("batch inserting edges", ['edges' => $edges]);
+
+        foreach ($edges as $edge) {
+            if ($this->wouldCreateCycle($edge->source, $edge->target)) {
+                $this->logger->error("Circular reference detected in batch", ['source' => $edge->source, 'target' => $edge->target]);
+                throw new DatabaseException("Cannot insert edge: would create circular reference", new Exception());
+            }
+        }
+
         $sql = "INSERT INTO edges(id, source, target, label, data) VALUES (:id, :source, :target, :label, :data)";
         $stmt = $this->pdo->prepare($sql);
         foreach ($edges as $edge) {
@@ -1887,7 +1914,6 @@ final class Database implements DatabaseInterface
                 $row['author'],
                 new DateTimeImmutable($row['created_at']),
                 new DateTimeImmutable($row['updated_at']),
-                $graph,
                 json_decode($row['data'], true)
             );
 
@@ -1895,6 +1921,114 @@ final class Database implements DatabaseInterface
         }
         $this->logger->info("project not found", ['params' => $params]);
         return null;
+    }
+
+    public function getProjectGraph(string $projectId): ?GraphDTO
+    {
+        $this->logger->debug("fetching project graph", ['project_id' => $projectId]);
+        $sql = '
+        WITH RECURSIVE descendants AS (
+            SELECT      p.id     as project_id,
+                        e.id     as edge_id,
+                        e.label  as edge_label,
+                        e.source as edge_source_id,
+                        e.target as edge_target_id,
+                        e.data   as edge_data,
+                        0        as edge_depth
+            FROM        edges e
+            INNER JOIN  nodes_projects np
+            ON          e.source = np.node_id
+            INNER JOIN  projects p
+            ON          np.project_id = p.id
+            WHERE       p.id = :project_id
+            UNION ALL
+            SELECT      d.project_id     as project_id,
+                        e.id             as edge_id,
+                        e.label          as edge_label,
+                        e.source         as edge_source_id,
+                        e.target         as edge_target_id,
+                        e.data           as edge_data,
+                        d.edge_depth + 1 as edge_depth
+            FROM        descendants d
+            INNER JOIN  edges e ON d.edge_target_id = e.source
+        )
+        SELECT DISTINCT d.project_id,
+                        d.edge_id,
+                        d.edge_label,
+                        d.edge_data,
+                        d.edge_source_id,
+                        s.label           as source_label,
+                        s.category        as source_category,
+                        s.type            as source_type,
+                        s.user_created    as source_user_created,
+                        s.data            as source_data,
+                        d.edge_target_id,
+                        t.label           as target_label,
+                        t.category        as target_category,
+                        t.type            as target_type,
+                        t.user_created    as target_user_created,
+                        t.data            as target_data,
+                        min(d.edge_depth) as depth
+        FROM            descendants d
+        INNER JOIN      nodes s
+        ON              d.edge_source_id = s.id
+        INNER JOIN      nodes t
+        ON              d.edge_target_id = t.id
+        GROUP BY        d.project_id,
+                        d.edge_id,
+                        d.edge_label,
+                        d.edge_data,
+                        d.edge_source_id,
+                        s.label,
+                        s.category,
+                        s.type,
+                        s.user_created,
+                        s.data,
+                        d.edge_target_id,
+                        t.label,
+                        t.category,
+                        t.type,
+                        t.user_created,
+                        t.data
+        ORDER BY        depth,
+                        d.project_id;
+        ';
+        $params = [':project_id' => $projectId];
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll();
+        $this->logger->info("project Graph fetched", ['params' => $params, 'rows' => $rows]);
+        $nodes = [];
+        $edges = [];
+        foreach ($rows as $row) {
+            $nodes[] = new NodeDTO(
+                $row['edge_source_id'], 
+                $row['source_label'], 
+                $row['source_category'],
+                $row['source_type'],
+                boolval($row['source_user_created']),
+                json_decode($row['source_data'], true)
+            );
+
+            $nodes[] = new NodeDTO(
+                $row['edge_target_id'], 
+                $row['target_label'], 
+                $row['target_category'],
+                $row['target_type'],
+                boolval($row['target_user_created']),
+                json_decode($row['target_data'], true)
+            );
+
+            $edges[] = new EdgeDTO(
+                $row['edge_id'],
+                $row['edge_source_id'],
+                $row['edge_target_id'],
+                $row['edge_label'],
+                json_decode($row['edge_data'], true)
+            );
+        }
+
+        return new GraphDTO($nodes, $edges);
     }
 
     /**
@@ -1915,7 +2049,6 @@ final class Database implements DatabaseInterface
                 $row['author'],
                 new DateTimeImmutable($row['created_at']),
                 new DateTimeImmutable($row['updated_at']),
-                new GraphDTO([], []),
                 $row['data']
             );
         }
@@ -2048,115 +2181,6 @@ final class Database implements DatabaseInterface
         return true;
     }
 
-    private function getProjectGraph(string $projectId): GraphDTO
-    {
-        $this->logger->debug("fetching project graph", ['project_id' => $projectId]);
-        $sql = '
-        WITH RECURSIVE descendants AS (
-            SELECT      p.id     as project_id,
-                        e.id     as edge_id,
-                        e.label  as edge_label,
-                        e.source as edge_source_id,
-                        e.target as edge_target_id,
-                        e.data   as edge_data,
-                        0        as edge_depth
-            FROM        edges e
-            INNER JOIN  nodes_projects np
-            ON          e.source = np.node_id
-            INNER JOIN  projects p
-            ON          np.project_id = p.id
-            WHERE       p.id = :project_id
-            UNION ALL
-            SELECT      d.project_id     as project_id,
-                        e.id             as edge_id,
-                        e.label          as edge_label,
-                        e.source         as edge_source_id,
-                        e.target         as edge_target_id,
-                        e.data           as edge_data,
-                        d.edge_depth + 1 as edge_depth
-            FROM        descendants d
-            INNER JOIN  edges e ON d.edge_target_id = e.source
-            WHERE       d.edge_depth < 100
-        )
-        SELECT DISTINCT d.project_id,
-                        d.edge_id,
-                        d.edge_label,
-                        d.edge_data,
-                        d.edge_source_id,
-                        s.label           as source_label,
-                        s.category        as source_category,
-                        s.type            as source_type,
-                        s.user_created    as source_user_created,
-                        s.data            as source_data,
-                        d.edge_target_id,
-                        t.label           as target_label,
-                        t.category        as target_category,
-                        t.type            as target_type,
-                        t.user_created    as target_user_created,
-                        t.data            as target_data,
-                        min(d.edge_depth) as depth
-        FROM            descendants d
-        INNER JOIN      nodes s
-        ON              d.edge_source_id = s.id
-        INNER JOIN      nodes t
-        ON              d.edge_target_id = t.id
-        GROUP BY        d.project_id,
-                        d.edge_id,
-                        d.edge_label,
-                        d.edge_data,
-                        d.edge_source_id,
-                        s.label,
-                        s.category,
-                        s.type,
-                        s.user_created,
-                        s.data,
-                        d.edge_target_id,
-                        t.label,
-                        t.category,
-                        t.type,
-                        t.user_created,
-                        t.data
-        ORDER BY        depth,
-                        d.project_id;
-        ';
-        $params = [':project_id' => $projectId];
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($params);
-        $rows = $stmt->fetchAll();
-        $this->logger->info("project Graph fetched", ['params' => $params, 'rows' => $rows]);
-        $nodes = [];
-        $edges = [];
-        foreach ($rows as $row) {
-            $nodes[] = new NodeDTO(
-                $row['edge_source_id'], 
-                $row['source_label'], 
-                $row['source_category'],
-                $row['source_type'],
-                boolval($row['source_user_created']),
-                json_decode($row['source_data'], true)
-            );
-
-            $nodes[] = new NodeDTO(
-                $row['edge_target_id'], 
-                $row['target_label'], 
-                $row['target_category'],
-                $row['target_type'],
-                boolval($row['target_user_created']),
-                json_decode($row['target_data'], true)
-            );
-
-            $edges[] = new EdgeDTO(
-                $row['edge_id'],
-                $row['edge_source_id'],
-                $row['edge_target_id'],
-                $row['edge_label'],
-                json_decode($row['edge_data'], true)
-            );
-        }
-
-        return new GraphDTO($nodes, $edges);
-    }
-
     private function initSchema(): void
     {
         $this->pdo->exec($this->sqlSchema);
@@ -2259,6 +2283,8 @@ interface DatabaseInterface
     public function batchUpdateNodeStatus(array $statuses): bool;
 
     public function getProject(string $id): ?ProjectDTO;
+
+    public function getProjectGraph(string $projectId): ?GraphDTO;
 
     /**
      * @return ProjectDTO[]
@@ -2712,41 +2738,12 @@ final class Service implements ServiceInterface
         $dbProject = $this->database->getProject($id);
 
         if (! is_null($dbProject)) {
-
-            $nodes = [];
-            $edges = [];
-
-            foreach($dbProject->graph->nodes as $n) {
-                $node = new Node(
-                    $n->id,
-                    $n->label,
-                    $n->category,
-                    $n->type,
-                    $n->userCreated,
-                    $n->data
-                );
-                $nodes[] = $node;
-            }
-
-            foreach($dbProject->graph->edges as $e) {
-                $edge = new Edge(
-                    $e->source,
-                    $e->target,
-                    $e->label,
-                    $e->data
-                );
-                $edges[] = $edge;
-            }
-
-            $graph = new Graph($nodes, $edges);
-
             $project = new Project(
                 $dbProject->id,
                 $dbProject->name,
                 $dbProject->author,
                 $dbProject->createdAt,
-                $dbProject->updatedAt,
-                $graph
+                $dbProject->updatedAt
             );
             $this->logger->info("project found", ["project" => $project]);
             return $project;
@@ -2769,8 +2766,7 @@ final class Service implements ServiceInterface
                 $project->name,
                 $project->author,
                 $project->createdAt,
-                $project->updatedAt,
-                null
+                $project->updatedAt
             );
             $projects[] = $project;
         }
@@ -2788,7 +2784,6 @@ final class Service implements ServiceInterface
             $project->getAuthor(),
             $project->getCreatedAt(),
             $project->getUpdatedAt(),
-            null,
             $project->getData()
         );
         return $this->database->insertProject($dto);
@@ -2805,7 +2800,6 @@ final class Service implements ServiceInterface
             $project->getAuthor(),
             new DateTimeImmutable(),
             new DateTimeImmutable(),
-            null,
             $project->getData()
         );
 
@@ -3511,7 +3505,6 @@ final class Controller implements ControllerInterface
             $creator,
             $now,
             $now,
-            null,
             $req->data['data'],
         );
         $this->service->insertProject($project);
@@ -3535,7 +3528,6 @@ final class Controller implements ControllerInterface
             $creator,
             $now,
             $now,
-            null,
             $req->data['data'],
         );
         if($this->service->updateProject($project)) {
@@ -3556,7 +3548,6 @@ final class Controller implements ControllerInterface
             '',
             new DateTimeImmutable(),
             new DateTimeImmutable(),
-            null,
             [],
         );
         if($this->service->deleteProject($project->getId())) {
@@ -3643,6 +3634,7 @@ final class NodeDTO
 }
 #####################################
 
+// Graph DTO for representing nodes and edges in a graph structure.
 final class GraphDTO
 {
     public function __construct(
@@ -3653,6 +3645,8 @@ final class GraphDTO
 }
 #####################################
 
+// Edge DTO join two nodes in a graph structure.
+// It contains identifiers for the source and target nodes, a label for the edge, and optional metadata.
 final class EdgeDTO
 {
     public function __construct(
@@ -3666,14 +3660,17 @@ final class EdgeDTO
 }
 #####################################
 
+// The category of a Node.
+// The category influences the shape and size of the Node when rendered.
+// It is modeled as a DTO because new categories may be added in the future.
 final class CategoryDTO
 {
     public function __construct(
-        public string $id,
-        public string $name,
-        public string $shape,
-        public int    $width,
-        public int    $height
+        public readonly string $id,
+        public readonly string $name,
+        public readonly string $shape,
+        public readonly int    $width,
+        public readonly int    $height
     ) {
     }
 }
@@ -3687,13 +3684,15 @@ final class ProjectDTO
         public readonly string $author,
         public readonly DateTimeImmutable $createdAt,
         public readonly DateTimeImmutable $updatedAt,
-        public readonly ?GraphDTO $graph,
         public readonly array $data,
     ) {
     }
 }
 #####################################
 
+// The type of a Node.
+// The type influences the icon displayed for the Node.
+// It is modeled as a DTO because new types may be added in the future.
 final class TypeDTO
 {
     public function __construct(
@@ -3715,16 +3714,18 @@ final class LogDTO
         public readonly string $userId,
         public readonly string $ipAddress,
         public readonly DateTimeImmutable $timestamp,
-    ) {}
+    ) {
+    }
 }
 #####################################
 
 final class StatusDTO
 {
     public function __construct(
-        public string $node_id,
-        public ?string $status
-    ) {}
+        public readonly string $node_id,
+        public readonly ?string $status
+    ) {
+    }
 }
 #####################################
 
