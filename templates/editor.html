@@ -171,19 +171,19 @@ $basePath = rtrim(dirname($requestUri), "/\\");
                 display: block;
             }
 
-            #modal-new-doc {
+            #modal-new-prj {
                 display: none;
             }
 
-            #modal-new-doc.show {
+            #modal-new-prj.show {
                 display: block;
             }
 
-            #modal-open-doc {
+            #modal-open-prj {
                 display: none;
             }
 
-            #modal-open-doc.show {
+            #modal-open-prj.show {
                 display: block;
             }
         </style>
@@ -206,8 +206,8 @@ $basePath = rtrim(dirname($requestUri), "/\\");
             <div id="user-panel">
                 <p><button id="login-btn" title="Entrar">Entrar</button></p>
                 <p>
-                    <button id="new-doc-btn" title="Novo Documento" style="margin: 0 10px;">Novo</button>
-                    <button id="open-doc-btn" title="Abrir Documento" style="margin: 0 10px;">Abrir</button>
+                    <button id="new-prj-btn" title="Novo Documento" style="margin: 0 10px;">Novo</button>
+                    <button id="open-prj-btn" title="Abrir Documento" style="margin: 0 10px;">Abrir</button>
                 </p>
             </div>
 
@@ -269,24 +269,24 @@ $basePath = rtrim(dirname($requestUri), "/\\");
 
         <div id="modal">
             <div><button id="close-modal-btn">x</button></div>
-            <div id="modal-new-doc">
-                <div id="modal-new-doc-content">
+            <div id="modal-new-prj">
+                <div id="modal-new-prj-content">
                     <h2>Novo Projeto</h2>
-                    <form id="new-doc-form" method="post">
-                        <p><label for="new-doc-form-name">Nome:<br>
-                            <input type="text" id="new-doc-form-name" name="name"></label>
+                    <form id="new-prj-form" method="post">
+                        <p><label for="new-prj-form-name">Nome:<br>
+                            <input type="text" id="new-prj-form-name" name="name"></label>
                         </p>
                         <p><button type="submit">Criar</button></p>
                     </form>
                 </div>
             </div>
 
-            <div id="modal-open-doc">
-                <div id="modal-open-doc-content">
+            <div id="modal-open-prj">
+                <div id="modal-open-prj-content">
                     <h2>Abrir Projeto</h2>
-                    <form id="open-doc-form" method="post">
-                        <p><label for="open-doc-form-id">Projeto 
-                            <select id="open-doc-form-id" name="id">
+                    <form id="open-prj-form" method="post">
+                        <p><label for="open-prj-form-id">Projeto 
+                            <select id="open-prj-form-id" name="id">
                             </select>
                         </label></p>
                         <p><button type="submit">Abrir</button></p>
@@ -311,9 +311,11 @@ $basePath = rtrim(dirname($requestUri), "/\\");
         };
 
         const EVENTS = {
-            INITIAL_LOAD: "INITIAL_LOAD",
-            PROJECTS_LIST_LOADED: "PROJECTS_LIST_LOADED",
-            PROJECT_SELECTED: "PROJECT_SELECTED"
+            INITIAL_LOAD:          "INITIAL_LOAD",
+            PROJECTS_LIST_LOADED:  "PROJECTS_LIST_LOADED",
+            PROJECT_SELECTED:      "PROJECT_SELECTED",
+            MODAL_CLOSE_REQUESTED: "MODAL_CLOSE_REQUESTED",
+            MODAL_CLOSED:          "MODAL_CLOSED"
         };
 
         const COSELAYOUT = {
@@ -518,6 +520,14 @@ $basePath = rtrim(dirname($requestUri), "/\\");
                     ...state,
                     selectedProjectId: payload.selectedProjectId
                 }));
+
+                this.store.register(EVENTS.MODAL_CLOSE_REQUESTED, (state, payload) => ({
+                    ...state
+                }));
+
+                this.store.register(EVENTS.MODAL_CLOSED, (state, payload) => ({
+                    ...state
+                }));
             }
 
             setupSubscription()
@@ -566,15 +576,54 @@ $basePath = rtrim(dirname($requestUri), "/\\");
             }
         }
 
+        class Modal
+        {
+            constructor(store, modals = [])
+            {
+                this.store = store;
+                this.htmlElement = document.getElementById('modal');
+                this.htmlElementCloseModal = document.getElementById('close-modal-btn');
+                this.setupEventListeners();
+                this.setupSubscription();
+
+                for (const modal of modals) {
+                    modal.parentModal = this;
+                }
+            }
+
+            setupEventListeners()
+            {
+                this.htmlElementCloseModal.addEventListener('click', (event) => {
+                    this.store.dispatch(EVENTS.MODAL_CLOSE_REQUESTED, {});
+                });
+            }
+
+            setupSubscription()
+            {
+                this.store.subscribe(EVENTS.MODAL_CLOSE_REQUESTED, async (state) => {
+                    this.hide();
+                });
+            }
+
+            show() {
+                this.htmlElement.classList.add('show');
+            }
+
+            hide() {
+                this.htmlElement.classList.remove('show');
+            }
+        }
+
         class OpenProjectModal
         {
             constructor(store)
             {
                 this.store = store;
-                this.htmlElement = document.getElementById('modal-open-doc');
+                this.htmlElement = document.getElementById('modal-open-prj');
                 this.htmlElementModal = document.getElementById('modal');
-                this.htmlOpenProjectFormElement = document.getElementById('open-doc-form');
-                this.htmlOpenProjectFormIdElement = document.getElementById('open-doc-form-id');
+                this.htmlElementCloseModal = document.getElementById('close-modal-btn');
+                this.htmlOpenProjectFormElement = document.getElementById('open-prj-form');
+                this.htmlOpenProjectFormIdElement = document.getElementById('open-prj-form-id');
                 this.setupEventListeners();
                 this.setupSubscription();
             }
@@ -602,8 +651,7 @@ $basePath = rtrim(dirname($requestUri), "/\\");
             }
 
             loadProjects(projects) {
-                // Logic to load projects into the modal
-                this.htmlOpenProjectFormIdElement.innerHTML = ''; // Clear existing options
+                this.htmlOpenProjectFormIdElement.innerHTML = '';
                 projects.forEach((project) => {
                     this.htmlOpenProjectFormIdElement.appendChild(
                         createOptionElement(project.id, project.name)
@@ -624,6 +672,7 @@ $basePath = rtrim(dirname($requestUri), "/\\");
 
         document.addEventListener("DOMContentLoaded", async function() {
             const store = new Store();
+            const modal = new Modal(store, []);
             const graph = new Graph(store);
         });
     </script>
