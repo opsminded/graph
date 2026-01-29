@@ -89,30 +89,30 @@ final class RequestRouter
         if($req->method == Request::METHOD_GET && $req->path == "/")
         {
             $resp = new OKResponse("welcome to the API", []);
-            $resp->template = 'editor';
+            $resp->template = 'editor.html';
             return $resp;
         }
 
-        if ($req->method == Request::METHOD_GET && $req->path == "/getImage")
-        {
-            $type = $req->getParam('img');
-            $types = HelperImages::getTypes();
-            if (!in_array($type, $types)) {
-                return new NotFoundResponse("image not found", ["requested_type" => $type, "available_types" => $types]);
-            }
+        // if ($req->method == Request::METHOD_GET && $req->path == "/getImage")
+        // {
+        //     $type = $req->getParam('img');
+        //     $types = HelperImages::getTypes();
+        //     if (!in_array($type, $types)) {
+        //         return new NotFoundResponse("image not found", ["requested_type" => $type, "available_types" => $types]);
+        //     }
             
-            $resp = new OKResponse("getImage", []);
-            $resp->contentType = 'Content-Type: image/png';
-            $resp->binaryContent = HelperImages::getImageData($req->getParam('img'));
-            $resp->headers[] = "Content-Length: " . strlen($resp->binaryContent);
+        //     $resp = new OKResponse("getImage", []);
+        //     $resp->contentType = 'Content-Type: image/png';
+        //     $resp->binaryContent = HelperImages::getImageData($req->getParam('img'));
+        //     $resp->headers[] = "Content-Length: " . strlen($resp->binaryContent);
 
-            $resp->headers[] = "Cache-Control: public, max-age=86400";
-            $resp->headers[] = "Expires: " . gmdate("D, d M Y H:i:s", time() + 86400) . " GMT";
-            $resp->headers[] = "ETag: \"" . HelperImages::getImageEtag($req->getParam('img')) . "\"";
+        //     $resp->headers[] = "Cache-Control: public, max-age=86400";
+        //     $resp->headers[] = "Expires: " . gmdate("D, d M Y H:i:s", time() + 86400) . " GMT";
+        //     $resp->headers[] = "ETag: \"" . HelperImages::getImageEtag($req->getParam('img')) . "\"";
 
-            $resp->binaryContent = HelperImages::getImageData($req->getParam('img'));
-            return $resp;
-        }
+        //     $resp->binaryContent = HelperImages::getImageData($req->getParam('img'));
+        //     return $resp;
+        // }
         return null;
     }
 
@@ -138,11 +138,12 @@ final class RequestRouter
 
 final class Renderer
 {
-    private array $templates;
+    private string $templateDir;
     
-    public function __construct(array $templates)
+    public function __construct(string $templateDir)
     {
-        $this->templates = $templates;
+        $templateDir = rtrim($templateDir, '/');
+        $this->templateDir = $templateDir;
     }
 
     public function render(Response $response): void
@@ -172,11 +173,17 @@ final class Renderer
             exit();
         } else {
             header('Content-Type: text/html; charset=utf-8');
-            if (!array_key_exists($response->template, $this->templates)) {
+            $templatePath = $this->templateDir . '/' . $response->template;
+            if (!file_exists($templatePath)) {
+                echo $templatePath;
+                exit();
                 throw new Exception("template not found: " . $response->template);
             }
-            $content = base64_decode($this->templates[$response->template]['data']);
-            eval('?>' . $content);
+
+            ob_start();
+            include $templatePath;
+            $content = ob_get_clean();
+            echo $content;
             exit();
         }
     }
@@ -2398,32 +2405,9 @@ final class ServiceException extends RuntimeException
 
 #####################################
 
-final class HelperImages
-{
-    public static function getTypes(): array
-    {
-        global $DATA_IMAGES;
-        return array_keys($DATA_IMAGES);
-    }
-
-    public static function getImageData(string $image): string
-    {
-        global $DATA_IMAGES;
-        return $DATA_IMAGES[$image]['data'];
-    }
-
-    public static function getImageEtag(string $image): string
-    {
-        global $DATA_IMAGES;
-        return $DATA_IMAGES[$image]['etag'];
-    }
-}
-#####################################
-
 final class HelperCytoscape
 {
     private DatabaseInterface $database;
-    private HelperImages $imagesHelper;
 
     private const KEYNAME_ELEMENTS = "elements";
     private const KEYNAME_STYLES = "style";
@@ -2437,11 +2421,10 @@ final class HelperCytoscape
 
     private array $categories;
 
-    public function __construct(DatabaseInterface $database, HelperImages $imagesHelper, string $imageBaseUrl)
+    public function __construct(DatabaseInterface $database, string $imageBaseUrl)
     {
         $this->database = $database;
         $this->categories = $this->database->getCategories();
-        $this->imagesHelper = $imagesHelper;
         $this->imageBaseUrl = $imageBaseUrl;
     }
 

@@ -5,7 +5,6 @@ declare(strict_types=1);
 final class HelperCytoscape
 {
     private DatabaseInterface $database;
-    private HelperImages $imagesHelper;
 
     private const KEYNAME_ELEMENTS = "elements";
     private const KEYNAME_STYLES = "style";
@@ -19,11 +18,10 @@ final class HelperCytoscape
 
     private array $categories;
 
-    public function __construct(DatabaseInterface $database, HelperImages $imagesHelper, string $imageBaseUrl)
+    public function __construct(DatabaseInterface $database, string $imageBaseUrl)
     {
         $this->database = $database;
         $this->categories = $this->database->getCategories();
-        $this->imagesHelper = $imagesHelper;
         $this->imageBaseUrl = $imageBaseUrl;
     }
 

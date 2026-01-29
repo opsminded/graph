@@ -13,8 +13,6 @@ class TestRequestRouter extends TestAbstractTest
     private ?DatabaseInterface $database;
     private ?ServiceInterface $service;
     private ?ControllerInterface $controller;
-
-    private ?HelperImages $imagesHelper;
     private ?HelperCytoscape $cytoscapeHelper;
 
     private ?RequestRouter $router;
@@ -35,8 +33,7 @@ class TestRequestRouter extends TestAbstractTest
 
         $this->database = new Database($this->pdo, $this->databaseLogger, $SQL_SCHEMA);
 
-        $this->imagesHelper = new HelperImages($DATA_IMAGES);
-        $this->cytoscapeHelper = new HelperCytoscape($this->database, $this->imagesHelper, 'http://localhost/images');
+        $this->cytoscapeHelper = new HelperCytoscape($this->database, 'http://localhost/images');
 
         $this->service = new Service($this->database, $this->serviceLogger);
         $this->controller = new Controller($this->service, $this->cytoscapeHelper, $this->controllerLogger);

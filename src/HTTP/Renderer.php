@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 final class Renderer
 {
-    private array $templates;
+    private string $templateDir;
     
-    public function __construct(array $templates)
+    public function __construct(string $templateDir)
     {
-        $this->templates = $templates;
+        $templateDir = rtrim($templateDir, '/');
+        $this->templateDir = $templateDir;
     }
 
     public function render(Response $response): void
@@ -38,11 +39,17 @@ final class Renderer
             exit();
         } else {
             header('Content-Type: text/html; charset=utf-8');
-            if (!array_key_exists($response->template, $this->templates)) {
+            $templatePath = $this->templateDir . '/' . $response->template;
+            if (!file_exists($templatePath)) {
+                echo $templatePath;
+                exit();
                 throw new Exception("template not found: " . $response->template);
             }
-            $content = base64_decode($this->templates[$response->template]['data']);
-            eval('?>' . $content);
+
+            ob_start();
+            include $templatePath;
+            $content = ob_get_clean();
+            echo $content;
             exit();
         }
     }
