@@ -10,31 +10,23 @@ final class RequestRouter
         ["method" => Request::METHOD_PUT,    "class_method" => "updateUser"],
         ["method" => Request::METHOD_GET,    "class_method" => "getCategories"],
         ["method" => Request::METHOD_GET,    "class_method" => "getTypes"],
-        ["method" => Request::METHOD_GET,    "class_method" => "getCytoscapeGraph"],
+
         ["method" => Request::METHOD_GET,    "class_method" => "getNode"],
         ["method" => Request::METHOD_GET,    "class_method" => "getNodes"],
         ["method" => Request::METHOD_POST,   "class_method" => "insertNode"],
         ["method" => Request::METHOD_PUT,    "class_method" => "updateNode"],
         ["method" => Request::METHOD_DELETE, "class_method" => "deleteNode"],
+
         ["method" => Request::METHOD_GET,    "class_method" => "getEdge"],
         ["method" => Request::METHOD_GET,    "class_method" => "getEdges"],
         ["method" => Request::METHOD_POST,   "class_method" => "insertEdge"],
         ["method" => Request::METHOD_PUT,    "class_method" => "updateEdge"],
         ["method" => Request::METHOD_DELETE, "class_method" => "deleteEdge"],
-        ["method" => Request::METHOD_GET,    "class_method" => "getStatus"],
-        ["method" => Request::METHOD_GET,    "class_method" => "getNodeStatus"],
+
         ["method" => Request::METHOD_PUT,    "class_method" => "updateNodeStatus"],
 
         ["method" => Request::METHOD_GET,    "class_method" => "getProject"],
         ["method" => Request::METHOD_GET,    "class_method" => "getProjects"],
-
-        ["method" => Request::METHOD_GET,    "class_method" => "getSave"],
-        ["method" => Request::METHOD_GET,    "class_method" => "getSaves"],
-        ["method" => Request::METHOD_POST,   "class_method" => "insertSave"],
-        ["method" => Request::METHOD_PUT,    "class_method" => "updateSave"],
-        ["method" => Request::METHOD_DELETE, "class_method" => "deleteSave"],
-
-        ["method" => Request::METHOD_GET,    "class_method" => "getLogs"],
     ];
 
     public Controller $controller;

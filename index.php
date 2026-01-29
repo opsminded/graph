@@ -30,6 +30,10 @@ if(str_contains($_SERVER['REQUEST_URI'], 'images')) {
     return false;
 }
 
+if(str_contains($_SERVER['REQUEST_URI'], 'javascript')) {
+    return false;
+}
+
 $request    = new Request();
 $response   = $router->handle($request);
 $renderer->render($response);
