@@ -6,8 +6,8 @@ class TestGraph extends TestAbstractTest
 {
     public function testGraphConstructor(): void
     {
-        $node1 = new Node('node1', 'Node 01', 'business', 'server', false,  ['key' => 'value1']);
-        $node2 = new Node('node2', 'Node 02', 'application', 'database', false, ['key' => 'value2']);
+        $node1 = new Node('node1', 'Node 01', 'business', 'server', ['key' => 'value1']);
+        $node2 = new Node('node2', 'Node 02', 'application', 'database', ['key' => 'value2']);
         
         $edge1 = new Edge('node1', 'node2', 'lbl node1', ['weight' => '10']);
 

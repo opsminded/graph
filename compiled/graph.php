@@ -27,322 +27,6 @@ class Response implements ResponseInterface
 }
 #####################################
 
-final class HelperImages
-{
-    public static function getTypes(): array
-    {
-        global $DATA_IMAGES;
-        return array_keys($DATA_IMAGES);
-    }
-
-    public static function getImageData(string $image): string
-    {
-        global $DATA_IMAGES;
-        return $DATA_IMAGES[$image]['data'];
-    }
-
-    public static function getImageEtag(string $image): string
-    {
-        global $DATA_IMAGES;
-        return $DATA_IMAGES[$image]['etag'];
-    }
-}
-#####################################
-
-final class HelperCytoscape
-{
-    private DatabaseInterface $database;
-    private HelperImages $imagesHelper;
-
-    private const KEYNAME_ELEMENTS = "elements";
-    private const KEYNAME_STYLES = "style";
-    private const KEYNAME_LAYOUT = "layout";
-    private const KEYNAME_ZOOM = "zoom";
-    private const KEYNAME_PAN = "pan";
-    private const KEYNAME_PANX = "x";
-    private const KEYNAME_PANY = "y";
-
-    private string $imageBaseUrl = "";
-
-    private array $categories;
-
-    public function __construct(DatabaseInterface $database, HelperImages $imagesHelper, string $imageBaseUrl)
-    {
-        $this->database = $database;
-        $this->categories = $this->database->getCategories();
-        $this->imagesHelper = $imagesHelper;
-        $this->imageBaseUrl = $imageBaseUrl;
-    }
-
-    public function toArray(Graph $graph): array
-    {
-        return [
-            self::KEYNAME_ELEMENTS => [
-                Graph::KEYNAME_NODES => $this->getNodes($graph),
-                Graph::KEYNAME_EDGES => $this->getEdges($graph),
-            ],
-
-            self::KEYNAME_STYLES => $this->getStyle(),
-
-            self::KEYNAME_LAYOUT => $this->getLayout(),
-
-            self::KEYNAME_ZOOM => 1,
-
-            self::KEYNAME_PAN => [
-                self::KEYNAME_PANX => 0,
-                self::KEYNAME_PANY => 0,
-            ],
-        ];
-    }
-
-    private function getNodes(Graph $graph): array
-    {
-        $graphArr = $graph->toArray();
-        $nodes = [];
-        foreach ($graphArr[Graph::KEYNAME_NODES] as $index => $node) {
-            $node = $node->toArray();
-            $nodes[] = [
-                "data" => array_merge([
-                    Node::NODE_KEYNAME_ID => $node[Node::NODE_KEYNAME_ID],
-                    Node::NODE_KEYNAME_LABEL => $node[Node::NODE_KEYNAME_LABEL],
-                    Node::NODE_KEYNAME_CATEGORY => $node[Node::NODE_KEYNAME_CATEGORY],
-                    Node::NODE_KEYNAME_TYPE => $node[Node::NODE_KEYNAME_TYPE],
-                ], $node["data"]),
-                "classes" => [
-                    "node-category-".$node[Node::NODE_KEYNAME_CATEGORY],
-                    "node-type-".$node[Node::NODE_KEYNAME_TYPE],
-                    "node-status-unknown",
-                ],
-            ];
-        }
-
-        return $nodes;
-    }
-
-    private function getEdges(Graph $graph): array
-    {
-        $edgesArr = $graph->toArray();
-        $edges = [];
-        foreach ($edgesArr[Graph::KEYNAME_EDGES] as $edge) {
-            $edge = $edge->toArray();
-            $edges[] = [
-                "data" => [
-                    'id'     => $edge['id'],
-                    'source' => $edge['source'],
-                    'target' => $edge['target'],
-                    'label'  => $edge['label'],
-                    'data'   => $edge['data'],
-                ]
-            ];
-        }
-        return $edges;
-    }
-
-    private function getStyle(): array
-    {
-        $baseStyle = [
-            [
-                "selector" => "node",
-                "style" => [
-                    "background-clip" => "none",
-                    "background-height" => "32px",
-                    "background-width" => "32px",
-                    "border-width" => 2,
-                    "color" => "#333",
-                    "font-family" => "Tahoma, Geneva, Verdana, sans-serif",
-                    "font-size" => 16,
-                    "label" => "data(label)",
-                    "text-valign" => "bottom",
-                    "text-halign" => "center",
-                    "text-margin-y" => 8,
-                ],
-            ],
-            [
-                "selector" => "edge",
-                "style" => [
-                    "color" => "#333",
-                    "font-family" => "Tahoma, Geneva, Verdana, sans-serif",
-                    "font-size" => 14,
-                    //"label" => "data(label)",
-                    "line-color" => "#bebebe",
-                    "target-arrow-color" => "#7d7d7d",
-                    "target-arrow-shape" => "triangle",
-                    "target-arrow-fill" => "filled",
-                    "target-arrow-width" => 6,
-                    "target-endpoint" => "outside-to-node-or-label",
-                    "target-distance-from-node" => 5,
-                    "text-valign" => "bottom",
-                    "text-halign" => "center",
-                    "text-margin-y" => 10,
-                    "width" => 3,
-                    'curve-style' => 'bezier',
-
-                    "line-style" => 'dashed',
-                    'line-dash-pattern'  => [6, 3],
-                    'line-dash-offset' => 0,
-                    'transition-property' => 'line-dash-offset',
-                    'transition-duration' => '1000ms',
-                    'transition-timing-function' => 'linear'
-                ],
-            ],
-            [
-                "selector" => "edge:selected",
-                "style" => [
-                    "line-color" => "#00ff00",
-                    "width" => 5,
-                ],
-            ]
-        ];
-
-        $nodeStyles = $this->getNodeStyles();
-
-        return array_merge($baseStyle, $nodeStyles);
-    }
-
-    private function getNodeStyles(): array
-    {
-        $style = [];
-
-        $style[] = [
-            "selector" => "node.node-status-unknown",
-            "style" => [
-                "border-color" => "#939393",
-                "background-color" => "#cbcbcb",
-                "color" => "#000000",
-            ],
-        ];
-        
-        $style[] = [
-            "selector" => "node.node-status-healthy",
-            "style" => [
-                "border-color" => "#4CAF50",
-                "background-color" => "#d0edd1",
-                "color" => "#000000",
-            ],
-        ];
-
-        $style[] = [
-            "selector" => "node.node-status-unhealthy",
-            "style" => [
-                "border-color" => "#ff8178",
-                "background-color" => "#ffe2e2",
-                "color" => "#000000",
-            ],
-        ];
-        
-        $style[] = [
-            "selector" => "node.node-status-maintenance",
-            "style" => [
-                "border-color" => "#43aeff",
-                "background-color" => "#cde9ff",
-                "color" => "#000000",
-            ],
-        ];
-
-        $style[] = [
-            "selector" => "node.node-status-impacted",
-            "style" => [
-                "border-color" => "#ae6ec0",
-                "background-color" => "#ece5ee",
-                "color" => "#000000",
-            ],
-        ];
-
-        $types = $this->imagesHelper->getTypes();
-        foreach($types as $type) {
-            $style[] = [
-                "selector" => "node.node-type-{$type}",
-                "style" => [
-                    "background-image" => "{$this->imageBaseUrl}?img={$type}",
-                ],
-            ];
-        }
-        
-        foreach($this->categories as $category) {
-            $style[] = [
-                "selector" => "node.node-category-" . $category->id,
-                "style" => [
-                    "shape" => $category->shape,
-                    "width" => $category->width,
-                    "height" => $category->height,
-                ],
-            ];
-        }
-
-        $style[] = [
-            "selector" => "node:active",
-            "style" => [
-                "border-width" => 4,
-                "border-color" => "#ffec7f",
-
-                "overlay-color" => "#FFF",
-                "overlay-opacity" => 0,
-
-                "outline-width"   => "5",
-                "outline-style"   => "solid",
-                "outline-color"   => "rgb(255, 255, 229)",
-                "outline-opacity" => "1",
-                "outline-offset"  => "5",
-            ],
-        ];
-        
-        $style[] = [
-            "selector" => "node:selected",
-            "style" => [
-                "border-width" => 4,
-                "border-color" => "#ffe658",
-            ],
-        ];
-
-        return $style;
-    }
-
-    private function getLayout(): array
-    {
-        return [
-            "name"              => "breadthfirst",
-            "fit"               => true,
-            "directed"          => true,
-            "direction"         => "downward",
-            "padding"           => 100,
-            "avoidOverlap"      => true,
-            "animate"           => false,
-            //"animationDuration" => 500,
-        ];
-    }
-}
-#####################################
-
-final class HelperContext
-{
-    private static string $user;
-    private static string $group;
-    private static string $client_ip;
-
-    public static function update(string $user, string $group, string $client_ip)
-    {
-        self::$user = $user;
-        self::$group = $group;
-        self::$client_ip = $client_ip;
-    }
-
-    public static function getUser(): string
-    {
-        return self::$user;
-    }
-
-    public static function getGroup(): string
-    {
-        return self::$group;
-    }
-
-    public static function getClientIP(): string
-    {
-        return self::$client_ip;
-    }
-}
-#####################################
-
 final class RequestRouter
 {
     private $routes = [
@@ -760,25 +444,22 @@ final class User
 
 final class Node
 {
-    public const ID_VALIDATION_REGEX = "/^[a-zA-Z0-9\-_]+$/";
-    public const LABEL_MAX_LENGTH    = 120;
-    
     private string $id;
     private string $label;
     private string $categoryID;
     private string $typeID;
-    private bool $userCreated;
-
     private array $data = [];
 
-    public function __construct(string $id, string $label, string $categoryID, string $typeID, bool $userCreated, array $data)
+    public const ID_VALIDATION_REGEX = "/^[a-zA-Z0-9\-_]+$/";
+    public const LABEL_MAX_LENGTH    = 120;
+
+    public function __construct(string $id, string $label, string $categoryID, string $typeID, array $data)
     {
         $this->validate($id, $label);
         $this->id         = $id;
         $this->label      = $label;
         $this->categoryID = $categoryID;
         $this->typeID     = $typeID;
-        $this->userCreated = $userCreated;
         $this->data       = $data;
     }
 
@@ -800,11 +481,6 @@ final class Node
     public function getType(): string
     {
         return $this->typeID;
-    }
-
-    public function getUserCreated(): bool
-    {
-        return $this->userCreated;
     }
 
     public function getData(): array
@@ -830,7 +506,6 @@ final class Node
             'label'    => $this->label,
             'category' => $this->categoryID,
             'type'     => $this->typeID,
-            'user_created' => $this->userCreated,
             'data'     => $this->data
         ];
     }
@@ -1358,10 +1033,9 @@ final class Database implements DatabaseInterface
         $stmt->execute($params);
         $row = $stmt->fetch();
         if ($row) {
-            $row['user_created'] = (bool)$row['user_created'];
             $row['data'] = json_decode($row['data'], true);
             $this->logger->info("node fetched", ['params' => $params, 'row' => $row]);
-            return new NodeDTO($row['id'], $row['label'], $row['category'], $row['type'], $row['user_created'], $row['data']);
+            return new NodeDTO($row['id'], $row['label'], $row['category'], $row['type'], $row['data']);
         }
         $this->logger->info("node not found", ['params' => $params]);
         return null;
@@ -1377,19 +1051,18 @@ final class Database implements DatabaseInterface
         $stmt = $this->pdo->query($sql);
         $rows = $stmt->fetchAll();
         foreach ($rows as &$row) {
-            $row['user_created'] = (bool)$row['user_created'];
             $row['data'] = json_decode($row['data'], true);
         }
         $this->logger->info("nodes fetched", ['rows' => $rows]);
-        return array_map(fn($row) => new NodeDTO($row['id'], $row['label'], $row['category'], $row['type'], $row['user_created'], $row['data']), $rows);
+        return array_map(fn($row) => new NodeDTO($row['id'], $row['label'], $row['category'], $row['type'], $row['data']), $rows);
     }
 
     public function insertNode(NodeDTO $node): bool
     {
-        $this->logger->debug("inserting new node", ['id' => $node->id, 'label' => $node->label, 'category' => $node->category, 'type' => $node->type, 'userCreated' => $node->userCreated, 'data' => $node->data]);
-        $sql = "INSERT INTO nodes (id, label, category, type, user_created, data) VALUES (:id, :label, :category, :type, :user_created, :data)";
+        $this->logger->debug("inserting new node", ['id' => $node->id, 'label' => $node->label, 'category' => $node->category, 'type' => $node->type, 'data' => $node->data]);
+        $sql = "INSERT INTO nodes (id, label, category, type, data) VALUES (:id, :label, :category, :type, :data)";
         $data = json_encode($node->data, JSON_UNESCAPED_UNICODE);
-        $params = [':id' => $node->id, ':label' => $node->label, ':category' => $node->category, ':type' => $node->type, ':user_created' => $node->userCreated, ':data' => $data];
+        $params = [':id' => $node->id, ':label' => $node->label, ':category' => $node->category, ':type' => $node->type, ':data' => $data];
         $stmt = $this->pdo->prepare($sql);
         try {
             $stmt->execute($params);
@@ -1411,7 +1084,7 @@ final class Database implements DatabaseInterface
     public function batchInsertNodes(array $nodes): bool
     {
         $this->logger->debug("batch inserting nodes", ['nodes' => $nodes]);
-        $sql = "INSERT INTO nodes (id, label, category, type, user_created, data) VALUES (:id, :label, :category, :type, :user_created, :data)";
+        $sql = "INSERT INTO nodes (id, label, category, type, data) VALUES (:id, :label, :category, :type, :data)";
         $stmt = $this->pdo->prepare($sql);
         foreach ($nodes as $node) {
             $data = json_encode($node->data ?? [], JSON_UNESCAPED_UNICODE);
@@ -1420,7 +1093,6 @@ final class Database implements DatabaseInterface
                 ':label' => $node->label,
                 ':category' => $node->category,
                 ':type' => $node->type,
-                ':user_created' => $node->userCreated ?? false,
                 ':data' => $data
             ];
             try {
@@ -1744,13 +1416,11 @@ final class Database implements DatabaseInterface
                         s.label           as source_label,
                         s.category        as source_category,
                         s.type            as source_type,
-                        s.user_created    as source_user_created,
                         s.data            as source_data,
                         d.edge_target_id,
                         t.label           as target_label,
                         t.category        as target_category,
                         t.type            as target_type,
-                        t.user_created    as target_user_created,
                         t.data            as target_data,
                         min(d.edge_depth) as depth
         FROM            descendants d
@@ -1766,13 +1436,11 @@ final class Database implements DatabaseInterface
                         s.label,
                         s.category,
                         s.type,
-                        s.user_created,
                         s.data,
                         d.edge_target_id,
                         t.label,
                         t.category,
                         t.type,
-                        t.user_created,
                         t.data
         ORDER BY        depth,
                         d.project_id;
@@ -1790,7 +1458,6 @@ final class Database implements DatabaseInterface
                 $row['source_label'], 
                 $row['source_category'],
                 $row['source_type'],
-                boolval($row['source_user_created']),
                 json_decode($row['source_data'], true)
             );
 
@@ -1799,7 +1466,6 @@ final class Database implements DatabaseInterface
                 $row['target_label'], 
                 $row['target_category'],
                 $row['target_type'],
-                boolval($row['target_user_created']),
                 json_decode($row['target_data'], true)
             );
 
@@ -2098,6 +1764,7 @@ interface LoggerInterface
 }
 #####################################
 
+// Config class for application settings
 final class Config
 {
     public static $env = 'production';
@@ -2109,9 +1776,15 @@ final class Logger implements LoggerInterface
 {
     private int $level = 3;
 
-    public const LOGGER_LEVEL_INFO = "INFO";
-    public const LOGGER_LEVEL_DEBUG = "DEBUG";
-    public const LOGGER_LEVEL_ERROR = "ERROR";
+    public const LOGGER_LEVEL_DEBUG = 1;
+    public const LOGGER_LEVEL_INFO  = 2;
+    public const LOGGER_LEVEL_ERROR = 3;
+
+    private static array $levelNames = [
+        self::LOGGER_LEVEL_DEBUG => 'DEBUG',
+        self::LOGGER_LEVEL_INFO  => 'INFO',
+        self::LOGGER_LEVEL_ERROR => 'ERROR',
+    ];
 
     public function __construct(int $level = 3)
     {
@@ -2134,20 +1807,18 @@ final class Logger implements LoggerInterface
         $this->log(self::LOGGER_LEVEL_ERROR, $message, $data);
     }
 
-    private function log(string $type, $message, $data = [])
+    private function log(int $type, $message, $data = [])
     {
-        if ($this->level == 3 && $type != self::LOGGER_LEVEL_ERROR) {
+        if ($type < $this->level) {
             return;
         }
 
-        if ($this->level == 2 && $type != self::LOGGER_LEVEL_INFO && $type != self::LOGGER_LEVEL_ERROR) {
-            return;
-        }
+        $level = self::$levelNames[$type] ?? 'UNKNOWN';
 
         $trace = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 3);
         $method = "{$trace[2]['class']}::{$trace[2]['function']}";
         $data = json_encode($data);
-        $message = "[{$type}] {$method}: $message ($data)\n";
+        $message = "[{$level}] {$method}: $message ($data)\n";
         error_log($message);
     }
 }
@@ -2313,7 +1984,6 @@ final class Service implements ServiceInterface
                 $node->label,
                 $node->category,
                 $node->type,
-                $node->userCreated,
                 $node->data
             );
         }
@@ -2332,7 +2002,6 @@ final class Service implements ServiceInterface
                 $node->label,
                 $node->category,
                 $node->type,
-                $node->userCreated,
                 $node->data
             );
             $nodes[] = $new;
@@ -2347,7 +2016,7 @@ final class Service implements ServiceInterface
         $this->logger->debug("permission allowed", $node->toArray());
         $this->insertLog("node", $node->getId(), "insert", null, $node->toArray());
 
-        $dto = new NodeDTO($node->getId(), $node->getLabel(), $node->getCategory(), $node->getType(), $node->getUserCreated(), $node->getData());
+        $dto = new NodeDTO($node->getId(), $node->getLabel(), $node->getCategory(), $node->getType(), $node->getData());
 
         if ($this->database->insertNode($dto)) {
             $this->logger->info("node inserted", $node->toArray());
@@ -2367,7 +2036,7 @@ final class Service implements ServiceInterface
         }
         $old = $this->getNode($node->getId());
         $this->insertLog("node", $node->getId(), "update", $old->toArray(), $node->toArray());
-        $dto = new NodeDTO($node->getId(), $node->getLabel(), $node->getCategory(), $node->getType(), $node->getUserCreated(), $node->getData());
+        $dto = new NodeDTO($node->getId(), $node->getLabel(), $node->getCategory(), $node->getType(), $node->getData());
         if ($this->database->updateNode($dto)) {
             $this->logger->info("node updated", $node->toArray());
             return true;
@@ -2730,6 +2399,322 @@ final class ServiceException extends RuntimeException
 
 #####################################
 
+final class HelperImages
+{
+    public static function getTypes(): array
+    {
+        global $DATA_IMAGES;
+        return array_keys($DATA_IMAGES);
+    }
+
+    public static function getImageData(string $image): string
+    {
+        global $DATA_IMAGES;
+        return $DATA_IMAGES[$image]['data'];
+    }
+
+    public static function getImageEtag(string $image): string
+    {
+        global $DATA_IMAGES;
+        return $DATA_IMAGES[$image]['etag'];
+    }
+}
+#####################################
+
+final class HelperCytoscape
+{
+    private DatabaseInterface $database;
+    private HelperImages $imagesHelper;
+
+    private const KEYNAME_ELEMENTS = "elements";
+    private const KEYNAME_STYLES = "style";
+    private const KEYNAME_LAYOUT = "layout";
+    private const KEYNAME_ZOOM = "zoom";
+    private const KEYNAME_PAN = "pan";
+    private const KEYNAME_PANX = "x";
+    private const KEYNAME_PANY = "y";
+
+    private string $imageBaseUrl = "";
+
+    private array $categories;
+
+    public function __construct(DatabaseInterface $database, HelperImages $imagesHelper, string $imageBaseUrl)
+    {
+        $this->database = $database;
+        $this->categories = $this->database->getCategories();
+        $this->imagesHelper = $imagesHelper;
+        $this->imageBaseUrl = $imageBaseUrl;
+    }
+
+    public function toArray(Graph $graph): array
+    {
+        return [
+            self::KEYNAME_ELEMENTS => [
+                'nodes' => $this->getNodes($graph),
+                'edges' => $this->getEdges($graph),
+            ],
+
+            self::KEYNAME_STYLES => $this->getStyle(),
+
+            self::KEYNAME_LAYOUT => $this->getLayout(),
+
+            self::KEYNAME_ZOOM => 1,
+
+            self::KEYNAME_PAN => [
+                self::KEYNAME_PANX => 0,
+                self::KEYNAME_PANY => 0,
+            ],
+        ];
+    }
+
+    private function getNodes(Graph $graph): array
+    {
+        $graphArr = $graph->toArray();
+        $nodes = [];
+        foreach ($graphArr['nodes'] as $index => $node) {
+            $node = $node->toArray();
+            $nodes[] = [
+                "data" => array_merge([
+                    'id' => $node['id'],
+                    'label' => $node['label'],
+                    'category' => $node['category'],
+                    'type' => $node['type'],
+                ], $node["data"]),
+                "classes" => [
+                    "node-category-".$node['category'],
+                    "node-type-".$node['type'],
+                    "node-status-unknown",
+                ],
+            ];
+        }
+
+        return $nodes;
+    }
+
+    private function getEdges(Graph $graph): array
+    {
+        $edgesArr = $graph->toArray();
+        $edges = [];
+        foreach ($edgesArr['edges'] as $edge) {
+            $edge = $edge->toArray();
+            $edges[] = [
+                "data" => [
+                    'id'     => $edge['id'],
+                    'source' => $edge['source'],
+                    'target' => $edge['target'],
+                    'label'  => $edge['label'],
+                    'data'   => $edge['data'],
+                ]
+            ];
+        }
+        return $edges;
+    }
+
+    private function getStyle(): array
+    {
+        $baseStyle = [
+            [
+                "selector" => "node",
+                "style" => [
+                    "background-clip" => "none",
+                    "background-height" => "32px",
+                    "background-width" => "32px",
+                    "border-width" => 2,
+                    "color" => "#333",
+                    "font-family" => "Tahoma, Geneva, Verdana, sans-serif",
+                    "font-size" => 16,
+                    "label" => "data(label)",
+                    "text-valign" => "bottom",
+                    "text-halign" => "center",
+                    "text-margin-y" => 8,
+                ],
+            ],
+            [
+                "selector" => "edge",
+                "style" => [
+                    "color" => "#333",
+                    "font-family" => "Tahoma, Geneva, Verdana, sans-serif",
+                    "font-size" => 14,
+                    //"label" => "data(label)",
+                    "line-color" => "#bebebe",
+                    "target-arrow-color" => "#7d7d7d",
+                    "target-arrow-shape" => "triangle",
+                    "target-arrow-fill" => "filled",
+                    "target-arrow-width" => 6,
+                    "target-endpoint" => "outside-to-node-or-label",
+                    "target-distance-from-node" => 5,
+                    "text-valign" => "bottom",
+                    "text-halign" => "center",
+                    "text-margin-y" => 10,
+                    "width" => 3,
+                    'curve-style' => 'bezier',
+
+                    "line-style" => 'dashed',
+                    'line-dash-pattern'  => [6, 3],
+                    'line-dash-offset' => 0,
+                    'transition-property' => 'line-dash-offset',
+                    'transition-duration' => '1000ms',
+                    'transition-timing-function' => 'linear'
+                ],
+            ],
+            [
+                "selector" => "edge:selected",
+                "style" => [
+                    "line-color" => "#00ff00",
+                    "width" => 5,
+                ],
+            ]
+        ];
+
+        $nodeStyles = $this->getNodeStyles();
+
+        return array_merge($baseStyle, $nodeStyles);
+    }
+
+    private function getNodeStyles(): array
+    {
+        $style = [];
+
+        $style[] = [
+            "selector" => "node.node-status-unknown",
+            "style" => [
+                "border-color" => "#939393",
+                "background-color" => "#cbcbcb",
+                "color" => "#000000",
+            ],
+        ];
+        
+        $style[] = [
+            "selector" => "node.node-status-healthy",
+            "style" => [
+                "border-color" => "#4CAF50",
+                "background-color" => "#d0edd1",
+                "color" => "#000000",
+            ],
+        ];
+
+        $style[] = [
+            "selector" => "node.node-status-unhealthy",
+            "style" => [
+                "border-color" => "#ff8178",
+                "background-color" => "#ffe2e2",
+                "color" => "#000000",
+            ],
+        ];
+        
+        $style[] = [
+            "selector" => "node.node-status-maintenance",
+            "style" => [
+                "border-color" => "#43aeff",
+                "background-color" => "#cde9ff",
+                "color" => "#000000",
+            ],
+        ];
+
+        $style[] = [
+            "selector" => "node.node-status-impacted",
+            "style" => [
+                "border-color" => "#ae6ec0",
+                "background-color" => "#ece5ee",
+                "color" => "#000000",
+            ],
+        ];
+
+        $types = $this->imagesHelper->getTypes();
+        foreach($types as $type) {
+            $style[] = [
+                "selector" => "node.node-type-{$type}",
+                "style" => [
+                    "background-image" => "{$this->imageBaseUrl}?img={$type}",
+                ],
+            ];
+        }
+        
+        foreach($this->categories as $category) {
+            $style[] = [
+                "selector" => "node.node-category-" . $category->id,
+                "style" => [
+                    "shape" => $category->shape,
+                    "width" => $category->width,
+                    "height" => $category->height,
+                ],
+            ];
+        }
+
+        $style[] = [
+            "selector" => "node:active",
+            "style" => [
+                "border-width" => 4,
+                "border-color" => "#ffec7f",
+
+                "overlay-color" => "#FFF",
+                "overlay-opacity" => 0,
+
+                "outline-width"   => "5",
+                "outline-style"   => "solid",
+                "outline-color"   => "rgb(255, 255, 229)",
+                "outline-opacity" => "1",
+                "outline-offset"  => "5",
+            ],
+        ];
+        
+        $style[] = [
+            "selector" => "node:selected",
+            "style" => [
+                "border-width" => 4,
+                "border-color" => "#ffe658",
+            ],
+        ];
+
+        return $style;
+    }
+
+    private function getLayout(): array
+    {
+        return [
+            "name"              => "breadthfirst",
+            "fit"               => true,
+            "directed"          => true,
+            "direction"         => "downward",
+            "padding"           => 100,
+            "avoidOverlap"      => true,
+            "animate"           => false,
+            //"animationDuration" => 500,
+        ];
+    }
+}
+#####################################
+
+final class HelperContext
+{
+    private static string $user;
+    private static string $group;
+    private static string $client_ip;
+
+    public static function update(string $user, string $group, string $client_ip)
+    {
+        self::$user = $user;
+        self::$group = $group;
+        self::$client_ip = $client_ip;
+    }
+
+    public static function getUser(): string
+    {
+        return self::$user;
+    }
+
+    public static function getGroup(): string
+    {
+        return self::$group;
+    }
+
+    public static function getClientIP(): string
+    {
+        return self::$client_ip;
+    }
+}
+#####################################
+
 interface ResponseInterface
 {
     public const KEYNAME_CODE    = "code";
@@ -3069,7 +3054,6 @@ final class Controller implements ControllerInterface
             $req->data['label'], 
             $req->data['category'], 
             $req->data['type'], 
-            $req->data['user_created'],
             $req->data['data']
         );
         $this->service->insertNode($node);
@@ -3088,7 +3072,6 @@ final class Controller implements ControllerInterface
             $req->data['label'],
             $req->data['category'],
             $req->data['type'],
-            false,
             $req->data['data']
         );
         $this->service->updateNode($node);
@@ -3391,7 +3374,6 @@ final class NodeDTO
         public readonly string $label,
         public readonly string $category,
         public readonly string $type,
-        public readonly bool $userCreated,
         public readonly array $data
     ) {
     }

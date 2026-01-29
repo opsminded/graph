@@ -132,7 +132,6 @@ final class Controller implements ControllerInterface
             $req->data['label'], 
             $req->data['category'], 
             $req->data['type'], 
-            $req->data['user_created'],
             $req->data['data']
         );
         $this->service->insertNode($node);
@@ -151,7 +150,6 @@ final class Controller implements ControllerInterface
             $req->data['label'],
             $req->data['category'],
             $req->data['type'],
-            false,
             $req->data['data']
         );
         $this->service->updateNode($node);

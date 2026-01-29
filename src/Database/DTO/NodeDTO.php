@@ -9,7 +9,6 @@ final class NodeDTO
         public readonly string $label,
         public readonly string $category,
         public readonly string $type,
-        public readonly bool $userCreated,
         public readonly array $data
     ) {
     }

@@ -31,8 +31,8 @@ final class HelperCytoscape
     {
         return [
             self::KEYNAME_ELEMENTS => [
-                Graph::KEYNAME_NODES => $this->getNodes($graph),
-                Graph::KEYNAME_EDGES => $this->getEdges($graph),
+                'nodes' => $this->getNodes($graph),
+                'edges' => $this->getEdges($graph),
             ],
 
             self::KEYNAME_STYLES => $this->getStyle(),
@@ -52,18 +52,18 @@ final class HelperCytoscape
     {
         $graphArr = $graph->toArray();
         $nodes = [];
-        foreach ($graphArr[Graph::KEYNAME_NODES] as $index => $node) {
+        foreach ($graphArr['nodes'] as $index => $node) {
             $node = $node->toArray();
             $nodes[] = [
                 "data" => array_merge([
-                    Node::NODE_KEYNAME_ID => $node[Node::NODE_KEYNAME_ID],
-                    Node::NODE_KEYNAME_LABEL => $node[Node::NODE_KEYNAME_LABEL],
-                    Node::NODE_KEYNAME_CATEGORY => $node[Node::NODE_KEYNAME_CATEGORY],
-                    Node::NODE_KEYNAME_TYPE => $node[Node::NODE_KEYNAME_TYPE],
+                    'id' => $node['id'],
+                    'label' => $node['label'],
+                    'category' => $node['category'],
+                    'type' => $node['type'],
                 ], $node["data"]),
                 "classes" => [
-                    "node-category-".$node[Node::NODE_KEYNAME_CATEGORY],
-                    "node-type-".$node[Node::NODE_KEYNAME_TYPE],
+                    "node-category-".$node['category'],
+                    "node-type-".$node['type'],
                     "node-status-unknown",
                 ],
             ];
@@ -76,7 +76,7 @@ final class HelperCytoscape
     {
         $edgesArr = $graph->toArray();
         $edges = [];
-        foreach ($edgesArr[Graph::KEYNAME_EDGES] as $edge) {
+        foreach ($edgesArr['edges'] as $edge) {
             $edge = $edge->toArray();
             $edges[] = [
                 "data" => [

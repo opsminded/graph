@@ -4,25 +4,22 @@ declare(strict_types=1);
 
 final class Node
 {
-    public const ID_VALIDATION_REGEX = "/^[a-zA-Z0-9\-_]+$/";
-    public const LABEL_MAX_LENGTH    = 120;
-    
     private string $id;
     private string $label;
     private string $categoryID;
     private string $typeID;
-    private bool $userCreated;
-
     private array $data = [];
 
-    public function __construct(string $id, string $label, string $categoryID, string $typeID, bool $userCreated, array $data)
+    public const ID_VALIDATION_REGEX = "/^[a-zA-Z0-9\-_]+$/";
+    public const LABEL_MAX_LENGTH    = 120;
+
+    public function __construct(string $id, string $label, string $categoryID, string $typeID, array $data)
     {
         $this->validate($id, $label);
         $this->id         = $id;
         $this->label      = $label;
         $this->categoryID = $categoryID;
         $this->typeID     = $typeID;
-        $this->userCreated = $userCreated;
         $this->data       = $data;
     }
 
@@ -44,11 +41,6 @@ final class Node
     public function getType(): string
     {
         return $this->typeID;
-    }
-
-    public function getUserCreated(): bool
-    {
-        return $this->userCreated;
     }
 
     public function getData(): array
@@ -74,7 +66,6 @@ final class Node
             'label'    => $this->label,
             'category' => $this->categoryID,
             'type'     => $this->typeID,
-            'user_created' => $this->userCreated,
             'data'     => $this->data
         ];
     }

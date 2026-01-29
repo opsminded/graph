@@ -6,9 +6,15 @@ final class Logger implements LoggerInterface
 {
     private int $level = 3;
 
-    public const LOGGER_LEVEL_INFO = "INFO";
-    public const LOGGER_LEVEL_DEBUG = "DEBUG";
-    public const LOGGER_LEVEL_ERROR = "ERROR";
+    public const LOGGER_LEVEL_DEBUG = 1;
+    public const LOGGER_LEVEL_INFO  = 2;
+    public const LOGGER_LEVEL_ERROR = 3;
+
+    private static array $levelNames = [
+        self::LOGGER_LEVEL_DEBUG => 'DEBUG',
+        self::LOGGER_LEVEL_INFO  => 'INFO',
+        self::LOGGER_LEVEL_ERROR => 'ERROR',
+    ];
 
     public function __construct(int $level = 3)
     {
@@ -31,20 +37,18 @@ final class Logger implements LoggerInterface
         $this->log(self::LOGGER_LEVEL_ERROR, $message, $data);
     }
 
-    private function log(string $type, $message, $data = [])
+    private function log(int $type, $message, $data = [])
     {
-        if ($this->level == 3 && $type != self::LOGGER_LEVEL_ERROR) {
+        if ($type < $this->level) {
             return;
         }
 
-        if ($this->level == 2 && $type != self::LOGGER_LEVEL_INFO && $type != self::LOGGER_LEVEL_ERROR) {
-            return;
-        }
+        $level = self::$levelNames[$type] ?? 'UNKNOWN';
 
         $trace = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 3);
         $method = "{$trace[2]['class']}::{$trace[2]['function']}";
         $data = json_encode($data);
-        $message = "[{$type}] {$method}: $message ($data)\n";
+        $message = "[{$level}] {$method}: $message ($data)\n";
         error_log($message);
     }
 }

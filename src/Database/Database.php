@@ -285,10 +285,9 @@ final class Database implements DatabaseInterface
         $stmt->execute($params);
         $row = $stmt->fetch();
         if ($row) {
-            $row['user_created'] = (bool)$row['user_created'];
             $row['data'] = json_decode($row['data'], true);
             $this->logger->info("node fetched", ['params' => $params, 'row' => $row]);
-            return new NodeDTO($row['id'], $row['label'], $row['category'], $row['type'], $row['user_created'], $row['data']);
+            return new NodeDTO($row['id'], $row['label'], $row['category'], $row['type'], $row['data']);
         }
         $this->logger->info("node not found", ['params' => $params]);
         return null;
@@ -304,19 +303,18 @@ final class Database implements DatabaseInterface
         $stmt = $this->pdo->query($sql);
         $rows = $stmt->fetchAll();
         foreach ($rows as &$row) {
-            $row['user_created'] = (bool)$row['user_created'];
             $row['data'] = json_decode($row['data'], true);
         }
         $this->logger->info("nodes fetched", ['rows' => $rows]);
-        return array_map(fn($row) => new NodeDTO($row['id'], $row['label'], $row['category'], $row['type'], $row['user_created'], $row['data']), $rows);
+        return array_map(fn($row) => new NodeDTO($row['id'], $row['label'], $row['category'], $row['type'], $row['data']), $rows);
     }
 
     public function insertNode(NodeDTO $node): bool
     {
-        $this->logger->debug("inserting new node", ['id' => $node->id, 'label' => $node->label, 'category' => $node->category, 'type' => $node->type, 'userCreated' => $node->userCreated, 'data' => $node->data]);
-        $sql = "INSERT INTO nodes (id, label, category, type, user_created, data) VALUES (:id, :label, :category, :type, :user_created, :data)";
+        $this->logger->debug("inserting new node", ['id' => $node->id, 'label' => $node->label, 'category' => $node->category, 'type' => $node->type, 'data' => $node->data]);
+        $sql = "INSERT INTO nodes (id, label, category, type, data) VALUES (:id, :label, :category, :type, :data)";
         $data = json_encode($node->data, JSON_UNESCAPED_UNICODE);
-        $params = [':id' => $node->id, ':label' => $node->label, ':category' => $node->category, ':type' => $node->type, ':user_created' => $node->userCreated, ':data' => $data];
+        $params = [':id' => $node->id, ':label' => $node->label, ':category' => $node->category, ':type' => $node->type, ':data' => $data];
         $stmt = $this->pdo->prepare($sql);
         try {
             $stmt->execute($params);
@@ -338,7 +336,7 @@ final class Database implements DatabaseInterface
     public function batchInsertNodes(array $nodes): bool
     {
         $this->logger->debug("batch inserting nodes", ['nodes' => $nodes]);
-        $sql = "INSERT INTO nodes (id, label, category, type, user_created, data) VALUES (:id, :label, :category, :type, :user_created, :data)";
+        $sql = "INSERT INTO nodes (id, label, category, type, data) VALUES (:id, :label, :category, :type, :data)";
         $stmt = $this->pdo->prepare($sql);
         foreach ($nodes as $node) {
             $data = json_encode($node->data ?? [], JSON_UNESCAPED_UNICODE);
@@ -347,7 +345,6 @@ final class Database implements DatabaseInterface
                 ':label' => $node->label,
                 ':category' => $node->category,
                 ':type' => $node->type,
-                ':user_created' => $node->userCreated ?? false,
                 ':data' => $data
             ];
             try {
@@ -671,13 +668,11 @@ final class Database implements DatabaseInterface
                         s.label           as source_label,
                         s.category        as source_category,
                         s.type            as source_type,
-                        s.user_created    as source_user_created,
                         s.data            as source_data,
                         d.edge_target_id,
                         t.label           as target_label,
                         t.category        as target_category,
                         t.type            as target_type,
-                        t.user_created    as target_user_created,
                         t.data            as target_data,
                         min(d.edge_depth) as depth
         FROM            descendants d
@@ -693,13 +688,11 @@ final class Database implements DatabaseInterface
                         s.label,
                         s.category,
                         s.type,
-                        s.user_created,
                         s.data,
                         d.edge_target_id,
                         t.label,
                         t.category,
                         t.type,
-                        t.user_created,
                         t.data
         ORDER BY        depth,
                         d.project_id;
@@ -717,7 +710,6 @@ final class Database implements DatabaseInterface
                 $row['source_label'], 
                 $row['source_category'],
                 $row['source_type'],
-                boolval($row['source_user_created']),
                 json_decode($row['source_data'], true)
             );
 
@@ -726,7 +718,6 @@ final class Database implements DatabaseInterface
                 $row['target_label'], 
                 $row['target_category'],
                 $row['target_type'],
-                boolval($row['target_user_created']),
                 json_decode($row['target_data'], true)
             );
 

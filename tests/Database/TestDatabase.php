@@ -437,7 +437,7 @@ class TestDatabase extends TestAbstractTest
     }
 
     public function testInsertNode(): void {
-        $this->database->insertNode(new NodeDTO('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']));
+        $this->database->insertNode(new NodeDTO('node1', 'Node 01', 'business', 'service', ['running_on' => 'SRV01OP']));
         
 
         $stmt = $this->pdo->prepare('select * from nodes where id = :id');
@@ -451,18 +451,8 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('error on testInsertNode');
         }
 
-        $this->database->insertNode(new NodeDTO('user_created', 'User Created', 'application', 'database', true, ['created_by' => 'admin']));
-        
-        $stmt->execute([':id' => 'user_created']);
-        $dbNode = $stmt->fetch();
-
-        if ($dbNode['id'] !== 'user_created' || $dbNode['label'] !== 'User Created' || $dbNode['category'] !== 'application' || $dbNode['type'] !== 'database' || $dbNode['user_created'] !== 1) {
-            print_r($dbNode);
-            throw new Exception('error on testInsertNode');
-        }
-
         try {
-            $this->database->insertNode(new NodeDTO('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']));
+            $this->database->insertNode(new NodeDTO('node1', 'Node 01', 'business', 'service', ['running_on' => 'SRV01OP']));
         } catch(Exception $e) {
             if ($e->getMessage() !== "Database Error: Failed to insert node. Node already exists: node1. Exception: SQLSTATE[23000]: Integrity constraint violation: 19 UNIQUE constraint failed: nodes.id") {
                 throw new Exception('unique constraint expected');
@@ -474,10 +464,10 @@ class TestDatabase extends TestAbstractTest
 
     public function testBatchInsertNodes(): void {
         $nodes = [
-            new NodeDTO('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']),
-            new NodeDTO('node2', 'Node 02', 'application', 'database', false, ['running_on' => 'SRV011P']),
-            new NodeDTO('node3', 'Node 03', 'application', 'service', false, ['running_on' => 'SRV012P']),
-            new NodeDTO('node1', 'Node 01', 'business', 'service', false, ['running_on' => 'SRV01OP']),
+            new NodeDTO('node1', 'Node 01', 'business', 'service', ['running_on' => 'SRV01OP']),
+            new NodeDTO('node2', 'Node 02', 'application', 'database', ['running_on' => 'SRV011P']),
+            new NodeDTO('node3', 'Node 03', 'application', 'service', ['running_on' => 'SRV012P']),
+            new NodeDTO('node1', 'Node 01', 'business', 'service', ['running_on' => 'SRV01OP']),
         ];
 
         try {
@@ -489,9 +479,9 @@ class TestDatabase extends TestAbstractTest
         }
 
         $nodes = [
-            new NodeDTO('node4', 'Node 04', 'business', 'service', false, ['running_on' => 'SRV01OP']),
-            new NodeDTO('node5', 'Node 05', 'application', 'database', false, ['running_on' => 'SRV011P']),
-            new NodeDTO('node6', 'Node 06', 'application', 'service', false, ['running_on' => 'SRV012P']),
+            new NodeDTO('node4', 'Node 04', 'business', 'service', ['running_on' => 'SRV01OP']),
+            new NodeDTO('node5', 'Node 05', 'application', 'database', ['running_on' => 'SRV011P']),
+            new NodeDTO('node6', 'Node 06', 'application', 'service', ['running_on' => 'SRV012P']),
         ];
 
         $this->database->batchInsertNodes($nodes);
@@ -515,7 +505,7 @@ class TestDatabase extends TestAbstractTest
         $this->pdo->exec('insert into nodes (id, label, category, type, data) values ("node1", "Node 01", "business", "service", \'{"running_on":"SRV011P"}\')');
         $this->pdo->exec('insert into nodes (id, label, category, type, data) values ("node2", "Node 02", "application", "database", \'{"running_on":"SRV012P"}\')');
         
-        $this->database->updateNode(new NodeDTO('node1', 'Novo Label', 'application', 'database', false, ['other' => 'diff']));
+        $this->database->updateNode(new NodeDTO('node1', 'Novo Label', 'application', 'database', ['other' => 'diff']));
 
         $stmt = $this->pdo->prepare('select * from nodes where id = :id');
         $stmt->execute([':id' => 'node1']);
@@ -528,7 +518,7 @@ class TestDatabase extends TestAbstractTest
             throw new Exception('error on testUpdateNode 1');
         }
 
-        if ($this->database->updateNode(new NodeDTO('node3', 'Novo Label', 'application', 'database', false, ['other' => 'diff']))) {
+        if ($this->database->updateNode(new NodeDTO('node3', 'Novo Label', 'application', 'database', ['other' => 'diff']))) {
             throw new Exception('error on testUpdateNode 2');
         }
     }

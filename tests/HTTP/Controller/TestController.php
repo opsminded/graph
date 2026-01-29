@@ -250,7 +250,7 @@ final class TestController extends TestAbstractTest
             throw new Exception('error on testGetNode 2');
         }
         
-        $this->database->insertNode(new NodeDTO('node1', 'label 1', 'application', 'service', true, []));
+        $this->database->insertNode(new NodeDTO('node1', 'label 1', 'application', 'service', []));
         $req = new Request();
         $resp = $this->controller->getNode($req);
         if ($resp->code !== 200 || $resp->status !== 'success' || $resp->message !== 'node found') {
@@ -290,8 +290,8 @@ final class TestController extends TestAbstractTest
             throw new Exception('error on testGetNodes 2');
         }
 
-        $this->database->insertNode(new NodeDTO('node1', 'label1', 'application', 'service', true, []));
-        $this->database->insertNode(new NodeDTO('node2', 'label2', 'application', 'service', true, []));
+        $this->database->insertNode(new NodeDTO('node1', 'label1', 'application', 'service', []));
+        $this->database->insertNode(new NodeDTO('node2', 'label2', 'application', 'service', []));
         $req = new Request();
         $resp = $this->controller->getNodes($req);
         if ($resp->code !== 200 || count($resp->data) !== 2) {
@@ -323,7 +323,6 @@ final class TestController extends TestAbstractTest
         $req->data['label'] = 'node1';
         $req->data['category'] = 'application';
         $req->data['type'] = 'database';
-        $req->data['user_created'] = true;
         $req->data['data'] = ['a' => 'b'];
         $resp = $this->controller->insertNode($req);
     }
@@ -377,7 +376,7 @@ final class TestController extends TestAbstractTest
         if ($resp->code !== 404 || $resp->status !== 'error' || $resp->data['id'] !== 'node1') {
             throw new Exception('error on testDeleteNode');
         }
-        $this->database->insertNode(new NodeDTO('node1', 'label 1', 'application', 'service', true, []));
+        $this->database->insertNode(new NodeDTO('node1', 'label 1', 'application', 'service', []));
         $req = new Request();
         $req->data['id'] = 'node1';
         $resp = $this->controller->deleteNode($req);
@@ -409,8 +408,8 @@ final class TestController extends TestAbstractTest
             throw new Exception('error on testGetEdge 2');
         }
 
-        $this->database->insertNode(new NodeDTO('node1', 'label1', 'application', 'service', true, []));
-        $this->database->insertNode(new NodeDTO('node2', 'label2', 'application', 'service', true, []));
+        $this->database->insertNode(new NodeDTO('node1', 'label1', 'application', 'service', []));
+        $this->database->insertNode(new NodeDTO('node2', 'label2', 'application', 'service', []));
         $this->database->insertEdge(new EdgeDTO('node1-node2', 'node1', 'node2', 'label', []));
         
         $req = new Request();
@@ -442,8 +441,8 @@ final class TestController extends TestAbstractTest
         $req = new Request();
         $resp = $this->controller->getEdges($req);
 
-        $this->database->insertNode(new NodeDTO('node1', 'label1', 'application', 'service', true, []));
-        $this->database->insertNode(new NodeDTO('node2', 'label2', 'application', 'service', true, []));
+        $this->database->insertNode(new NodeDTO('node1', 'label1', 'application', 'service', []));
+        $this->database->insertNode(new NodeDTO('node2', 'label2', 'application', 'service', []));
         $this->database->insertEdge(new EdgeDTO('node1-node2', 'node1', 'node2', 'label', []));
 
         $req = new Request();
@@ -471,8 +470,8 @@ final class TestController extends TestAbstractTest
             throw new Exception('error on testInsertEdge');
         }
 
-        $this->database->insertNode(new NodeDTO('node1', 'label1', 'application', 'service', true, []));
-        $this->database->insertNode(new NodeDTO('node2', 'label2', 'application', 'service', true, []));
+        $this->database->insertNode(new NodeDTO('node1', 'label1', 'application', 'service', []));
+        $this->database->insertNode(new NodeDTO('node2', 'label2', 'application', 'service', []));
         $_SERVER['REQUEST_METHOD'] = 'POST';
         $_SERVER['SCRIPT_NAME'] = 'api.php';
         $_SERVER['REQUEST_URI'] = 'api.php/insertEdge';
@@ -549,8 +548,8 @@ final class TestController extends TestAbstractTest
     //     if ($resp->code !== 200 || $resp->status !== 'success' || count($resp->data) > 0) {
     //         throw new Exception('error on testGetStatus');
     //     }
-    //     $this->database->insertNode(new NodeDTO('node1', 'label1', 'application', 'service', true, []));
-    //     $this->database->insertNode(new NodeDTO('node2', 'label2', 'application', 'service', true, []));
+    //     $this->database->insertNode(new NodeDTO('node1', 'label1', 'application', 'service', []));
+    //     $this->database->insertNode(new NodeDTO('node2', 'label2', 'application', 'service', []));
 
     //     $req = new Request();
     //     $resp = $this->controller->getStatus($req);
@@ -573,7 +572,7 @@ final class TestController extends TestAbstractTest
             throw new Exception('error on testUpdateNodeStatus');
         }
 
-        $this->database->insertNode(new NodeDTO('node1', 'label', 'application', 'service', true, []));
+        $this->database->insertNode(new NodeDTO('node1', 'label', 'application', 'service', []));
         $_SERVER['REQUEST_METHOD'] = 'PUT';
         $_SERVER['SCRIPT_NAME'] = 'api.php';
         $_SERVER['REQUEST_URI'] = 'api.php/updateNodeStatus';

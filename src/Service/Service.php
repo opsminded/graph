@@ -162,7 +162,6 @@ final class Service implements ServiceInterface
                 $node->label,
                 $node->category,
                 $node->type,
-                $node->userCreated,
                 $node->data
             );
         }
@@ -181,7 +180,6 @@ final class Service implements ServiceInterface
                 $node->label,
                 $node->category,
                 $node->type,
-                $node->userCreated,
                 $node->data
             );
             $nodes[] = $new;
@@ -196,7 +194,7 @@ final class Service implements ServiceInterface
         $this->logger->debug("permission allowed", $node->toArray());
         $this->insertLog("node", $node->getId(), "insert", null, $node->toArray());
 
-        $dto = new NodeDTO($node->getId(), $node->getLabel(), $node->getCategory(), $node->getType(), $node->getUserCreated(), $node->getData());
+        $dto = new NodeDTO($node->getId(), $node->getLabel(), $node->getCategory(), $node->getType(), $node->getData());
 
         if ($this->database->insertNode($dto)) {
             $this->logger->info("node inserted", $node->toArray());
@@ -216,7 +214,7 @@ final class Service implements ServiceInterface
         }
         $old = $this->getNode($node->getId());
         $this->insertLog("node", $node->getId(), "update", $old->toArray(), $node->toArray());
-        $dto = new NodeDTO($node->getId(), $node->getLabel(), $node->getCategory(), $node->getType(), $node->getUserCreated(), $node->getData());
+        $dto = new NodeDTO($node->getId(), $node->getLabel(), $node->getCategory(), $node->getType(), $node->getData());
         if ($this->database->updateNode($dto)) {
             $this->logger->info("node updated", $node->toArray());
             return true;
