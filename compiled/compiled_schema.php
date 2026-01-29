@@ -2,48 +2,48 @@
 
 $SQL_SCHEMA = "
 CREATE TABLE IF NOT EXISTS users (
-    id TEXT PRIMARY KEY,
+    id         TEXT PRIMARY KEY,
     user_group TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS categories (
-    id TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    shape TEXT NOT NULL,
-    width INTEGER NOT NULL,
+    id     TEXT PRIMARY KEY,
+    name   TEXT NOT NULL,
+    shape  TEXT NOT NULL,
+    width  INTEGER NOT NULL,
     height INTEGER NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS types (
-    id TEXT PRIMARY KEY,
+    id   TEXT PRIMARY KEY,
     name TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS nodes (
-    id TEXT PRIMARY KEY,
-    label TEXT NOT NULL,
+    id       TEXT PRIMARY KEY,
+    label    TEXT NOT NULL,
     category TEXT NOT NULL,
-    type TEXT NOT NULL,
-    data TEXT NOT NULL,
+    type     TEXT NOT NULL,
+    data     TEXT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    
     FOREIGN KEY (category) REFERENCES categories(id),
     FOREIGN KEY (type) REFERENCES types(id)
 );
 
 CREATE TABLE IF NOT EXISTS edges (
-    id TEXT PRIMARY KEY,
-    label TEXT NOT NULL,
-    source TEXT NOT NULL,
-    target TEXT NOT NULL,
-    data TEXT,
+    id         TEXT PRIMARY KEY,
+    label      TEXT NOT NULL,
+    source     TEXT NOT NULL,
+    target     TEXT NOT NULL,
+    data       TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    
     FOREIGN KEY (source) REFERENCES nodes(id) ON DELETE CASCADE,
     FOREIGN KEY (target) REFERENCES nodes(id) ON DELETE CASCADE
 );
-
--- CREATE UNIQUE INDEX IF NOT EXISTS idx_edges_source_target ON edges (source, target);
 
 CREATE TABLE IF NOT EXISTS status (
     node_id    TEXT PRIMARY KEY NOT NULL,

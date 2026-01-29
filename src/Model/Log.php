@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 final class Log
 {
-
     private string            $entityType;
     private string            $entityId;
     private string            $action;
@@ -77,14 +76,14 @@ final class Log
     public function toArray(): array
     {
         return [
-            'entityType' => $this->entityType,
-            'entityId'   => $this->entityId,
+            'entity_type' => $this->entityType,
+            'entity_id'   => $this->entityId,
             'action'      => $this->action,
-            'oldData'    => $this->oldData,
-            'newData'    => $this->newData,
-            'userId'     => $this->userId,
-            'ipAddress'  => $this->ipAddress,
-            'createdAt'  => $this->createdAt,
+            'old_data'    => $this->oldData,
+            'new_data'    => $this->newData,
+            'user_id'     => $this->userId,
+            'ip_address'  => $this->ipAddress,
+            'created_at'  => $this->createdAt,
         ];
     }
 }
