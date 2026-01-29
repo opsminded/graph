@@ -27,9 +27,7 @@ xdebug_start_code_coverage(XDEBUG_CC_UNUSED | XDEBUG_CC_DEAD_CODE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-require_once dirname(__DIR__) . '/compiled/compiled_images.php';
 require_once dirname(__DIR__) . '/compiled/compiled_schema.php';
-require_once dirname(__DIR__) . '/compiled/compiled_templates.php';
 require_once dirname(__DIR__) . '/compiled/graph.php';
 require_once dirname(__DIR__) . '/compiled/tests.php';
 

@@ -57,24 +57,7 @@ for file in folder.rglob('*.php'):
 
 
 with open('compiled/graph.php', 'w') as outputfile:
-    
     outputfile.write("".join(init))
-    
-    # Write compiled images first
-    # outputfile.write("\n")
-    # outputfile.write(compiled_images)
-    # outputfile.write("\n")
-    
-    # Write compiled templates second
-    # outputfile.write("\n")
-    # outputfile.write(compiled_templates)
-    # outputfile.write("\n")
-    
-    # Write compiled schema third
-    # outputfile.write("\n")
-    # outputfile.write(compiled_schema)
-    # outputfile.write("\n")
-    
     print_file(outputfile, 'src/HTTP/Response/Response.php')
     for file in folder.rglob('*.php'):
         print_file(outputfile, str(file))
