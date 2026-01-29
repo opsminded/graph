@@ -2,7 +2,7 @@
 
 $files = glob(dirname(__DIR__) . "/www/templates/*.html");
 
-$content = "\$DATA_TEMPLATES = [\n";
+$content = "<?php\n\n\$DATA_TEMPLATES = [\n";
 
 foreach ($files as $file) {
     $data = base64_encode(file_get_contents($file));

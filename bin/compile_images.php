@@ -2,7 +2,7 @@
 
 $files = glob(dirname(__DIR__) . "/www/images/*.png");
 
-$content = "\$DATA_IMAGES = [\n";
+$content = "<?php\n\n\$DATA_IMAGES = [\n";
 
 foreach ($files as $file) {
     $base64 = base64_encode(file_get_contents($file));

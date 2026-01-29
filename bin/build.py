@@ -37,18 +37,18 @@ def print_file(output, filename):
     
 ######################################################
 
-compiled_images = ''
-with open('compiled/compiled_images.php', 'r') as file:
-        compiled_images = file.read()
+# compiled_images = ''
+# with open('compiled/compiled_images.php', 'r') as file:
+#         compiled_images = file.read()
         
 
-compiled_templates = ''
-with open('compiled/compiled_templates.php', 'r') as file:
-    compiled_templates = file.read()
+# compiled_templates = ''
+# with open('compiled/compiled_templates.php', 'r') as file:
+#     compiled_templates = file.read()
 
-compiled_schema = ''
-with open('compiled/compiled_schema.php', 'r') as file:
-    compiled_schema = file.read()
+# compiled_schema = ''
+# with open('compiled/compiled_schema.php', 'r') as file:
+#     compiled_schema = file.read()
 
 filenames = []
 folder = Path('src')
@@ -61,19 +61,19 @@ with open('compiled/graph.php', 'w') as outputfile:
     outputfile.write("".join(init))
     
     # Write compiled images first
-    outputfile.write("\n")
-    outputfile.write(compiled_images)
-    outputfile.write("\n")
+    # outputfile.write("\n")
+    # outputfile.write(compiled_images)
+    # outputfile.write("\n")
     
     # Write compiled templates second
-    outputfile.write("\n")
-    outputfile.write(compiled_templates)
-    outputfile.write("\n")
+    # outputfile.write("\n")
+    # outputfile.write(compiled_templates)
+    # outputfile.write("\n")
     
     # Write compiled schema third
-    outputfile.write("\n")
-    outputfile.write(compiled_schema)
-    outputfile.write("\n")
+    # outputfile.write("\n")
+    # outputfile.write(compiled_schema)
+    # outputfile.write("\n")
     
     print_file(outputfile, 'src/HTTP/Response/Response.php')
     for file in folder.rglob('*.php'):

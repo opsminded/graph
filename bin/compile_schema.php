@@ -2,7 +2,7 @@
 
 $schemaFile = dirname(__DIR__) . '/sql/schema.sql';
 
-$content = "\$SQL_SCHEMA = \"\n";
+$content = "<?php\n\n\$SQL_SCHEMA = \"\n";
 $content .= file_get_contents($schemaFile);
 $content .= "\";\n";
 

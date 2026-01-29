@@ -1,3 +1,5 @@
+<?php
+
 $SQL_SCHEMA = "
 CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
