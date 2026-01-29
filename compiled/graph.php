@@ -2602,15 +2602,15 @@ final class HelperCytoscape
             ],
         ];
 
-        $types = $this->imagesHelper->getTypes();
-        foreach($types as $type) {
-            $style[] = [
-                "selector" => "node.node-type-{$type}",
-                "style" => [
-                    "background-image" => "{$this->imageBaseUrl}?img={$type}",
-                ],
-            ];
-        }
+        // $types = $this->imagesHelper->getTypes();
+        // foreach($types as $type) {
+        //     $style[] = [
+        //         "selector" => "node.node-type-{$type}",
+        //         "style" => [
+        //             "background-image" => "{$this->imageBaseUrl}?img={$type}",
+        //         ],
+        //     ];
+        // }
         
         foreach($this->categories as $category) {
             $style[] = [

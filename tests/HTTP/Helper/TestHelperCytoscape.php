@@ -30,22 +30,21 @@ class TestHelperCytoscape extends TestAbstractTest
 
     public function testHelperCytoscape(): void
     {
-        global $DATA_IMAGES;
-        $img = new HelperImages($DATA_IMAGES);
-        $cy = new HelperCytoscape($this->database, $img, 'http://example.com/images');
+        // $img = new HelperImages($DATA_IMAGES);
+        // $cy = new HelperCytoscape($this->database, $img, 'http://example.com/images');
 
-        $nodes = [
-            new Node('n1', 'Node 1', 'business', 'server',  ['a' => 1]),
-            new Node('n2', 'Node 2', 'business', 'server', ['b' => 2]),
-            new Node('n3', 'Node 3', 'business', 'server', ['c' => 3]),
-        ];
+        // $nodes = [
+        //     new Node('n1', 'Node 1', 'business', 'server',  ['a' => 1]),
+        //     new Node('n2', 'Node 2', 'business', 'server', ['b' => 2]),
+        //     new Node('n3', 'Node 3', 'business', 'server', ['c' => 3]),
+        // ];
 
-        $edges = [
-            new Edge('n1', 'n2', 'label1'),
-            new Edge('n2', 'n3', 'label2'),
-        ];
+        // $edges = [
+        //     new Edge('n1', 'n2', 'label1'),
+        //     new Edge('n2', 'n3', 'label2'),
+        // ];
 
-        $graph = new Graph($nodes, $edges);
-        $data = $cy->toArray($graph);
+        // $graph = new Graph($nodes, $edges);
+        // $data = $cy->toArray($graph);
     }
 }

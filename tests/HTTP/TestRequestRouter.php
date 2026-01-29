@@ -19,7 +19,6 @@ class TestRequestRouter extends TestAbstractTest
 
     public function up(): void
     {
-        global $DATA_IMAGES;
         global $SQL_SCHEMA;
 
         $_GET = [];
@@ -50,7 +49,6 @@ class TestRequestRouter extends TestAbstractTest
         $this->router = null;
         $this->controller = null;
         $this->cytoscapeHelper = null;
-        $this->imagesHelper = null;
         $this->service = null;
         $this->database = null;
 
