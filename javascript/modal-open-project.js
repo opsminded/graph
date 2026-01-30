@@ -42,6 +42,21 @@ export class OpenProjectModal extends HTMLElement {
             </form>
         </div>
         `;
+
+        const form = this.shadowRoot.getElementById('open-prj-form');
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const select = this.shadowRoot.getElementById('open-prj-form-id');
+            const projectId = select.value;
+            
+            alert(`Abrindo projeto ${projectId}`);
+
+            this.dispatchEvent(new CustomEvent('open-project', {
+                detail: { projectId },
+                bubbles: true,
+                composed: true
+            }));
+        });
     }
 
     populateProjects(projects) {

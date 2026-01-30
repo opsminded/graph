@@ -60,26 +60,7 @@ $basePath = rtrim(dirname($requestUri), "/\\");
 
             /* Info panel on the right side */
 
-                #info-panel {
-                    position: absolute;
-
-                    right: 0;
-                    top: 0;
-
-                    width: 40%;
-                    height: 100%;
-                    
-                    background-color: #fff;
-                    border-left: 1px solid #CCC;
-                    padding: 10px;
-                    
-                    display: none;
-                    z-index: 400;
-                }
-
-                #info-panel.show {
-                    display: block;
-                }
+                
 
             #cy {
                 position: absolute;
@@ -95,42 +76,6 @@ $basePath = rtrim(dirname($requestUri), "/\\");
                 z-index: 100;
             }
 
-            #modal {
-                position: absolute;
-
-                border: 2px solid #CCC;
-                background-color: #fff;
-
-                left: 25%;
-                top: 8%;
-                width: 50%;
-                height: 70%;
-
-                padding: 10px;
-
-                display: none;
-                z-index: 200;
-            }
-
-            #modal.show {
-                display: block;
-            }
-
-            #modal-new-prj {
-                display: none;
-            }
-
-            #modal-new-prj.show {
-                display: block;
-            }
-
-            #modal-open-prj {
-                display: none;
-            }
-
-            #modal-open-prj.show {
-                display: block;
-            }
         </style>
 
         <script>
@@ -143,61 +88,7 @@ $basePath = rtrim(dirname($requestUri), "/\\");
             <p>Autor: <span id="graph-author"></span></p>
             <p>Criado em: <span id="graph-created"></span></p>
         </div>
-        <div id="menu">
-            <div><button id="close-menu-btn">X</button></div>
-            <img src="<?php echo $basePath; ?>images/logo.png" alt="Logo" width="32" height="32">
-            <h2><span style="color: rgb(182, 43, 43);">Brades</span>ketch</h2>
-
-            <div id="user-panel">
-                <p><button id="login-btn" title="Entrar">Entrar</button></p>
-                <p>
-                    <button id="new-prj-btn" title="Novo Documento" style="margin: 0 10px;">Novo</button>
-                    <button id="open-prj-btn" title="Abrir Documento" style="margin: 0 10px;">Abrir</button>
-                </p>
-            </div>
-
-            <form id="add-node-form" method="post">
-                <h3>Adicionar Item</h3>
-                <p>
-                    <label for="add-node-form-category">Categoria:<br>
-                        <select id="add-node-form-category" name="category" required>
-                            <option>Selecione</option>
-                        </select>
-                    </label>
-                </p>
-
-                <p>
-                    <label for="add-node-form-type">Tipo:<br>
-                        <select id="add-node-form-type" name="type" required>
-                            <option>Selecione</option>
-                        </select>
-                    </label>
-                </p>
-
-                <p>
-                    <label for="add-node-form-node">Item:<br>
-                        <select id="add-node-form-node" name="node" required>
-                            <!-- Options will be populated dynamically -->
-                        </select>
-                    </label>
-                </p>
-
-                <p><button id="add-node-form-submit" type="submit">Adicionar Item</button></p>
-            </form>
-
-            <form id="add-edge-form" method="post">
-                <h3>Adicionar Conexão</h3>
-                <p><button id="add-edge-form-submit" type="submit" disabled>Adicionar Conexão</button></p>
-            </form>
-
-            <p>
-                <button id="export-btn" type="button">Exportar</button>
-            </p>
-
-            <p>
-                <button id="fit-btn" type="button">Ajustar</button>
-            </p>
-        </div>
+        
 
         <div id="modal">
             <div><button id="close-modal-btn">x</button></div>
@@ -213,18 +104,6 @@ $basePath = rtrim(dirname($requestUri), "/\\");
                 </div>
             </div>
 
-            <div id="modal-open-prj">
-                <div id="modal-open-prj-content">
-                    <h2>Abrir Projeto</h2>
-                    <form id="open-prj-form" method="post">
-                        <p><label for="open-prj-form-id">Projeto 
-                            <select id="open-prj-form-id" name="id">
-                            </select>
-                        </label></p>
-                        <p><button type="submit">Abrir</button></p>
-                    </form>
-                </div>
-            </div>
         </div>
         
         <div id="cy"></div>

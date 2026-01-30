@@ -145,7 +145,6 @@ export class Menu extends HTMLElement {
 
         const newPrjBtn = this.shadowRoot.getElementById("new-prj-btn");
         newPrjBtn.addEventListener("click", () => {
-            alert("Novo Projeto - Em construção");
             this.dispatchEvent(new CustomEvent("new-prj-btn-clicked", {bubbles: true, composed: true}));
         });
 
