@@ -1,16 +1,20 @@
-
+import {Api} from './api.js';
 import './menu.js';
 import './modal-open-project.js';
 import './modal-new-project.js';
 import './info-panel.js';
+
 export class App extends HTMLElement {
     constructor() {
         super();
+
+        this.api = new Api();
+
         this.attachShadow({ mode: "open" });
         this.render();
     }
 
-    render() {
+    async render() {
         this.shadowRoot.innerHTML = `
             <app-menu></app-menu>
             <app-open-project-modal></app-open-project-modal>
@@ -27,10 +31,10 @@ export class App extends HTMLElement {
             alert('Login to be implemented in App');
         });
 
-        const categories = [{ id: 1, name: 'Category 1' }, { id: 2, name: 'Category 2' }];
+        const categories = await this.api.fetchCategories();
         menu.populateCategories(categories);
 
-        const types = [{ id: 1, name: 'Type A' }, { id: 2, name: 'Type B' }];
+        const types = await this.api.fetchTypes();
         menu.populateTypes(types);
 
         const nodes = [{ id: 1, label: 'Node X' }, { id: 2, label: 'Node Y' }];
@@ -51,7 +55,8 @@ export class App extends HTMLElement {
         });
 
         const modalOpenProject = this.shadowRoot.querySelector('app-open-project-modal');
-        const projects = [{ id: 1, name: 'Project A' }, { id: 2, name: 'Project B' }];
+        
+        const projects = await this.api.fetchProjects();
         modalOpenProject.populateProjects(projects);
     }
 }

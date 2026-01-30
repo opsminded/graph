@@ -44,6 +44,7 @@ export class NewProjectModal extends HTMLElement {
         const form = this.shadowRoot.getElementById('new-prj-form');
         form.addEventListener('submit', (e) => {
             e.preventDefault();
+            alert('Projeto criado com sucesso!');
             this.dispatchEvent(new CustomEvent('new-project', {
                 bubbles: true,
                 composed: true

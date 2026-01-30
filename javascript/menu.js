@@ -174,6 +174,30 @@ export class Menu extends HTMLElement {
         fitBtn.addEventListener("click", () => {
             alert("Ajustar - Em construção");
         });
+
+        //////////////////////////////////////////////
+
+        const categorySelect = this.shadowRoot.getElementById("add-node-form-category");
+        categorySelect.addEventListener("change", () => {
+            const selectedCategoryId = categorySelect.value;
+            alert(`Categoria selecionada: ${selectedCategoryId} - Em construção`);
+            this.dispatchEvent(new CustomEvent("category-changed", {
+                detail: { categoryId: selectedCategoryId },
+                bubbles: true,
+                composed: true
+            }));
+        });
+
+        const typeSelect = this.shadowRoot.getElementById("add-node-form-type");
+        typeSelect.addEventListener("change", () => {
+            const selectedTypeId = typeSelect.value;
+            alert(`Tipo selecionado: ${selectedTypeId} - Em construção`);
+            this.dispatchEvent(new CustomEvent("type-changed", {
+                detail: { typeId: selectedTypeId },
+                bubbles: true,
+                composed: true
+            }));
+        });
     }
 
     populateCategories(categories) {
