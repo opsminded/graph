@@ -9,11 +9,8 @@ import './project.js';
 export class App extends HTMLElement {
     constructor() {
         super();
-
         this.api = new Api();
-
         this.statusUpdateTimer = null;
-
         this.attachShadow({ mode: "open" });
         this.render();
     }
@@ -28,28 +25,42 @@ export class App extends HTMLElement {
             <app-notification></app-notification>
         `;
 
-        // Initialize components
+        this.initializeComponents();
+        await this.fetchData();
+        this.populateItems();
+        this.setupEventListeners();
+    }
+
+    initializeComponents()
+    {
         this.menu             = this.shadowRoot.querySelector('app-menu');
         this.modalNewProject  = this.shadowRoot.querySelector('app-new-project-modal');
         this.modalOpenProject = this.shadowRoot.querySelector('app-open-project-modal');
         this.infoPanel        = this.shadowRoot.querySelector('app-info-panel'); 
         this.project          = this.shadowRoot.querySelector('app-project');
         this.notification     = this.shadowRoot.querySelector('app-notification');
+    }
 
-        // Fetch data
+    async fetchData()
+    {
         this.categories = await this.api.fetchCategories();
         this.types      = await this.api.fetchTypes();
-        const projects  = await this.api.fetchProjects();
+        this.projects   = await this.api.fetchProjects();
         this.nodes      = [{ id: 1, label: 'Node X' }, { id: 2, label: 'Node Y' }];
+    }
 
-        // Populate menu and modals
+    populateItems()
+    {
         this.menu.populateCategories(this.categories);
         this.menu.populateTypes(this.types);
         this.menu.populateNodes(this.nodes);
-        this.modalOpenProject.populateProjects(projects);
+        this.modalOpenProject.populateProjects(this.projects);
+    }
 
+    setupEventListeners()
+    {
         this.menu.addEventListener('login-btn-clicked', () => {
-            alert('Login to be implemented in App');
+            alert('Não implementado ainda');
         });
 
         this.menu.addEventListener('new-prj-btn-clicked', () => {
@@ -67,9 +78,15 @@ export class App extends HTMLElement {
         });
 
         // Handle opening projects
-        this.modalOpenProject.addEventListener('open-project', (event) => {
+        this.addEventListener('open-project', (event) => {
             this.openProject(event.detail.id);
         });
+
+        this.boundKeyHandler = this.handleKeyPress.bind(this);
+        document.addEventListener('keydown', this.boundKeyHandler);
+
+        this.boundMouseHandler = this.handleMouseMove.bind(this);
+        document.addEventListener('mousemove', this.boundMouseHandler);
     }
 
     async openProject(projectId) {
@@ -84,12 +101,6 @@ export class App extends HTMLElement {
         this.startStatusUpdates(projectId);
 
         this.notification.success(`Projeto "${project.id}" aberto com sucesso!`);
-    }
-
-    disconnectedCallback() {
-        if (this.statusUpdateTimer) {
-            clearInterval(this.statusUpdateTimer);
-        }
     }
 
     async startStatusUpdates(projectId) {
@@ -108,6 +119,16 @@ export class App extends HTMLElement {
         const statuses = await this.api.fetchProjectStatus(projectId);
         console.log('Fetched node statuses:', statuses);
         this.project.updateNodeStatuses(statuses);
+    }
+
+    handleKeyPress(e) {
+        console.log('Key pressed:', e.key);
+        this.menu.handleKeyPress(e);
+    }
+
+    handleMouseMove(e) {
+        console.log('Mouse moved:', e.clientX, e.clientY);
+        this.menu.handleMouseMove(e);
     }
 }
 

@@ -16,9 +16,7 @@ export class Project extends HTMLElement
                 #cy {
                     position: absolute;
 
-                    background: #e4b7b7;
-
-                    left: 400px;
+                    left: 0;
                     top: 0;
                     bottom: 0;
                     right: 0;

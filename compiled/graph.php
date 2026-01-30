@@ -2754,15 +2754,23 @@ final class HelperCytoscape
 
     private function getLayout(): array
     {
+        // return [
+        //     "name"              => "breadthfirst",
+        //     "fit"               => true,
+        //     "directed"          => true,
+        //     "direction"         => "downward",
+        //     "padding"           => 100,
+        //     "avoidOverlap"      => true,
+        //     "animate"           => false,
+        //     //"animationDuration" => 500,
+        // ];
+
         return [
-            "name"              => "breadthfirst",
-            "fit"               => true,
-            "directed"          => true,
-            "direction"         => "downward",
-            "padding"           => 100,
-            "avoidOverlap"      => true,
-            "animate"           => false,
-            //"animationDuration" => 500,
+            'name' => 'cose',
+            'animate' => false,
+            'fit' => true,
+            'padding' => 30,
+            'componentSpacing' => 40
         ];
     }
 }

@@ -24,7 +24,7 @@ export class Menu extends HTMLElement {
                     background-color: #FAF9F5;
 
                     border-right: 1px solid #CCC;
-                    z-index: 200;
+                    z-index: 500;
                 }
 
                 #menu h2 {
@@ -220,30 +220,6 @@ export class Menu extends HTMLElement {
         this.menu.classList.add("hide");
     }
 
-    connectedCallback() {
-        this.boundKeyHandler = this.handleKeyPress.bind(this);
-        document.addEventListener('keydown', this.boundKeyHandler);
-
-        this.boundMouseHandler = this.handleMouseMove.bind(this);
-        document.addEventListener('mousemove', this.boundMouseHandler);
-    }
-
-    handleKeyPress(event) {
-        if (event.key === "m" || event.key === "M") {
-            this.hide();
-        }
-    }
-
-    handleMouseMove(event) {
-        if (event.clientX <= 300) {
-            return this.show();
-        }
-        if (!this.keepClosed) {
-            return;
-        }
-        return this.hide();
-    }
-
     populateCategories(categories) {
         const select = this.shadowRoot.getElementById("add-node-form-category");
         select.innerHTML = '<option value="" disabled selected>Selecione</option>';
@@ -266,6 +242,22 @@ export class Menu extends HTMLElement {
         nodes.forEach(node => {
             select.innerHTML += `<option value="${node.id}">${node.label}</option>`;
         });
+    }
+
+    handleKeyPress(e) {
+        if (e.key === "m" || e.key === "M") {
+            this.show();
+        }
+    }
+
+    handleMouseMove(e) {
+        if (e.clientX <= 300) {
+            return this.show();
+        }
+        if (!this.keepClosed) {
+            return;
+        }
+        this.hide();
     }
 }
 
