@@ -16,7 +16,7 @@ export class Project extends HTMLElement
                 #cy {
                     position: absolute;
 
-                    left: 400px;
+                    left: 250px;
                     top: 0;
                     bottom: 0;
                     right: 0;
@@ -29,13 +29,13 @@ export class Project extends HTMLElement
 
                 #project-container h2 {
                     position: absolute;
-                    left: 420px;
+                    left: 320px;
                     top: 10px;
                     z-index: 101;
                 }
             </style>
             <div id="project-container">
-                <h2 id="project-title">Project</h2>
+                <h2 id="project-title"></h2>
                 <div id="cy"></div>
             </div>
         `;
@@ -51,8 +51,18 @@ export class Project extends HTMLElement
         graph.container = this.cyContainer;
         this.cy = cytoscape(graph);
 
+        console.log('Current graphhhhhhhh:', graph);
         this.cy.layout(graph.layout).run();
         this.cy.fit();
+    }
+
+    clear()
+    {
+        if (this.cy) {
+            this.cy.destroy();
+            this.cy = null;
+        }
+        this.projectTitle.textContent = '';
     }
 
     updateNodeStatuses(statusUpdates)

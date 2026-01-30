@@ -8,6 +8,7 @@ final class Service implements ServiceInterface
         "Service::getUser"             => true,
         "Service::getCategories"       => true,
         "Service::getTypes"            => true,
+        "Service::getCategoryTypes"    => true,
         "Service::getNode"             => true,
         "Service::getNodes"            => true,
         "Service::getNodeParentOf"     => true,
@@ -141,6 +142,26 @@ final class Service implements ServiceInterface
         }
         return $types;
     }
+
+    /**
+     * @return array<Type>
+     */
+    public function getCategoryTypes(string $category): array
+    {
+        $this->logger->debug("getting category types", ["category" => $category]);
+        $this->verify();
+        $dbTypes = $this->database->getCategoryTypes($category);
+        $types     = [];
+        foreach ($dbTypes as $tp) {
+            $type = new Type(
+                $tp->id,
+                $tp->name
+            );
+            $types[] = $type;
+        }
+        return $types;
+    }
+
     public function insertType(Type $type): bool
     {
         $this->logger->debug("inserting type", ["type" => $type->toArray()]);

@@ -3,110 +3,142 @@ export class Api
 {
     constructor(baseUrl = '')
     {
+        this.getTypesURL = baseUrl + '/getTypes';
         this.getProjectURL = baseUrl + '/getProject';
         this.getProjectsURL = baseUrl + '/getProjects';
+        this.getCategoriesURL = baseUrl + '/getCategories';
     }
 
-    async fetchCategories() {
-        console.log('Fetching categories from API...');
-        try {
-            const response = await fetch('/getCategories');
-            if (!response.ok) {
-                console.error('Response not ok:', response);
-                throw new Error(`Erro ao carregar categorias: ${response.status}`);
+    fetchCategories() {
+        return fetch(this.getCategoriesURL)
+            .then(response => {
+                if (!response.ok) {
+                    console.error('Response not ok:', response);
+                    throw new Error(`Erro ao carregar categorias: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(({ data }) => {
+                return data;
+            })
+            .catch(error => {
+                console.error('[fetchCategories] Fetch error:', error);
+                return [];
             }
-            const { data } = await response.json();
-            console.log('Categories fetched:', data);
-            return data;
-        } catch (error) {
-            console.error('[fetchCategories] Fetch error:', error);
-            return [];
-        }
+        );
     }
 
-    async fetchTypes() {
-        console.log('Fetching types from API...');
-        try {
-            const response = await fetch('/getTypes');
-            if (!response.ok) {
-                console.error('Response not ok:', response);
-                throw new Error(`Erro ao carregar tipos: ${response.status}`);
-            }
-            const { data } = await response.json();
-            console.log('Types fetched:', data);
-            return data;
-        }
-        catch (error) {
-            console.error('[fetchTypes] Fetch error:', error);
-            return [];
-        }
+    fetchTypes() {
+        return fetch(this.getTypesURL)
+            .then(response => {
+                if (!response.ok) {
+                    console.error('Response not ok:', response);
+                    throw new Error(`Erro ao carregar tipos: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(({ data }) => {
+                return data;
+            })
+            .catch(error => {
+                console.error('[fetchTypes] Fetch error:', error);
+                return [];
+            });
     }
 
-    async fetchProjects() {
-        console.log('Fetching projects from API...');
-        try {
-            const response = await fetch(this.getProjectsURL);
-            if (!response.ok) {
-                console.error('Response not ok:', response);
-                throw new Error(`Erro ao carregar projetos: ${response.status}`);
-            }
-            const { data } = await response.json();
-            console.log('Projects fetched:', data);
-            return data;
-        } catch (error) {
-            console.error('[fetchProjects] Fetch error:', error);
-            return [];
-        }
+    fetchProjects() {
+        return fetch(this.getProjectsURL)
+            .then(response => {
+                if (!response.ok) {
+                    console.error('Response not ok:', response);
+                    throw new Error(`Erro ao carregar projetos: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(({ data }) => {
+                return data;
+            })
+            .catch(error => {
+                console.error('[fetchProjects] Fetch error:', error);
+                return [];
+            });
     }
 
-    async fetchProject(projectId) {
-        console.log('Fetching project from API with ID:', projectId);
-        try {
-            const response = await fetch(`${this.getProjectURL}?id=${encodeURIComponent(projectId)}`);
+    fetchProject(projectId) {
+        return fetch(`${this.getProjectURL}?id=${encodeURIComponent(projectId)}`)
+            .then(response => {
+                if (!response.ok) {
+                    console.error('Response not ok:', response);
+                    throw new Error(`Erro ao carregar projeto: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(({ data }) => {
+                return data;
+            })
+            .catch(error => {
+                console.error('[fetchProject] Fetch error:', error);
+                return null;
+            });
+    }
+
+    fetchProjectGraph(projectId) {
+        return fetch(`/getProjectGraph?id=${encodeURIComponent(projectId)}`)
+            .then(response => {
+                if (!response.ok) {
+                    console.error('Response not ok:', response);
+                    throw new Error(`Erro ao carregar gráficos do projeto: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(({ data }) => {
+                return data;
+            })
+            .catch(error => {
+                console.error('[fetchProjectGraph] Fetch error:', error);
+                return [];
+            });
+    }
+
+    fetchProjectStatus(projectId) {
+        return fetch(`/getProjectStatus?id=${encodeURIComponent(projectId)}`)
+            .then(response => {
+                if (!response.ok) {
+                    console.error('Response not ok:', response);
+                    throw new Error(`Erro ao carregar status do projeto: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(({ data }) => {
+                return data;
+            })
+            .catch(error => {
+                console.error('[fetchProjectStatus] Fetch error:', error);
+                return null;
+            });
+    }
+
+    insertProject(projectData) {
+        return fetch('/insertProject', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(projectData)
+        })
+        .then(response => {
             if (!response.ok) {
                 console.error('Response not ok:', response);
-                throw new Error(`Erro ao carregar projeto: ${response.status}`);
+                throw new Error(`Erro ao inserir projeto: ${response.status}`);
             }
-            const { data } = await response.json();
-            console.log('Project fetched:', data);
+            return response.json();
+        })
+        .then(({ data }) => {
             return data;
-        } catch (error) {
-            console.error('[fetchProject] Fetch error:', error);
+        })
+        .catch(error => {
+            console.error('[insertProject] Fetch error:', error);
             return null;
-        }
-    }
-
-    async fetchProjectGraph(projectId) {
-        console.log('Fetching project graph from API with ID:', projectId);
-        try {
-            const response = await fetch(`/getProjectGraph?id=${encodeURIComponent(projectId)}`);
-            if (!response.ok) {
-                console.error('Response not ok:', response);
-                throw new Error(`Erro ao carregar gráficos do projeto: ${response.status}`);
-            }
-            const { data } = await response.json();
-            console.log('Project graph fetched:', data);
-            return data;
-        } catch (error) {
-            console.error('[fetchProjectGraph] Fetch error:', error);
-            return [];
-        }
-    }
-
-    async fetchProjectStatus(projectId) {
-        console.log('Fetching project status from API with ID:', projectId);
-        try {
-            const response = await fetch(`/getProjectStatus?id=${encodeURIComponent(projectId)}`);
-            if (!response.ok) {
-                console.error('Response not ok:', response);
-                throw new Error(`Erro ao carregar status do projeto: ${response.status}`);
-            }
-            const { data } = await response.json();
-            console.log('Project status fetched:', data);
-            return data;
-        } catch (error) {
-            console.error('[fetchProjectStatus] Fetch error:', error);
-            return null;
-        }
+        });
     }
 }

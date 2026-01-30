@@ -226,6 +226,33 @@ final class Database implements DatabaseInterface
         return array_map(fn($row) => new TypeDTO($row['id'], $row['name']), $rows);
     }
 
+    /**
+     * @return TypeDTO[]
+     */
+    public function getCategoryTypes(string $categoryId): array
+    {
+        $this->logger->debug("fetching types for category", ['category' => $categoryId]);
+        $sql = "
+            SELECT DISTINCT
+                       t.id,
+                       t.name
+            FROM       types t
+            INNER JOIN nodes n
+            ON         n.type = t.id
+            WHERE      n.category = :category_id
+        ";
+        $params = [':category_id' => $categoryId];
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll();
+
+        echo "Type category rows\n";
+        print_r($rows);
+        exit();
+        $this->logger->info("category types fetched", ['params' => $params, 'rows' => $rows]);
+        return array_map(fn($row) => new TypeDTO($row['id'], $row['name']), $rows);
+    }
+
     public function insertType(TypeDTO $type): bool
     {
         $this->logger->debug("inserting new type", ['id' => $type->id, 'name' => $type->name]);

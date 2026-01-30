@@ -110,7 +110,10 @@ INSERT OR IGNORE INTO edges(id, label, source, target, data) VALUES ('e3-4', 'co
 INSERT OR IGNORE INTO edges(id, label, source, target, data) VALUES ('e2-5', 'connects_to', 'n2', 'n5', '{\"a\":\"b\"}');
 INSERT OR IGNORE INTO edges(id, label, source, target, data) VALUES ('e4-5', 'connects_to', 'n4', 'n5', '{\"a\":\"b\"}');
 
-INSERT OR IGNORE INTO projects(id, name, author, data) VALUES ('p1', 'Projeto 1', 'admin', '{}');
+INSERT OR IGNORE INTO projects(id, name, author, data) VALUES ('p1', 'Projeto 1', 'admin', '{\"a\":\"b\"}');
+INSERT OR IGNORE INTO projects(id, name, author, data) VALUES ('p2', 'Projeto 2', 'admin', '{\"a\":\"b\"}');
 
 INSERT OR IGNORE INTO nodes_projects(node_id, project_id) VALUES ('n1', 'p1');
 INSERT OR IGNORE INTO nodes_projects(node_id, project_id) VALUES ('n3', 'p1');
+
+INSERT OR IGNORE INTO nodes_projects(node_id, project_id) VALUES ('n3', 'p2');

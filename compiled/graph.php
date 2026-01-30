@@ -35,6 +35,7 @@ final class RequestRouter
         ["method" => Request::METHOD_PUT,    "class_method" => "updateUser"],
         ["method" => Request::METHOD_GET,    "class_method" => "getCategories"],
         ["method" => Request::METHOD_GET,    "class_method" => "getTypes"],
+        ["method" => Request::METHOD_GET,    "class_method" => "getCategoryTypes"],
 
         ["method" => Request::METHOD_GET,    "class_method" => "getNode"],
         ["method" => Request::METHOD_GET,    "class_method" => "getNodes"],
@@ -54,6 +55,7 @@ final class RequestRouter
         ["method" => Request::METHOD_GET,    "class_method" => "getProjectGraph"],
         ["method" => Request::METHOD_GET,    "class_method" => "getProjectStatus"],
         ["method" => Request::METHOD_GET,    "class_method" => "getProjects"],
+        ["method" => Request::METHOD_POST,   "class_method" => "insertProject"]
     ];
 
     public Controller $controller;
@@ -953,6 +955,33 @@ final class Database implements DatabaseInterface
         return array_map(fn($row) => new TypeDTO($row['id'], $row['name']), $rows);
     }
 
+    /**
+     * @return TypeDTO[]
+     */
+    public function getCategoryTypes(string $categoryId): array
+    {
+        $this->logger->debug("fetching types for category", ['category' => $categoryId]);
+        $sql = "
+            SELECT DISTINCT
+                       t.id,
+                       t.name
+            FROM       types t
+            INNER JOIN nodes n
+            ON         n.type = t.id
+            WHERE      n.category = :category_id
+        ";
+        $params = [':category_id' => $categoryId];
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll();
+
+        echo "Type category rows\n";
+        print_r($rows);
+        exit();
+        $this->logger->info("category types fetched", ['params' => $params, 'rows' => $rows]);
+        return array_map(fn($row) => new TypeDTO($row['id'], $row['name']), $rows);
+    }
+
     public function insertType(TypeDTO $type): bool
     {
         $this->logger->debug("inserting new type", ['id' => $type->id, 'name' => $type->name]);
@@ -1718,6 +1747,11 @@ interface DatabaseInterface
      */
     public function getTypes(): array;
 
+    /**
+     * @return TypeDTO[]
+     */
+    public function getCategoryTypes(string $category): array;
+
     public function insertType(TypeDTO $type): bool;
     public function updateType(TypeDTO $type): bool;
     public function deleteType(string $id): bool;
@@ -1867,6 +1901,7 @@ final class Service implements ServiceInterface
         "Service::getUser"             => true,
         "Service::getCategories"       => true,
         "Service::getTypes"            => true,
+        "Service::getCategoryTypes"    => true,
         "Service::getNode"             => true,
         "Service::getNodes"            => true,
         "Service::getNodeParentOf"     => true,
@@ -2000,6 +2035,26 @@ final class Service implements ServiceInterface
         }
         return $types;
     }
+
+    /**
+     * @return array<Type>
+     */
+    public function getCategoryTypes(string $category): array
+    {
+        $this->logger->debug("getting category types", ["category" => $category]);
+        $this->verify();
+        $dbTypes = $this->database->getCategoryTypes($category);
+        $types     = [];
+        foreach ($dbTypes as $tp) {
+            $type = new Type(
+                $tp->id,
+                $tp->name
+            );
+            $types[] = $type;
+        }
+        return $types;
+    }
+
     public function insertType(Type $type): bool
     {
         $this->logger->debug("inserting type", ["type" => $type->toArray()]);
@@ -2450,11 +2505,22 @@ interface ServiceInterface
     public function insertUser(User $user): bool;
     public function updateUser(User $user): bool;
 
+    /**
+     * @return array<Category>
+     */
     public function getCategories(): array;
     public function insertCategory(Category $category): bool;
     
+    /*
+     * @return array<Type>
+     */
     public function getTypes(): array;
     public function insertType(Type $type): bool;
+
+    /**
+     * @return array<Type>
+     */
+    public function getCategoryTypes(string $category): array;
 
     public function getNode(string $id): ?Node;
     public function getNodes(): array;
@@ -2483,6 +2549,9 @@ interface ServiceInterface
     public function updateProject(Project $project): bool;
     public function deleteProject(string $id): bool;
 
+    /**
+     * @return array<Log>
+     */
     public function getLogs(int $limit): array;
 }
 #####################################
@@ -2991,6 +3060,7 @@ interface ControllerInterface
 
     public function getCategories(Request $req): ResponseInterface;
     public function getTypes(Request $req): ResponseInterface;
+    public function getCategoryTypes(Request $req): ResponseInterface;
 
     public function getNode(Request $req): ResponseInterface;
     public function getNodes(Request $req): ResponseInterface;
@@ -3100,6 +3170,24 @@ final class Controller implements ControllerInterface
         }
 
         $types = $this->service->getTypes();
+        $data = [];
+        foreach($types as $type) {
+            $data[] = $type->toArray();
+        }
+        return new OKResponse("types found", $data);
+    }
+
+    public function getCategoryTypes(Request $req): ResponseInterface
+    {
+        if($req->method !== Request::METHOD_GET) {
+            return new MethodNotAllowedResponse($req->method, __METHOD__);
+        }
+        try {
+            $category = $req->getParam('category');
+        } catch(RequestException $e) {
+            return new BadRequestResponse($e->getMessage(), []);
+        }
+        $types = $this->service->getCategoryTypes($category);
         $data = [];
         foreach($types as $type) {
             $data[] = $type->toArray();
@@ -3383,7 +3471,7 @@ final class Controller implements ControllerInterface
 
         $now = new DateTimeImmutable();
 
-        $id = $this->createSlug($req->data['name'] ?? 'project');
+        $id = $this->createSlug($req->data['name']);
 
         $project = new Project(
             $id,
@@ -3391,7 +3479,7 @@ final class Controller implements ControllerInterface
             $creator,
             $now,
             $now,
-            $req->data['data'],
+            [],
         );
         $this->service->insertProject($project);
         $data = $project->toArray();

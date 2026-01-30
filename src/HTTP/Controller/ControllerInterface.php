@@ -10,6 +10,7 @@ interface ControllerInterface
 
     public function getCategories(Request $req): ResponseInterface;
     public function getTypes(Request $req): ResponseInterface;
+    public function getCategoryTypes(Request $req): ResponseInterface;
 
     public function getNode(Request $req): ResponseInterface;
     public function getNodes(Request $req): ResponseInterface;

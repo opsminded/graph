@@ -8,11 +8,22 @@ interface ServiceInterface
     public function insertUser(User $user): bool;
     public function updateUser(User $user): bool;
 
+    /**
+     * @return array<Category>
+     */
     public function getCategories(): array;
     public function insertCategory(Category $category): bool;
     
+    /*
+     * @return array<Type>
+     */
     public function getTypes(): array;
     public function insertType(Type $type): bool;
+
+    /**
+     * @return array<Type>
+     */
+    public function getCategoryTypes(string $category): array;
 
     public function getNode(string $id): ?Node;
     public function getNodes(): array;
@@ -41,5 +52,8 @@ interface ServiceInterface
     public function updateProject(Project $project): bool;
     public function deleteProject(string $id): bool;
 
+    /**
+     * @return array<Log>
+     */
     public function getLogs(int $limit): array;
 }

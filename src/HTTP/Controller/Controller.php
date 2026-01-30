@@ -91,6 +91,24 @@ final class Controller implements ControllerInterface
         return new OKResponse("types found", $data);
     }
 
+    public function getCategoryTypes(Request $req): ResponseInterface
+    {
+        if($req->method !== Request::METHOD_GET) {
+            return new MethodNotAllowedResponse($req->method, __METHOD__);
+        }
+        try {
+            $category = $req->getParam('category');
+        } catch(RequestException $e) {
+            return new BadRequestResponse($e->getMessage(), []);
+        }
+        $types = $this->service->getCategoryTypes($category);
+        $data = [];
+        foreach($types as $type) {
+            $data[] = $type->toArray();
+        }
+        return new OKResponse("types found", $data);
+    }
+
     public function getNode(Request $req): ResponseInterface
     {
         if($req->method !== Request::METHOD_GET) {
@@ -367,7 +385,7 @@ final class Controller implements ControllerInterface
 
         $now = new DateTimeImmutable();
 
-        $id = $this->createSlug($req->data['name'] ?? 'project');
+        $id = $this->createSlug($req->data['name']);
 
         $project = new Project(
             $id,
@@ -375,7 +393,7 @@ final class Controller implements ControllerInterface
             $creator,
             $now,
             $now,
-            $req->data['data'],
+            [],
         );
         $this->service->insertProject($project);
         $data = $project->toArray();

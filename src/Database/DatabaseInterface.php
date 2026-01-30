@@ -41,6 +41,11 @@ interface DatabaseInterface
      */
     public function getTypes(): array;
 
+    /**
+     * @return TypeDTO[]
+     */
+    public function getCategoryTypes(string $category): array;
+
     public function insertType(TypeDTO $type): bool;
     public function updateType(TypeDTO $type): bool;
     public function deleteType(string $id): bool;

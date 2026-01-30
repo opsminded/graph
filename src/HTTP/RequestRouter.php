@@ -10,6 +10,7 @@ final class RequestRouter
         ["method" => Request::METHOD_PUT,    "class_method" => "updateUser"],
         ["method" => Request::METHOD_GET,    "class_method" => "getCategories"],
         ["method" => Request::METHOD_GET,    "class_method" => "getTypes"],
+        ["method" => Request::METHOD_GET,    "class_method" => "getCategoryTypes"],
 
         ["method" => Request::METHOD_GET,    "class_method" => "getNode"],
         ["method" => Request::METHOD_GET,    "class_method" => "getNodes"],
@@ -29,6 +30,7 @@ final class RequestRouter
         ["method" => Request::METHOD_GET,    "class_method" => "getProjectGraph"],
         ["method" => Request::METHOD_GET,    "class_method" => "getProjectStatus"],
         ["method" => Request::METHOD_GET,    "class_method" => "getProjects"],
+        ["method" => Request::METHOD_POST,   "class_method" => "insertProject"]
     ];
 
     public Controller $controller;

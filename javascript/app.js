@@ -15,7 +15,7 @@ export class App extends HTMLElement {
         this.render();
     }
 
-    async render() {
+    render() {
         this.shadowRoot.innerHTML = `
             <app-menu></app-menu>
             <app-open-project-modal></app-open-project-modal>
@@ -26,8 +26,7 @@ export class App extends HTMLElement {
         `;
 
         this.initializeComponents();
-        await this.fetchData();
-        this.populateItems();
+        this.fetchData();
         this.setupEventListeners();
     }
 
@@ -43,18 +42,19 @@ export class App extends HTMLElement {
 
     async fetchData()
     {
-        this.categories = await this.api.fetchCategories();
-        this.types      = await this.api.fetchTypes();
-        this.projects   = await this.api.fetchProjects();
-        this.nodes      = [{ id: 1, label: 'Node X' }, { id: 2, label: 'Node Y' }];
-    }
+        this.api.fetchCategories().then(categories => {
+            this.menu.populateCategories(categories);
+        });
 
-    populateItems()
-    {
-        this.menu.populateCategories(this.categories);
-        this.menu.populateTypes(this.types);
-        this.menu.populateNodes(this.nodes);
-        this.modalOpenProject.populateProjects(this.projects);
+        this.api.fetchTypes().then(types => {
+            this.menu.populateTypes(types);
+        });
+
+        this.menu.populateNodes([{ id: 1, label: 'Node X' }, { id: 2, label: 'Node Y' }]);
+        
+        this.api.fetchProjects().then(projects => {
+            this.modalOpenProject.populateProjects(projects);
+        });
     }
 
     setupEventListeners()
@@ -64,11 +64,25 @@ export class App extends HTMLElement {
         });
 
         this.menu.addEventListener('new-prj-btn-clicked', () => {
+            
+            if (this.statusUpdateTimer !== null) {
+                clearInterval(this.statusUpdateTimer);
+                this.statusUpdateTimer = null;
+                this.project.clear();
+            }
+
             this.modalNewProject.show();
             this.modalOpenProject.hide();
         });
 
         this.menu.addEventListener('open-prj-btn-clicked', () => {
+
+            if (this.statusUpdateTimer !== null) {
+                clearInterval(this.statusUpdateTimer);
+                this.statusUpdateTimer = null;
+                this.project.clear();
+            }
+
             this.modalNewProject.hide();
             this.modalOpenProject.show();
         });
@@ -77,9 +91,18 @@ export class App extends HTMLElement {
             this.project.export();
         });
 
+        this.addEventListener('new-project', (event) => {
+            const projectData = event.detail;
+            this.newProject(projectData);
+        });
+
         // Handle opening projects
         this.addEventListener('open-project', (event) => {
             this.openProject(event.detail.id);
+        });
+
+        this.addEventListener('category-changed', (event) => {
+            alert(`Categoria alterada para: ${event.detail.categoryId}`);
         });
 
         this.boundKeyHandler = this.handleKeyPress.bind(this);
@@ -89,12 +112,19 @@ export class App extends HTMLElement {
         document.addEventListener('mousemove', this.boundMouseHandler);
     }
 
+    async newProject(projectData) {
+        console.log('Creating new project with data:', projectData);
+        const project = await this.api.insertProject(projectData);
+        this.modalNewProject.hide();
+        this.notification.success(`Projeto "${project.name}" criado com sucesso!`);
+        this.openProject(project.id);
+    }
+
     async openProject(projectId) {
         this.modalOpenProject.hide();
 
         const project = await this.api.fetchProject(projectId);
         const projectGraph = await this.api.fetchProjectGraph(projectId);
-
         console.log('Opened project:', project);
         console.log('Project graph:', projectGraph);
         this.project.populateProject(project, projectGraph);
@@ -103,14 +133,14 @@ export class App extends HTMLElement {
         this.notification.success(`Projeto "${project.id}" aberto com sucesso!`);
     }
 
-    async startStatusUpdates(projectId) {
-        await this.updateNodeStatuses(projectId);
+    startStatusUpdates(projectId) {
+        this.updateNodeStatuses(projectId);
         if (this.statusUpdateTimer) {
             clearInterval(this.statusUpdateTimer);
         }
 
-        this.statusUpdateTimer = setInterval(async () => {
-            await this.updateNodeStatuses(projectId);
+        this.statusUpdateTimer = setInterval(() => {
+            this.updateNodeStatuses(projectId);
         }, 5000);
     }
 
@@ -122,12 +152,10 @@ export class App extends HTMLElement {
     }
 
     handleKeyPress(e) {
-        console.log('Key pressed:', e.key);
         this.menu.handleKeyPress(e);
     }
 
     handleMouseMove(e) {
-        console.log('Mouse moved:', e.clientX, e.clientY);
         this.menu.handleMouseMove(e);
     }
 }

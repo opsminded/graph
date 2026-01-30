@@ -192,7 +192,6 @@ export class Menu extends HTMLElement {
         const categorySelect = this.shadowRoot.getElementById("add-node-form-category");
         categorySelect.addEventListener("change", () => {
             const selectedCategoryId = categorySelect.value;
-            alert(`Categoria selecionada: ${selectedCategoryId} - Em construção`);
             this.dispatchEvent(new CustomEvent("category-changed", {
                 detail: { categoryId: selectedCategoryId },
                 bubbles: true,
