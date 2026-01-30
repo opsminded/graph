@@ -975,9 +975,6 @@ final class Database implements DatabaseInterface
         $stmt->execute($params);
         $rows = $stmt->fetchAll();
 
-        echo "Type category rows\n";
-        print_r($rows);
-        exit();
         $this->logger->info("category types fetched", ['params' => $params, 'rows' => $rows]);
         return array_map(fn($row) => new TypeDTO($row['id'], $row['name']), $rows);
     }

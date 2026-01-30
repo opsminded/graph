@@ -7,6 +7,7 @@ export class Api
         this.getProjectURL = baseUrl + '/getProject';
         this.getProjectsURL = baseUrl + '/getProjects';
         this.getCategoriesURL = baseUrl + '/getCategories';
+        this.getCategoryTypesURL = baseUrl + '/getCategoryTypes';
     }
 
     fetchCategories() {
@@ -42,6 +43,24 @@ export class Api
             })
             .catch(error => {
                 console.error('[fetchTypes] Fetch error:', error);
+                return [];
+            });
+    }
+
+    getCategoryTypes(categoryId) {
+        return fetch(`${this.getCategoryTypesURL}?category=${encodeURIComponent(categoryId)}`)
+            .then(response => {
+                if (!response.ok) {
+                    console.error('Response not ok:', response);
+                    throw new Error(`Erro ao carregar tipos da categoria: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(({ data }) => {
+                return data;
+            })
+            .catch(error => {
+                console.error('[getCategoryTypes] Fetch error:', error);
                 return [];
             });
     }

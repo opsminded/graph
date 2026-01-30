@@ -101,8 +101,10 @@ export class App extends HTMLElement {
             this.openProject(event.detail.id);
         });
 
-        this.addEventListener('category-changed', (event) => {
-            alert(`Categoria alterada para: ${event.detail.categoryId}`);
+        this.addEventListener('category-changed', async (event) => {
+            const categoryId = event.detail.categoryId;
+            const newTypes = await this.api.getCategoryTypes(categoryId);
+            this.menu.populateTypes(newTypes);
         });
 
         this.boundKeyHandler = this.handleKeyPress.bind(this);
