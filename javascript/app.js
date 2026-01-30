@@ -1,6 +1,6 @@
 
 import './menu.js';
-
+import './modal-open-project.js';
 export class App extends HTMLElement {
     constructor() {
         super();
@@ -8,12 +8,19 @@ export class App extends HTMLElement {
         this.render();
     }
 
-    async render() {
-        this.shadowRoot.innerHTML = "";
-        const menu = document.createElement("app-menu");
-        const modalOpenProject = document.createElement("app-modal-open-project");
-        const modalNewProject = document.createElement("app-modal-new-project");
-        this.shadowRoot.append(menu, modalOpenProject, modalNewProject);
+    render() {
+        this.shadowRoot.innerHTML = `
+            <app-menu></app-menu>
+            <app-open-project-modal></app-open-project-modal>
+        `;
+
+        const menu = this.shadowRoot.querySelector('app-menu');
+        menu.addEventListener('close-menu-btn-clicked', () => { 
+            alert('Close menu to be implemented in App');
+         });
+        menu.addEventListener('login-btn-clicked', () => {
+            alert('Login to be implemented in App');
+         });
     }
 }
 

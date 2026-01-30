@@ -6,11 +6,156 @@ export class Menu extends HTMLElement {
         this.render();
     }
 
-    async render() {
-        this.shadowRoot.innerHTML = "";
-        const div = document.createElement("p");
-        div.textContent = "This is the menu component.";
-        this.shadowRoot.appendChild(div);
+    render() {
+        this.shadowRoot.innerHTML = `
+            <style>
+                #menu {
+                    position: absolute;
+
+                    left: 0;
+                    top: 0;
+                    width: 270px;
+                    height: 100%;
+                    padding: 10px 0;
+
+                    text-align: center;
+
+                    background-color: #FAF9F5;
+
+                    border-right: 1px solid #CCC;
+                    z-index: 200;
+                }
+
+                #menu h2 {
+                    font-size: 24px;
+                    line-height: 24px;
+                    margin: 10px 0;
+                    padding: 0;
+                }
+
+                #menu.hide {
+                    display: none;
+                }
+
+                #menu > div:first-of-type {
+                    text-align: right;
+                    padding: 0 10px;
+                }
+
+                #menu h2 span {
+                    font-weight: bold;
+                    color: #B62B2B;
+                }
+                
+                #user-panel {
+                    background-color: #FFFFFF;
+                    border-top: 1px solid #CCC;
+                    border-bottom: 1px solid #CCC;
+                    padding-bottom: 20px;
+                }
+
+                #add-node-form {
+                    display: block;
+                }
+
+                #add-node-form.hide {
+                    display: none;
+                }
+
+                #add-edge-form {
+                    display: none;
+                }
+
+                #add-edge-form.show {
+                    display: block;
+                }
+            </style>
+            <div id="menu">
+                <div><button id="close-menu-btn">X</button></div>
+                <img src="/images/logo.png" alt="Logo" width="32" height="32">
+                <h2><span>Brades</span>ketch</h2>
+
+                <div id="user-panel">
+                    <p><button id="login-btn" title="Entrar">Entrar</button></p>
+                    <p>
+                        <button id="new-prj-btn" title="Novo Projeto" style="margin: 0 10px;">Novo</button>
+                        <button id="open-prj-btn" title="Abrir Projeto" style="margin: 0 10px;">Abrir</button>
+                    </p>
+                </div>
+
+                <form id="add-node-form">
+                    <h3>Adicionar Item</h3>
+                    <p>
+                        <label for="add-node-form-category">Categoria:<br>
+                            <select id="add-node-form-category" name="category" required>
+                                <option>Selecione</option>
+                            </select>
+                        </label>
+                    </p>
+
+                    <p>
+                        <label for="add-node-form-type">Tipo:<br>
+                            <select id="add-node-form-type" name="type" required>
+                                <option>Selecione</option>
+                            </select>
+                        </label>
+                    </p>
+
+                    <p>
+                        <label for="add-node-form-node">Item:<br>
+                            <select id="add-node-form-node" name="node" required>
+                                <!-- Options will be populated dynamically -->
+                            </select>
+                        </label>
+                    </p>
+
+                    <p><button id="add-node-form-submit" type="submit">Adicionar Item</button></p>
+                </form>
+
+                <form id="add-edge-form">
+                    <h3>Adicionar Conexão</h3>
+                    <p><button id="add-edge-form-submit" type="submit" disabled>Adicionar Conexão</button></p>
+                </form>
+
+                <p>
+                    <button id="export-btn" type="button">Exportar</button>
+                </p>
+
+                <p>
+                    <button id="fit-btn" type="button">Ajustar</button>
+                </p>
+            </div>
+        `;
+
+        const closeMenuBtn = this.shadowRoot.getElementById("close-menu-btn");
+        closeMenuBtn.addEventListener("click", () => {
+            alert("Fechar Menu - Em construção");
+            this.dispatchEvent(new CustomEvent("close-menu-btn-clicked", {bubbles: true, composed: true}));
+        });
+
+        const loginBtn = this.shadowRoot.getElementById("login-btn");
+        loginBtn.addEventListener("click", () => {
+            alert("Login - Em construção");
+            this.dispatchEvent(new CustomEvent("login-btn-clicked", {bubbles: true, composed: true}));
+        });
+
+        const newPrjBtn = this.shadowRoot.getElementById("new-prj-btn");
+        newPrjBtn.addEventListener("click", () => {
+            alert("Novo Projeto - Em construção");
+            this.dispatchEvent(new CustomEvent("new-prj-btn-clicked", {bubbles: true, composed: true}));
+        });
+
+        const openPrjBtn = this.shadowRoot.getElementById("open-prj-btn");
+        openPrjBtn.addEventListener("click", () => {
+            alert("Abrir Projeto - Em construção");
+            this.dispatchEvent(new CustomEvent("open-prj-btn-clicked", {bubbles: true, composed: true}));
+        });
+
+        const addNodeForm = this.shadowRoot.getElementById("add-node-form");
+        addNodeForm.addEventListener("submit", (event) => {
+            event.preventDefault();
+            alert("Adicionar Item - Em construção");
+        });
     }
 }
 

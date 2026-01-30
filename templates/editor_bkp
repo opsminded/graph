@@ -56,84 +56,30 @@ $basePath = rtrim(dirname($requestUri), "/\\");
                 padding: 0;
             }
 
-            #menu {
-                position: absolute;
-
-                left: 0;
-                top: 0;
-                width: 270px;
-                height: 100%;
-                padding: 10px 0;
-
-                text-align: center;
-
-                background-color: #FAF9F5;
-
-                border-right: 1px solid #CCC;
-                z-index: 200;
-            }
-
-            #menu h2 {
-                font-size: 24px;
-                line-height: 24px;
-                margin: 10px 0;
-                padding: 0;
-            }
-
-            #menu.hide {
-                display: none;
-            }
-
-            #menu > div:first-of-type {
-                text-align: right;
-                padding: 0 10px;
-            }
-
-            #user-panel {
-                background-color: #FFFFFF;
-                border-top: 1px solid #CCC;
-                border-bottom: 1px solid #CCC;
-                padding-bottom: 20px;
-            }
-
-            #add-node-form {
-                display: block;
-            }
-
-            #add-node-form.hide {
-                display: none;
-            }
-
-            #add-edge-form {
-                display: none;
-            }
-
-            #add-edge-form.show {
-                display: block;
-            }
+            
 
             /* Info panel on the right side */
 
-            #info-panel {
-                position: absolute;
+                #info-panel {
+                    position: absolute;
 
-                right: 0;
-                top: 0;
+                    right: 0;
+                    top: 0;
 
-                width: 40%;
-                height: 100%;
-                
-                background-color: #fff;
-                border-left: 1px solid #CCC;
-                padding: 10px;
-                
-                display: none;
-                z-index: 400;
-            }
+                    width: 40%;
+                    height: 100%;
+                    
+                    background-color: #fff;
+                    border-left: 1px solid #CCC;
+                    padding: 10px;
+                    
+                    display: none;
+                    z-index: 400;
+                }
 
-            #info-panel.show {
-                display: block;
-            }
+                #info-panel.show {
+                    display: block;
+                }
 
             #cy {
                 position: absolute;
@@ -251,19 +197,6 @@ $basePath = rtrim(dirname($requestUri), "/\\");
             <p>
                 <button id="fit-btn" type="button">Ajustar</button>
             </p>
-        </div>
-
-        <div id="info-panel">
-            <h2>Propriedades do Nó</h2>
-            <div id="info-panel-content">
-                <p><strong>ID:</strong> <span id="info-node-id"></span></p>
-                <p><strong>Rótulo:</strong> <span id="info-node-label"></span></p>
-                <p><strong>Categoria:</strong> <span id="info-node-category"></span></p>
-                <p><strong>Tipo:</strong> <span id="info-node-type"></span></p>
-                <div id="info-node-properties">
-                    <!-- Additional properties will be populated dynamically -->
-                </div>
-            </div>
         </div>
 
         <div id="modal">
