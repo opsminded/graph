@@ -86,9 +86,9 @@ CREATE TABLE IF NOT EXISTS audit (
 INSERT OR IGNORE INTO users VALUES('admin', 'admin');
 
 INSERT OR IGNORE INTO categories VALUES
-('business',       'Negócios',       'round-rectangle', 80, 80),
-('application',    'Aplicação',      'ellipse',         60, 60),
-('infrastructure', 'Infraestrutura', 'round-hexagon',   60, 53);
+('business',       '💼 Negócios',       'round-rectangle', 80, 80),
+('application',    '📱 Aplicação',      'ellipse',         60, 60),
+('infrastructure', '🏗️ Infraestrutura', 'round-hexagon',   60, 53);
 
 INSERT OR IGNORE INTO types VALUES
 ('business',      'Negócios'),
