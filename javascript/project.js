@@ -69,10 +69,20 @@ export class Project extends HTMLElement
 
             if (node) {
                 node.addClass(`node-status-${update.status}`);
-
-                console.log("final node classes", node.classes());
             }
         });
+    }
+
+    export()
+    {
+        let pngData = this.cy.png({
+            full: true,
+        });
+        
+        let link = document.createElement('a');
+        link.href = pngData;
+        link.download = 'graph.png';
+        link.click();
     }
 }
 

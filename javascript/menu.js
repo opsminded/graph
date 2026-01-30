@@ -177,8 +177,9 @@ export class Menu extends HTMLElement {
         });
 
         const exportBtn = this.shadowRoot.getElementById("export-btn");
-        exportBtn.addEventListener("click", () => {
-            alert("Exportar - Em construção");
+        exportBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            this.dispatchEvent(new CustomEvent("export-btn-clicked", {bubbles: true, composed: true}));
         });
 
         const fitBtn = this.shadowRoot.getElementById("fit-btn");

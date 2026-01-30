@@ -3,6 +3,7 @@ import './info-panel.js';
 import './menu.js';
 import './modal-open-project.js';
 import './modal-new-project.js';
+import './notification.js';
 import './project.js';
 
 export class App extends HTMLElement {
@@ -24,6 +25,7 @@ export class App extends HTMLElement {
             <app-new-project-modal></app-new-project-modal>
             <app-info-panel></app-info-panel>
             <app-project></app-project>
+            <app-notification></app-notification>
         `;
 
         // Initialize components
@@ -32,6 +34,7 @@ export class App extends HTMLElement {
         this.modalOpenProject = this.shadowRoot.querySelector('app-open-project-modal');
         this.infoPanel        = this.shadowRoot.querySelector('app-info-panel'); 
         this.project          = this.shadowRoot.querySelector('app-project');
+        this.notification     = this.shadowRoot.querySelector('app-notification');
 
         // Fetch data
         this.categories = await this.api.fetchCategories();
@@ -59,6 +62,10 @@ export class App extends HTMLElement {
             this.modalOpenProject.show();
         });
 
+        this.menu.addEventListener('export-btn-clicked', () => {
+            this.project.export();
+        });
+
         // Handle opening projects
         this.modalOpenProject.addEventListener('open-project', (event) => {
             this.openProject(event.detail.id);
@@ -75,6 +82,8 @@ export class App extends HTMLElement {
         console.log('Project graph:', projectGraph);
         this.project.populateProject(project, projectGraph);
         this.startStatusUpdates(projectId);
+
+        this.notification.success(`Projeto "${project.id}" aberto com sucesso!`);
     }
 
     disconnectedCallback() {
