@@ -1,5 +1,5 @@
 
-export class Menu extends HTMLElement {
+export class OpenProjectModal extends HTMLElement {
     constructor() {
         super();
         this.attachShadow({ mode: "open" });
@@ -9,9 +9,9 @@ export class Menu extends HTMLElement {
     async render() {
         this.shadowRoot.innerHTML = "";
         const div = document.createElement("p");
-        div.textContent = "This is the menu component.";
+        div.textContent = "This is the open project modal component.";
         this.shadowRoot.appendChild(div);
     }
 }
 
-customElements.define("app-menu", Menu);
+customElements.define("app-open-project-modal", OpenProjectModal);
