@@ -299,6 +299,27 @@ final class Controller implements ControllerInterface
         return new NotFoundResponse("project not found", ['id' => $id]);
     }
 
+    public function getProjectGraph(Request $req): ResponseInterface
+    {
+        if($req->method !== Request::METHOD_GET) {
+            return new MethodNotAllowedResponse($req->method, __METHOD__);
+        }
+
+        try {
+            $id = $req->getParam('id');
+        } catch(RequestException $e) {
+            return new BadRequestResponse($e->getMessage(), []);
+        }
+
+        $projectGraph = $this->service->getProjectGraph($id);
+        if(is_null($projectGraph)) {
+            return new NotFoundResponse("project graph not found", ['id' => $id]);
+        }
+
+        $graph = $this->cytoscapeHelper->convertToCytoscapeFormat($projectGraph);
+        return new OKResponse("project graph found", $graph);
+    }
+
     public function getProjects(Request $req): ResponseInterface
     {
         if($req->method !== Request::METHOD_GET) {

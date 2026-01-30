@@ -51,6 +51,7 @@ final class RequestRouter
         ["method" => Request::METHOD_PUT,    "class_method" => "updateNodeStatus"],
 
         ["method" => Request::METHOD_GET,    "class_method" => "getProject"],
+        ["method" => Request::METHOD_GET,    "class_method" => "getProjectGraph"],
         ["method" => Request::METHOD_GET,    "class_method" => "getProjects"],
     ];
 
@@ -1837,6 +1838,7 @@ final class Service implements ServiceInterface
         "Service::getStatus"           => true,
         "Service::getNodeStatus"       => true,
         "Service::getProject"          => true,
+        "Service::getProjectGraph"     => true,
         "Service::getProjects"         => true,
         "Service::getLogs"             => true,
         "Service::insertUser"          => false,
@@ -2203,6 +2205,42 @@ final class Service implements ServiceInterface
         return null;
     }
 
+    public function getProjectGraph(string $id): ?Graph
+    {
+        $this->logger->debug("getting project graph", ["id" => $id]);
+        $this->verify();
+        $dbGraph = $this->database->getProjectGraph($id);
+
+        if (! is_null($dbGraph)) {
+            $nodes = [];
+            foreach ($dbGraph->nodes as $node) {
+                $nodes[] = new Node(
+                    $node->id,
+                    $node->label,
+                    $node->category,
+                    $node->type,
+                    $node->data
+                );
+            }
+
+            $edges = [];
+            foreach ($dbGraph->edges as $edge) {
+                $edges[] = new Edge(
+                    $edge->source,
+                    $edge->target,
+                    $edge->label,
+                    $edge->data
+                );
+            }
+
+            $graph = new Graph($nodes, $edges);
+            $this->logger->info("project graph found", ["id" => $id]);
+            return $graph;
+        }
+        $this->logger->info("project graph not found", ["id" => $id]);
+        return null;
+    }
+
     public function getProjects(): array
     {
         $this->logger->debug("getting projects");
@@ -2377,6 +2415,8 @@ interface ServiceInterface
     public function updateNodeStatus(Status $status): bool;
 
     public function getProject(string $id): ?Project;
+    public function getProjectGraph(string $id): ?Graph;
+
     public function getProjects(): array;
     public function insertProject(Project $project): bool;
     public function updateProject(Project $project): bool;
@@ -2420,12 +2460,14 @@ final class HelperCytoscape
         $this->imageBaseUrl = $imageBaseUrl;
     }
 
-    public function toArray(Graph $graph): array
+    public function convertToCytoscapeFormat(Graph $graph): array
     {
+        $nodes = $this->getNodes($graph);
+        $edges = $this->getEdges($graph);
         return [
             self::KEYNAME_ELEMENTS => [
-                'nodes' => $this->getNodes($graph),
-                'edges' => $this->getEdges($graph),
+                'nodes' => $nodes,
+                'edges' => $edges,
             ],
 
             self::KEYNAME_STYLES => $this->getStyle(),
@@ -2446,7 +2488,6 @@ final class HelperCytoscape
         $graphArr = $graph->toArray();
         $nodes = [];
         foreach ($graphArr['nodes'] as $index => $node) {
-            $node = $node->toArray();
             $nodes[] = [
                 "data" => array_merge([
                     'id' => $node['id'],
@@ -2470,7 +2511,6 @@ final class HelperCytoscape
         $edgesArr = $graph->toArray();
         $edges = [];
         foreach ($edgesArr['edges'] as $edge) {
-            $edge = $edge->toArray();
             $edges[] = [
                 "data" => [
                     'id'     => $edge['id'],
@@ -2890,6 +2930,8 @@ interface ControllerInterface
     public function updateNodeStatus(Request $req): ResponseInterface;
 
     public function getProject(Request $req): ResponseInterface;
+    public function getProjectGraph(Request $req): ResponseInterface;
+    
     public function getProjects(Request $req): ResponseInterface;
     public function insertProject(Request $req): ResponseInterface;
     public function updateProject(Request $req): ResponseInterface;
@@ -3193,6 +3235,27 @@ final class Controller implements ControllerInterface
             return new OKResponse("project found", $data);
         }
         return new NotFoundResponse("project not found", ['id' => $id]);
+    }
+
+    public function getProjectGraph(Request $req): ResponseInterface
+    {
+        if($req->method !== Request::METHOD_GET) {
+            return new MethodNotAllowedResponse($req->method, __METHOD__);
+        }
+
+        try {
+            $id = $req->getParam('id');
+        } catch(RequestException $e) {
+            return new BadRequestResponse($e->getMessage(), []);
+        }
+
+        $projectGraph = $this->service->getProjectGraph($id);
+        if(is_null($projectGraph)) {
+            return new NotFoundResponse("project graph not found", ['id' => $id]);
+        }
+
+        $graph = $this->cytoscapeHelper->convertToCytoscapeFormat($projectGraph);
+        return new OKResponse("project graph found", $graph);
     }
 
     public function getProjects(Request $req): ResponseInterface

@@ -1,8 +1,9 @@
 import {Api} from './api.js';
+import './info-panel.js';
 import './menu.js';
 import './modal-open-project.js';
 import './modal-new-project.js';
-import './info-panel.js';
+import './project.js';
 
 export class App extends HTMLElement {
     constructor() {
@@ -20,44 +21,54 @@ export class App extends HTMLElement {
             <app-open-project-modal></app-open-project-modal>
             <app-new-project-modal></app-new-project-modal>
             <app-info-panel></app-info-panel>
+            <app-project></app-project>
         `;
 
-        const menu = this.shadowRoot.querySelector('app-menu');
-        menu.addEventListener('close-menu-btn-clicked', () => { 
-            // Handle menu close if needed
-        });
+        // Initialize components
+        this.menu             = this.shadowRoot.querySelector('app-menu');
+        this.modalNewProject  = this.shadowRoot.querySelector('app-new-project-modal');
+        this.modalOpenProject = this.shadowRoot.querySelector('app-open-project-modal');
+        this.infoPanel        = this.shadowRoot.querySelector('app-info-panel'); 
+        this.project          = this.shadowRoot.querySelector('app-project');
 
-        menu.addEventListener('login-btn-clicked', () => {
+        // Fetch data
+        this.categories = await this.api.fetchCategories();
+        this.types      = await this.api.fetchTypes();
+        const projects  = await this.api.fetchProjects();
+        this.nodes      = [{ id: 1, label: 'Node X' }, { id: 2, label: 'Node Y' }];
+
+        // Populate menu and modals
+        this.menu.populateCategories(this.categories);
+        this.menu.populateTypes(this.types);
+        this.menu.populateNodes(this.nodes);
+        this.modalOpenProject.populateProjects(projects);
+
+        this.menu.addEventListener('login-btn-clicked', () => {
             alert('Login to be implemented in App');
         });
 
-        const categories = await this.api.fetchCategories();
-        menu.populateCategories(categories);
-
-        const types = await this.api.fetchTypes();
-        menu.populateTypes(types);
-
-        const nodes = [{ id: 1, label: 'Node X' }, { id: 2, label: 'Node Y' }];
-        menu.populateNodes(nodes);
-
-        menu.addEventListener('new-prj-btn-clicked', () => {
-            const modalNewProject = this.shadowRoot.querySelector('app-new-project-modal');
-            const modalOpenProject = this.shadowRoot.querySelector('app-open-project-modal');
-            modalNewProject.show();
-            modalOpenProject.hide();
+        this.menu.addEventListener('new-prj-btn-clicked', () => {
+            this.modalNewProject.show();
+            this.modalOpenProject.hide();
         });
 
-        menu.addEventListener('open-prj-btn-clicked', () => {
-            const modalNewProject = this.shadowRoot.querySelector('app-new-project-modal');
-            const modalOpenProject = this.shadowRoot.querySelector('app-open-project-modal');
-            modalNewProject.hide();
-            modalOpenProject.show();
+        this.menu.addEventListener('open-prj-btn-clicked', () => {
+            this.modalNewProject.hide();
+            this.modalOpenProject.show();
         });
 
-        const modalOpenProject = this.shadowRoot.querySelector('app-open-project-modal');
-        
-        const projects = await this.api.fetchProjects();
-        modalOpenProject.populateProjects(projects);
+        // Handle opening projects
+        this.modalOpenProject.addEventListener('open-project', (event) => {
+            this.openProject(event.detail.id);
+        });
+    }
+
+    async openProject(id) {
+        const project = await this.api.fetchProject(id);
+        const projectGraph = await this.api.fetchProjectGraph(id);
+        console.log('Opened project:', project);
+        this.project.populateProject(project, projectGraph);
+        this.modalOpenProject.hide();
     }
 }
 

@@ -75,4 +75,21 @@ export class Api
             return null;
         }
     }
+
+    async fetchProjectGraph(projectId) {
+        console.log('Fetching project graph from API with ID:', projectId);
+        try {
+            const response = await fetch(`/getProjectGraph?id=${encodeURIComponent(projectId)}`);
+            if (!response.ok) {
+                console.error('Response not ok:', response);
+                throw new Error(`Erro ao carregar gráficos do projeto: ${response.status}`);
+            }
+            const { data } = await response.json();
+            console.log('Project graph fetched:', data);
+            return data;
+        } catch (error) {
+            console.error('[fetchProjectGraph] Fetch error:', error);
+            return [];
+        }
+    }
 }

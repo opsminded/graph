@@ -94,16 +94,16 @@ INSERT OR IGNORE INTO types VALUES
 ('server',        'Servidor'),
 ('database',      'Banco de Dados');
 
-INSERT OR IGNORE INTO nodes(id, label, category, type, data) VALUES ('n1', 'n1', 'application', 'service', '{}');
-INSERT OR IGNORE INTO nodes(id, label, category, type, data) VALUES ('n2', 'n2', 'application', 'service', '{}');
-INSERT OR IGNORE INTO nodes(id, label, category, type, data) VALUES ('n3', 'n3', 'application', 'service', '{}');
-INSERT OR IGNORE INTO nodes(id, label, category, type, data) VALUES ('n4', 'n4', 'application', 'service', '{}');
-INSERT OR IGNORE INTO nodes(id, label, category, type, data) VALUES ('n5', 'n5', 'application', 'service', '{}');
+INSERT OR IGNORE INTO nodes(id, label, category, type, data) VALUES ('n1', 'n1', 'application', 'service', '{\"a\":\"b\"}');
+INSERT OR IGNORE INTO nodes(id, label, category, type, data) VALUES ('n2', 'n2', 'application', 'service', '{\"a\":\"b\"}');
+INSERT OR IGNORE INTO nodes(id, label, category, type, data) VALUES ('n3', 'n3', 'application', 'service', '{\"a\":\"b\"}');
+INSERT OR IGNORE INTO nodes(id, label, category, type, data) VALUES ('n4', 'n4', 'application', 'service', '{\"a\":\"b\"}');
+INSERT OR IGNORE INTO nodes(id, label, category, type, data) VALUES ('n5', 'n5', 'application', 'service', '{\"a\":\"b\"}');
 
-INSERT OR IGNORE INTO edges(id, label, source, target, data) VALUES ('e1-2', 'connects_to', 'n1', 'n2', '{}');
-INSERT OR IGNORE INTO edges(id, label, source, target, data) VALUES ('e3-4', 'connects_to', 'n3', 'n4', '{}');
-INSERT OR IGNORE INTO edges(id, label, source, target, data) VALUES ('e2-5', 'connects_to', 'n2', 'n5', '{}');
-INSERT OR IGNORE INTO edges(id, label, source, target, data) VALUES ('e4-5', 'connects_to', 'n4', 'n5', '{}');
+INSERT OR IGNORE INTO edges(id, label, source, target, data) VALUES ('e1-2', 'connects_to', 'n1', 'n2', '{\"a\":\"b\"}');
+INSERT OR IGNORE INTO edges(id, label, source, target, data) VALUES ('e3-4', 'connects_to', 'n3', 'n4', '{\"a\":\"b\"}');
+INSERT OR IGNORE INTO edges(id, label, source, target, data) VALUES ('e2-5', 'connects_to', 'n2', 'n5', '{\"a\":\"b\"}');
+INSERT OR IGNORE INTO edges(id, label, source, target, data) VALUES ('e4-5', 'connects_to', 'n4', 'n5', '{\"a\":\"b\"}');
 
 INSERT OR IGNORE INTO projects(id, name, author, data) VALUES ('p1', 'Projeto 1', 'admin', '{}');
 

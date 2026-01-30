@@ -132,9 +132,19 @@ export class Menu extends HTMLElement {
             </div>
         `;
 
+        this.menu = this.shadowRoot.getElementById("menu");
+
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "m" || event.key === "M") {
+                this.show();
+            }
+        });
+
         const closeMenuBtn = this.shadowRoot.getElementById("close-menu-btn");
         closeMenuBtn.addEventListener("click", () => {
             this.hide();
+            this.keepClosed = !this.keepClosed;
+            closeMenuBtn.textContent = this.keepClosed ? "fixar" : "X";
             this.dispatchEvent(new CustomEvent("close-menu-btn-clicked", {bubbles: true, composed: true}));
         });
 
@@ -201,11 +211,36 @@ export class Menu extends HTMLElement {
         });
     }
 
+    show() {
+        this.menu.classList.remove("hide");
+    }
+
     hide() {
-        if (!this.keepClosed) {
-            const menu = this.shadowRoot.getElementById("menu");
-            menu.classList.add("hide");
+        this.menu.classList.add("hide");
+    }
+
+    connectedCallback() {
+        this.boundKeyHandler = this.handleKeyPress.bind(this);
+        document.addEventListener('keydown', this.boundKeyHandler);
+
+        this.boundMouseHandler = this.handleMouseMove.bind(this);
+        document.addEventListener('mousemove', this.boundMouseHandler);
+    }
+
+    handleKeyPress(event) {
+        if (event.key === "m" || event.key === "M") {
+            this.hide();
         }
+    }
+
+    handleMouseMove(event) {
+        if (event.clientX <= 300) {
+            return this.show();
+        }
+        if (!this.keepClosed) {
+            return;
+        }
+        return this.hide();
     }
 
     populateCategories(categories) {

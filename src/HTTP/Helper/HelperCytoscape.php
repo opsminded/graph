@@ -25,12 +25,14 @@ final class HelperCytoscape
         $this->imageBaseUrl = $imageBaseUrl;
     }
 
-    public function toArray(Graph $graph): array
+    public function convertToCytoscapeFormat(Graph $graph): array
     {
+        $nodes = $this->getNodes($graph);
+        $edges = $this->getEdges($graph);
         return [
             self::KEYNAME_ELEMENTS => [
-                'nodes' => $this->getNodes($graph),
-                'edges' => $this->getEdges($graph),
+                'nodes' => $nodes,
+                'edges' => $edges,
             ],
 
             self::KEYNAME_STYLES => $this->getStyle(),
@@ -51,7 +53,6 @@ final class HelperCytoscape
         $graphArr = $graph->toArray();
         $nodes = [];
         foreach ($graphArr['nodes'] as $index => $node) {
-            $node = $node->toArray();
             $nodes[] = [
                 "data" => array_merge([
                     'id' => $node['id'],
@@ -75,7 +76,6 @@ final class HelperCytoscape
         $edgesArr = $graph->toArray();
         $edges = [];
         foreach ($edgesArr['edges'] as $edge) {
-            $edge = $edge->toArray();
             $edges[] = [
                 "data" => [
                     'id'     => $edge['id'],

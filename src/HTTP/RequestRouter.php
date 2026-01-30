@@ -26,6 +26,7 @@ final class RequestRouter
         ["method" => Request::METHOD_PUT,    "class_method" => "updateNodeStatus"],
 
         ["method" => Request::METHOD_GET,    "class_method" => "getProject"],
+        ["method" => Request::METHOD_GET,    "class_method" => "getProjectGraph"],
         ["method" => Request::METHOD_GET,    "class_method" => "getProjects"],
     ];
 

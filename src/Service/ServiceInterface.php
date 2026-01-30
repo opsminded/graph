@@ -29,6 +29,8 @@ interface ServiceInterface
     public function updateNodeStatus(Status $status): bool;
 
     public function getProject(string $id): ?Project;
+    public function getProjectGraph(string $id): ?Graph;
+
     public function getProjects(): array;
     public function insertProject(Project $project): bool;
     public function updateProject(Project $project): bool;
