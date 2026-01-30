@@ -14,12 +14,21 @@ final class HelperCytoscape
     private const KEYNAME_PANX = "x";
     private const KEYNAME_PANY = "y";
 
+    private array $images = [];
     private string $imageBaseUrl = "";
 
     private array $categories;
 
     public function __construct(DatabaseInterface $database, string $imageBaseUrl)
     {
+        $imageDir = __DIR__ . '/../images';
+        $files = glob($imageDir . '/*.png');
+        
+        foreach($files as $file) {
+            $info = pathinfo($file);
+            $this->images[] = basename($info['filename']);
+        }
+
         $this->database = $database;
         $this->categories = $this->database->getCategories();
         $this->imageBaseUrl = $imageBaseUrl;
@@ -199,16 +208,6 @@ final class HelperCytoscape
             ],
         ];
 
-        // $types = $this->imagesHelper->getTypes();
-        // foreach($types as $type) {
-        //     $style[] = [
-        //         "selector" => "node.node-type-{$type}",
-        //         "style" => [
-        //             "background-image" => "{$this->imageBaseUrl}?img={$type}",
-        //         ],
-        //     ];
-        // }
-        
         foreach($this->categories as $category) {
             $style[] = [
                 "selector" => "node.node-category-" . $category->id,
@@ -216,6 +215,15 @@ final class HelperCytoscape
                     "shape" => $category->shape,
                     "width" => $category->width,
                     "height" => $category->height,
+                ],
+            ];
+        }
+
+        foreach($this->images as $type) {
+            $style[] = [
+                "selector" => "node.node-type-" . $type,
+                "style" => [
+                    "background-image" => $this->imageBaseUrl . "/" . $type . ".png",
                 ],
             ];
         }

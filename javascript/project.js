@@ -44,16 +44,31 @@ export class Project extends HTMLElement
 
         this.projectTitle  = this.shadowRoot.getElementById('project-title');
         this.cyContainer = this.shadowRoot.getElementById('cy');
-
-        this.cy = cytoscape({
-            container: this.cyContainer,
-        });
     }
 
     populateProject(project, graph)
     {
         this.projectTitle.textContent = project.id;
-        this.cy.elements().remove();
+
+        graph.container = this.cyContainer;
+        this.cy = cytoscape({
+            container: graph.container,
+            elements: graph.elements,
+            layout: graph.layout,
+            style: graph.style,
+        });
+
+        console.log("Cytoscape instance initialized:");
+        console.log('Style', graph.style);
+        console.log('First node classes: ', this.cy.nodes()[0].classes());
+
+        this.cy.on('tap', 'node', (evt) => {
+            const node = evt.target;
+            console.log('Node ', node.classes());
+        });
+        
+        this.cy.layout(graph.layout).run();
+        this.cy.fit();
     }
 }
 

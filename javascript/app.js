@@ -67,6 +67,7 @@ export class App extends HTMLElement {
         const project = await this.api.fetchProject(id);
         const projectGraph = await this.api.fetchProjectGraph(id);
         console.log('Opened project:', project);
+        console.log('Project graph:', projectGraph);
         this.project.populateProject(project, projectGraph);
         this.modalOpenProject.hide();
     }
