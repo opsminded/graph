@@ -26,6 +26,10 @@ if($_SERVER['REQUEST_URI'] === '/favicon.ico') {
     return false;
 }
 
+if(str_contains($_SERVER['REQUEST_URI'], 'appspecific')) {
+    return false;
+}
+
 if(str_contains($_SERVER['REQUEST_URI'], 'images')) {
     return false;
 }

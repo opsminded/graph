@@ -9,7 +9,7 @@ export class App
 {
     constructor() {
         this.store = new Store();
-
+        
         this.modal = new Modal(this.store);
         this.menu = new Menu(this.store);
 
