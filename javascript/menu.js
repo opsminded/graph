@@ -3,6 +3,7 @@ export class Menu extends HTMLElement {
     constructor() {
         super();
         this.attachShadow({ mode: "open" });
+        this.keepClosed = false;
         this.render();
     }
 
@@ -133,7 +134,7 @@ export class Menu extends HTMLElement {
 
         const closeMenuBtn = this.shadowRoot.getElementById("close-menu-btn");
         closeMenuBtn.addEventListener("click", () => {
-            alert("Fechar Menu - Em construção");
+            this.hide();
             this.dispatchEvent(new CustomEvent("close-menu-btn-clicked", {bubbles: true, composed: true}));
         });
 
@@ -198,6 +199,13 @@ export class Menu extends HTMLElement {
                 composed: true
             }));
         });
+    }
+
+    hide() {
+        if (!this.keepClosed) {
+            const menu = this.shadowRoot.getElementById("menu");
+            menu.classList.add("hide");
+        }
     }
 
     populateCategories(categories) {

@@ -24,7 +24,7 @@ export class App extends HTMLElement {
 
         const menu = this.shadowRoot.querySelector('app-menu');
         menu.addEventListener('close-menu-btn-clicked', () => { 
-            alert('Close menu to be implemented in App');
+            // Handle menu close if needed
         });
 
         menu.addEventListener('login-btn-clicked', () => {
