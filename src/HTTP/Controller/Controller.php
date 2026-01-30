@@ -320,6 +320,30 @@ final class Controller implements ControllerInterface
         return new OKResponse("project graph found", $graph);
     }
 
+    public function getProjectStatus(Request $req): ResponseInterface
+    {
+        if($req->method !== Request::METHOD_GET) {
+            return new MethodNotAllowedResponse($req->method, __METHOD__);
+        }
+        try {
+            $id = $req->getParam('id');
+        } catch(RequestException $e) {
+            return new BadRequestResponse($e->getMessage(), []);
+        }
+        $projectStatus = $this->service->getProjectStatus($id);
+        if(is_null($projectStatus)) {
+            return new NotFoundResponse("project status not found", ['id' => $id]);
+        }
+        
+        $status = [];
+
+        foreach($projectStatus as $s) {
+            $status[] = ['node_id' => $s->getNodeId(), 'status' => $s->getStatus()];
+        }
+
+        return new OKResponse("project status found", $status);
+    }
+
     public function getProjects(Request $req): ResponseInterface
     {
         if($req->method !== Request::METHOD_GET) {

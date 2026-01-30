@@ -92,6 +92,11 @@ interface DatabaseInterface
     public function getProjectGraph(string $projectId): ?GraphDTO;
 
     /**
+     * @return array<StatusDTO>
+     */
+    public function getProjectStatus(string $projectId): array;
+
+    /**
      * @return ProjectDTO[]
      */
     public function getProjects(): array;

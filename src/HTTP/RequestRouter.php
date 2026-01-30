@@ -27,6 +27,7 @@ final class RequestRouter
 
         ["method" => Request::METHOD_GET,    "class_method" => "getProject"],
         ["method" => Request::METHOD_GET,    "class_method" => "getProjectGraph"],
+        ["method" => Request::METHOD_GET,    "class_method" => "getProjectStatus"],
         ["method" => Request::METHOD_GET,    "class_method" => "getProjects"],
     ];
 
@@ -60,27 +61,6 @@ final class RequestRouter
             $resp->template = 'editor.html';
             return $resp;
         }
-
-        // if ($req->method == Request::METHOD_GET && $req->path == "/getImage")
-        // {
-        //     $type = $req->getParam('img');
-        //     $types = HelperImages::getTypes();
-        //     if (!in_array($type, $types)) {
-        //         return new NotFoundResponse("image not found", ["requested_type" => $type, "available_types" => $types]);
-        //     }
-            
-        //     $resp = new OKResponse("getImage", []);
-        //     $resp->contentType = 'Content-Type: image/png';
-        //     $resp->binaryContent = HelperImages::getImageData($req->getParam('img'));
-        //     $resp->headers[] = "Content-Length: " . strlen($resp->binaryContent);
-
-        //     $resp->headers[] = "Cache-Control: public, max-age=86400";
-        //     $resp->headers[] = "Expires: " . gmdate("D, d M Y H:i:s", time() + 86400) . " GMT";
-        //     $resp->headers[] = "ETag: \"" . HelperImages::getImageEtag($req->getParam('img')) . "\"";
-
-        //     $resp->binaryContent = HelperImages::getImageData($req->getParam('img'));
-        //     return $resp;
-        // }
         return null;
     }
 

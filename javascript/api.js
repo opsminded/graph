@@ -92,4 +92,21 @@ export class Api
             return [];
         }
     }
+
+    async fetchProjectStatus(projectId) {
+        console.log('Fetching project status from API with ID:', projectId);
+        try {
+            const response = await fetch(`/getProjectStatus?id=${encodeURIComponent(projectId)}`);
+            if (!response.ok) {
+                console.error('Response not ok:', response);
+                throw new Error(`Erro ao carregar status do projeto: ${response.status}`);
+            }
+            const { data } = await response.json();
+            console.log('Project status fetched:', data);
+            return data;
+        } catch (error) {
+            console.error('[fetchProjectStatus] Fetch error:', error);
+            return null;
+        }
+    }
 }

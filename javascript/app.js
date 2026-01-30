@@ -11,6 +11,8 @@ export class App extends HTMLElement {
 
         this.api = new Api();
 
+        this.statusUpdateTimer = null;
+
         this.attachShadow({ mode: "open" });
         this.render();
     }
@@ -63,13 +65,40 @@ export class App extends HTMLElement {
         });
     }
 
-    async openProject(id) {
-        const project = await this.api.fetchProject(id);
-        const projectGraph = await this.api.fetchProjectGraph(id);
+    async openProject(projectId) {
+        this.modalOpenProject.hide();
+
+        const project = await this.api.fetchProject(projectId);
+        const projectGraph = await this.api.fetchProjectGraph(projectId);
+
         console.log('Opened project:', project);
         console.log('Project graph:', projectGraph);
         this.project.populateProject(project, projectGraph);
-        this.modalOpenProject.hide();
+        this.startStatusUpdates(projectId);
+    }
+
+    disconnectedCallback() {
+        if (this.statusUpdateTimer) {
+            clearInterval(this.statusUpdateTimer);
+        }
+    }
+
+    async startStatusUpdates(projectId) {
+        await this.updateNodeStatuses(projectId);
+        if (this.statusUpdateTimer) {
+            clearInterval(this.statusUpdateTimer);
+        }
+
+        this.statusUpdateTimer = setInterval(async () => {
+            await this.updateNodeStatuses(projectId);
+        }, 5000);
+    }
+
+    async updateNodeStatuses(projectId) {
+        console.log('Updating node statuses...');
+        const statuses = await this.api.fetchProjectStatus(projectId);
+        console.log('Fetched node statuses:', statuses);
+        this.project.updateNodeStatuses(statuses);
     }
 }
 

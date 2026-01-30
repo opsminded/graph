@@ -51,24 +51,28 @@ export class Project extends HTMLElement
         this.projectTitle.textContent = project.id;
 
         graph.container = this.cyContainer;
-        this.cy = cytoscape({
-            container: graph.container,
-            elements: graph.elements,
-            layout: graph.layout,
-            style: graph.style,
-        });
+        this.cy = cytoscape(graph);
 
-        console.log("Cytoscape instance initialized:");
-        console.log('Style', graph.style);
-        console.log('First node classes: ', this.cy.nodes()[0].classes());
-
-        this.cy.on('tap', 'node', (evt) => {
-            const node = evt.target;
-            console.log('Node ', node.classes());
-        });
-        
         this.cy.layout(graph.layout).run();
         this.cy.fit();
+    }
+
+    updateNodeStatuses(statusUpdates)
+    {
+        console.log('updateNodeStatuses called with:', statusUpdates);
+        statusUpdates.forEach(update => {
+            const node = this.cy.$(`#${update.node_id}`);
+            
+            let classes = node.classes();
+
+            classes.forEach(cls => { if (cls.startsWith("node-status")) { node.removeClass(cls); } });
+
+            if (node) {
+                node.addClass(`node-status-${update.status}`);
+
+                console.log("final node classes", node.classes());
+            }
+        });
     }
 }
 

@@ -709,6 +709,59 @@ final class Database implements DatabaseInterface
     }
 
     /**
+     * @return array<StatusDTO>
+     */
+    public function getProjectStatus(string $projectId): array
+    {
+        $this->logger->debug("fetching project status", ['project_id' => $projectId]);
+        $sql = '
+        WITH RECURSIVE descendants AS (
+            SELECT      e.source as edge_source_id,
+                        e.target as edge_target_id,
+                        0        as edge_depth
+            FROM        edges e
+            INNER JOIN  nodes_projects np
+            ON          e.source = np.node_id
+            INNER JOIN  projects p
+            ON          np.project_id = p.id
+            WHERE       p.id = :project_id
+            UNION ALL
+            SELECT      e.source         as edge_source_id,
+                        e.target         as edge_target_id,
+                        d.edge_depth + 1 as edge_depth
+            FROM        descendants d
+            INNER JOIN  edges e ON d.edge_target_id = e.source
+        )
+        SELECT DISTINCT d.edge_source_id,
+                        COALESCE(s.status, \'unknown\') as edge_source_status,
+                        d.edge_target_id,
+                        COALESCE(t.status, \'unknown\') as edge_target_status,
+                        min(d.edge_depth) as depth
+        FROM            descendants d
+        LEFT JOIN       status s
+        ON              d.edge_source_id = s.node_id
+        LEFT JOIN       status t
+        ON              d.edge_target_id = t.node_id
+        GROUP BY        d.edge_source_id,
+                        d.edge_target_id
+        ORDER BY        depth;
+        ';
+        $params = [':project_id' => $projectId];
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll();
+        $this->logger->info("project Graph fetched", ['params' => $params, 'rows' => $rows]);
+        $status = [];
+        foreach ($rows as $row) {
+            $s = new StatusDTO($row['edge_source_id'], $row['edge_source_status']);
+            $t = new StatusDTO($row['edge_target_id'], $row['edge_target_status']);
+            $status[] = $s;
+            $status[] = $t;
+        }
+        return $status;
+    }
+
+    /**
      * @return ProjectDTO[]
      */
     public function getProjects(): array

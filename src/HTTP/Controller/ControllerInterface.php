@@ -27,6 +27,7 @@ interface ControllerInterface
 
     public function getProject(Request $req): ResponseInterface;
     public function getProjectGraph(Request $req): ResponseInterface;
+    public function getProjectStatus(Request $req): ResponseInterface;
     
     public function getProjects(Request $req): ResponseInterface;
     public function insertProject(Request $req): ResponseInterface;

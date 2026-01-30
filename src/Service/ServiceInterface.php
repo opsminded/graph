@@ -31,6 +31,11 @@ interface ServiceInterface
     public function getProject(string $id): ?Project;
     public function getProjectGraph(string $id): ?Graph;
 
+    /**
+     * @return array<Status>
+     */
+    public function getProjectStatus(string $id): array;
+
     public function getProjects(): array;
     public function insertProject(Project $project): bool;
     public function updateProject(Project $project): bool;

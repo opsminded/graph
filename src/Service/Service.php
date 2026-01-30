@@ -18,6 +18,7 @@ final class Service implements ServiceInterface
         "Service::getNodeStatus"       => true,
         "Service::getProject"          => true,
         "Service::getProjectGraph"     => true,
+        "Service::getProjectStatus"    => true,
         "Service::getProjects"         => true,
         "Service::getLogs"             => true,
         "Service::insertUser"          => false,
@@ -418,6 +419,23 @@ final class Service implements ServiceInterface
         }
         $this->logger->info("project graph not found", ["id" => $id]);
         return null;
+    }
+
+    /**
+     * @return Status[]
+     */
+    public function getProjectStatus(string $id): array
+    {
+        $this->logger->debug("getting project status", ["id" => $id]);
+        $this->verify();
+        $dbStatuses = $this->database->getProjectStatus($id);
+        
+        $statuses = [];
+        foreach ($dbStatuses as $st) {
+            $status = new Status($st->node_id, $st->status);
+            $statuses[] = $status;
+        }
+        return $statuses;
     }
 
     public function getProjects(): array

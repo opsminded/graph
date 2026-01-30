@@ -100,6 +100,11 @@ INSERT OR IGNORE INTO nodes(id, label, category, type, data) VALUES ('n3', 'n3',
 INSERT OR IGNORE INTO nodes(id, label, category, type, data) VALUES ('n4', 'n4', 'application',    'database', '{\"a\":\"b\"}');
 INSERT OR IGNORE INTO nodes(id, label, category, type, data) VALUES ('n5', 'n5', 'infrastructure', 'server', '{\"a\":\"b\"}');
 
+INSERT OR IGNORE INTO status(node_id, status) VALUES ('n1', 'healthy');
+INSERT OR IGNORE INTO status(node_id, status) VALUES ('n2', 'healthy');
+INSERT OR IGNORE INTO status(node_id, status) VALUES ('n3', 'unhealthy');
+INSERT OR IGNORE INTO status(node_id, status) VALUES ('n4', 'maintenance');
+
 INSERT OR IGNORE INTO edges(id, label, source, target, data) VALUES ('e1-2', 'connects_to', 'n1', 'n2', '{\"a\":\"b\"}');
 INSERT OR IGNORE INTO edges(id, label, source, target, data) VALUES ('e3-4', 'connects_to', 'n3', 'n4', '{\"a\":\"b\"}');
 INSERT OR IGNORE INTO edges(id, label, source, target, data) VALUES ('e2-5', 'connects_to', 'n2', 'n5', '{\"a\":\"b\"}');
