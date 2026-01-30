@@ -6,7 +6,7 @@ export class OpenProjectModal extends HTMLElement {
         this.render();
     }
 
-    async render() {
+    render() {
         this.shadowRoot.innerHTML = `
         <style>
             #open-project-modal {
@@ -22,7 +22,7 @@ export class OpenProjectModal extends HTMLElement {
 
                 padding: 10px;
 
-                /* ****** display: none; */
+                display: none;
                 z-index: 200;
             }
 
@@ -32,7 +32,7 @@ export class OpenProjectModal extends HTMLElement {
         </style>
         <div id="open-project-modal">
             <h2>Abrir Projeto</h2>
-            <form id="open-prj-form" method="post">
+            <form id="open-prj-form">
                 <p>
                     <label for="open-prj-form-id">Projeto:<br>
                         <select id="open-prj-form-id" name="id"></select>
@@ -42,6 +42,27 @@ export class OpenProjectModal extends HTMLElement {
             </form>
         </div>
         `;
+    }
+
+    populateProjects(projects) {
+        const select = this.shadowRoot.getElementById('open-prj-form-id');
+        select.innerHTML = '';
+        projects.forEach(prj => {
+            const option = document.createElement('option');
+            option.value = prj.id;
+            option.textContent = prj.name;
+            select.appendChild(option);
+        });
+    }
+
+    show() {
+        const modal = this.shadowRoot.getElementById('open-project-modal');
+        modal.classList.add('show');
+    }
+
+    hide() {
+        const modal = this.shadowRoot.getElementById('open-project-modal');
+        modal.classList.remove('show');
     }
 }
 

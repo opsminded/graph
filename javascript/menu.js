@@ -54,6 +54,10 @@ export class Menu extends HTMLElement {
                     padding-bottom: 20px;
                 }
 
+                #user-panel button {
+                    margin: 0 10px;
+                }
+
                 #add-node-form {
                     display: block;
                 }
@@ -78,8 +82,8 @@ export class Menu extends HTMLElement {
                 <div id="user-panel">
                     <p><button id="login-btn" title="Entrar">Entrar</button></p>
                     <p>
-                        <button id="new-prj-btn" title="Novo Projeto" style="margin: 0 10px;">Novo</button>
-                        <button id="open-prj-btn" title="Abrir Projeto" style="margin: 0 10px;">Abrir</button>
+                        <button id="new-prj-btn" title="Novo Projeto">Novo</button>
+                        <button id="open-prj-btn" title="Abrir Projeto">Abrir</button>
                     </p>
                 </div>
 
@@ -147,7 +151,6 @@ export class Menu extends HTMLElement {
 
         const openPrjBtn = this.shadowRoot.getElementById("open-prj-btn");
         openPrjBtn.addEventListener("click", () => {
-            alert("Abrir Projeto - Em construção");
             this.dispatchEvent(new CustomEvent("open-prj-btn-clicked", {bubbles: true, composed: true}));
         });
 
@@ -155,6 +158,46 @@ export class Menu extends HTMLElement {
         addNodeForm.addEventListener("submit", (event) => {
             event.preventDefault();
             alert("Adicionar Item - Em construção");
+        });
+
+        const addEdgeForm = this.shadowRoot.getElementById("add-edge-form");
+        addEdgeForm.addEventListener("submit", (event) => {
+            event.preventDefault();
+            alert("Adicionar Conexão - Em construção");
+        });
+
+        const exportBtn = this.shadowRoot.getElementById("export-btn");
+        exportBtn.addEventListener("click", () => {
+            alert("Exportar - Em construção");
+        });
+
+        const fitBtn = this.shadowRoot.getElementById("fit-btn");
+        fitBtn.addEventListener("click", () => {
+            alert("Ajustar - Em construção");
+        });
+    }
+
+    populateCategories(categories) {
+        const select = this.shadowRoot.getElementById("add-node-form-category");
+        select.innerHTML = '<option value="" disabled selected>Selecione</option>';
+        categories.forEach(cat => {
+            select.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
+        });
+    }
+
+    populateTypes(types) {
+        const select = this.shadowRoot.getElementById("add-node-form-type");
+        select.innerHTML = '<option value="" disabled selected>Selecione</option>';
+        types.forEach(type => {
+            select.innerHTML += `<option value="${type.id}">${type.name}</option>`;
+        });
+    }
+
+    populateNodes(nodes) {
+        const select = this.shadowRoot.getElementById("add-node-form-node");
+        select.innerHTML = '<option value="" disabled selected>Selecione</option>';
+        nodes.forEach(node => {
+            select.innerHTML += `<option value="${node.id}">${node.label}</option>`;
         });
     }
 }
