@@ -1,3 +1,4 @@
+"use strict";
 
 export class Notification extends HTMLElement {
     constructor() {

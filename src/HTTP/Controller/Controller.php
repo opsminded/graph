@@ -109,6 +109,24 @@ final class Controller implements ControllerInterface
         return new OKResponse("types found", $data);
     }
 
+    public function getTypeNodes(Request $req): ResponseInterface
+    {
+        if($req->method !== Request::METHOD_GET) {
+            return new MethodNotAllowedResponse($req->method, __METHOD__);
+        }
+        try {
+            $type = $req->getParam('type');
+        } catch(RequestException $e) {
+            return new BadRequestResponse($e->getMessage(), []);
+        }
+        $nodesArr = $this->service->getTypeNodes($type);
+        $data = [];
+        foreach($nodesArr as $node) {
+            $data[] = $node->toArray();
+        }
+        return new OKResponse("nodes found", $data);
+    }
+
     public function getNode(Request $req): ResponseInterface
     {
         if($req->method !== Request::METHOD_GET) {
@@ -442,6 +460,27 @@ final class Controller implements ControllerInterface
             return new NoContentResponse("project deleted", ['id' => $req->data['id']]);
         }
         return new NotFoundResponse("project not deleted",['id' => $req->data['id']]);
+    }
+
+    public function insertProjectNode(Request $req): ResponseInterface
+    {
+        if ($req->method !== Request::METHOD_POST) {
+            return new MethodNotAllowedResponse($req->method, __METHOD__);
+        }
+
+        $node = new ProjectNode(
+            $req->data['project_id'],
+            $req->data['node_id']
+        );
+
+        if ($this->service->insertProjectNode($node)) {
+            return new CreatedResponse("project node inserted", $req->data);
+        }
+        return new BadRequestResponse("project node not inserted", $req->data);
+    }
+
+    public function deleteProjectNode(Request $req): ResponseInterface
+    {
     }
 
     public function getLogs(Request $req): ResponseInterface

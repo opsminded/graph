@@ -25,6 +25,11 @@ interface ServiceInterface
      */
     public function getCategoryTypes(string $category): array;
 
+    /**
+     * @return array<Node>
+     */
+    public function getTypeNodes(string $type): array;
+
     public function getNode(string $id): ?Node;
     public function getNodes(): array;
     public function insertNode(Node $node): bool;
@@ -51,6 +56,8 @@ interface ServiceInterface
     public function insertProject(Project $project): bool;
     public function updateProject(Project $project): bool;
     public function deleteProject(string $id): bool;
+    public function insertProjectNode(ProjectNode $projectNode): bool;
+    public function deleteProjectNode(string $projectId, string $nodeId): bool;
 
     /**
      * @return array<Log>

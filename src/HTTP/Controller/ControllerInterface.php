@@ -10,7 +10,9 @@ interface ControllerInterface
 
     public function getCategories(Request $req): ResponseInterface;
     public function getTypes(Request $req): ResponseInterface;
+
     public function getCategoryTypes(Request $req): ResponseInterface;
+    public function getTypeNodes(Request $req): ResponseInterface;
 
     public function getNode(Request $req): ResponseInterface;
     public function getNodes(Request $req): ResponseInterface;
@@ -34,5 +36,8 @@ interface ControllerInterface
     public function insertProject(Request $req): ResponseInterface;
     public function updateProject(Request $req): ResponseInterface;
     public function deleteProject(Request $req): ResponseInterface;
+    public function insertProjectNode(Request $req): ResponseInterface;
+    public function deleteProjectNode(Request $req): ResponseInterface;
+
     public function getLogs(Request $req): ResponseInterface;
 }

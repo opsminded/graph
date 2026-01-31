@@ -9,6 +9,7 @@ final class Service implements ServiceInterface
         "Service::getCategories"       => true,
         "Service::getTypes"            => true,
         "Service::getCategoryTypes"    => true,
+        "Service::getTypeNodes"        => true,
         "Service::getNode"             => true,
         "Service::getNodes"            => true,
         "Service::getNodeParentOf"     => true,
@@ -36,6 +37,8 @@ final class Service implements ServiceInterface
         "Service::insertProject"       => false,
         "Service::updateProject"       => false,
         "Service::deleteProject"       => false,
+        "Service::insertProjectNode"   => false,
+        "Service::deleteProjectNode"   => false,
         "Service::insertLog"           => false,
     ];
 
@@ -160,6 +163,25 @@ final class Service implements ServiceInterface
             $types[] = $type;
         }
         return $types;
+    }
+
+    public function getTypeNodes(string $type): array
+    {
+        $this->logger->debug("getting type nodes", ["type" => $type]);
+        $this->verify();
+        $dbNodes = $this->database->getTypeNodes($type);
+        $nodes     = [];
+        foreach ($dbNodes as $node) {
+            $new = new Node(
+                $node->id,
+                $node->label,
+                $node->category,
+                $node->type,
+                $node->data
+            );
+            $nodes[] = $new;
+        }
+        return $nodes;
     }
 
     public function insertType(Type $type): bool
@@ -518,6 +540,24 @@ final class Service implements ServiceInterface
         $this->logger->debug("deleting project", ["id" => $id]);
         $this->verify();
         return $this->database->deleteProject($id);
+    }
+
+    public function insertProjectNode(ProjectNode $projectNode): bool
+    {
+        $this->logger->debug("inserting project node", ["projectNode" => $projectNode->toArray()]);
+        $this->verify();
+        $dto = new ProjectNodeDTO(
+            $projectNode->getProjectId(),
+            $projectNode->getNodeId()
+        );
+        return $this->database->insertProjectNode($dto);
+    }
+
+    public function deleteProjectNode(string $projectId, string $nodeId): bool
+    {
+        $this->logger->debug("deleting project node", ["projectId" => $projectId, "nodeId" => $nodeId]);
+        $this->verify();
+        return $this->database->deleteProjectNode($projectId, $nodeId);
     }
 
     public function getLogs(int $limit): array

@@ -35,7 +35,9 @@ final class RequestRouter
         ["method" => Request::METHOD_PUT,    "class_method" => "updateUser"],
         ["method" => Request::METHOD_GET,    "class_method" => "getCategories"],
         ["method" => Request::METHOD_GET,    "class_method" => "getTypes"],
+
         ["method" => Request::METHOD_GET,    "class_method" => "getCategoryTypes"],
+        ["method" => Request::METHOD_GET,    "class_method" => "getTypeNodes"],
 
         ["method" => Request::METHOD_GET,    "class_method" => "getNode"],
         ["method" => Request::METHOD_GET,    "class_method" => "getNodes"],
@@ -55,7 +57,8 @@ final class RequestRouter
         ["method" => Request::METHOD_GET,    "class_method" => "getProjectGraph"],
         ["method" => Request::METHOD_GET,    "class_method" => "getProjectStatus"],
         ["method" => Request::METHOD_GET,    "class_method" => "getProjects"],
-        ["method" => Request::METHOD_POST,   "class_method" => "insertProject"]
+        ["method" => Request::METHOD_POST,   "class_method" => "insertProject"],
+        ["method" => Request::METHOD_POST,   "class_method" => "insertProjectNode"],
     ];
 
     public Controller $controller;
@@ -103,6 +106,8 @@ final class RequestRouter
                     return $resp;
                 } catch (Exception $e) {
                     return new InternalServerErrorResponse("internal server error", ["exception_message" => $e->getMessage()]);
+                } catch(Error $err) {
+                    return new InternalServerErrorResponse("internal server error", ["error_message" => $err->getMessage()]);
                 }
             }
         }
@@ -200,6 +205,37 @@ final class Graph
         return [
             "nodes" => $nodes,
             "edges" => $edges,
+        ];
+    }
+}
+#####################################
+
+final class ProjectNode
+{
+    private string $projectId;
+    private string $nodeId;
+
+    public function __construct(string $projectId, string $nodeId)
+    {
+        $this->projectId = $projectId;
+        $this->nodeId = $nodeId;
+    }
+    
+    public function getProjectId(): string
+    {
+        return $this->projectId;
+    }
+
+    public function getNodeId(): string
+    {
+        return $this->nodeId;
+    }
+
+    public function toArray(): array
+    {
+        return [
+            'project_id' => $this->projectId,
+            'node_id' => $this->nodeId,
         ];
     }
 }
@@ -979,6 +1015,27 @@ final class Database implements DatabaseInterface
         return array_map(fn($row) => new TypeDTO($row['id'], $row['name']), $rows);
     }
 
+    public function getTypeNodes(string $type): array
+    {
+        $this->logger->debug("fetching nodes for type", ['type' => $type]);
+        $sql = "
+            SELECT *
+            FROM       nodes n
+            WHERE      n.type = :type
+        ";
+        $params = [':type' => $type];
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll();
+
+        foreach ($rows as &$row) {
+            $row['data'] = json_decode($row['data'], true);
+        }
+
+        $this->logger->info("type nodes fetched", ['params' => $params, 'rows' => $rows]);
+        return array_map(fn($row) => new NodeDTO($row['id'], $row['label'], $row['category'], $row['type'], $row['data']), $rows);
+    }
+
     public function insertType(TypeDTO $type): bool
     {
         $this->logger->debug("inserting new type", ['id' => $type->id, 'name' => $type->name]);
@@ -1586,11 +1643,11 @@ final class Database implements DatabaseInterface
         return false;
     }
 
-    public function insertProjectNode(string $projectId, string $nodeId): bool
+    public function insertProjectNode(ProjectNodeDTO $projectNode): bool
     {
-        $this->logger->debug('inserting project node', ['project_id' => $projectId, 'node_id' => $nodeId]);
+        $this->logger->debug('inserting project node', ['project_id' => $projectNode->projectId, 'node_id' => $projectNode->nodeId]);
         $sql = "INSERT INTO nodes_projects (project_id, node_id) VALUES (:project_id, :node_id)";
-        $params = [':project_id' => $projectId, ':node_id' => $nodeId];
+        $params = [':project_id' => $projectNode->projectId, ':node_id' => $projectNode->nodeId];
         $stmt = $this->pdo->prepare($sql);
         try {
             $stmt->execute($params);
@@ -1749,6 +1806,11 @@ interface DatabaseInterface
      */
     public function getCategoryTypes(string $category): array;
 
+    /**
+     * @return NodeDTO[]
+     */
+    public function getTypeNodes(string $type): array;
+
     public function insertType(TypeDTO $type): bool;
     public function updateType(TypeDTO $type): bool;
     public function deleteType(string $id): bool;
@@ -1812,7 +1874,7 @@ interface DatabaseInterface
     public function insertProject(ProjectDTO $project): bool;
     public function updateProject(ProjectDTO $project): bool;
     public function deleteProject(string $id): bool;
-    public function insertProjectNode(string $projectId, string $nodeId): bool;
+    public function insertProjectNode(ProjectNodeDTO $projectNode): bool;
     public function deleteProjectNode(string $projectId, string $nodeId): bool;
 
     /**
@@ -1899,6 +1961,7 @@ final class Service implements ServiceInterface
         "Service::getCategories"       => true,
         "Service::getTypes"            => true,
         "Service::getCategoryTypes"    => true,
+        "Service::getTypeNodes"        => true,
         "Service::getNode"             => true,
         "Service::getNodes"            => true,
         "Service::getNodeParentOf"     => true,
@@ -1926,6 +1989,8 @@ final class Service implements ServiceInterface
         "Service::insertProject"       => false,
         "Service::updateProject"       => false,
         "Service::deleteProject"       => false,
+        "Service::insertProjectNode"   => false,
+        "Service::deleteProjectNode"   => false,
         "Service::insertLog"           => false,
     ];
 
@@ -2050,6 +2115,25 @@ final class Service implements ServiceInterface
             $types[] = $type;
         }
         return $types;
+    }
+
+    public function getTypeNodes(string $type): array
+    {
+        $this->logger->debug("getting type nodes", ["type" => $type]);
+        $this->verify();
+        $dbNodes = $this->database->getTypeNodes($type);
+        $nodes     = [];
+        foreach ($dbNodes as $node) {
+            $new = new Node(
+                $node->id,
+                $node->label,
+                $node->category,
+                $node->type,
+                $node->data
+            );
+            $nodes[] = $new;
+        }
+        return $nodes;
     }
 
     public function insertType(Type $type): bool
@@ -2410,6 +2494,24 @@ final class Service implements ServiceInterface
         return $this->database->deleteProject($id);
     }
 
+    public function insertProjectNode(ProjectNode $projectNode): bool
+    {
+        $this->logger->debug("inserting project node", ["projectNode" => $projectNode->toArray()]);
+        $this->verify();
+        $dto = new ProjectNodeDTO(
+            $projectNode->getProjectId(),
+            $projectNode->getNodeId()
+        );
+        return $this->database->insertProjectNode($dto);
+    }
+
+    public function deleteProjectNode(string $projectId, string $nodeId): bool
+    {
+        $this->logger->debug("deleting project node", ["projectId" => $projectId, "nodeId" => $nodeId]);
+        $this->verify();
+        return $this->database->deleteProjectNode($projectId, $nodeId);
+    }
+
     public function getLogs(int $limit): array
     {
         $this->logger->debug("getting logs", ["limit" => $limit]);
@@ -2519,6 +2621,11 @@ interface ServiceInterface
      */
     public function getCategoryTypes(string $category): array;
 
+    /**
+     * @return array<Node>
+     */
+    public function getTypeNodes(string $type): array;
+
     public function getNode(string $id): ?Node;
     public function getNodes(): array;
     public function insertNode(Node $node): bool;
@@ -2545,6 +2652,8 @@ interface ServiceInterface
     public function insertProject(Project $project): bool;
     public function updateProject(Project $project): bool;
     public function deleteProject(string $id): bool;
+    public function insertProjectNode(ProjectNode $projectNode): bool;
+    public function deleteProjectNode(string $projectId, string $nodeId): bool;
 
     /**
      * @return array<Log>
@@ -3057,7 +3166,9 @@ interface ControllerInterface
 
     public function getCategories(Request $req): ResponseInterface;
     public function getTypes(Request $req): ResponseInterface;
+
     public function getCategoryTypes(Request $req): ResponseInterface;
+    public function getTypeNodes(Request $req): ResponseInterface;
 
     public function getNode(Request $req): ResponseInterface;
     public function getNodes(Request $req): ResponseInterface;
@@ -3081,6 +3192,9 @@ interface ControllerInterface
     public function insertProject(Request $req): ResponseInterface;
     public function updateProject(Request $req): ResponseInterface;
     public function deleteProject(Request $req): ResponseInterface;
+    public function insertProjectNode(Request $req): ResponseInterface;
+    public function deleteProjectNode(Request $req): ResponseInterface;
+
     public function getLogs(Request $req): ResponseInterface;
 }
 #####################################
@@ -3190,6 +3304,24 @@ final class Controller implements ControllerInterface
             $data[] = $type->toArray();
         }
         return new OKResponse("types found", $data);
+    }
+
+    public function getTypeNodes(Request $req): ResponseInterface
+    {
+        if($req->method !== Request::METHOD_GET) {
+            return new MethodNotAllowedResponse($req->method, __METHOD__);
+        }
+        try {
+            $type = $req->getParam('type');
+        } catch(RequestException $e) {
+            return new BadRequestResponse($e->getMessage(), []);
+        }
+        $nodesArr = $this->service->getTypeNodes($type);
+        $data = [];
+        foreach($nodesArr as $node) {
+            $data[] = $node->toArray();
+        }
+        return new OKResponse("nodes found", $data);
     }
 
     public function getNode(Request $req): ResponseInterface
@@ -3527,6 +3659,27 @@ final class Controller implements ControllerInterface
         return new NotFoundResponse("project not deleted",['id' => $req->data['id']]);
     }
 
+    public function insertProjectNode(Request $req): ResponseInterface
+    {
+        if ($req->method !== Request::METHOD_POST) {
+            return new MethodNotAllowedResponse($req->method, __METHOD__);
+        }
+
+        $node = new ProjectNode(
+            $req->data['project_id'],
+            $req->data['node_id']
+        );
+
+        if ($this->service->insertProjectNode($node)) {
+            return new CreatedResponse("project node inserted", $req->data);
+        }
+        return new BadRequestResponse("project node not inserted", $req->data);
+    }
+
+    public function deleteProjectNode(Request $req): ResponseInterface
+    {
+    }
+
     public function getLogs(Request $req): ResponseInterface
     {
         if($req->method !== Request::METHOD_GET) {
@@ -3641,6 +3794,16 @@ final class CategoryDTO
         public readonly string $shape,
         public readonly int    $width,
         public readonly int    $height
+    ) {
+    }
+}
+#####################################
+
+final class ProjectNodeDTO
+{
+    public function __construct(
+        public readonly string $projectId,
+        public readonly string $nodeId
     ) {
     }
 }

@@ -10,7 +10,9 @@ final class RequestRouter
         ["method" => Request::METHOD_PUT,    "class_method" => "updateUser"],
         ["method" => Request::METHOD_GET,    "class_method" => "getCategories"],
         ["method" => Request::METHOD_GET,    "class_method" => "getTypes"],
+
         ["method" => Request::METHOD_GET,    "class_method" => "getCategoryTypes"],
+        ["method" => Request::METHOD_GET,    "class_method" => "getTypeNodes"],
 
         ["method" => Request::METHOD_GET,    "class_method" => "getNode"],
         ["method" => Request::METHOD_GET,    "class_method" => "getNodes"],
@@ -30,7 +32,8 @@ final class RequestRouter
         ["method" => Request::METHOD_GET,    "class_method" => "getProjectGraph"],
         ["method" => Request::METHOD_GET,    "class_method" => "getProjectStatus"],
         ["method" => Request::METHOD_GET,    "class_method" => "getProjects"],
-        ["method" => Request::METHOD_POST,   "class_method" => "insertProject"]
+        ["method" => Request::METHOD_POST,   "class_method" => "insertProject"],
+        ["method" => Request::METHOD_POST,   "class_method" => "insertProjectNode"],
     ];
 
     public Controller $controller;
@@ -78,6 +81,8 @@ final class RequestRouter
                     return $resp;
                 } catch (Exception $e) {
                     return new InternalServerErrorResponse("internal server error", ["exception_message" => $e->getMessage()]);
+                } catch(Error $err) {
+                    return new InternalServerErrorResponse("internal server error", ["error_message" => $err->getMessage()]);
                 }
             }
         }

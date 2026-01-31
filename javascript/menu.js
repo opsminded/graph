@@ -1,3 +1,4 @@
+"use strict";
 
 export class Menu extends HTMLElement {
     constructor() {
@@ -167,7 +168,12 @@ export class Menu extends HTMLElement {
         const addNodeForm = this.shadowRoot.getElementById("add-node-form");
         addNodeForm.addEventListener("submit", (event) => {
             event.preventDefault();
-            alert("Adicionar Item - Em construção");
+            const nodeId = addNodeForm.elements['add-node-form-node'].value;
+            this.dispatchEvent(new CustomEvent("add-node-form-submitted", {
+                bubbles: true,
+                composed: true,
+                detail: {nodeId}
+            }));
         });
 
         const addEdgeForm = this.shadowRoot.getElementById("add-edge-form");
@@ -189,9 +195,9 @@ export class Menu extends HTMLElement {
 
         //////////////////////////////////////////////
 
-        const categorySelect = this.shadowRoot.getElementById("add-node-form-category");
-        categorySelect.addEventListener("change", () => {
-            const selectedCategoryId = categorySelect.value;
+        this.categorySelect = this.shadowRoot.getElementById("add-node-form-category");
+        this.categorySelect.addEventListener("change", () => {
+            const selectedCategoryId = this.categorySelect.value;
             this.dispatchEvent(new CustomEvent("category-changed", {
                 detail: { categoryId: selectedCategoryId },
                 bubbles: true,
@@ -199,10 +205,9 @@ export class Menu extends HTMLElement {
             }));
         });
 
-        const typeSelect = this.shadowRoot.getElementById("add-node-form-type");
-        typeSelect.addEventListener("change", () => {
-            const selectedTypeId = typeSelect.value;
-            alert(`Tipo selecionado: ${selectedTypeId} - Em construção`);
+        this.typeSelect = this.shadowRoot.getElementById("add-node-form-type");
+        this.typeSelect.addEventListener("change", () => {
+            const selectedTypeId = this.typeSelect.value;
             this.dispatchEvent(new CustomEvent("type-changed", {
                 detail: { typeId: selectedTypeId },
                 bubbles: true,

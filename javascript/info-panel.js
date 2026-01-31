@@ -1,3 +1,5 @@
+"use strict";
+
 export class InfoPanel extends HTMLElement {
     constructor() {
         super();

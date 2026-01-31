@@ -1,3 +1,4 @@
+"use strict";
 
 export class Api
 {
@@ -6,6 +7,10 @@ export class Api
         this.getTypesURL = baseUrl + '/getTypes';
         this.getProjectURL = baseUrl + '/getProject';
         this.getProjectsURL = baseUrl + '/getProjects';
+
+        this.insertProjectNodeURL = baseUrl + '/insertProjectNode';
+        this.insertProjectURL = baseUrl + '/insertProject';
+
         this.getCategoriesURL = baseUrl + '/getCategories';
         this.getCategoryTypesURL = baseUrl + '/getCategoryTypes';
     }
@@ -47,7 +52,7 @@ export class Api
             });
     }
 
-    getCategoryTypes(categoryId) {
+    fetchCategoryTypes(categoryId) {
         return fetch(`${this.getCategoryTypesURL}?category=${encodeURIComponent(categoryId)}`)
             .then(response => {
                 if (!response.ok) {
@@ -61,6 +66,24 @@ export class Api
             })
             .catch(error => {
                 console.error('[getCategoryTypes] Fetch error:', error);
+                return [];
+            });
+    }
+
+    fetchTypeNodes(typeId) {
+        return fetch(`/getTypeNodes?type=${encodeURIComponent(typeId)}`)
+            .then(response => {
+                if (!response.ok) {
+                    console.error('Response not ok:', response);
+                    throw new Error(`Erro ao carregar nós do tipo: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(({ data }) => {
+                return data;
+            })
+            .catch(error => {
+                console.error('[fetchTypeNodes] Fetch error:', error);
                 return [];
             });
     }
@@ -138,7 +161,7 @@ export class Api
     }
 
     insertProject(projectData) {
-        return fetch('/insertProject', {
+        return fetch(this.insertProjectURL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -157,6 +180,30 @@ export class Api
         })
         .catch(error => {
             console.error('[insertProject] Fetch error:', error);
+            return null;
+        });
+    }
+
+    insertProjectNode(nodeData) {
+        return fetch(this.insertProjectNodeURL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(nodeData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                console.error('Response not ok:', response);
+                throw new Error(`Erro ao inserir nó do projeto: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(({ data }) => {
+            return data;
+        })
+        .catch(error => {
+            console.error('[insertProjectNode] Fetch error:', error);
             return null;
         });
     }

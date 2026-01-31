@@ -1,3 +1,4 @@
+"use strict";
 
 export class NewProjectModal extends HTMLElement {
     constructor() {

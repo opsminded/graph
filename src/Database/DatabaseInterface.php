@@ -46,6 +46,11 @@ interface DatabaseInterface
      */
     public function getCategoryTypes(string $category): array;
 
+    /**
+     * @return NodeDTO[]
+     */
+    public function getTypeNodes(string $type): array;
+
     public function insertType(TypeDTO $type): bool;
     public function updateType(TypeDTO $type): bool;
     public function deleteType(string $id): bool;
@@ -109,7 +114,7 @@ interface DatabaseInterface
     public function insertProject(ProjectDTO $project): bool;
     public function updateProject(ProjectDTO $project): bool;
     public function deleteProject(string $id): bool;
-    public function insertProjectNode(string $projectId, string $nodeId): bool;
+    public function insertProjectNode(ProjectNodeDTO $projectNode): bool;
     public function deleteProjectNode(string $projectId, string $nodeId): bool;
 
     /**

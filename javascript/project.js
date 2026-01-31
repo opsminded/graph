@@ -1,3 +1,5 @@
+"use strict";
+
 import cytoscape from "./cytoscape.esm.min.mjs";
 
 export class Project extends HTMLElement
@@ -5,6 +7,7 @@ export class Project extends HTMLElement
     constructor()
     {
         super();
+        this.projectId = null;
         this.attachShadow({ mode: "open" });
         this.render();
     }
@@ -46,23 +49,69 @@ export class Project extends HTMLElement
 
     populateProject(project, graph)
     {
+        this.projectId = project.id;
         this.projectTitle.textContent = project.id;
 
         graph.container = this.cyContainer;
         this.cy = cytoscape(graph);
 
-        console.log('Current graphhhhhhhh:', graph);
-        this.cy.layout(graph.layout).run();
-        this.cy.fit();
+        this.cy.on('select', 'node', (e) => {
+            const selectedNodes = this.cy.$('node:selected');
+            if (selectedNodes.length > 2) {
+                e.target.unselect();
+                return;
+            }
+
+            this.dispatchEvent(
+                new CustomEvent('node-selected', {
+                    bubbles: true,
+                    composed: true,
+                    detail: {
+                        selectedNodes: selectedNodes.map(n => n.id()) 
+                    }
+                })
+            );
+        });
+
+        this.cy.on('select', 'edge', (e) => {
+            const selectedEdges = this.cy.$('edge:selected');
+            if (selectedEdges.length > 1) {
+                // e.target.unselect();
+                // return;
+            }
+            
+            const edge = e.target;
+        });
+
+        this.cy.on('unselect', 'node', () => {
+            this.cy.elements().unselect();
+            // this.store.clearSelection();
+            // this.infoPanel.hide();
+        });
+
+        this.cy.on('unselect', 'edge', () => {
+            // this.store.setSelectedEdge(null);
+        });
+
+        this.cy.on('dbltap', 'node', (e) => {
+            const node = e.target;
+            // this.store.setState({ currentNodeSelectionForInfo: node.id() });
+            // this.infoPanel.show();
+        });
+
+        // this.cy.layout(graph.layout).run();
+        // this.cy.fit();
     }
 
     clear()
     {
+        this.projectId = null;
+        this.projectTitle.textContent = '';
+        
         if (this.cy) {
             this.cy.destroy();
             this.cy = null;
         }
-        this.projectTitle.textContent = '';
     }
 
     updateNodeStatuses(statusUpdates)

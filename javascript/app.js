@@ -1,3 +1,5 @@
+"use strict";
+
 import {Api} from './api.js';
 import './info-panel.js';
 import './menu.js';
@@ -9,8 +11,11 @@ import './project.js';
 export class App extends HTMLElement {
     constructor() {
         super();
+        
         this.api = new Api();
         this.statusUpdateTimer = null;
+        this.selectedNodes = [];
+
         this.attachShadow({ mode: "open" });
         this.render();
     }
@@ -50,8 +55,6 @@ export class App extends HTMLElement {
             this.menu.populateTypes(types);
         });
 
-        this.menu.populateNodes([{ id: 1, label: 'Node X' }, { id: 2, label: 'Node Y' }]);
-        
         this.api.fetchProjects().then(projects => {
             this.modalOpenProject.populateProjects(projects);
         });
@@ -103,8 +106,39 @@ export class App extends HTMLElement {
 
         this.addEventListener('category-changed', async (event) => {
             const categoryId = event.detail.categoryId;
-            const newTypes = await this.api.getCategoryTypes(categoryId);
+            const newTypes = await this.api.fetchCategoryTypes(categoryId);
             this.menu.populateTypes(newTypes);
+            this.menu.populateNodes([]);
+        });
+
+        this.addEventListener('type-changed', async (event) => {
+            const typeId = event.detail.typeId;
+            const newNodes = await this.api.fetchTypeNodes(typeId);
+            this.menu.populateNodes(newNodes);
+        });
+
+        this.addEventListener('add-node-form-submitted', async (event) => {
+            const {nodeId} = event.detail;
+            
+            if (this.project.projectId === null) {
+                return;
+            }
+
+            const formData = {
+                project_id: this.project.projectId,
+                node_id: nodeId
+            };
+
+            await this.api.insertProjectNode(formData);
+            this.openProject(this.project.projectId);
+        });
+
+        this.addEventListener('node-selected', (event) => {
+            this.selectedNodes = event.detail.selectedNodes;
+
+            if (this.selectedNodes.length === 2) {
+                alert('libera add node')
+            }
         });
 
         this.boundKeyHandler = this.handleKeyPress.bind(this);

@@ -250,6 +250,27 @@ final class Database implements DatabaseInterface
         return array_map(fn($row) => new TypeDTO($row['id'], $row['name']), $rows);
     }
 
+    public function getTypeNodes(string $type): array
+    {
+        $this->logger->debug("fetching nodes for type", ['type' => $type]);
+        $sql = "
+            SELECT *
+            FROM       nodes n
+            WHERE      n.type = :type
+        ";
+        $params = [':type' => $type];
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll();
+
+        foreach ($rows as &$row) {
+            $row['data'] = json_decode($row['data'], true);
+        }
+
+        $this->logger->info("type nodes fetched", ['params' => $params, 'rows' => $rows]);
+        return array_map(fn($row) => new NodeDTO($row['id'], $row['label'], $row['category'], $row['type'], $row['data']), $rows);
+    }
+
     public function insertType(TypeDTO $type): bool
     {
         $this->logger->debug("inserting new type", ['id' => $type->id, 'name' => $type->name]);
@@ -857,11 +878,11 @@ final class Database implements DatabaseInterface
         return false;
     }
 
-    public function insertProjectNode(string $projectId, string $nodeId): bool
+    public function insertProjectNode(ProjectNodeDTO $projectNode): bool
     {
-        $this->logger->debug('inserting project node', ['project_id' => $projectId, 'node_id' => $nodeId]);
+        $this->logger->debug('inserting project node', ['project_id' => $projectNode->projectId, 'node_id' => $projectNode->nodeId]);
         $sql = "INSERT INTO nodes_projects (project_id, node_id) VALUES (:project_id, :node_id)";
-        $params = [':project_id' => $projectId, ':node_id' => $nodeId];
+        $params = [':project_id' => $projectNode->projectId, ':node_id' => $projectNode->nodeId];
         $stmt = $this->pdo->prepare($sql);
         try {
             $stmt->execute($params);
