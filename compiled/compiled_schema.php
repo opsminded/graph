@@ -108,10 +108,11 @@ INSERT OR IGNORE INTO status(node_id, status) VALUES ('n2', 'healthy');
 INSERT OR IGNORE INTO status(node_id, status) VALUES ('n3', 'unhealthy');
 INSERT OR IGNORE INTO status(node_id, status) VALUES ('n4', 'maintenance');
 
-INSERT OR IGNORE INTO edges(id, label, source, target, data) VALUES ('e1-2', 'connects_to', 'n1', 'n2', '{\"a\":\"b\"}');
-INSERT OR IGNORE INTO edges(id, label, source, target, data) VALUES ('e3-4', 'connects_to', 'n3', 'n4', '{\"a\":\"b\"}');
-INSERT OR IGNORE INTO edges(id, label, source, target, data) VALUES ('e2-5', 'connects_to', 'n2', 'n5', '{\"a\":\"b\"}');
-INSERT OR IGNORE INTO edges(id, label, source, target, data) VALUES ('e4-5', 'connects_to', 'n4', 'n5', '{\"a\":\"b\"}');
+
+-- INSERT OR IGNORE INTO edges(id, label, source, target, data) VALUES ('e1-2', 'connects_to', 'n1', 'n2', '{\"a\":\"b\"}');
+-- INSERT OR IGNORE INTO edges(id, label, source, target, data) VALUES ('e3-4', 'connects_to', 'n3', 'n4', '{\"a\":\"b\"}');
+-- INSERT OR IGNORE INTO edges(id, label, source, target, data) VALUES ('e2-5', 'connects_to', 'n2', 'n5', '{\"a\":\"b\"}');
+-- INSERT OR IGNORE INTO edges(id, label, source, target, data) VALUES ('e4-5', 'connects_to', 'n4', 'n5', '{\"a\":\"b\"}');
 
 INSERT OR IGNORE INTO projects(id, name, author, data) VALUES ('p1', 'Projeto 1', 'admin', '{\"a\":\"b\"}');
 INSERT OR IGNORE INTO projects(id, name, author, data) VALUES ('p2', 'Projeto 2', 'admin', '{\"a\":\"b\"}');
