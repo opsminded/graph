@@ -157,11 +157,13 @@ class TestDatabase extends TestAbstractTest
         if ($category !== null) {
             throw new Exception('should return null');
         }
+        
         $category = $this->database->getCategory('business');
-        if ($category->id !== 'business' || $category->name !== 'Negócios') {
+        
+        if ($category->id !== 'business' || $category->name !== '💼 Negócios') {
             throw new Exception('business expected');
         }
-    }
+   }
 
 
     public function testGetCategories(): void
@@ -269,6 +271,24 @@ class TestDatabase extends TestAbstractTest
         $type = $this->database->getType('nonexistent');
         if ($type !== null) {
             throw new Exception('should return null');
+        }
+    }
+
+    public function testGetCategoryTypes(): void
+    {
+        $this->pdo->exec('insert into nodes (id, label, category, type, data) values ("n1", "Node 1", "business", "business_case", \'{}\')');
+        $types = $this->database->getCategoryTypes('business');
+        if ($types[0]->id !== 'business_case' || $types[0]->name !== 'Caso de Uso') {
+            throw new Exception('business_case expected');
+        }
+    }
+
+    public function testGetTypeNodes(): void
+    {
+        $this->pdo->exec('insert into nodes (id, label, category, type, data) values ("n1", "Node 1", "business", "service", \'{}\')');
+        $nodes = $this->database->getTypeNodes('service');
+        if ($nodes[0]->id !== 'n1' || $nodes[0]->label !== 'Node 1') {
+            throw new Exception('node n1 expected');
         }
     }
 
@@ -942,7 +962,9 @@ class TestDatabase extends TestAbstractTest
         $this->pdo->exec('insert into nodes (id, label, category, type, data) values ("a", "Node A", "business", "service", \'{}\')');
         $this->pdo->exec('insert into projects (id, name, author, data) values ("initial", "Initial Project", "admin", \'{}\')');
 
-        if (! $this->database->insertProjectNode('initial', 'a')) {
+        $pj = new ProjectNodeDTO('initial', 'a');
+
+        if (! $this->database->insertProjectNode($pj)) {
             throw new Exception('error on testInsertProjectNode 1');
         }
 

@@ -54,6 +54,7 @@ $tests = [
     new TestGroup(),
     new TestLog(),
     new TestNode(),
+    new TestProjectNode(),
     new TestStatus(),
     new TestUser(),
 ];
