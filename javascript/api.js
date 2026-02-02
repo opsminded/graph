@@ -13,6 +13,8 @@ export class Api
 
         this.getCategoriesURL = baseUrl + '/getCategories';
         this.getCategoryTypesURL = baseUrl + '/getCategoryTypes';
+        
+        this.insertEdgeURL = baseUrl + '/insertEdge';
     }
 
     fetchCategories() {
@@ -204,6 +206,30 @@ export class Api
         })
         .catch(error => {
             console.error('[insertProjectNode] Fetch error:', error);
+            return null;
+        });
+    }
+
+    insertEdge(edgeData) {
+        return fetch(this.insertEdgeURL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(edgeData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                console.error('Response not ok:', response);
+                throw new Error(`Erro ao inserir aresta: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(({ data }) => {
+            return data;
+        })
+        .catch(error => {
+            console.error('[insertEdge] Fetch error:', error);
             return null;
         });
     }

@@ -53,7 +53,7 @@ export class Menu extends HTMLElement {
                     background-color: #FFFFFF;
                     border-top: 1px solid #CCC;
                     border-bottom: 1px solid #CCC;
-                    padding-bottom: 20px;
+                    padding-bottom: 10px;
                 }
 
                 #user-panel button {
@@ -61,11 +61,11 @@ export class Menu extends HTMLElement {
                 }
 
                 #add-node-form {
-                    display: block;
+                    display: none;
                 }
 
-                #add-node-form.hide {
-                    display: none;
+                #add-node-form.show {
+                    display: block;
                 }
 
                 #add-edge-form {
@@ -75,6 +75,14 @@ export class Menu extends HTMLElement {
                 #add-edge-form.show {
                     display: block;
                 }
+
+                #export-btn {
+                    display: none;
+                }
+
+                #fit-btn {
+                    display: none;
+                }
             </style>
             <div id="menu">
                 <div><button id="close-menu-btn">X</button></div>
@@ -82,7 +90,6 @@ export class Menu extends HTMLElement {
                 <h2><span>Brades</span>ketch</h2>
 
                 <div id="user-panel">
-                    <p><button id="login-btn" title="Entrar">Entrar</button></p>
                     <p>
                         <button id="new-prj-btn" title="Novo Projeto">Novo</button>
                         <button id="open-prj-btn" title="Abrir Projeto">Abrir</button>
@@ -120,7 +127,7 @@ export class Menu extends HTMLElement {
 
                 <form id="add-edge-form">
                     <h3>Adicionar Conexão</h3>
-                    <p><button id="add-edge-form-submit" type="submit" disabled>Adicionar Conexão</button></p>
+                    <p><button id="add-edge-form-submit" type="submit">Adicionar Conexão</button></p>
                 </form>
 
                 <p>
@@ -149,12 +156,6 @@ export class Menu extends HTMLElement {
             this.dispatchEvent(new CustomEvent("close-menu-btn-clicked", {bubbles: true, composed: true}));
         });
 
-        const loginBtn = this.shadowRoot.getElementById("login-btn");
-        loginBtn.addEventListener("click", () => {
-            alert("Login - Em construção");
-            this.dispatchEvent(new CustomEvent("login-btn-clicked", {bubbles: true, composed: true}));
-        });
-
         const newPrjBtn = this.shadowRoot.getElementById("new-prj-btn");
         newPrjBtn.addEventListener("click", () => {
             this.dispatchEvent(new CustomEvent("new-prj-btn-clicked", {bubbles: true, composed: true}));
@@ -179,7 +180,7 @@ export class Menu extends HTMLElement {
         const addEdgeForm = this.shadowRoot.getElementById("add-edge-form");
         addEdgeForm.addEventListener("submit", (event) => {
             event.preventDefault();
-            alert("Adicionar Conexão - Em construção");
+            this.dispatchEvent(new CustomEvent("add-edge-form-submitted", {bubbles: true, composed: true}));
         });
 
         const exportBtn = this.shadowRoot.getElementById("export-btn");
@@ -222,6 +223,21 @@ export class Menu extends HTMLElement {
 
     hide() {
         this.menu.classList.add("hide");
+    }
+
+    showAddNodeForm() {
+        const addNodeForm = this.shadowRoot.getElementById("add-node-form");
+        const addEdgeForm = this.shadowRoot.getElementById("add-edge-form");
+
+        addNodeForm.classList.add("show");
+        addEdgeForm.classList.remove("show");
+    }
+
+    showAddEdgeForm() {
+        const addNodeForm = this.shadowRoot.getElementById("add-node-form");
+        const addEdgeForm = this.shadowRoot.getElementById("add-edge-form");
+        addNodeForm.classList.remove("show");
+        addEdgeForm.classList.add("show");
     }
 
     populateCategories(categories) {

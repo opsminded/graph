@@ -247,6 +247,7 @@ final class Controller implements ControllerInterface
         if($req->method !== Request::METHOD_POST) {
             return new MethodNotAllowedResponse($req->method, __METHOD__);
         }
+
         $edge = new Edge(
             $req->data['source'],
             $req->data['target'],

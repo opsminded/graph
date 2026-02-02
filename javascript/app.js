@@ -133,11 +133,23 @@ export class App extends HTMLElement {
             this.openProject(this.project.projectId);
         });
 
+        this.addEventListener('add-edge-form-submitted', async (event) => {
+            const formData = {
+                source : this.selectedNodes[0],
+                target : this.selectedNodes[1],
+                label: "connects",
+                data: {}
+            }
+
+            let resp = await this.api.insertEdge(formData);
+            console.log('Edge insertion response:', resp);
+        });
+
         this.addEventListener('node-selected', (event) => {
             this.selectedNodes = event.detail.selectedNodes;
 
             if (this.selectedNodes.length === 2) {
-                alert('libera add node')
+                this.menu.showAddEdgeForm();
             }
         });
 
@@ -158,6 +170,7 @@ export class App extends HTMLElement {
 
     async openProject(projectId) {
         this.modalOpenProject.hide();
+        this.menu.showAddNodeForm();
 
         const project = await this.api.fetchProject(projectId);
         const projectGraph = await this.api.fetchProjectGraph(projectId);
