@@ -433,7 +433,7 @@ final class Service implements ServiceInterface
         $this->logger->debug("getting project graph", ["id" => $id]);
         $this->verify();
         $dbGraph = $this->database->getProjectGraph($id);
-
+        
         if (! is_null($dbGraph)) {
             $nodes = [];
             foreach ($dbGraph->nodes as $node) {

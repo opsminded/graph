@@ -1433,7 +1433,7 @@ final class Database implements DatabaseInterface
                         0           as depth
             FROM        nodes n
             INNER JOIN  nodes_projects np ON n.id = np.node_id
-            WHERE       np.node_id = :project_id
+            WHERE       np.project_id = :project_id
             
             UNION ALL
             
@@ -2355,7 +2355,7 @@ final class Service implements ServiceInterface
         $this->logger->debug("getting project graph", ["id" => $id]);
         $this->verify();
         $dbGraph = $this->database->getProjectGraph($id);
-
+        
         if (! is_null($dbGraph)) {
             $nodes = [];
             foreach ($dbGraph->nodes as $node) {

@@ -668,7 +668,7 @@ final class Database implements DatabaseInterface
                         0           as depth
             FROM        nodes n
             INNER JOIN  nodes_projects np ON n.id = np.node_id
-            WHERE       np.node_id = :project_id
+            WHERE       np.project_id = :project_id
             
             UNION ALL
             
