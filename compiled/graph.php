@@ -1421,66 +1421,39 @@ final class Database implements DatabaseInterface
         $this->logger->debug("fetching project graph", ['project_id' => $projectId]);
         $sql = '
         WITH RECURSIVE descendants AS (
-            SELECT      p.id     as project_id,
-                        e.id     as edge_id,
-                        e.label  as edge_label,
-                        e.source as edge_source_id,
-                        e.target as edge_target_id,
-                        e.data   as edge_data,
-                        0        as edge_depth
-            FROM        edges e
-            INNER JOIN  nodes_projects np
-            ON          e.source = np.node_id
-            INNER JOIN  projects p
-            ON          np.project_id = p.id
-            WHERE       p.id = :project_id
+            SELECT      n.id        as node_id,
+                        n.label     as node_label,
+                        n.category  as node_category,
+                        n.type      as node_type,
+                        n.data      as node_data,
+                        NULL        as edge_id,
+                        NULL        as edge_label,
+                        NULL        as edge_data,
+                        NULL        as parent_node_id,
+                        0           as depth
+            FROM        nodes n
+            INNER JOIN  nodes_projects np ON n.id = np.node_id
+            WHERE       np.node_id = :project_id
+            
             UNION ALL
-            SELECT      d.project_id     as project_id,
-                        e.id             as edge_id,
-                        e.label          as edge_label,
-                        e.source         as edge_source_id,
-                        e.target         as edge_target_id,
-                        e.data           as edge_data,
-                        d.edge_depth + 1 as edge_depth
+            
+            SELECT      n.id        as node_id,
+                        n.label     as node_label,
+                        n.category  as node_category,
+                        n.type      as node_type,
+                        n.data      as node_data,
+                        e.id        as edge_id,
+                        e.label     as edge_label,
+                        e.data      as edge_data,
+                        d.node_id   as parent_node_id,
+                        d.depth + 1 as depth
             FROM        descendants d
-            INNER JOIN  edges e ON d.edge_target_id = e.source
+            INNER JOIN  edges e ON d.node_id = e.source
+            INNER JOIN  nodes n ON e.target = n.id
         )
-        SELECT DISTINCT d.project_id,
-                        d.edge_id,
-                        d.edge_label,
-                        d.edge_data,
-                        d.edge_source_id,
-                        s.label           as source_label,
-                        s.category        as source_category,
-                        s.type            as source_type,
-                        s.data            as source_data,
-                        d.edge_target_id,
-                        t.label           as target_label,
-                        t.category        as target_category,
-                        t.type            as target_type,
-                        t.data            as target_data,
-                        min(d.edge_depth) as depth
-        FROM            descendants d
-        INNER JOIN      nodes s
-        ON              d.edge_source_id = s.id
-        INNER JOIN      nodes t
-        ON              d.edge_target_id = t.id
-        GROUP BY        d.project_id,
-                        d.edge_id,
-                        d.edge_label,
-                        d.edge_data,
-                        d.edge_source_id,
-                        s.label,
-                        s.category,
-                        s.type,
-                        s.data,
-                        d.edge_target_id,
-                        t.label,
-                        t.category,
-                        t.type,
-                        t.data
-        ORDER BY        depth,
-                        d.project_id;
+        SELECT DISTINCT *
+        FROM            descendants
+        ORDER BY        depth, node_id;
         ';
         $params = [':project_id' => $projectId];
         $stmt = $this->pdo->prepare($sql);
@@ -1489,27 +1462,24 @@ final class Database implements DatabaseInterface
         $this->logger->info("project Graph fetched", ['params' => $params, 'rows' => $rows]);
         $nodes = [];
         $edges = [];
+        
         foreach ($rows as $row) {
             $nodes[] = new NodeDTO(
-                $row['edge_source_id'], 
-                $row['source_label'], 
-                $row['source_category'],
-                $row['source_type'],
-                json_decode($row['source_data'], true)
+                $row['node_id'], 
+                $row['node_label'], 
+                $row['node_category'],
+                $row['node_type'],
+                json_decode($row['node_data'], true)
             );
 
-            $nodes[] = new NodeDTO(
-                $row['edge_target_id'], 
-                $row['target_label'], 
-                $row['target_category'],
-                $row['target_type'],
-                json_decode($row['target_data'], true)
-            );
+            if ($row['edge_id'] === null) {
+                continue;
+            }
 
             $edges[] = new EdgeDTO(
                 $row['edge_id'],
-                $row['edge_source_id'],
-                $row['edge_target_id'],
+                $row['parent_node_id'],
+                $row['node_id'],
                 $row['edge_label'],
                 json_decode($row['edge_data'], true)
             );
@@ -1534,7 +1504,7 @@ final class Database implements DatabaseInterface
             ON          e.source = np.node_id
             INNER JOIN  projects p
             ON          np.project_id = p.id
-            WHERE       p.id = :project_id
+            WHERE       np.project_id = :project_id
             UNION ALL
             SELECT      e.source         as edge_source_id,
                         e.target         as edge_target_id,
