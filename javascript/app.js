@@ -171,14 +171,12 @@ export class App extends HTMLElement {
     async openProject(projectId) {
         this.modalOpenProject.hide();
         this.menu.showAddNodeForm();
-
         const project = await this.api.fetchProject(projectId);
         const projectGraph = await this.api.fetchProjectGraph(projectId);
         console.log('Opened project:', project);
         console.log('Project graph:', projectGraph);
         this.project.populateProject(project, projectGraph);
         this.startStatusUpdates(projectId);
-
         this.notification.success(`Projeto "${project.id}" aberto com sucesso!`);
     }
 

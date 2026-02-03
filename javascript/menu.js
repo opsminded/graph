@@ -85,8 +85,11 @@ export class Menu extends HTMLElement {
                 }
             </style>
             <div id="menu">
-                <div><button id="close-menu-btn">X</button></div>
+                
+            <div><button id="close-menu-btn">X</button></div>
+
                 <img src="/images/logo.png" alt="Logo" width="32" height="32">
+                
                 <h2><span>Brades</span>ketch</h2>
 
                 <div id="user-panel">
@@ -142,34 +145,31 @@ export class Menu extends HTMLElement {
 
         this.menu = this.shadowRoot.getElementById("menu");
 
-        document.addEventListener("keydown", (event) => {
-            if (event.key === "m" || event.key === "M") {
-                this.show();
-            }
-        });
-
-        const closeMenuBtn = this.shadowRoot.getElementById("close-menu-btn");
-        closeMenuBtn.addEventListener("click", () => {
-            this.hide();
+        this.closeMenuBtn = this.shadowRoot.getElementById("close-menu-btn");
+        this.closeMenuBtn.addEventListener("click", () => {
             this.keepClosed = !this.keepClosed;
-            closeMenuBtn.textContent = this.keepClosed ? "fixar" : "X";
-            this.dispatchEvent(new CustomEvent("close-menu-btn-clicked", {bubbles: true, composed: true}));
+            this.closeMenuBtn.textContent = this.keepClosed ? "fixar" : "X";
+
+            if("X" === this.closeMenuBtn.textContent) {
+                return;
+            }
+            this.hide();
         });
 
-        const newPrjBtn = this.shadowRoot.getElementById("new-prj-btn");
-        newPrjBtn.addEventListener("click", () => {
+        this.newPrjBtn = this.shadowRoot.getElementById("new-prj-btn");
+        this.newPrjBtn.addEventListener("click", () => {
             this.dispatchEvent(new CustomEvent("new-prj-btn-clicked", {bubbles: true, composed: true}));
         });
 
-        const openPrjBtn = this.shadowRoot.getElementById("open-prj-btn");
-        openPrjBtn.addEventListener("click", () => {
+        this.openPrjBtn = this.shadowRoot.getElementById("open-prj-btn");
+        this.openPrjBtn.addEventListener("click", () => {
             this.dispatchEvent(new CustomEvent("open-prj-btn-clicked", {bubbles: true, composed: true}));
         });
 
-        const addNodeForm = this.shadowRoot.getElementById("add-node-form");
-        addNodeForm.addEventListener("submit", (event) => {
+        this.addNodeForm = this.shadowRoot.getElementById("add-node-form");
+        this.addNodeForm.addEventListener("submit", (event) => {
             event.preventDefault();
-            const nodeId = addNodeForm.elements['add-node-form-node'].value;
+            const nodeId = this.addNodeForm.elements['add-node-form-node'].value;
             this.dispatchEvent(new CustomEvent("add-node-form-submitted", {
                 bubbles: true,
                 composed: true,
@@ -177,20 +177,20 @@ export class Menu extends HTMLElement {
             }));
         });
 
-        const addEdgeForm = this.shadowRoot.getElementById("add-edge-form");
-        addEdgeForm.addEventListener("submit", (event) => {
+        this.addEdgeForm = this.shadowRoot.getElementById("add-edge-form");
+        this.addEdgeForm.addEventListener("submit", (event) => {
             event.preventDefault();
             this.dispatchEvent(new CustomEvent("add-edge-form-submitted", {bubbles: true, composed: true}));
         });
 
-        const exportBtn = this.shadowRoot.getElementById("export-btn");
-        exportBtn.addEventListener("click", (e) => {
+        this.exportBtn = this.shadowRoot.getElementById("export-btn");
+        this.exportBtn.addEventListener("click", (e) => {
             e.preventDefault();
             this.dispatchEvent(new CustomEvent("export-btn-clicked", {bubbles: true, composed: true}));
         });
 
-        const fitBtn = this.shadowRoot.getElementById("fit-btn");
-        fitBtn.addEventListener("click", () => {
+        this.fitBtn = this.shadowRoot.getElementById("fit-btn");
+        this.fitBtn.addEventListener("click", () => {
             alert("Ajustar - Em construção");
         });
 
@@ -226,18 +226,13 @@ export class Menu extends HTMLElement {
     }
 
     showAddNodeForm() {
-        const addNodeForm = this.shadowRoot.getElementById("add-node-form");
-        const addEdgeForm = this.shadowRoot.getElementById("add-edge-form");
-
-        addNodeForm.classList.add("show");
-        addEdgeForm.classList.remove("show");
+        this.addNodeForm.classList.add("show");
+        this.addEdgeForm.classList.remove("show");
     }
 
     showAddEdgeForm() {
-        const addNodeForm = this.shadowRoot.getElementById("add-node-form");
-        const addEdgeForm = this.shadowRoot.getElementById("add-edge-form");
-        addNodeForm.classList.remove("show");
-        addEdgeForm.classList.add("show");
+        this.addNodeForm.classList.remove("show");
+        this.addEdgeForm.classList.add("show");
     }
 
     populateCategories(categories) {

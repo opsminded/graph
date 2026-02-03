@@ -62,6 +62,7 @@ export class NewProjectModal extends HTMLElement {
 
     hide() {
         const modal = this.shadowRoot.getElementById('new-project-modal');
+        //modal.style.animation = 'slideOut 1s ease-out';
         modal.classList.remove('show');
     }
 }
