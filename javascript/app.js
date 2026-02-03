@@ -47,12 +47,12 @@ export class App extends HTMLElement {
 
         this.addEventListener('open-prj-btn-clicked', () => {
             const project = {
-                "id": "p1",
-                "name": "Projeto 1",
-                "author": "admin",
-                "created_at": "2026-02-02T20:22:30+00:00",
-                "updated_at": "2026-02-02T20:22:30+00:00",
-                "data": []
+                id: "p1",
+                name: "Projeto 1",
+                author: "admin",
+                created_at: "2026-02-02T20:22:30+00:00",
+                updated_at: "2026-02-02T20:22:30+00:00",
+                data: []
             }
             const graph = {
                 elements: {
@@ -106,16 +106,23 @@ export class App extends HTMLElement {
             history.pushState({ project: 1 }, '', '?project=1');
         }, this.abortController.signal);
 
-        this.addEventListener('add-node-btn-clicked', (event) => {
-            alert('add node');
+        this.addEventListener('', (event) => {
         }, this.abortController.signal);
 
-        this.addEventListener('import-node-btn-clicked', (event) => {
-            alert('import node');
+        this.addEventListener('node-imported', (event) => {
+            // TODO: completar tarefa
+            alert(event.detail);
+        }, this.abortController.signal);
+
+        this.addEventListener('node-added', (event) => {
+            // TODO: completar tarefa
+            alert('add node');
+            alert(event.detail);
         }, this.abortController.signal);
 
         this.addEventListener('add-edge-btn-clicked', (event) => {
-            alert('add edge');
+            // TODO: completar tarefa
+            alert(`Project: ${event.detail.project}, Source: ${event.detail.source}, Target: ${event.detail.target}`);
         }, this.abortController.signal);
 
         this.addEventListener('export-btn-clicked', () => {

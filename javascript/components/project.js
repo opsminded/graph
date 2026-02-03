@@ -51,10 +51,38 @@ export class Project extends HTMLElement
         }, this.abortController.signal);
 
         this.addEdgeButton.addEventListener('click', () => {
+            const p = this.project;
+            console.log(JSON.stringify(p));
+
             this.dispatchEvent(new CustomEvent('add-edge-btn-clicked', {
+                detail: {
+                    project: this.project.id,
+                    source: this.selectedNodes[0],
+                    target: this.selectedNodes[1],
+                },
                 bubbles: true,
                 composed: true,
             }));
+        }, this.abortController.signal);
+
+        this.importNodeForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(this.importNodeForm);
+            const nodeData = {
+                category: formData.get('import-node-category'),
+                type: formData.get('import-node-type'),
+                node: formData.get('import-node-node'),
+            };
+            
+            this.dispatchEvent(new CustomEvent('node-imported', {
+                detail: nodeData,
+                bubbles: true,
+                composed: true,
+            }));
+            
+            this.importNodeModal.style.display = 'none';
+            this.importNodeForm.reset();
         }, this.abortController.signal);
 
         this.addNodeForm.addEventListener('submit', (e) => {
@@ -111,7 +139,7 @@ export class Project extends HTMLElement
     set project(value)
     {
         console.log("Setting project:", value);
-        this.setAttribute("project", value);
+        this.setAttribute("project", JSON.stringify(value));
         if (value === null) {
             this.selectedNodes = [];
             this.selectedEdge = null;
@@ -124,7 +152,6 @@ export class Project extends HTMLElement
             this.addEdgeButton.style.display = "none";
             return;
         }
-        this.setAttribute("project", value);
         this.projectTitle.textContent = value.name;
         this.importNodeButton.style.display = "inline-block";
         this.addNodeButton.style.display = "inline-block";
@@ -133,14 +160,18 @@ export class Project extends HTMLElement
 
     get project()
     {
-        console.log("Getting project:", this.getAttribute("project"));
-        return this.getAttribute("project");
+        const data = JSON.parse(this.getAttribute("project"));
+        if (data === null || data === undefined || data === "") {
+            return null;
+        }
+        console.log("Getting project data:", JSON.stringify(data));
+        return data;
     }
 
     set graph(value)
     {
         console.log("Setting graph:", value);
-        this.setAttribute("graph", value);
+        this.setAttribute("graph", JSON.stringify(value));
 
         // Destroy existing instance if it exists
         if (this.cy) {
@@ -158,14 +189,18 @@ export class Project extends HTMLElement
 
     get graph()
     {
-        console.log("Getting graph:", this.getAttribute("graph"));
-        return this.getAttribute("graph");
+        const data = JSON.parse(this.getAttribute("graph"));
+        if (data === null || data === undefined || data === "") {
+            return null;
+        }
+        
+        return data;
     }
 
     set nodeStatus(statusUpdates)
     {
         console.log("Setting status:", statusUpdates);
-        this.setAttribute("node-status", statusUpdates);
+        this.setAttribute("node-status", JSON.stringify(statusUpdates));
 
         statusUpdates.forEach(update => {
             const node = this.cy.$('#' + update.node_id);
@@ -187,8 +222,11 @@ export class Project extends HTMLElement
     
     get nodeStatus()
     {
-        console.log("Getting status:", this.getAttribute("node-status"));
-        return this.getAttribute("node-status");
+        const data = JSON.parse(this.getAttribute("node-status"));
+        if (data === null || data === undefined || data === "") {
+            return null;
+        }
+        return data;
     }
 
     render()
