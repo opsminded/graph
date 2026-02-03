@@ -150,6 +150,9 @@ export class Menu extends HTMLElement {
       { signal: this.abortController.signal },
     );
 
+    // Set initial visibility based on attributes
+    this.updateButtonVisibility();
+
     this.boundMouseHandler = this.handleMouseMove.bind(this);
     document.addEventListener("mousemove", this.boundMouseHandler, {
       signal: this.abortController.signal,
@@ -182,12 +185,9 @@ export class Menu extends HTMLElement {
       }
     }
 
-    if (name === "add-node-visible") {
-      if (this.hasAttribute("add-node-visible")) {
-        this.addNodeBtn.style.display = "block";
-      } else {
-        this.addNodeBtn.style.display = "none";
-      }
+    // Handle visibility attributes - only update if elements are available
+    if (name.endsWith("-visible")) {
+      this.updateButtonVisibility();
     }
   }
 
@@ -292,40 +292,72 @@ export class Menu extends HTMLElement {
     `;
   }
 
+  /**
+   * Updates button visibility based on attributes.
+   * Safe to call even if DOM elements don't exist yet.
+   */
+  updateButtonVisibility() {
+    if (this.addNodeBtn) {
+      this.addNodeBtn.style.display = this.hasAttribute("add-node-visible") ? "block" : "none";
+    }
+    if (this.addEdgeBtn) {
+      this.addEdgeBtn.style.display = this.hasAttribute("add-edge-visible") ? "block" : "none";
+    }
+    if (this.exportBtn) {
+      this.exportBtn.style.display = this.hasAttribute("export-visible") ? "block" : "none";
+    }
+    if (this.fitBtn) {
+      this.fitBtn.style.display = this.hasAttribute("fit-visible") ? "block" : "none";
+    }
+  }
+
+  // Property getters/setters for programmatic access
   set addNodeVisible(isVisible) {
-    const displayStyle = isVisible ? "block" : "none";
-    this.addNodeBtn.style.display = displayStyle;
+    if (isVisible) {
+      this.setAttribute("add-node-visible", "");
+    } else {
+      this.removeAttribute("add-node-visible");
+    }
   }
 
   get addNodeVisible() {
-    return this.addNodeBtn.style.display === "block";
+    return this.hasAttribute("add-node-visible");
   }
 
   set addEdgeVisible(isVisible) {
-    const displayStyle = isVisible ? "block" : "none";
-    this.addEdgeBtn.style.display = displayStyle;
+    if (isVisible) {
+      this.setAttribute("add-edge-visible", "");
+    } else {
+      this.removeAttribute("add-edge-visible");
+    }
   }
 
   get addEdgeVisible() {
-    return this.addEdgeBtn.style.display === "block";
+    return this.hasAttribute("add-edge-visible");
   }
 
   set exportVisible(isVisible) {
-    const displayStyle = isVisible ? "block" : "none";
-    this.exportBtn.style.display = displayStyle;
+    if (isVisible) {
+      this.setAttribute("export-visible", "");
+    } else {
+      this.removeAttribute("export-visible");
+    }
   }
 
   get exportVisible() {
-    return this.exportBtn.style.display === "block";
+    return this.hasAttribute("export-visible");
   }
 
   set fitVisible(isVisible) {
-    const displayStyle = isVisible ? "block" : "none";
-    this.fitBtn.style.display = displayStyle;
+    if (isVisible) {
+      this.setAttribute("fit-visible", "");
+    } else {
+      this.removeAttribute("fit-visible");
+    }
   }
 
   get fitVisible() {
-    return this.fitBtn.style.display === "block";
+    return this.hasAttribute("fit-visible");
   }
 
   render() {
