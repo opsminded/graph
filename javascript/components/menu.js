@@ -298,16 +298,24 @@ export class Menu extends HTMLElement {
    */
   updateButtonVisibility() {
     if (this.addNodeBtn) {
-      this.addNodeBtn.style.display = this.hasAttribute("add-node-visible") ? "block" : "none";
+      this.addNodeBtn.style.display = this.hasAttribute("add-node-visible") 
+        ? "block" 
+        : "none";
     }
     if (this.addEdgeBtn) {
-      this.addEdgeBtn.style.display = this.hasAttribute("add-edge-visible") ? "block" : "none";
+      this.addEdgeBtn.style.display = this.hasAttribute("add-edge-visible") 
+        ? "block" 
+        : "none";
     }
     if (this.exportBtn) {
-      this.exportBtn.style.display = this.hasAttribute("export-visible") ? "block" : "none";
+      this.exportBtn.style.display = this.hasAttribute("export-visible") 
+        ? "block" 
+        : "none";
     }
     if (this.fitBtn) {
-      this.fitBtn.style.display = this.hasAttribute("fit-visible") ? "block" : "none";
+      this.fitBtn.style.display = this.hasAttribute("fit-visible") 
+        ? "block" 
+        : "none";
     }
   }
 
