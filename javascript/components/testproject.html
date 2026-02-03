@@ -47,9 +47,15 @@
                 },
                 style: [
                     {
-                        selector: 'node.healthy',
+                        selector: 'node.node-status-healthy',
                         style: {
                             "background-color": "green"
+                        }
+                    },
+                    {
+                        selector: 'node.node-status-unhealthy',
+                        style: {
+                            "background-color": "red"
                         }
                     }
                 ]
@@ -92,6 +98,20 @@
             <button 
                 onclick="document.querySelector('app-project').nodeStatus = status">
                 Atualizar status dos nós
+            </button>
+        </p>
+
+        <p>
+            <button 
+                onclick="document.querySelector('app-project').export()">
+                Exportar projeto
+            </button>
+        </p>
+
+        <p>
+            <button 
+                onclick="document.querySelector('app-project').fit()">
+                Ajustar zoom
             </button>
         </p>
     </body>

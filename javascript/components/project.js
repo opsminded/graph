@@ -63,15 +63,27 @@ export class Project extends HTMLElement
         return this.getAttribute("graph");
     }
 
-    set nodeStatus(status)
+    set nodeStatus(statusUpdates)
     {
-        console.log("Setting status:", status);
-        this.setAttribute("node-status", status);
+        console.log("Setting status:", statusUpdates);
+        this.setAttribute("node-status", statusUpdates);
 
-        // foreach status in value
-        for(let update of status) {
-            this.cy.$('#' + update.node_id).addClass(`${update.status}`);
-        }
+        statusUpdates.forEach(update => {
+            const node = this.cy.$('#' + update.node_id);
+            
+            if (node.length > 0) {
+                // Remove classes de status anteriores
+                let classes = node.classes();
+                classes.forEach(cls => {
+                    if (cls.startsWith("node-status")) {
+                        node.removeClass(cls);
+                    }
+                });
+
+                // Adiciona nova classe de status
+                node.addClass(`node-status-${update.status}`);
+            }
+        });
     }
     
     get nodeStatus()
@@ -167,48 +179,6 @@ export class Project extends HTMLElement
         });
     }
 
-    /**
-     * Limpa o projeto e destrói a instância do Cytoscape.
-     */
-    clear() {
-        this.projectTitle.textContent = '';
-        
-        if (this.cy) {
-            this.cy.destroy();
-            this.cy = null;
-        }
-    }
-
-    /**
-     * Atualiza os status visuais dos nós.
-     * @param {Array} statusUpdates - Array de objetos {node_id, status}
-     */
-    updateNodeStatuses(statusUpdates) {
-        if (!this.cy) return;
-
-        console.log('updateNodeStatuses called with:', statusUpdates);
-        
-        statusUpdates.forEach(update => {
-            const node = this.cy.$(`#${update.node_id}`);
-            
-            if (node.length > 0) {
-                // Remove classes de status anteriores
-                let classes = node.classes();
-                classes.forEach(cls => {
-                    if (cls.startsWith("node-status")) {
-                        node.removeClass(cls);
-                    }
-                });
-
-                // Adiciona nova classe de status
-                node.addClass(`node-status-${update.status}`);
-            }
-        });
-    }
-
-    /**
-     * Exporta o gráfico como imagem PNG.
-     */
     export() {
         if (!this.cy) return;
 
@@ -222,9 +192,6 @@ export class Project extends HTMLElement
         link.click();
     }
 
-    /**
-     * Ajusta o zoom para mostrar todo o gráfico.
-     */
     fit() {
         if (this.cy) {
             this.cy.fit();
