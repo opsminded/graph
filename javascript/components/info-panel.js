@@ -2,7 +2,7 @@
 
 export class InfoPanel extends HTMLElement {
 
-    static observedAttributes = ["node"]
+    static observedAttributes = ["node"];
 
     constructor() {
         super();
@@ -27,12 +27,6 @@ export class InfoPanel extends HTMLElement {
         this.abortController.abort();
     }
 
-    attributeChangedCallback(name, oldValue, newValue) {
-        if (name === "node") {
-            console.log(`InfoPanel attribute changed: ${name} from ${oldValue} to ${newValue}`);
-        }
-    }
-
     set node(value) {
         if (value === null || value === "null" || value === "") {
             console.log("Clearing node info panel");
@@ -41,18 +35,17 @@ export class InfoPanel extends HTMLElement {
             return;
         }
 
-        const data = JSON.parse(value);
-        console.log("Setting node:", data);
+        console.log("Setting node:", value);
         this.setAttribute("node", value);
         
         this.panel.style.display = "block";
-        this.infoNodeId.textContent = data.id || "N/A";
-        this.infoNodeLabel.textContent = data.label || "N/A";
-        this.infoNodeCategory.textContent = data.category || "N/A";
-        this.infoNodeType.textContent = data.type || "N/A";
+        this.infoNodeId.textContent = value.id || "N/A";
+        this.infoNodeLabel.textContent = value.label || "N/A";
+        this.infoNodeCategory.textContent = value.category || "N/A";
+        this.infoNodeType.textContent = value.type || "N/A";
 
         this.infoNodeOtherProperties.innerHTML = "";
-        for (const [key, val] of Object.entries(data['data'])) {
+        for (const [key, val] of Object.entries(value['data'])) {
             const p = document.createElement("p");
             p.innerHTML = `<strong>${val.key}:</strong> ${val.value}`;
             this.infoNodeOtherProperties.appendChild(p);
@@ -61,8 +54,7 @@ export class InfoPanel extends HTMLElement {
 
     get node() {
         console.log("Getting node:", this.getAttribute("node"));
-        const data = JSON.parse(this.getAttribute("node"));
-        return data;
+        return this.getAttribute("node");
     }
 
     getStyles() {
