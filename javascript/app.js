@@ -1,210 +1,283 @@
 "use strict";
 
 import {Api} from './api.js';
-import './info-panel.js';
-import './menu.js';
-import './modal-open-project.js';
-import './modal-new-project.js';
-import './notification.js';
-import './project.js';
+import './components/menu.js';
+import './components/notification.js';
+import './components/project.js';
 
 export class App extends HTMLElement {
     constructor() {
         super();
-        
         this.api = new Api();
-        this.statusUpdateTimer = null;
-        this.selectedNodes = [];
 
-        this.attachShadow({ mode: "open" });
+        // AbortController for automatic event listener cleanup
+        this.abortController = new AbortController();
         this.render();
     }
 
-    render() {
-        this.shadowRoot.innerHTML = `
-            <app-menu></app-menu>
-            <app-open-project-modal></app-open-project-modal>
-            <app-new-project-modal></app-new-project-modal>
-            <app-info-panel></app-info-panel>
-            <app-project></app-project>
-            <app-notification></app-notification>
-        `;
+    connectedCallback() {
+        console.log("App connected");
 
-        this.initializeComponents();
-        this.fetchData();
+        this.menu         = this.shadowRoot.querySelector('app-menu');
+        this.project      = this.shadowRoot.querySelector('app-project');
+        this.notification = this.shadowRoot.querySelector('app-notification');
+
         this.setupEventListeners();
     }
 
-    initializeComponents()
-    {
-        this.menu             = this.shadowRoot.querySelector('app-menu');
-        this.modalNewProject  = this.shadowRoot.querySelector('app-new-project-modal');
-        this.modalOpenProject = this.shadowRoot.querySelector('app-open-project-modal');
-        this.infoPanel        = this.shadowRoot.querySelector('app-info-panel'); 
-        this.project          = this.shadowRoot.querySelector('app-project');
-        this.notification     = this.shadowRoot.querySelector('app-notification');
+    disconnectedCallback() {
+        console.log("App disconnected");
+        this.abortController.abort();
     }
 
-    async fetchData()
-    {
-        this.api.fetchCategories().then(categories => {
-            this.menu.populateCategories(categories);
-        });
-
-        this.api.fetchTypes().then(types => {
-            this.menu.populateTypes(types);
-        });
-
-        this.api.fetchProjects().then(projects => {
-            this.modalOpenProject.populateProjects(projects);
-        });
+    render() {
+        this.attachShadow({ mode: "open" });
+        this.shadowRoot.innerHTML = `
+            <app-menu keep-open></app-menu>
+            <app-project></app-project>
+            <app-notification></app-notification>
+        `;
     }
 
     setupEventListeners()
     {
-        this.menu.addEventListener('login-btn-clicked', () => {
-            alert('Não implementado ainda');
-        });
+        this.addEventListener('new-prj-btn-clicked', () => {
+            alert('new project');
+        }, this.abortController.signal);
 
-        this.menu.addEventListener('new-prj-btn-clicked', () => {
-            
-            if (this.statusUpdateTimer !== null) {
-                clearInterval(this.statusUpdateTimer);
-                this.statusUpdateTimer = null;
-                this.project.clear();
+        this.addEventListener('open-prj-btn-clicked', () => {
+            const project = {
+                "id": "p1",
+                "name": "Projeto 1",
+                "author": "admin",
+                "created_at": "2026-02-02T20:22:30+00:00",
+                "updated_at": "2026-02-02T20:22:30+00:00",
+                "data": []
+            }
+            const graph = {
+                elements: {
+                    nodes: [
+                        { data: { id: 'a', label: 'Node A' } },
+                        { data: { id: 'b', label: 'Node B' } },
+                        { data: { id: 'c', label: 'Node C' } }
+                    ],
+                    edges: [
+                        { data: { id: 'ab', source: 'a', target: 'b' } },
+                        { data: { id: 'bc', source: 'b', target: 'c' } }
+                    ]
+                },
+                layout: {
+                    name: 'cose'
+                },
+                style: [
+                    {
+                        selector: 'node.node-status-healthy',
+                        style: {
+                            "background-color": "green"
+                        }
+                    },
+                    {
+                        selector: 'node.node-status-unhealthy',
+                        style: {
+                            "background-color": "red"
+                        }
+                    }
+                ]
             }
 
-            this.modalNewProject.show();
-            this.modalOpenProject.hide();
-        });
+            const status = [
+                {
+                    "node_id": "a",
+                    "status": "healthy"
+                },
+                {
+                    "node_id": "b",
+                    "status": "healthy"
+                },
+                {
+                    "node_id": "c",
+                    "status": "unhealthy"
+                }
+            ]
+            this.project.project = project;
+            this.project.graph = graph;
+            this.project.nodeStatus = status;
 
-        this.menu.addEventListener('open-prj-btn-clicked', () => {
+            history.pushState({ project: 1 }, '', '?project=1');
+        }, this.abortController.signal);
 
-            if (this.statusUpdateTimer !== null) {
-                clearInterval(this.statusUpdateTimer);
-                this.statusUpdateTimer = null;
-                this.project.clear();
-            }
+        this.addEventListener('add-node-btn-clicked', (event) => {
+            alert('add node');
+        }, this.abortController.signal);
 
-            this.modalNewProject.hide();
-            this.modalOpenProject.show();
-        });
+        this.addEventListener('import-node-btn-clicked', (event) => {
+            alert('import node');
+        }, this.abortController.signal);
 
-        this.menu.addEventListener('export-btn-clicked', () => {
+        this.addEventListener('add-edge-btn-clicked', (event) => {
+            alert('add edge');
+        }, this.abortController.signal);
+
+        this.addEventListener('export-btn-clicked', () => {
             this.project.export();
-        });
+        }, this.abortController.signal);
 
-        this.addEventListener('new-project', (event) => {
-            const projectData = event.detail;
-            this.newProject(projectData);
-        });
-
-        // Handle opening projects
-        this.addEventListener('open-project', (event) => {
-            this.openProject(event.detail.id);
-        });
-
-        this.addEventListener('category-changed', async (event) => {
-            const categoryId = event.detail.categoryId;
-            const newTypes = await this.api.fetchCategoryTypes(categoryId);
-            this.menu.populateTypes(newTypes);
-            this.menu.populateNodes([]);
-        });
-
-        this.addEventListener('type-changed', async (event) => {
-            const typeId = event.detail.typeId;
-            const newNodes = await this.api.fetchTypeNodes(typeId);
-            this.menu.populateNodes(newNodes);
-        });
-
-        this.addEventListener('add-node-form-submitted', async (event) => {
-            const {nodeId} = event.detail;
-            
-            if (this.project.projectId === null) {
-                return;
-            }
-
-            const formData = {
-                project_id: this.project.projectId,
-                node_id: nodeId
-            };
-
-            await this.api.insertProjectNode(formData);
-            this.openProject(this.project.projectId);
-        });
-
-        this.addEventListener('add-edge-form-submitted', async (event) => {
-            const formData = {
-                source : this.selectedNodes[0],
-                target : this.selectedNodes[1],
-                label: "connects",
-                data: {}
-            }
-
-            let resp = await this.api.insertEdge(formData);
-            console.log('Edge insertion response:', resp);
-        });
-
-        this.addEventListener('node-selected', (event) => {
-            this.selectedNodes = event.detail.selectedNodes;
-
-            if (this.selectedNodes.length === 2) {
-                this.menu.showAddEdgeForm();
-            }
-        });
-
-        this.boundKeyHandler = this.handleKeyPress.bind(this);
-        document.addEventListener('keydown', this.boundKeyHandler);
-
-        this.boundMouseHandler = this.handleMouseMove.bind(this);
-        document.addEventListener('mousemove', this.boundMouseHandler);
+        this.addEventListener('fit-btn-clicked', () => {
+            this.project.fit();
+        }, this.abortController.signal);
     }
 
-    async newProject(projectData) {
-        console.log('Creating new project with data:', projectData);
-        const project = await this.api.insertProject(projectData);
-        this.modalNewProject.hide();
-        this.notification.success(`Projeto "${project.name}" criado com sucesso!`);
-        this.openProject(project.id);
-    }
+    // async newProject(projectData) {
+    //     console.log('Creating new project with data:', projectData);
+    //     const project = await this.api.insertProject(projectData);
+    //     this.modalNewProject.hide();
+    //     this.notification.success(`Projeto "${project.name}" criado com sucesso!`);
+    //     this.openProject(project.id);
+    // }
 
-    async openProject(projectId) {
-        this.modalOpenProject.hide();
-        this.menu.showAddNodeForm();
-        const project = await this.api.fetchProject(projectId);
-        const projectGraph = await this.api.fetchProjectGraph(projectId);
-        console.log('Opened project:', project);
-        console.log('Project graph:', projectGraph);
-        this.project.populateProject(project, projectGraph);
-        this.startStatusUpdates(projectId);
-        this.notification.success(`Projeto "${project.id}" aberto com sucesso!`);
-    }
+    // async openProject(projectId) {
+    //     this.modalOpenProject.hide();
+    //     this.menu.showAddNodeForm();
+    //     const project = await this.api.fetchProject(projectId);
+    //     const projectGraph = await this.api.fetchProjectGraph(projectId);
+    //     console.log('Opened project:', project);
+    //     console.log('Project graph:', projectGraph);
+    //     this.project.populateProject(project, projectGraph);
+    //     this.startStatusUpdates(projectId);
+    //     this.notification.success(`Projeto "${project.id}" aberto com sucesso!`);
+    // }
 
-    startStatusUpdates(projectId) {
-        this.updateNodeStatuses(projectId);
-        if (this.statusUpdateTimer) {
-            clearInterval(this.statusUpdateTimer);
-        }
+    // startStatusUpdates(projectId) {
+    //     this.updateNodeStatuses(projectId);
+    //     if (this.statusUpdateTimer) {
+    //         clearInterval(this.statusUpdateTimer);
+    //     }
 
-        this.statusUpdateTimer = setInterval(() => {
-            this.updateNodeStatuses(projectId);
-        }, 5000);
-    }
+    //     this.statusUpdateTimer = setInterval(() => {
+    //         this.updateNodeStatuses(projectId);
+    //     }, 5000);
+    // }
 
-    async updateNodeStatuses(projectId) {
-        console.log('Updating node statuses...');
-        const statuses = await this.api.fetchProjectStatus(projectId);
-        console.log('Fetched node statuses:', statuses);
-        this.project.updateNodeStatuses(statuses);
-    }
+    // async updateNodeStatuses(projectId) {
+    //     console.log('Updating node statuses...');
+    //     const statuses = await this.api.fetchProjectStatus(projectId);
+    //     console.log('Fetched node statuses:', statuses);
+    //     this.project.updateNodeStatuses(statuses);
+    // }
 
-    handleKeyPress(e) {
-        this.menu.handleKeyPress(e);
-    }
+    // handleKeyPress(e) {
+    //     this.menu.handleKeyPress(e);
+    // }
 
-    handleMouseMove(e) {
-        this.menu.handleMouseMove(e);
-    }
+    // handleMouseMove(e) {
+    //     this.menu.handleMouseMove(e);
+    // }
 }
 
 customElements.define("app-root", App);
+
+
+
+// this.menu.addEventListener('new-prj-btn-clicked', () => {
+            
+//             if (this.statusUpdateTimer !== null) {
+//                 clearInterval(this.statusUpdateTimer);
+//                 this.statusUpdateTimer = null;
+//                 this.project.clear();
+//             }
+
+//             this.modalNewProject.show();
+//             this.modalOpenProject.hide();
+//         });
+
+
+// async fetchData()
+//     {
+//         this.api.fetchCategories().then(categories => {
+//             this.menu.populateCategories(categories);
+//         });
+
+//         this.api.fetchTypes().then(types => {
+//             this.menu.populateTypes(types);
+//         });
+
+//         this.api.fetchProjects().then(projects => {
+//             this.modalOpenProject.populateProjects(projects);
+//         });
+//     }
+
+
+// this.menu.addEventListener('open-prj-btn-clicked', () => {
+
+//             if (this.statusUpdateTimer !== null) {
+//                 clearInterval(this.statusUpdateTimer);
+//                 this.statusUpdateTimer = null;
+//                 this.project.clear();
+//             }
+
+//             this.modalNewProject.hide();
+//             this.modalOpenProject.show();
+//         });
+
+// this.addEventListener('new-project', (event) => {
+//             const projectData = event.detail;
+//             this.newProject(projectData);
+//         });
+
+
+
+
+
+// // Handle opening projects
+//         this.addEventListener('open-project', (event) => {
+//             this.openProject(event.detail.id);
+//         });
+
+//         this.addEventListener('category-changed', async (event) => {
+//             const categoryId = event.detail.categoryId;
+//             const newTypes = await this.api.fetchCategoryTypes(categoryId);
+//             this.menu.populateTypes(newTypes);
+//             this.menu.populateNodes([]);
+//         });
+
+//         this.addEventListener('type-changed', async (event) => {
+//             const typeId = event.detail.typeId;
+//             const newNodes = await this.api.fetchTypeNodes(typeId);
+//             this.menu.populateNodes(newNodes);
+//         });
+
+//         this.addEventListener('add-node-form-submitted', async (event) => {
+//             const {nodeId} = event.detail;
+            
+//             if (this.project.projectId === null) {
+//                 return;
+//             }
+
+//             const formData = {
+//                 project_id: this.project.projectId,
+//                 node_id: nodeId
+//             };
+
+//             await this.api.insertProjectNode(formData);
+//             this.openProject(this.project.projectId);
+//         });
+
+//         this.addEventListener('add-edge-form-submitted', async (event) => {
+//             const formData = {
+//                 source : this.selectedNodes[0],
+//                 target : this.selectedNodes[1],
+//                 label: "connects",
+//                 data: {}
+//             }
+
+//             let resp = await this.api.insertEdge(formData);
+//             console.log('Edge insertion response:', resp);
+//         });
+
+//         this.addEventListener('node-selected', (event) => {
+//             this.selectedNodes = event.detail.selectedNodes;
+
+//             if (this.selectedNodes.length === 2) {
+//                 this.menu.showAddEdgeForm();
+//             }
+//         });

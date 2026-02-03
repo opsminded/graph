@@ -21,9 +21,67 @@ export class Project extends HTMLElement
 
     connectedCallback() {
         console.log("Project connected");
-        this.projectTitle  = this.shadowRoot.getElementById('project-title');
-        this.infoPanel = this.shadowRoot.querySelector('app-info-panel');
-        this.cyContainer = this.shadowRoot.getElementById('cy');
+        this.projectTitle     = this.shadowRoot.getElementById('project-title');
+        this.importNodeButton = this.shadowRoot.getElementById('import-node-btn');
+        this.addNodeButton    = this.shadowRoot.getElementById('add-node-btn');
+        this.addEdgeButton    = this.shadowRoot.getElementById('add-edge-btn');
+        this.infoPanel        = this.shadowRoot.querySelector('app-info-panel');
+
+        this.importNodeModal = this.shadowRoot.getElementById('import-node-modal');
+        this.importNodeForm  = this.shadowRoot.getElementById('import-node-form');
+        this.importNodeFormCancelButton = this.shadowRoot.getElementById('cancel-import-node');
+        
+        this.addNodeModal = this.shadowRoot.getElementById('add-node-modal');
+        this.addNodeForm  = this.shadowRoot.getElementById('add-node-form');
+        this.addNodeFormCancelButton = this.shadowRoot.getElementById('cancel-add-node');
+
+        this.cyContainer   = this.shadowRoot.getElementById('cy');
+
+        this.importNodeButton.addEventListener('click', () => {
+            this.importNodeModal.style.display = 'block';
+        }, this.abortController.signal);
+
+        this.importNodeFormCancelButton.addEventListener('click', () => {
+            this.importNodeForm.reset();
+            this.importNodeModal.style.display = 'none';
+        }, this.abortController.signal);
+
+        this.addNodeButton.addEventListener('click', () => {
+            this.addNodeModal.style.display = 'block';
+        }, this.abortController.signal);
+
+        this.addEdgeButton.addEventListener('click', () => {
+            this.dispatchEvent(new CustomEvent('add-edge-btn-clicked', {
+                bubbles: true,
+                composed: true,
+            }));
+        }, this.abortController.signal);
+
+        this.addNodeForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(this.addNodeForm);
+            const nodeData = {
+                id: formData.get('node-id'),
+                label: formData.get('node-label'),
+                category: formData.get('node-category'),
+                type: formData.get('node-type'),
+            };
+            
+            this.dispatchEvent(new CustomEvent('node-added', {
+                detail: nodeData,
+                bubbles: true,
+                composed: true,
+            }));
+            
+            this.addNodeModal.style.display = 'none';
+            this.addNodeForm.reset();
+        }, this.abortController.signal);
+
+        this.addNodeFormCancelButton.addEventListener('click', () => {
+            this.addNodeForm.reset();
+            this.addNodeModal.style.display = 'none';
+        }, this.abortController.signal);
 
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && this.cy) {
@@ -61,10 +119,16 @@ export class Project extends HTMLElement
             this.cy = null;
             this.infoPanel.node = null;
             this.projectTitle.textContent = "";
+            this.importNodeButton.style.display = "none";
+            this.addNodeButton.style.display = "none";
+            this.addEdgeButton.style.display = "none";
             return;
         }
         this.setAttribute("project", value);
         this.projectTitle.textContent = value.name;
+        this.importNodeButton.style.display = "inline-block";
+        this.addNodeButton.style.display = "inline-block";
+        this.addEdgeButton.style.display = "inline-block";
     }
 
     get project()
@@ -146,17 +210,123 @@ export class Project extends HTMLElement
                     z-index: 100;
                 }
 
+                #buttons-container {
+                    position: absolute;
+                    top: 10px;
+                    right: 10px;
+                    width: 500px;
+                    z-index: 101;
+                    text-align: right;
+                }
+
+                #buttons-container button {
+                    margin: 0 10px;
+                    display: none;
+                }
+
                 #project-container h2 {
                     position: absolute;
                     left: 320px;
                     top: 10px;
                     z-index: 101;
                 }
+
+                #import-node-modal {
+                    position: absolute;
+
+                    border: 2px solid #CCC;
+                    background-color: #fff;
+
+                    left: 25%;
+                    top: 8%;
+                    width: 50%;
+                    height: 70%;
+
+                    padding: 10px;
+
+                    display: none;
+                    z-index: 200;
+                }
+
+                #add-node-modal {
+                    position: absolute;
+
+                    border: 2px solid #CCC;
+                    background-color: #fff;
+
+                    left: 25%;
+                    top: 8%;
+                    width: 50%;
+                    height: 70%;
+
+                    padding: 10px;
+
+                    display: none;
+                    z-index: 200;
+                }
             </style>
             <div id="project-container">
                 <h2 id="project-title"></h2>
+
+                <div id="buttons-container">
+                    <button id="import-node-btn">Importar Item</button>
+                    <button id="add-node-btn">Novo Item</button>
+                    <button id="add-edge-btn">Nova Ligação</button>
+                </div>
+
                 <div id="cy"></div>
                 <app-info-panel></app-info-panel>
+
+                <div id="import-node-modal">
+                    <form id="import-node-form">
+                        <label for="import-node-category">Categoria do Item:</label>
+                        <select id="import-node-category" name="import-node-category">
+                            <option value="gene">Gene</option>
+                            <option value="protein">Proteína</option>
+                            <option value="compound">Composto</option>
+                        </select>
+                        <br>
+
+                        <label for="import-node-type">Tipo do Item:</label>
+                        <select id="import-node-type" name="import-node-type">
+                            <option value="enzyme">Enzima</option>
+                            <option value="receptor">Receptor</option>
+                        </select>
+
+                        <label for="import-node-node">Node ID:</label>
+                        <select id="import-node-node" name="import-node-node">
+                            <!-- Options will be populated dynamically -->
+                        </select>
+                        <br>
+
+                        <button type="submit">Importar Item</button>
+                        <button type="button" id="cancel-import-node">Cancelar</button>
+                    </form>
+                </div>
+
+                <div id="add-node-modal">
+                    <form id="add-node-form">
+                        
+                        <label for="node-id">Node ID:</label>
+                        <input type="text" id="node-id" name="node-id" required>
+                        <br>
+
+                        <label for="node-label">Node Label:</label>
+                        <input type="text" id="node-label" name="node-label" required>
+                        <br>
+
+                        <label for="node-category">Node Category:</label>
+                        <input type="text" id="node-category" name="node-category">
+                        <br>
+
+                        <label for="node-type">Node Type:</label>
+                        <input type="text" id="node-type" name="node-type">
+                        <br>
+                        
+                        <button type="submit">Add Node</button>
+                        <button type="button" id="cancel-add-node">Cancel</button>
+                    </form>
+                </div>
             </div>
         `;
     }
