@@ -1,6 +1,7 @@
 "use strict";
 
 import cytoscape from "/javascript/libs/cytoscape.esm.min.mjs";
+import {InfoPanel} from "./info-panel.js";
 
 export class Project extends HTMLElement
 {
@@ -18,6 +19,7 @@ export class Project extends HTMLElement
     connectedCallback() {
         console.log("Project connected");
         this.projectTitle  = this.shadowRoot.getElementById('project-title');
+        this.infoPanel = this.shadowRoot.querySelector('app-info-panel');
         this.cyContainer = this.shadowRoot.getElementById('cy');
     }
 
@@ -121,6 +123,7 @@ export class Project extends HTMLElement
             <div id="project-container">
                 <h2 id="project-title"></h2>
                 <div id="cy"></div>
+                <app-info-panel></app-info-panel>
             </div>
         `;
     }
@@ -168,7 +171,7 @@ export class Project extends HTMLElement
         // Evento: Duplo clique em nó (para mostrar info)
         this.cy.on('dbltap', 'node', (e) => {
             const node = e.target;
-            alert(`Node Info:\nID: ${node.id()}\nData: ${JSON.stringify(node.data())}`);
+            this.infoPanel.node = node.data();
         });
 
         // Evento: Clique no background (deseleciona tudo)
