@@ -13,6 +13,9 @@ export class Project extends HTMLElement
         this.cy = null;
         this.selectedNodes = [];
         this.selectedEdge = null;
+        
+        // AbortController for automatic event listener cleanup
+        this.abortController = new AbortController();
         this.render();
     }
 
@@ -21,10 +24,30 @@ export class Project extends HTMLElement
         this.projectTitle  = this.shadowRoot.getElementById('project-title');
         this.infoPanel = this.shadowRoot.querySelector('app-info-panel');
         this.cyContainer = this.shadowRoot.getElementById('cy');
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.cy) {
+                this.cy.elements().unselect();
+                this.selectedNodes = [];
+                this.selectedEdge = null;
+                this.infoPanel.node = null;
+            }
+
+            if ((e.key === 'p' || e.key === 'P')) {
+                e.preventDefault();
+                this.export();
+            }
+
+            if ((e.key === 'f' || e.key === 'F')) {
+                e.preventDefault();
+                this.fit();
+            }
+        }, this.abortController.signal);
     }
 
     disconnectedCallback() {
         console.log("Project disconnected");
+        this.abortController.abort();
     }
 
     set project(value)
