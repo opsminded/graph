@@ -111,13 +111,12 @@ export class App extends HTMLElement {
 
         this.addEventListener('node-imported', (event) => {
             // TODO: completar tarefa
-            alert(event.detail);
+            alert(`Node Imported: id: ${event.detail.id}`);
         }, this.abortController.signal);
 
         this.addEventListener('node-added', (event) => {
             // TODO: completar tarefa
-            alert('add node');
-            alert(event.detail);
+            alert(`Node Added: id: ${event.detail.id}, label: ${event.detail.label}, category: ${event.detail.category}, type: ${event.detail.type}`);
         }, this.abortController.signal);
 
         this.addEventListener('add-edge-btn-clicked', (event) => {

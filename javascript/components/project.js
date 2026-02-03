@@ -69,14 +69,9 @@ export class Project extends HTMLElement
             e.preventDefault();
             
             const formData = new FormData(this.importNodeForm);
-            const nodeData = {
-                category: formData.get('import-node-category'),
-                type: formData.get('import-node-type'),
-                node: formData.get('import-node-node'),
-            };
             
             this.dispatchEvent(new CustomEvent('node-imported', {
-                detail: nodeData,
+                detail: {id: formData.get('import-node-node')},
                 bubbles: true,
                 composed: true,
             }));
@@ -117,16 +112,6 @@ export class Project extends HTMLElement
                 this.selectedNodes = [];
                 this.selectedEdge = null;
                 this.infoPanel.node = null;
-            }
-
-            if ((e.key === 'p' || e.key === 'P')) {
-                e.preventDefault();
-                this.export();
-            }
-
-            if ((e.key === 'f' || e.key === 'F')) {
-                e.preventDefault();
-                this.fit();
             }
         }, this.abortController.signal);
     }
