@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Bradesketch</title>
+        
+        <style>
+            html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+                overflow: hidden;
+                font-family: Verdana, Geneva, Tahoma, sans-serif;
+            }
+
+            body {
+                background-color: #FAF9F5;
+            }
+        </style>
+        <script src="info-panel.js" type="module"></script>
+        <script>
+            const node = {
+                id: "Node-01",
+                label: "Node de Serviço",
+                category: "Negócio",
+                type: "service",
+                data: [
+                    { key: "Cliente", value: "Empresa XYZ", type: "string" },
+                    { key: "Início", value: "01/01/2024", type: "string" },
+                    { key: "Status", value: "Em andamento", type: "string" }
+                ]
+
+            }
+        </script>
+    </head>
+    <body>
+        <app-info-panel></app-info-panel>
+        <p><button 
+            onclick="document.querySelector('app-info-panel').node = JSON.stringify(node)">Mostrar notificação</button></p>
+
+            <p><button 
+            onclick="document.querySelector('app-info-panel').node = JSON.stringify(null)">disable</button></p>
+    </body>
+</html>
