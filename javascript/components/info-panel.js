@@ -15,6 +15,11 @@ export class InfoPanel extends HTMLElement {
         console.log("InfoPanel connected");
         this.panel = this.shadowRoot.getElementById("info-panel");
 
+        this.closeButton = this.shadowRoot.getElementById("close-button");
+        this.closeButton.addEventListener("click", () => {
+            this.panel.style.display = "none";
+        }, { signal: this.abortController.signal });
+
         this.infoNodeId = this.shadowRoot.getElementById("info-node-id");
         this.infoNodeLabel = this.shadowRoot.getElementById("info-node-label");
         this.infoNodeCategory = this.shadowRoot.getElementById("info-node-category");
@@ -45,7 +50,8 @@ export class InfoPanel extends HTMLElement {
         this.infoNodeType.textContent = value.type || "N/A";
 
         this.infoNodeOtherProperties.innerHTML = "";
-        for (const [key, val] of Object.entries(value['data'])) {
+        for (const [key, val] of Object.entries(value)) {
+            if (val.key == 'id') continue;
             const p = document.createElement("p");
             p.innerHTML = `<strong>${val.key}:</strong> ${val.value}`;
             this.infoNodeOtherProperties.appendChild(p);
@@ -69,12 +75,16 @@ export class InfoPanel extends HTMLElement {
                     width: 40%;
                     height: 100%;
                     
-                    background-color: #fff;
+                    background-color: #FAF9F5;
                     border-left: 1px solid #CCC;
                     padding: 10px;
                     
                     display: none;
                     z-index: 400;
+                }
+
+                #info-panel-close {
+                    text-align: right;
                 }
             </style>
         `;
@@ -83,6 +93,7 @@ export class InfoPanel extends HTMLElement {
     getTemplate() {
         return `
             <div id="info-panel">
+                <div id="info-panel-close"><button id="close-button">Fechar</button></div>
                 <h2>Propriedades do Nó</h2>
                 <div id="info-panel-content">
                     <p><strong>ID:</strong>        <span id="info-node-id"></span></p>

@@ -31,6 +31,16 @@ export class Project extends HTMLElement
     {
         console.log("Setting project:", value);
         this.setAttribute("project", value);
+        if (value === null) {
+            this.selectedNodes = [];
+            this.selectedEdge = null;
+            this.cy.destroy();
+            this.cy = null;
+            this.infoPanel.node = null;
+            this.projectTitle.textContent = "";
+            return;
+        }
+        this.setAttribute("project", value);
         this.projectTitle.textContent = value.name;
     }
 
@@ -178,6 +188,7 @@ export class Project extends HTMLElement
         this.cy.on('tap', (e) => {
             if (e.target === this.cy) {
                 this.cy.elements().unselect();
+                this.infoPanel.node = null;
             }
         });
     }
