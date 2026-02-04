@@ -26,7 +26,6 @@ export class Menu extends HTMLElement {
    * Sets up all event listeners and initializes menu state.
    */
   connectedCallback() {
-    console.log("Menu connected");
 
     // Cache DOM references from shadow DOM
     this.menu = this.shadowRoot.getElementById("menu");
@@ -159,7 +158,6 @@ export class Menu extends HTMLElement {
   }
 
   disconnectedCallback() {
-    console.log("Menu disconnected");
     if (this.debounce.timeout) {
       clearTimeout(this.debounce.timeout);
     }
@@ -167,17 +165,14 @@ export class Menu extends HTMLElement {
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
-    console.log(`Attribute ${name} has changed.`);
 
     if (name === "keep-open") {
       if (this.hasAttribute("keep-open")) {
-        console.log("Menu set to keep open");
         if (this.menu) {
           this.menu.style.display = "block";
           this.closeMenuBtn.textContent = "X";
         }
       } else {
-        console.log("Menu set to auto-hide");
         if (this.closeMenuBtn) {
           this.closeMenuBtn.textContent = "fixar";
         }
@@ -383,11 +378,9 @@ export class Menu extends HTMLElement {
         return;
       } else {
         if (this.hasAttribute("keep-open")) {
-          console.log("Menu is fixed open; not hiding");
           return;
         }
         if (e.clientX > 300 && this.menu.style.display === "block") {
-          console.log("Hiding menu");
           this.menu.style.display = "none";
         }
       }

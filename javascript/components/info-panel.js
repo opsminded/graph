@@ -12,7 +12,6 @@ export class InfoPanel extends HTMLElement {
     }
 
     connectedCallback() {
-        console.log("InfoPanel connected");
         this.panel = this.shadowRoot.getElementById("info-panel");
 
         this.closeButton = this.shadowRoot.getElementById("close-button");
@@ -28,20 +27,17 @@ export class InfoPanel extends HTMLElement {
     }
 
     disconnectedCallback() {
-        console.log("InfoPanel disconnected");
         this.abortController.abort();
     }
 
     set node(value) {
         if (value === null || value === "null" || value === "") {
-            console.log("Clearing node info panel");
             this.setAttribute("node", "");
             this.panel.style.display = "none";
             return;
         }
 
-        console.log("Setting node:", value);
-        this.setAttribute("node", value);
+        this.setAttribute("node", JSON.stringify(value));
         
         this.panel.style.display = "block";
         this.infoNodeId.textContent = value.id || "N/A";
@@ -59,8 +55,7 @@ export class InfoPanel extends HTMLElement {
     }
 
     get node() {
-        console.log("Getting node:", this.getAttribute("node"));
-        return this.getAttribute("node");
+        return JSON.parse(this.getAttribute("node"));
     }
 
     getStyles() {
