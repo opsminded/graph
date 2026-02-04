@@ -31,12 +31,7 @@ export class Api
             })
             .then(({ data }) => {
                 return data;
-            })
-            .catch(error => {
-                console.error('[fetchCategories] Fetch error:', error);
-                return [];
-            }
-        );
+            });
     }
 
     fetchTypes() {
@@ -50,10 +45,6 @@ export class Api
             })
             .then(({ data }) => {
                 return data;
-            })
-            .catch(error => {
-                console.error('[fetchTypes] Fetch error:', error);
-                return [];
             });
     }
 
@@ -68,10 +59,6 @@ export class Api
             })
             .then(({ data }) => {
                 return data;
-            })
-            .catch(error => {
-                console.error('[getCategoryTypes] Fetch error:', error);
-                return [];
             });
     }
 
@@ -86,10 +73,6 @@ export class Api
             })
             .then(({ data }) => {
                 return data;
-            })
-            .catch(error => {
-                console.error('[fetchTypeNodes] Fetch error:', error);
-                return [];
             });
     }
 
@@ -104,10 +87,6 @@ export class Api
             })
             .then(({ data }) => {
                 return data;
-            })
-            .catch(error => {
-                console.error('[fetchProjects] Fetch error:', error);
-                return [];
             });
     }
 
@@ -122,10 +101,6 @@ export class Api
             })
             .then(({ data }) => {
                 return data;
-            })
-            .catch(error => {
-                console.error('[fetchProject] Fetch error:', error);
-                return null;
             });
     }
 
@@ -140,10 +115,6 @@ export class Api
             })
             .then(({ data }) => {
                 return data;
-            })
-            .catch(error => {
-                console.error('[fetchProjectGraph] Fetch error:', error);
-                return [];
             });
     }
 
@@ -158,10 +129,6 @@ export class Api
             })
             .then(({ data }) => {
                 return data;
-            })
-            .catch(error => {
-                console.error('[fetchProjectStatus] Fetch error:', error);
-                return null;
             });
     }
 
@@ -182,10 +149,6 @@ export class Api
         })
         .then(({ data }) => {
             return data;
-        })
-        .catch(error => {
-            console.error('[insertProject] Fetch error:', error);
-            return null;
         });
     }
 
@@ -206,10 +169,6 @@ export class Api
         })
         .then(({ data }) => {
             return data;
-        })
-        .catch(error => {
-            console.error('[insertProjectNode] Fetch error:', error);
-            return null;
         });
     }
 
@@ -231,10 +190,6 @@ export class Api
         })
         .then(({ data }) => {
             return data;
-        })
-        .catch(error => {
-            console.error('[insertNode] Fetch error:', error);
-            return null;
         });
     }
 
@@ -255,10 +210,6 @@ export class Api
         })
         .then(({ data }) => {
             return data;
-        })
-        .catch(error => {
-            console.error('[insertEdge] Fetch error:', error);
-            return null;
         });
     }
 
@@ -275,9 +226,6 @@ export class Api
                 console.error('Response not ok:', response);
                 throw new Error(`Erro ao deletar nó do projeto: ${response.status}`);
             }
-        }).catch(error => {
-            console.error('[deleteProjectNode] Fetch error:', error);
-            return null;
         });
     }
 
@@ -295,9 +243,6 @@ export class Api
                 console.error('Response not ok:', response);
                 throw new Error(`Erro ao deletar aresta: ${response.status}`);
             }
-        }).catch(error => {
-            console.error('[deleteEdge] Fetch error:', error);
-            return null;
         });
     }
 }

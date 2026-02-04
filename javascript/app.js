@@ -94,11 +94,13 @@ export class App extends HTMLElement {
 
                 this.openProjectModal.hide();
             }).catch(error => {
-                alert('Error fetching project data:', error);
+                alert(`Error fetching project data: ${error.message}`);
             });
 
-            history.pushState({ project: 1 }, '', '?project=1');
+            history.pushState({ project: projectId }, '', `?project=${projectId}`);
         });
+
+
     }
 
     render() {
