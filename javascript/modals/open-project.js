@@ -31,6 +31,12 @@ export class OpenProjectModal extends HTMLElement {
             }));
             this.hide();
         }, { signal: this.abortController.signal });
+
+        this.cancelButton = this.shadowRoot.getElementById('cancel-open-project');
+        this.cancelButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.hide();
+        }, { signal: this.abortController.signal });
     }
 
     disconnectedCallback()
@@ -87,7 +93,7 @@ export class OpenProjectModal extends HTMLElement {
                         <select id="open-prj-form-id" name="id"></select>
                     </label>
                 </p>
-                <p><button type="submit">Abrir</button></p>
+                <p><button type="submit">Abrir</button> <button type="button" id="cancel-open-project">Cancelar</button></p>
             </form>
         </div>
         `;

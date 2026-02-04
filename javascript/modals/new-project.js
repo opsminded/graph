@@ -15,7 +15,7 @@ export class NewProjectModal extends HTMLElement {
     {
         this.modal = this.shadowRoot.getElementById('new-project-modal');
         this.form = this.shadowRoot.getElementById('new-prj-form');
-
+        
         this.newProjectFormNameInput = this.shadowRoot.getElementById('new-prj-form-name');
 
         this.form.addEventListener('submit', (e) => {
@@ -26,6 +26,11 @@ export class NewProjectModal extends HTMLElement {
                 bubbles: true,
                 composed: true
             }));
+            this.hide();
+        }, { signal: this.abortController.signal });
+
+        this.cancelButton = this.shadowRoot.getElementById('cancel-new-project');
+        this.cancelButton.addEventListener('click', () => {
             this.hide();
         }, { signal: this.abortController.signal });
     }
@@ -64,7 +69,7 @@ export class NewProjectModal extends HTMLElement {
                 <p><label for="new-prj-form-name">Nome:<br>
                     <input type="text" id="new-prj-form-name" name="name" required></label>
                 </p>
-                <p><button type="submit">Criar</button></p>
+                <p><button type="submit">Criar</button> <button type="button" id="cancel-new-project">Cancelar</button></p>
             </form>
         </div>
         `;
