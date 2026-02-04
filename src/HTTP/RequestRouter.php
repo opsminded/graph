@@ -34,6 +34,8 @@ final class RequestRouter
         ["method" => Request::METHOD_GET,    "class_method" => "getProjects"],
         ["method" => Request::METHOD_POST,   "class_method" => "insertProject"],
         ["method" => Request::METHOD_POST,   "class_method" => "insertProjectNode"],
+
+        ["method" => Request::METHOD_DELETE,   "class_method" => "deleteProjectNode"],
     ];
 
     public Controller $controller;

@@ -59,6 +59,8 @@ final class RequestRouter
         ["method" => Request::METHOD_GET,    "class_method" => "getProjects"],
         ["method" => Request::METHOD_POST,   "class_method" => "insertProject"],
         ["method" => Request::METHOD_POST,   "class_method" => "insertProjectNode"],
+
+        ["method" => Request::METHOD_DELETE,   "class_method" => "deleteProjectNode"],
     ];
 
     public Controller $controller;
@@ -3649,6 +3651,17 @@ final class Controller implements ControllerInterface
 
     public function deleteProjectNode(Request $req): ResponseInterface
     {
+        if ($req->method !== Request::METHOD_DELETE) {
+            return new MethodNotAllowedResponse($req->method, __METHOD__);
+        }
+
+        $projectId = $req->data['project_id'];
+        $nodeId = $req->data['node_id'];
+
+        if ($this->service->deleteProjectNode($projectId, $nodeId)) {
+            return new NoContentResponse("project node deleted", $req->data);
+        }
+        return new NotFoundResponse("project node not found", $req->data);
     }
 
     public function getLogs(Request $req): ResponseInterface

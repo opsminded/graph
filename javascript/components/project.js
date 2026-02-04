@@ -48,6 +48,9 @@ export class Project extends HTMLElement
         this.removeNodeButton = this.shadowRoot.getElementById('remove-node-btn');
         this.removeEdgeButton = this.shadowRoot.getElementById('remove-edge-btn');
 
+        this.removeEdgeSource = this.shadowRoot.getElementById('remove-edge-source');
+        this.removeEdgeTarget = this.shadowRoot.getElementById('remove-edge-target');
+
         this.cyContainer   = this.shadowRoot.getElementById('cy');
 
         this.importNodeButton.addEventListener('click', () => {
@@ -193,7 +196,8 @@ export class Project extends HTMLElement
         this.removeEdgeButton.addEventListener('click', () => {
             this.removeEdgeModal.style.display = 'block';
             if (this.selectedEdge) {
-                this.removeEdgeForm.querySelector('#remove-edge-id').value = this.selectedEdge;
+                this.removeEdgeSource.value = this.selectedEdge.source;
+                this.removeEdgeTarget.value = this.selectedEdge.target;
             }
         }, this.abortController.signal);
 
@@ -202,27 +206,39 @@ export class Project extends HTMLElement
             const formData = new FormData(this.removeNodeForm);
             const nodeId = formData.get('remove-node-id');
             console.log("Removing node:", nodeId);
+
+            const nodeData = {
+                project_id: this.project.id,
+                node_id: nodeId
+            };
+
+            this.api.deleteProjectNode(nodeData).then(() => {
+                alert(`Item "${nodeId}" removido com sucesso!`);
+            }).catch(error => {
+                alert(`Erro ao remover item: ${error.message}`);
+            });
+
             this.removeNodeModal.style.display = 'none';
             this.removeNodeForm.reset();
-            this.dispatchEvent(new CustomEvent('node-removed', {
-                detail: {id: nodeId},
-                bubbles: true,
-                composed: true,
-            }));
         }, this.abortController.signal);
 
         this.removeEdgeForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const formData = new FormData(this.removeEdgeForm);
-            const edgeId = formData.get('remove-edge-id');
-            console.log("Removing edge:", edgeId);
+            
+            const edgeData = {
+                source: formData.get('remove-edge-source'),
+                target: formData.get('remove-edge-target')
+            };
+
+            this.api.deleteEdge(edgeData).then(() => {
+                alert(`Ligação "${edgeData.source} -> ${edgeData.target}" removida com sucesso!`);
+            }).catch(error => {
+                alert(`Erro ao remover ligação: ${error.message}`);
+            });
+
             this.removeEdgeModal.style.display = 'none';
             this.removeEdgeForm.reset();
-            this.dispatchEvent(new CustomEvent('edge-removed', {
-                detail: {id: edgeId},
-                bubbles: true,
-                composed: true,
-            }));
         }, this.abortController.signal);
 
         document.addEventListener('keydown', (e) => {
@@ -462,8 +478,12 @@ export class Project extends HTMLElement
 
                 <div id="remove-edge-modal">
                     <form id="remove-edge-form">
-                        <label for="remove-edge-id">Edge ID:</label>
-                        <input type="text" id="remove-edge-id" name="remove-edge-id" required>
+                        <label for="remove-edge-source">Source:</label>
+                        <input type="text" id="remove-edge-source" name="remove-edge-source" required>
+                        <br>
+
+                        <label for="remove-edge-target">Target:</label>
+                        <input type="text" id="remove-edge-target" name="remove-edge-target" required>
                         <br>
 
                         <button type="submit">Remove Node</button>
@@ -513,7 +533,11 @@ export class Project extends HTMLElement
         // Evento: Seleção de aresta
         this.cy.on('select', 'edge', (e) => {
             const edge = e.target;
-            this.selectedEdge = edge.id();
+            this.selectedEdge = {
+                id: edge.id(),
+                source: edge.data('source'),
+                target: edge.data('target'),
+            }
             this.removeEdgeButton.style.display = 'inline-block';
             console.log("Selected edge:", this.selectedEdge);
         });

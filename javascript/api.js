@@ -16,6 +16,8 @@ export class Api
         
         this.insertNodeURL = baseUrl + '/insertNode';
         this.insertEdgeURL = baseUrl + '/insertEdge';
+        this.deleteEdgeURL = baseUrl + '/deleteEdge';
+        this.deleteProjectNodeURL = baseUrl + '/deleteProjectNode';
     }
 
     fetchCategories() {
@@ -256,6 +258,45 @@ export class Api
         })
         .catch(error => {
             console.error('[insertEdge] Fetch error:', error);
+            return null;
+        });
+    }
+
+    deleteProjectNode(node) {
+        return fetch(this.deleteProjectNodeURL, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(node)
+        })
+        .then(response => {
+            if (!response.ok) {
+                console.error('Response not ok:', response);
+                throw new Error(`Erro ao deletar nó do projeto: ${response.status}`);
+            }
+        }).catch(error => {
+            console.error('[deleteProjectNode] Fetch error:', error);
+            return null;
+        });
+    }
+
+    deleteEdge(edge)
+    {
+        return fetch(this.deleteEdgeURL, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(edge)
+        })
+        .then(response => {
+            if (!response.ok) {
+                console.error('Response not ok:', response);
+                throw new Error(`Erro ao deletar aresta: ${response.status}`);
+            }
+        }).catch(error => {
+            console.error('[deleteEdge] Fetch error:', error);
             return null;
         });
     }

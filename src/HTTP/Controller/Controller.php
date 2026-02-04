@@ -482,6 +482,17 @@ final class Controller implements ControllerInterface
 
     public function deleteProjectNode(Request $req): ResponseInterface
     {
+        if ($req->method !== Request::METHOD_DELETE) {
+            return new MethodNotAllowedResponse($req->method, __METHOD__);
+        }
+
+        $projectId = $req->data['project_id'];
+        $nodeId = $req->data['node_id'];
+
+        if ($this->service->deleteProjectNode($projectId, $nodeId)) {
+            return new NoContentResponse("project node deleted", $req->data);
+        }
+        return new NotFoundResponse("project node not found", $req->data);
     }
 
     public function getLogs(Request $req): ResponseInterface
