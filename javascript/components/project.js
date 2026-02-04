@@ -8,92 +8,16 @@ import { EVENTS } from "../events.js";
 const STATUS_UPDATE_INTERVAL = 5000;
 
 export class Project extends HTMLElement {
-  static observedAttributes = ["project", "graph", "node-status"];
-
-  /**
-   * Helper method to show notification
-   * @param {string} message - The message to display
-   * @param {string} type - The notification type (success, error, info)
-   */
-  showNotification(message, type = 'info') {
-    this.dispatchEvent(new CustomEvent('show-notification', {
-      detail: { message, type },
-      bubbles: true,
-      composed: true
-    }));
-  }
-
-  get project() {
-    const data = JSON.parse(this.getAttribute("project"));
-    if (data === null || data === undefined || data === "") {
-      return null;
-    }
-    return data;
-  }
-
-  set graph(value) {
-    this.setAttribute("graph", JSON.stringify(value));
-
-    // Destroy existing instance if it exists
-    if (this.cy) {
-      this.cy.destroy();
-    }
-
-    // Initialize Cytoscape
-
-    value.container = this.cyContainer;
-    this.cy = cytoscape(value);
-
-    // Setup Cytoscape event listeners after initialization
-    this.setupCytoscapeEvents();
-  }
-
-  get graph() {
-    const data = JSON.parse(this.getAttribute("graph"));
-    if (data === null || data === undefined || data === "") {
-      return null;
-    }
-
-    return data;
-  }
-
-  set nodeStatus(statusUpdates) {
-    if (!statusUpdates || !Array.isArray(statusUpdates)) {
-      return;
-    }
-    this.setAttribute("node-status", JSON.stringify(statusUpdates));
-
-    statusUpdates.forEach((update) => {
-      const node = this.cy.$("#" + update.node_id);
-      if (node.length > 0) {
-        // Remove classes de status anteriores
-        let classes = node.classes();
-        classes.forEach((cls) => {
-          if (cls.startsWith("node-status")) {
-            node.removeClass(cls);
-          }
-        });
-
-        // Adiciona nova classe de status
-        node.addClass(`node-status-${update.status}`);
-      }
-    });
-  }
-
-  get nodeStatus() {
-    const data = JSON.parse(this.getAttribute("node-status"));
-    if (data === null || data === undefined || data === "") {
-      return null;
-    }
-    return data;
-  }
-
   constructor() {
     super();
+
     this.api = new Api();
+
     this.cy = null;
+
     this.selectedNodes = [];
     this.selectedEdge = null;
+
     this.statusUpdateTimer = null;
 
     // AbortController for automatic event listener cleanup
@@ -139,11 +63,19 @@ export class Project extends HTMLElement {
       this.shadowRoot.getElementById("remove-edge-target");
 
     this.exportButton = this.shadowRoot.getElementById("export-btn");
-    this.exportButton.addEventListener("click", () => this.export(), this.abortController.signal);
+    this.exportButton.addEventListener(
+      "click",
+      () => this.export(),
+      this.abortController.signal,
+    );
     this.exportButton.style.display = "inline-block";
 
     this.adjustButton = this.shadowRoot.getElementById("adjust-btn");
-    this.adjustButton.addEventListener("click", () => this.fit(), this.abortController.signal);
+    this.adjustButton.addEventListener(
+      "click",
+      () => this.fit(),
+      this.abortController.signal,
+    );
     this.adjustButton.style.display = "inline-block";
 
     this.cyContainer = this.shadowRoot.getElementById("cy");
@@ -256,10 +188,17 @@ export class Project extends HTMLElement {
           .insertEdge(edge)
           .then((newEdge) => {
             this.dispatchEvent(
-              new CustomEvent(EVENTS.RELOAD_PROJECT, {bubbles: true, composed: true}));
+              new CustomEvent(EVENTS.RELOAD_PROJECT, {
+                bubbles: true,
+                composed: true,
+              }),
+            );
           })
           .catch((error) => {
-            this.showNotification(`Erro ao criar ligação: ${error.message}`, 'error');
+            this.showNotification(
+              `Erro ao criar ligação: ${error.message}`,
+              "error",
+            );
           });
 
         this.selectedNodes = [];
@@ -285,10 +224,17 @@ export class Project extends HTMLElement {
           .insertProjectNode(nodeData)
           .then((node) => {
             this.dispatchEvent(
-              new CustomEvent(EVENTS.RELOAD_PROJECT, {bubbles: true, composed: true}));
+              new CustomEvent(EVENTS.RELOAD_PROJECT, {
+                bubbles: true,
+                composed: true,
+              }),
+            );
           })
           .catch((error) => {
-            this.showNotification(`Erro ao importar item: ${error.message}`, 'error');
+            this.showNotification(
+              `Erro ao importar item: ${error.message}`,
+              "error",
+            );
           });
 
         this.importNodeModal.style.display = "none";
@@ -316,10 +262,17 @@ export class Project extends HTMLElement {
           .insertNode(nodeData)
           .then((newNode) => {
             this.dispatchEvent(
-              new CustomEvent(EVENTS.RELOAD_PROJECT, {bubbles: true, composed: true}));
+              new CustomEvent(EVENTS.RELOAD_PROJECT, {
+                bubbles: true,
+                composed: true,
+              }),
+            );
           })
           .catch((error) => {
-            this.showNotification(`Erro ao criar item: ${error.message}`, 'error');
+            this.showNotification(
+              `Erro ao criar item: ${error.message}`,
+              "error",
+            );
           });
 
         this.addNodeModal.style.display = "none";
@@ -377,10 +330,17 @@ export class Project extends HTMLElement {
           .deleteProjectNode(nodeData)
           .then(() => {
             this.dispatchEvent(
-              new CustomEvent(EVENTS.RELOAD_PROJECT, {bubbles: true, composed: true}));
+              new CustomEvent(EVENTS.RELOAD_PROJECT, {
+                bubbles: true,
+                composed: true,
+              }),
+            );
           })
           .catch((error) => {
-            this.showNotification(`Erro ao remover item: ${error.message}`, 'error');
+            this.showNotification(
+              `Erro ao remover item: ${error.message}`,
+              "error",
+            );
           });
 
         this.removeNodeModal.style.display = "none";
@@ -404,10 +364,17 @@ export class Project extends HTMLElement {
           .deleteEdge(edgeData)
           .then(() => {
             this.dispatchEvent(
-              new CustomEvent(EVENTS.RELOAD_PROJECT, {bubbles: true, composed: true}));
+              new CustomEvent(EVENTS.RELOAD_PROJECT, {
+                bubbles: true,
+                composed: true,
+              }),
+            );
           })
           .catch((error) => {
-            this.showNotification(`Erro ao remover ligação: ${error.message}`, 'error');
+            this.showNotification(
+              `Erro ao remover ligação: ${error.message}`,
+              "error",
+            );
           });
 
         this.removeEdgeModal.style.display = "none";
@@ -434,74 +401,98 @@ export class Project extends HTMLElement {
     );
   }
 
-  openProject(project, graph, status)
-  {
-    this.project = project;
-    this.graph = graph;
-    this.nodeStatus = status;
-  }
-
-  closeProject()
-  {
-    this.project = null;
-    this.graph = null;
-    this.nodeStatus = null;
-  }
-
-  updateStatus( statusUpdates )
-  {
-    this.nodeStatus = statusUpdates;
-  }
-
   disconnectedCallback() {
     this.abortController.abort();
   }
 
-  set project(value) {
-    this.setAttribute("project", JSON.stringify(value));
+  showNotification(message, type = "info") {
+    this.dispatchEvent(
+      new CustomEvent("show-notification", {
+        detail: { message, type },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
 
+  openProject(project, graph, status) {
+    console.log("Opening project:", project, "graph", graph, "status", status);
+    this.project = project;
     if (this.statusUpdateTimer) {
       clearInterval(this.statusUpdateTimer);
     }
     this.statusUpdateTimer = null;
 
-    if (value === null) {
-      this.selectedNodes = [];
-      this.selectedEdge = null;
-      if(this.cy) {
-        this.cy.destroy();
-        this.cy = null;
-      }
-      this.infoPanel.node = null;
-      this.projectTitle.textContent = "";
-      this.projectAuthor.textContent = "";
-      this.importNodeButton.style.display = "none";
-      this.addNodeButton.style.display = "none";
-      this.addEdgeButton.style.display = "none";
-      this.exportButton.style.display = "none";
-      this.adjustButton.style.display = "none";
-
-      return;
-    }
-
     this.statusUpdateTimer = setInterval(() => {
       this.api
-        .fetchProjectStatus(value.id)
+        .fetchProjectStatus(project.id)
         .then((statuses) => {
-          this.nodeStatus = statuses;
+          this.updateStatus(statuses);
         })
         .catch((error) => {
           console.error("Erro ao atualizar status dos nós:", error);
         });
     }, STATUS_UPDATE_INTERVAL);
 
-    this.projectTitle.textContent = value.name;
-    this.projectAuthor.textContent = value.author;
+    this.projectTitle.textContent = project.name;
+    this.projectAuthor.textContent = project.author;
     this.importNodeButton.style.display = "inline-block";
     this.addNodeButton.style.display = "inline-block";
+
+    if (this.cy) {
+      this.cy.destroy();
+    }
+
+    // Initialize Cytoscape
+    graph.container = this.cyContainer;
+    this.cy = cytoscape(graph);
+
+    // Setup Cytoscape event listeners after initialization
+    this.setupCytoscapeEvents();
+
+    this.updateStatus(status);
   }
 
-  
+  closeProject() {
+    this.project = null;
+    this.selectedNodes = [];
+    this.selectedEdge = null;
+    if (this.cy) {
+      this.cy.destroy();
+      this.cy = null;
+    }
+    this.infoPanel.node = null;
+    this.projectTitle.textContent = "";
+    this.projectAuthor.textContent = "";
+    this.importNodeButton.style.display = "none";
+    this.addNodeButton.style.display = "none";
+    this.addEdgeButton.style.display = "none";
+    this.exportButton.style.display = "none";
+    this.adjustButton.style.display = "none";
+  }
+
+  updateStatus(statusUpdates) {
+    if (!statusUpdates || !Array.isArray(statusUpdates)) {
+      return;
+    }
+    this.status = statusUpdates;
+
+    statusUpdates.forEach((update) => {
+      const node = this.cy.$("#" + update.node_id);
+      if (node.length > 0) {
+        // Remove classes de status anteriores
+        let classes = node.classes();
+        classes.forEach((cls) => {
+          if (cls.startsWith("node-status")) {
+            node.removeClass(cls);
+          }
+        });
+
+        // Adiciona nova classe de status
+        node.addClass(`node-status-${update.status}`);
+      }
+    });
+  }
 
   render() {
     this.attachShadow({ mode: "open" });

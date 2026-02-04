@@ -51,7 +51,7 @@ export class App extends HTMLElement {
         this.addEventListener(EVENTS.NEW_PROJECT_BUTTON_CLICKED, () => {
             this.newProjectModal.show();
             this.openProjectModal.hide();
-            this.project.project = null;
+            this.project.closeProject();
         }, this.abortController.signal);
 
         this.addEventListener(EVENTS.OPEN_PROJECT_BUTTON_CLICKED, async () => {
@@ -62,7 +62,7 @@ export class App extends HTMLElement {
             } catch (error) {
                 this.notification.error(`Erro ao carregar projetos: ${error.message}`);
             }
-            this.project.project = null;
+            this.project.closeProject();
         }, this.abortController.signal);
 
         this.addEventListener(EVENTS.NEW_PROJECT, async (event) => {
@@ -94,16 +94,19 @@ export class App extends HTMLElement {
     }
 
     async openProject(projectId) {
+        console.log('Opening project:', projectId);
         try {
             const [project, graph, status] = await Promise.all([
                 this.api.fetchProject(projectId),
                 this.api.fetchProjectGraph(projectId),
                 this.api.fetchProjectStatus(projectId)
             ]);
+            console.log('Fetched project data:', { project, graph, status });
             this.project.openProject(project, graph, status);
             this.openProjectModal.hide();
             history.pushState({ project: projectId }, '', `?project=${projectId}`);
         } catch (error) {
+            console.error('Error opening project:', error);
             this.notification.error(`Erro ao carregar dados do projeto: ${error.message}`);
         }
     }
