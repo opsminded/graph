@@ -106,9 +106,6 @@ export class App extends HTMLElement {
             history.pushState({ project: 1 }, '', '?project=1');
         }, this.abortController.signal);
 
-        this.addEventListener('', (event) => {
-        }, this.abortController.signal);
-
         this.addEventListener('node-imported', (event) => {
             // TODO: completar tarefa
             alert(`Node Imported: id: ${event.detail.id}`);
@@ -119,9 +116,19 @@ export class App extends HTMLElement {
             alert(`Node Added: id: ${event.detail.id}, label: ${event.detail.label}, category: ${event.detail.category}, type: ${event.detail.type}`);
         }, this.abortController.signal);
 
+        this.addEventListener('node-removed', (event) => {
+            // TODO: completar tarefa
+            alert(`Node Removed: id: ${event.detail.id}`);
+        }, this.abortController.signal);
+
         this.addEventListener('add-edge-btn-clicked', (event) => {
             // TODO: completar tarefa
             alert(`Project: ${event.detail.project}, Source: ${event.detail.source}, Target: ${event.detail.target}`);
+        }, this.abortController.signal);
+
+        this.addEventListener('edge-removed', (event) => {
+            // TODO: completar tarefa
+            alert(`Edge Removed: id: ${event.detail.id}`);
         }, this.abortController.signal);
 
         this.addEventListener('export-btn-clicked', () => {

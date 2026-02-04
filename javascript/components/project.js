@@ -20,7 +20,6 @@ export class Project extends HTMLElement
     }
 
     connectedCallback() {
-        console.log("Project connected");
         this.projectTitle     = this.shadowRoot.getElementById('project-title');
         this.importNodeButton = this.shadowRoot.getElementById('import-node-btn');
         this.addNodeButton    = this.shadowRoot.getElementById('add-node-btn');
@@ -61,7 +60,6 @@ export class Project extends HTMLElement
 
         this.addEdgeButton.addEventListener('click', () => {
             const p = this.project;
-            console.log(JSON.stringify(p));
 
             this.dispatchEvent(new CustomEvent('add-edge-btn-clicked', {
                 detail: {
@@ -123,7 +121,6 @@ export class Project extends HTMLElement
             this.removeNodeModal.style.display = 'block';
             if (this.selectedNodes.length === 1) {
                 this.removeNodeForm.querySelector('#remove-node-id').value = this.selectedNodes[0];
-                alert(this.selectedNodes[0]);
             }
         }, this.abortController.signal);
 
@@ -131,7 +128,6 @@ export class Project extends HTMLElement
             this.removeEdgeModal.style.display = 'block';
             if (this.selectedEdge) {
                 this.removeEdgeForm.querySelector('#remove-edge-id').value = this.selectedEdge;
-                alert(this.selectedEdge);
             }
         }, this.abortController.signal);
 
@@ -174,13 +170,11 @@ export class Project extends HTMLElement
     }
 
     disconnectedCallback() {
-        console.log("Project disconnected");
         this.abortController.abort();
     }
 
     set project(value)
     {
-        console.log("Setting project:", value);
         this.setAttribute("project", JSON.stringify(value));
         if (value === null) {
             this.selectedNodes = [];
@@ -205,13 +199,11 @@ export class Project extends HTMLElement
         if (data === null || data === undefined || data === "") {
             return null;
         }
-        console.log("Getting project data:", JSON.stringify(data));
         return data;
     }
 
     set graph(value)
     {
-        console.log("Setting graph:", value);
         this.setAttribute("graph", JSON.stringify(value));
 
         // Destroy existing instance if it exists
@@ -240,7 +232,6 @@ export class Project extends HTMLElement
 
     set nodeStatus(statusUpdates)
     {
-        console.log("Setting status:", statusUpdates);
         this.setAttribute("node-status", JSON.stringify(statusUpdates));
 
         statusUpdates.forEach(update => {
