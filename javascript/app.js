@@ -87,10 +87,28 @@ export class App extends HTMLElement {
             }
         }, this.abortController.signal);
 
+        this.addEventListener(EVENTS.MENU_HIDDEN, () => {
+            this.project.cyContainer.style.left = "0px";
+            this.project.cyContainer.style.width = "100%";
+            this.project.cy.resize();
+            this.project.cy.fit(this.project.cy.elements(), 100);
+        }, this.abortController.signal);
+
         this.addEventListener('show-notification', (event) => {
             const { message, type } = event.detail;
             this.notification[type](message);
         }, this.abortController.signal);
+
+        document.addEventListener(
+            "keydown",
+            (e) => {
+                if (e.key === "Escape") {
+                    this.newProjectModal.hide();
+                    this.openProjectModal.hide();
+                }
+            },
+            this.abortController.signal,
+        );
     }
 
     async openProject(projectId) {
@@ -104,6 +122,14 @@ export class App extends HTMLElement {
             console.log('Fetched project data:', { project, graph, status });
             this.project.openProject(project, graph, status);
             this.openProjectModal.hide();
+
+            if (this.menu.hasAttribute("keep-open")) {
+                this.project.cyContainer.style.left = "340px";
+                this.project.cyContainer.style.width = "calc(100% - 340px)";
+                this.project.cy.resize();
+                this.project.cy.fit(this.project.cy.elements(), 100);
+            }
+
             history.pushState({ project: projectId }, '', `?project=${projectId}`);
         } catch (error) {
             console.error('Error opening project:', error);

@@ -15,6 +15,8 @@ const EVENTS = {
     EXPORT_BUTTON_CLICKED: 'export-button-clicked',
 
     FIT_BUTTON_CLICKED: 'fit-button-clicked',
+
+    MENU_HIDDEN: 'menu-hidden',
 };
 export default EVENTS;
 export { EVENTS };

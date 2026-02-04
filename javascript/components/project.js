@@ -28,6 +28,7 @@ export class Project extends HTMLElement {
   connectedCallback() {
     this.projectTitle = this.shadowRoot.getElementById("project-title");
     this.projectAuthor = this.shadowRoot.getElementById("project-author");
+    this.projectHeader = this.shadowRoot.getElementById("project-header");
     this.importNodeButton = this.shadowRoot.getElementById("import-node-btn");
     this.addNodeButton = this.shadowRoot.getElementById("add-node-btn");
     this.addEdgeButton = this.shadowRoot.getElementById("add-edge-btn");
@@ -45,6 +46,9 @@ export class Project extends HTMLElement {
 
     this.addNodeModal = this.shadowRoot.getElementById("add-node-modal");
     this.addNodeForm = this.shadowRoot.getElementById("add-node-form");
+    this.addNodeCategory = this.shadowRoot.getElementById("add-node-category");
+    this.addNodeType = this.shadowRoot.getElementById("add-node-type");
+
     this.addNodeFormCancelButton =
       this.shadowRoot.getElementById("cancel-add-node");
 
@@ -61,6 +65,11 @@ export class Project extends HTMLElement {
       this.shadowRoot.getElementById("remove-edge-source");
     this.removeEdgeTarget =
       this.shadowRoot.getElementById("remove-edge-target");
+
+    this.removeNodeCancelButton =
+      this.shadowRoot.getElementById("cancel-remove-node");
+    this.removeEdgeCancelButton =
+      this.shadowRoot.getElementById("cancel-remove-edge");
 
     this.exportButton = this.shadowRoot.getElementById("export-btn");
     this.exportButton.addEventListener(
@@ -168,7 +177,49 @@ export class Project extends HTMLElement {
     this.addNodeButton.addEventListener(
       "click",
       () => {
+        this.api
+          .fetchCategories()
+          .then((categories) => {
+            this.addNodeCategory.innerHTML =
+              '<option value="" disabled selected>Selecione uma categoria</option>';
+            categories.forEach((category) => {
+              console.log("Adding category option:", category);
+              const option = document.createElement("option");
+              option.value = category.id;
+              option.textContent = category.name;
+              this.addNodeCategory.appendChild(option);
+            });
+            this.addNodeType.innerHTML =
+              '<option value="" disabled selected>Selecione um tipo</option>';
+          })
+          .catch((error) => {
+            console.error("Error fetching categories:", error);
+          });
+
         this.addNodeModal.style.display = "block";
+      },
+      this.abortController.signal,
+    );
+
+    this.addNodeCategory.addEventListener(
+      "change",
+      () => {
+        const categoryId = this.addNodeCategory.value;
+        this.api
+          .fetchCategoryTypes(categoryId)
+          .then((types) => {
+            this.addNodeType.innerHTML =
+              '<option value="" disabled selected>Selecione um tipo</option>';
+            types.forEach((type) => {
+              const option = document.createElement("option");
+              option.value = type.id;
+              option.textContent = type.name;
+              this.addNodeType.appendChild(option);
+            });
+          })
+          .catch((error) => {
+            console.error("Error fetching types:", error);
+          });
       },
       this.abortController.signal,
     );
@@ -251,12 +302,14 @@ export class Project extends HTMLElement {
         const formData = new FormData(this.addNodeForm);
 
         const nodeData = {
-          id: formData.get("node-id"),
-          label: formData.get("node-label"),
-          category: formData.get("node-category"),
-          type: formData.get("node-type"),
+          id: formData.get("add-node-id"),
+          label: formData.get("add-node-label"),
+          category: formData.get("add-node-category"),
+          type: formData.get("add-node-type"),
           data: {},
         };
+
+        console.log("Creating node with data:", nodeData);
 
         this.api
           .insertNode(nodeData)
@@ -302,14 +355,33 @@ export class Project extends HTMLElement {
       this.abortController.signal,
     );
 
+    this.removeNodeCancelButton.addEventListener(
+      "click",
+      () => {
+        this.removeNodeForm.reset();
+        this.removeNodeModal.style.display = "none";
+      },
+      this.abortController.signal,
+    );
+
     this.removeEdgeButton.addEventListener(
       "click",
       () => {
         this.removeEdgeModal.style.display = "block";
         if (this.selectedEdge) {
+          console.log("Selected edge for removal:", this.selectedEdge);
           this.removeEdgeSource.value = this.selectedEdge.source;
           this.removeEdgeTarget.value = this.selectedEdge.target;
         }
+      },
+      this.abortController.signal,
+    );
+
+    this.removeEdgeCancelButton.addEventListener(
+      "click",
+      () => {
+        this.removeEdgeForm.reset();
+        this.removeEdgeModal.style.display = "none";
       },
       this.abortController.signal,
     );
@@ -355,10 +427,14 @@ export class Project extends HTMLElement {
         e.preventDefault();
         const formData = new FormData(this.removeEdgeForm);
 
+        console.log("Form data entries:", formData);
+
         const edgeData = {
           source: formData.get("remove-edge-source"),
           target: formData.get("remove-edge-target"),
         };
+
+        console.log("Removing edge:", edgeData);
 
         this.api
           .deleteEdge(edgeData)
@@ -438,6 +514,7 @@ export class Project extends HTMLElement {
     this.projectAuthor.textContent = project.author;
     this.importNodeButton.style.display = "inline-block";
     this.addNodeButton.style.display = "inline-block";
+    this.projectHeader.style.display = "block";
 
     if (this.cy) {
       this.cy.destroy();
@@ -445,6 +522,7 @@ export class Project extends HTMLElement {
 
     // Initialize Cytoscape
     graph.container = this.cyContainer;
+    this.layout = graph.layout;
     this.cy = cytoscape(graph);
 
     // Setup Cytoscape event listeners after initialization
@@ -469,8 +547,8 @@ export class Project extends HTMLElement {
     this.addEdgeButton.style.display = "none";
     this.exportButton.style.display = "none";
     this.adjustButton.style.display = "none";
+    this.projectHeader.style.display = "none";
   }
-
   updateStatus(statusUpdates) {
     if (!statusUpdates || !Array.isArray(statusUpdates)) {
       return;
@@ -501,7 +579,7 @@ export class Project extends HTMLElement {
                 #cy {
                     position: absolute;
 
-                    left: 250px;
+                    left: 0px;
                     top: 0;
                     bottom: 0;
                     right: 0;
@@ -532,6 +610,7 @@ export class Project extends HTMLElement {
                     margin-right: 20px;
                     top: 20px;
                     z-index: 101;
+                    display: none;
                 }
 
                 #import-node-modal,
@@ -575,75 +654,105 @@ export class Project extends HTMLElement {
 
                 <div id="import-node-modal">
                     <form id="import-node-form">
-                        <label for="import-node-category">Categoria do Item:</label>
-                        <select id="import-node-category" name="import-node-category">
-                            <!-- Options will be populated dynamically -->
-                        </select>
-                        <br>
+                        <p>
+                          <label for="import-node-category">Categoria do Item:<br>
+                            <select id="import-node-category" name="import-node-category"></select>
+                          </label>
+                        </p>
+                        
+                        <p>
+                          <label for="import-node-type">Tipo do Item:<br>
+                            <select id="import-node-type" name="import-node-type"></select>
+                          </label>
+                        </p>
 
-                        <label for="import-node-type">Tipo do Item:</label>
-                        <select id="import-node-type" name="import-node-type">
-                            <!-- Options will be populated dynamically -->
-                        </select>
+                        <p>
+                          <label for="import-node-node">Item:<br>
+                            <select id="import-node-node" name="import-node-node"></select>
+                          </label>
+                        </p>
 
-                        <label for="import-node-node">Node ID:</label>
-                        <select id="import-node-node" name="import-node-node">
-                            <!-- Options will be populated dynamically -->
-                        </select>
-                        <br>
-
-                        <button type="submit">Importar Item</button>
-                        <button type="button" id="cancel-import-node">Cancelar</button>
+                        <p>
+                          <button type="submit">Importar Item</button>
+                          <button type="button" id="cancel-import-node">Cancelar</button>
+                        </p>
                     </form>
                 </div>
 
                 <div id="add-node-modal">
                     <form id="add-node-form">
-                        
-                        <label for="node-id">Node ID:</label>
-                        <input type="text" id="node-id" name="node-id" required>
-                        <br>
+                      <p>
+                        <label for="add-node-id">Identificador único:<br>
+                          <input type="text" id="add-node-id" name="add-node-id" required>
+                        </label>
+                      </p>
 
-                        <label for="node-label">Node Label:</label>
-                        <input type="text" id="node-label" name="node-label" required>
-                        <br>
+                      <p>
+                        <label for="add-node-label">Rótulo do Item:<br>
+                          <input type="text" id="add-node-label" name="add-node-label" required>
+                        </label>
+                      </p>
 
-                        <label for="node-category">Node Category:</label>
-                        <input type="text" id="node-category" name="node-category">
-                        <br>
+                      <p>
+                        <label for="add-node-category">Categoria do Item:<br>
+                          <select id="add-node-category" name="add-node-category"></select>
+                        </label>
+                      </p>
 
-                        <label for="node-type">Node Type:</label>
-                        <input type="text" id="node-type" name="node-type">
-                        <br>
-                        
-                        <button type="submit">Add Node</button>
-                        <button type="button" id="cancel-add-node">Cancel</button>
+                      <p>
+                        <label for="add-node-type">Tipo do Item:<br>
+                          <select id="add-node-type" name="add-node-type"></select>
+                        </label>
+                      </p>
+
+                      <p>
+                        <button type="submit">Adicionar Item</button>
+                        <button type="button" id="cancel-add-node">Cancelar</button>
+                      </p>
                     </form>
                 </div>
 
                 <div id="remove-node-modal">
                     <form id="remove-node-form">
-                        <label for="remove-node-id">Node ID:</label>
-                        <input type="text" id="remove-node-id" name="remove-node-id" required>
-                        <br>
+                        <h3>Remover Item</h3>
+                        <p>Este item será removido apenas do projeto</p>
+                        <p>Se este item for dependência de outros itens, as ligações serão mantidas</p>
+
+                        <p>
+                          <label for="remove-node-id">Identificador único:<br>
+                            <input type="text" id="remove-node-id" name="remove-node-id" required readonly style="background-color: #f0f0f0;">
+                          </label>
+                        </p>
                         
-                        <button type="submit">Remove Node</button>
-                        <button type="button" id="cancel-remove-node">Cancel</button>
+                        <p>
+                          <button type="submit">Remover Item</button>
+                          <button type="button" id="cancel-remove-node">Cancelar</button>
+                        </p>
                     </form>
                 </div>
 
                 <div id="remove-edge-modal">
                     <form id="remove-edge-form">
-                        <label for="remove-edge-source">Source:</label>
-                        <input type="text" id="remove-edge-source" name="remove-edge-source" required>
-                        <br>
+                        <h3>Remover Ligação</h3>
+                        <p>Uma ligação vale para todos os projetos.</p>
+                        <p>Remover uma ligação pode afetar outros projetos que a utilizam.</p>
 
-                        <label for="remove-edge-target">Target:</label>
-                        <input type="text" id="remove-edge-target" name="remove-edge-target" required>
-                        <br>
+                        <p>
+                          <label for="remove-edge-source">Origem:<br>
+                            <input type="text" id="remove-edge-source" name="remove-edge-source" required readonly style="background-color: #f0f0f0;">
+                          </label>
+                        </p>
 
-                        <button type="submit">Remove Node</button>
-                        <button type="button" id="cancel-remove-node">Cancel</button>
+                        <p>
+                          <label for="remove-edge-target">Destino:<br>
+                            <input type="text" id="remove-edge-target" name="remove-edge-target" required readonly style="background-color: #f0f0f0;">
+                          </label>
+                        </p>
+
+                        <p>
+                          <button type="submit">Remover Ligação</button>
+                          <button type="button" id="cancel-remove-edge">Cancelar</button>
+                        </p>
                     </form>
                 </div>
             </div>
@@ -741,7 +850,7 @@ export class Project extends HTMLElement {
 
   fit() {
     if (this.cy) {
-      this.cy.fit();
+      this.cy.layout(this.layout).run();
     }
   }
 }

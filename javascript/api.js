@@ -103,7 +103,7 @@ export class Api
     }
 
     deleteProjectNode(node) {
-        return this._fetchJSON(this.deleteProjectNodeURL, {
+        return this._fetch(this.deleteProjectNodeURL, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json'
@@ -114,7 +114,7 @@ export class Api
 
     deleteEdge(edge)
     {
-        return this._fetchJSON(this.deleteEdgeURL, {
+        return this._fetch(this.deleteEdgeURL, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json'
@@ -131,5 +131,15 @@ export class Api
         }
         const { data } = await response.json();
         return data;
+    }
+
+    async _fetch(url, options = {}) {
+        const response = await fetch(url, options);
+        if (!response.ok) {
+            console.error('Response not ok:', response);
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        console.log("Fetch response:", response);
+        return response;
     }
 }

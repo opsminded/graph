@@ -69,36 +69,6 @@ export class Menu extends HTMLElement {
       { signal: this.abortController.signal },
     );
 
-    this.addNodeBtn = this.shadowRoot.getElementById("add-node-btn");
-    this.addNodeBtn.addEventListener(
-      "click",
-      (e) => {
-        e.preventDefault();
-        this.dispatchEvent(
-          new CustomEvent(EVENTS.ADD_NODE_BUTTON_CLICKED, {
-            bubbles: true,
-            composed: true,
-          }),
-        );
-      },
-      { signal: this.abortController.signal },
-    );
-
-    this.addEdgeBtn = this.shadowRoot.getElementById("add-edge-btn");
-    this.addEdgeBtn.addEventListener(
-      "click",
-      (e) => {
-        e.preventDefault();
-        this.dispatchEvent(
-          new CustomEvent(EVENTS.ADD_EDGE_BUTTON_CLICKED, {
-            bubbles: true,
-            composed: true,
-          }),
-        );
-      },
-      { signal: this.abortController.signal },
-    );
-
     this.openPrjBtn = this.shadowRoot.getElementById("open-prj-btn");
     this.openPrjBtn.addEventListener(
       "click",
@@ -106,37 +76,6 @@ export class Menu extends HTMLElement {
         e.preventDefault();
         this.dispatchEvent(
           new CustomEvent(EVENTS.OPEN_PROJECT_BUTTON_CLICKED, {
-            bubbles: true,
-            composed: true,
-          }),
-        );
-      },
-      { signal: this.abortController.signal },
-    );
-
-    this.exportBtn = this.shadowRoot.getElementById("export-btn");
-
-    this.exportBtn.addEventListener(
-      "click",
-      (e) => {
-        e.preventDefault();
-        this.dispatchEvent(
-          new CustomEvent(EVENTS.EXPORT_BUTTON_CLICKED, {
-            bubbles: true,
-            composed: true,
-          }),
-        );
-      },
-      { signal: this.abortController.signal },
-    );
-
-    this.fitBtn = this.shadowRoot.getElementById("fit-btn");
-    this.fitBtn.addEventListener(
-      "click",
-      (e) => {
-        e.preventDefault();
-        this.dispatchEvent(
-          new CustomEvent(EVENTS.FIT_BUTTON_CLICKED, {
             bubbles: true,
             composed: true,
           }),
@@ -263,22 +202,6 @@ export class Menu extends HTMLElement {
             <button id="open-prj-btn" title="Abrir Projeto">Abrir</button>
           </p>
         </div>
-
-        <div id="add-node-div">
-          <p><button id="add-node-btn" type="submit">Adicionar Item</button></p>
-        </div>
-
-        <div id="add-edge-div">
-          <p><button id="add-edge-btn" type="submit">Adicionar Conexão</button></p>
-        </div>
-
-        <p>
-          <button id="export-btn" type="button">Exportar</button>
-        </p>
-
-        <p>
-          <button id="fit-btn" type="button">Ajustar</button>
-        </p>
       </div>
     `;
   }
@@ -378,6 +301,10 @@ export class Menu extends HTMLElement {
           return;
         }
         if (e.clientX > 300 && this.menu.style.display === "block") {
+          this.dispatchEvent(new CustomEvent(EVENTS.MENU_HIDDEN, {
+            bubbles: true,
+            composed: true,
+          }));
           this.menu.style.display = "none";
         }
       }
