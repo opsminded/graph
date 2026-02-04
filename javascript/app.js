@@ -13,8 +13,6 @@ export class App extends HTMLElement {
         super();
         this.api = new Api();
 
-        this.statusUpdateTimer = null;
-
         // AbortController for automatic event listener cleanup
         this.abortController = new AbortController();
         this.render();
@@ -40,10 +38,7 @@ export class App extends HTMLElement {
         this.addEventListener('new-prj-btn-clicked', () => {
             this.newProjectModal.show();
             this.openProjectModal.hide();
-
-            if (this.statusUpdateTimer) {
-                clearInterval(this.statusUpdateTimer);
-            }
+            this.project.project = null;
         }, this.abortController.signal);
 
         this.addEventListener('open-prj-btn-clicked', () => {
@@ -53,9 +48,7 @@ export class App extends HTMLElement {
             }).catch(error => {
                 this.notification.error(`Erro ao carregar projetos: ${error.message}`);
             });
-            if (this.statusUpdateTimer) {
-                clearInterval(this.statusUpdateTimer);
-            }
+            this.project.project = null;
         }, this.abortController.signal);
 
         this.addEventListener('new-project', (event) => {
@@ -78,20 +71,6 @@ export class App extends HTMLElement {
                 this.project.project = project;
                 this.project.graph = graph;
                 this.project.nodeStatus = status;
-
-                if (this.statusUpdateTimer) {
-                    clearInterval(this.statusUpdateTimer);
-                }
-
-                this.statusUpdateTimer = setInterval(() => {
-                    this.api.fetchProjectStatus(projectId).then(statuses => {
-                        console.log('Atualizando status dos nós do projeto');
-                        this.project.nodeStatus = statuses;
-                    }).catch(error => {
-                        console.error('Erro ao atualizar status dos nós:', error);
-                    });
-                }, 5000);
-
                 this.openProjectModal.hide();
             }).catch(error => {
                 alert(`Error fetching project data: ${error.message}`);

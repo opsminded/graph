@@ -1,352 +1,459 @@
 "use strict";
 
-import {Api} from "../api.js";
+import { Api } from "../api.js";
 import cytoscape from "/javascript/libs/cytoscape.esm.min.mjs";
-import {InfoPanel} from "./info-panel.js";
+import { InfoPanel } from "./info-panel.js";
 
-export class Project extends HTMLElement
-{
-    static observedAttributes = ["project", "graph", "node-status"];
-    
-    constructor()
-    {
-        super();
-        this.api = new Api();
-        this.cy = null;
+export class Project extends HTMLElement {
+  static observedAttributes = ["project", "graph", "node-status"];
+
+  constructor() {
+    super();
+    this.api = new Api();
+    this.cy = null;
+    this.selectedNodes = [];
+    this.selectedEdge = null;
+    this.statusUpdateTimer = null;
+
+    // AbortController for automatic event listener cleanup
+    this.abortController = new AbortController();
+    this.render();
+  }
+
+  connectedCallback() {
+    this.projectTitle = this.shadowRoot.getElementById("project-title");
+    this.importNodeButton = this.shadowRoot.getElementById("import-node-btn");
+    this.addNodeButton = this.shadowRoot.getElementById("add-node-btn");
+    this.addEdgeButton = this.shadowRoot.getElementById("add-edge-btn");
+    this.infoPanel = this.shadowRoot.querySelector("app-info-panel");
+
+    this.importNodeModal = this.shadowRoot.getElementById("import-node-modal");
+    this.importNodeForm = this.shadowRoot.getElementById("import-node-form");
+    this.importNodeCategory = this.shadowRoot.getElementById(
+      "import-node-category",
+    );
+    this.importNodeType = this.shadowRoot.getElementById("import-node-type");
+    this.importNodeNode = this.shadowRoot.getElementById("import-node-node");
+    this.importNodeFormCancelButton =
+      this.shadowRoot.getElementById("cancel-import-node");
+
+    this.addNodeModal = this.shadowRoot.getElementById("add-node-modal");
+    this.addNodeForm = this.shadowRoot.getElementById("add-node-form");
+    this.addNodeFormCancelButton =
+      this.shadowRoot.getElementById("cancel-add-node");
+
+    this.removeNodeModal = this.shadowRoot.getElementById("remove-node-modal");
+    this.removeEdgeModal = this.shadowRoot.getElementById("remove-edge-modal");
+
+    this.removeNodeForm = this.shadowRoot.getElementById("remove-node-form");
+    this.removeEdgeForm = this.shadowRoot.getElementById("remove-edge-form");
+
+    this.removeNodeButton = this.shadowRoot.getElementById("remove-node-btn");
+    this.removeEdgeButton = this.shadowRoot.getElementById("remove-edge-btn");
+
+    this.removeEdgeSource =
+      this.shadowRoot.getElementById("remove-edge-source");
+    this.removeEdgeTarget =
+      this.shadowRoot.getElementById("remove-edge-target");
+
+    this.cyContainer = this.shadowRoot.getElementById("cy");
+
+    this.importNodeButton.addEventListener(
+      "click",
+      () => {
+        this.importNodeModal.style.display = "block";
+
+        this.api
+          .fetchCategories()
+          .then((categories) => {
+            console.log("categories", categories);
+            this.importNodeCategory.innerHTML =
+              '<option value="" disabled selected>Selecione uma categoria</option>';
+            categories.forEach((category) => {
+              const option = document.createElement("option");
+              option.value = category.id;
+              option.textContent = category.name;
+              this.importNodeCategory.appendChild(option);
+            });
+            this.importNodeType.innerHTML =
+              '<option value="" disabled selected>Selecione um tipo</option>';
+            this.importNodeNode.innerHTML =
+              '<option value="" disabled selected>Selecione um item</option>';
+          })
+          .catch((error) => {
+            console.error("Error fetching categories:", error);
+          });
+      },
+      this.abortController.signal,
+    );
+
+    this.importNodeCategory.addEventListener(
+      "change",
+      () => {
+        const categoryId = this.importNodeCategory.value;
+        this.api
+          .fetchCategoryTypes(categoryId)
+          .then((types) => {
+            console.log("types", types);
+            this.importNodeType.innerHTML =
+              '<option value="" disabled selected>Selecione um tipo</option>';
+            types.forEach((type) => {
+              const option = document.createElement("option");
+              option.value = type.id;
+              option.textContent = type.name;
+              this.importNodeType.appendChild(option);
+            });
+            this.importNodeNode.innerHTML =
+              '<option value="" disabled selected>Selecione um item</option>';
+          })
+          .catch((error) => {
+            console.error("Error fetching types:", error);
+          });
+      },
+      this.abortController.signal,
+    );
+
+    this.importNodeType.addEventListener(
+      "change",
+      () => {
+        const typeId = this.importNodeType.value;
+        this.api
+          .fetchTypeNodes(typeId)
+          .then((nodes) => {
+            console.log("nodes", nodes);
+            this.importNodeNode.innerHTML =
+              '<option value="" disabled selected>Selecione um item</option>';
+            nodes.forEach((node) => {
+              const option = document.createElement("option");
+              option.value = node.id;
+              option.textContent = node.label;
+              this.importNodeNode.appendChild(option);
+            });
+          })
+          .catch((error) => {
+            console.error("Error fetching nodes:", error);
+          });
+      },
+      this.abortController.signal,
+    );
+
+    this.importNodeFormCancelButton.addEventListener(
+      "click",
+      () => {
+        this.importNodeForm.reset();
+        this.importNodeModal.style.display = "none";
+      },
+      this.abortController.signal,
+    );
+
+    this.addNodeButton.addEventListener(
+      "click",
+      () => {
+        this.addNodeModal.style.display = "block";
+      },
+      this.abortController.signal,
+    );
+
+    this.addEdgeButton.addEventListener(
+      "click",
+      () => {
+        const edge = {
+          project: this.project.id,
+          label: "connects_to",
+          source: this.selectedNodes[0],
+          target: this.selectedNodes[1],
+          data: {},
+        };
+
+        this.api
+          .insertEdge(edge)
+          .then((newEdge) => {
+            alert(`Ligação "${newEdge.id}" criada com sucesso!`);
+          })
+          .catch((error) => {
+            alert(`Erro ao criar ligação: ${error.message}`);
+          });
+
         this.selectedNodes = [];
-        this.selectedEdge = null;
-        
-        // AbortController for automatic event listener cleanup
-        this.abortController = new AbortController();
-        this.render();
-    }
+        this.addEdgeButton.style.display = "none";
+        this.cy.elements().unselect();
+      },
+      this.abortController.signal,
+    );
 
-    connectedCallback() {
-        this.projectTitle     = this.shadowRoot.getElementById('project-title');
-        this.importNodeButton = this.shadowRoot.getElementById('import-node-btn');
-        this.addNodeButton    = this.shadowRoot.getElementById('add-node-btn');
-        this.addEdgeButton    = this.shadowRoot.getElementById('add-edge-btn');
-        this.infoPanel        = this.shadowRoot.querySelector('app-info-panel');
+    this.importNodeForm.addEventListener(
+      "submit",
+      (e) => {
+        e.preventDefault();
 
-        this.importNodeModal    = this.shadowRoot.getElementById('import-node-modal');
-        this.importNodeForm     = this.shadowRoot.getElementById('import-node-form');
-        this.importNodeCategory = this.shadowRoot.getElementById('import-node-category');
-        this.importNodeType     = this.shadowRoot.getElementById('import-node-type');
-        this.importNodeNode     = this.shadowRoot.getElementById('import-node-node');
-        this.importNodeFormCancelButton = this.shadowRoot.getElementById('cancel-import-node');
-        
-        this.addNodeModal = this.shadowRoot.getElementById('add-node-modal');
-        this.addNodeForm  = this.shadowRoot.getElementById('add-node-form');
-        this.addNodeFormCancelButton = this.shadowRoot.getElementById('cancel-add-node');
+        const formData = new FormData(this.importNodeForm);
 
-        this.removeNodeModal = this.shadowRoot.getElementById('remove-node-modal');
-        this.removeEdgeModal = this.shadowRoot.getElementById('remove-edge-modal');
+        const nodeData = {
+          project_id: this.project.id,
+          node_id: formData.get("import-node-node"),
+        };
 
-        this.removeNodeForm = this.shadowRoot.getElementById('remove-node-form');
-        this.removeEdgeForm = this.shadowRoot.getElementById('remove-edge-form');
+        console.log("Importing node with data:", JSON.stringify(nodeData));
 
-        this.removeNodeButton = this.shadowRoot.getElementById('remove-node-btn');
-        this.removeEdgeButton = this.shadowRoot.getElementById('remove-edge-btn');
+        this.api
+          .insertProjectNode(nodeData)
+          .then((node) => {
+            alert(`Item importado com sucesso!`);
+          })
+          .catch((error) => {
+            alert(`Erro ao importar item: ${error.message}`);
+          });
 
-        this.removeEdgeSource = this.shadowRoot.getElementById('remove-edge-source');
-        this.removeEdgeTarget = this.shadowRoot.getElementById('remove-edge-target');
+        this.importNodeModal.style.display = "none";
+        this.importNodeForm.reset();
+      },
+      this.abortController.signal,
+    );
 
-        this.cyContainer   = this.shadowRoot.getElementById('cy');
+    this.addNodeForm.addEventListener(
+      "submit",
+      (e) => {
+        e.preventDefault();
 
-        this.importNodeButton.addEventListener('click', () => {
-            this.importNodeModal.style.display = 'block';
+        const formData = new FormData(this.addNodeForm);
 
-            this.api.fetchCategories().then(categories => {
-                console.log("categories", categories);
-                this.importNodeCategory.innerHTML = '<option value="" disabled selected>Selecione uma categoria</option>';
-                categories.forEach(category => {
-                    const option = document.createElement('option');
-                    option.value = category.id;
-                    option.textContent = category.name;
-                    this.importNodeCategory.appendChild(option);
-                });
-                this.importNodeType.innerHTML = '<option value="" disabled selected>Selecione um tipo</option>';
-                this.importNodeNode.innerHTML = '<option value="" disabled selected>Selecione um item</option>';
-            }).catch(error => {
-                console.error("Error fetching categories:", error);
-            });
+        const nodeData = {
+          id: formData.get("node-id"),
+          label: formData.get("node-label"),
+          category: formData.get("node-category"),
+          type: formData.get("node-type"),
+          data: {},
+        };
 
-        }, this.abortController.signal);
+        this.api
+          .insertNode(nodeData)
+          .then((newNode) => {
+            alert(`Item "${newNode.label}" criado com sucesso!`);
+          })
+          .catch((error) => {
+            alert(`Erro ao criar item: ${error.message}`);
+          });
 
-        this.importNodeCategory.addEventListener('change', () => {
-            const categoryId = this.importNodeCategory.value;
-            this.api.fetchCategoryTypes(categoryId).then(types => {
-                console.log("types", types);
-                this.importNodeType.innerHTML = '<option value="" disabled selected>Selecione um tipo</option>';
-                types.forEach(type => {
-                    const option = document.createElement('option');
-                    option.value = type.id;
-                    option.textContent = type.name;
-                    this.importNodeType.appendChild(option);
-                });
-                this.importNodeNode.innerHTML = '<option value="" disabled selected>Selecione um item</option>';
-            }).catch(error => {
-                console.error("Error fetching types:", error);
-            });
-        }, this.abortController.signal);
+        this.addNodeModal.style.display = "none";
+        this.addNodeForm.reset();
+      },
+      this.abortController.signal,
+    );
 
-        this.importNodeType.addEventListener('change', () => {
-            const typeId = this.importNodeType.value;
-            this.api.fetchTypeNodes(typeId).then(nodes => {
-                console.log("nodes", nodes);
-                this.importNodeNode.innerHTML = '<option value="" disabled selected>Selecione um item</option>';
-                nodes.forEach(node => {
-                    const option = document.createElement('option');
-                    option.value = node.id;
-                    option.textContent = node.label;
-                    this.importNodeNode.appendChild(option);
-                });
-            }).catch(error => {
-                console.error("Error fetching nodes:", error);
-            });
-        }, this.abortController.signal);
+    this.addNodeFormCancelButton.addEventListener(
+      "click",
+      () => {
+        this.addNodeForm.reset();
+        this.addNodeModal.style.display = "none";
+      },
+      this.abortController.signal,
+    );
 
-        this.importNodeFormCancelButton.addEventListener('click', () => {
-            this.importNodeForm.reset();
-            this.importNodeModal.style.display = 'none';
-        }, this.abortController.signal);
-
-        this.addNodeButton.addEventListener('click', () => {
-            this.addNodeModal.style.display = 'block';
-        }, this.abortController.signal);
-
-        this.addEdgeButton.addEventListener('click', () => {
-            
-            const edge = {
-                project: this.project.id,
-                label: 'connects_to',
-                source: this.selectedNodes[0],
-                target: this.selectedNodes[1],
-                data: {}
-            };
-
-            this.api.insertEdge(edge).then((newEdge) => {
-                alert(`Ligação "${newEdge.id}" criada com sucesso!`);
-            }).catch(error => {
-                alert(`Erro ao criar ligação: ${error.message}`);
-            });
-
-            this.selectedNodes = [];
-            this.addEdgeButton.style.display = "none";
-            this.cy.elements().unselect();
-        }, this.abortController.signal);
-
-        this.importNodeForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            
-            const formData = new FormData(this.importNodeForm);
-            
-            const nodeData = {
-                project_id: this.project.id,
-                node_id: formData.get('import-node-node'),
-            };
-
-            console.log("Importing node with data:", JSON.stringify(nodeData));
-
-            this.api.insertProjectNode(nodeData).then((node) => {
-                alert(`Item importado com sucesso!`);
-            }).catch(error => {
-                alert(`Erro ao importar item: ${error.message}`);
-            });
-            
-            this.importNodeModal.style.display = 'none';
-            this.importNodeForm.reset();
-        }, this.abortController.signal);
-
-        this.addNodeForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            
-            const formData = new FormData(this.addNodeForm);
-
-            const nodeData = {
-                id: formData.get('node-id'),
-                label: formData.get('node-label'),
-                category: formData.get('node-category'),
-                type: formData.get('node-type'),
-                data: {}
-            };
-
-            this.api.insertNode(nodeData).then((newNode) => {
-                alert(`Item "${newNode.label}" criado com sucesso!`);
-            }).catch(error => {
-                alert(`Erro ao criar item: ${error.message}`);
-            });
-            
-            this.addNodeModal.style.display = 'none';
-            this.addNodeForm.reset();
-        }, this.abortController.signal);
-
-        this.addNodeFormCancelButton.addEventListener('click', () => {
-            this.addNodeForm.reset();
-            this.addNodeModal.style.display = 'none';
-        }, this.abortController.signal);
-
-        this.removeNodeButton.addEventListener('click', () => {
-            this.removeNodeModal.style.display = 'block';
-            if (this.selectedNodes.length === 1) {
-                this.removeNodeForm.querySelector('#remove-node-id').value = this.selectedNodes[0];
-            }
-        }, this.abortController.signal);
-
-        this.removeEdgeButton.addEventListener('click', () => {
-            this.removeEdgeModal.style.display = 'block';
-            if (this.selectedEdge) {
-                this.removeEdgeSource.value = this.selectedEdge.source;
-                this.removeEdgeTarget.value = this.selectedEdge.target;
-            }
-        }, this.abortController.signal);
-
-        this.removeNodeForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const formData = new FormData(this.removeNodeForm);
-            const nodeId = formData.get('remove-node-id');
-            console.log("Removing node:", nodeId);
-
-            const nodeData = {
-                project_id: this.project.id,
-                node_id: nodeId
-            };
-
-            this.api.deleteProjectNode(nodeData).then(() => {
-                alert(`Item "${nodeId}" removido com sucesso!`);
-            }).catch(error => {
-                alert(`Erro ao remover item: ${error.message}`);
-            });
-
-            this.removeNodeModal.style.display = 'none';
-            this.removeNodeForm.reset();
-        }, this.abortController.signal);
-
-        this.removeEdgeForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const formData = new FormData(this.removeEdgeForm);
-            
-            const edgeData = {
-                source: formData.get('remove-edge-source'),
-                target: formData.get('remove-edge-target')
-            };
-
-            this.api.deleteEdge(edgeData).then(() => {
-                alert(`Ligação "${edgeData.source} -> ${edgeData.target}" removida com sucesso!`);
-            }).catch(error => {
-                alert(`Erro ao remover ligação: ${error.message}`);
-            });
-
-            this.removeEdgeModal.style.display = 'none';
-            this.removeEdgeForm.reset();
-        }, this.abortController.signal);
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && this.cy) {
-                this.cy.elements().unselect();
-                this.selectedNodes = [];
-                this.selectedEdge = null;
-                this.infoPanel.node = null;
-            }
-        }, this.abortController.signal);
-    }
-
-    disconnectedCallback() {
-        this.abortController.abort();
-    }
-
-    set project(value)
-    {
-        this.setAttribute("project", JSON.stringify(value));
-        if (value === null) {
-            this.selectedNodes = [];
-            this.selectedEdge = null;
-            this.cy.destroy();
-            this.cy = null;
-            this.infoPanel.node = null;
-            this.projectTitle.textContent = "";
-            this.importNodeButton.style.display = "none";
-            this.addNodeButton.style.display = "none";
-            this.addEdgeButton.style.display = "none";
-            return;
+    this.removeNodeButton.addEventListener(
+      "click",
+      () => {
+        this.removeNodeModal.style.display = "block";
+        if (this.selectedNodes.length === 1) {
+          this.removeNodeForm.querySelector("#remove-node-id").value =
+            this.selectedNodes[0];
         }
-        this.projectTitle.textContent = value.name;
-        this.importNodeButton.style.display = "inline-block";
-        this.addNodeButton.style.display = "inline-block";
-    }
+      },
+      this.abortController.signal,
+    );
 
-    get project()
-    {
-        const data = JSON.parse(this.getAttribute("project"));
-        if (data === null || data === undefined || data === "") {
-            return null;
+    this.removeEdgeButton.addEventListener(
+      "click",
+      () => {
+        this.removeEdgeModal.style.display = "block";
+        if (this.selectedEdge) {
+          this.removeEdgeSource.value = this.selectedEdge.source;
+          this.removeEdgeTarget.value = this.selectedEdge.target;
         }
-        return data;
-    }
+      },
+      this.abortController.signal,
+    );
 
-    set graph(value)
-    {
-        this.setAttribute("graph", JSON.stringify(value));
+    this.removeNodeForm.addEventListener(
+      "submit",
+      (e) => {
+        e.preventDefault();
+        const formData = new FormData(this.removeNodeForm);
+        const nodeId = formData.get("remove-node-id");
+        console.log("Removing node:", nodeId);
 
-        // Destroy existing instance if it exists
-        if (this.cy) {
-            this.cy.destroy();
+        const nodeData = {
+          project_id: this.project.id,
+          node_id: nodeId,
+        };
+
+        this.api
+          .deleteProjectNode(nodeData)
+          .then(() => {
+            alert(`Item "${nodeId}" removido com sucesso!`);
+          })
+          .catch((error) => {
+            alert(`Erro ao remover item: ${error.message}`);
+          });
+
+        this.removeNodeModal.style.display = "none";
+        this.removeNodeForm.reset();
+      },
+      this.abortController.signal,
+    );
+
+    this.removeEdgeForm.addEventListener(
+      "submit",
+      (e) => {
+        e.preventDefault();
+        const formData = new FormData(this.removeEdgeForm);
+
+        const edgeData = {
+          source: formData.get("remove-edge-source"),
+          target: formData.get("remove-edge-target"),
+        };
+
+        this.api
+          .deleteEdge(edgeData)
+          .then(() => {
+            alert(
+              `Ligação "${edgeData.source} -> ${edgeData.target}" removida com sucesso!`,
+            );
+          })
+          .catch((error) => {
+            alert(`Erro ao remover ligação: ${error.message}`);
+          });
+
+        this.removeEdgeModal.style.display = "none";
+        this.removeEdgeForm.reset();
+      },
+      this.abortController.signal,
+    );
+
+    document.addEventListener(
+      "keydown",
+      (e) => {
+        if (e.key === "Escape" && this.cy) {
+          this.cy.elements().unselect();
+          this.selectedNodes = [];
+          this.selectedEdge = null;
+          this.infoPanel.node = null;
         }
+      },
+      this.abortController.signal,
+    );
+  }
 
-        // Initialize Cytoscape
+  disconnectedCallback() {
+    this.abortController.abort();
+  }
 
-        value.container = this.cyContainer;
-        this.cy = cytoscape(value);
+  set project(value) {
+    this.setAttribute("project", JSON.stringify(value));
 
-        // Setup Cytoscape event listeners after initialization
-        this.setupCytoscapeEvents();
+    if (this.statusUpdateTimer) {
+      clearInterval(this.statusUpdateTimer);
+    }
+    this.statusUpdateTimer = null;
+
+    if (value === null) {
+      this.selectedNodes = [];
+      this.selectedEdge = null;
+      if(this.cy) {
+        this.cy.destroy();
+        this.cy = null;
+      }
+      this.infoPanel.node = null;
+      this.projectTitle.textContent = "";
+      this.importNodeButton.style.display = "none";
+      this.addNodeButton.style.display = "none";
+      this.addEdgeButton.style.display = "none";
+
+      return;
     }
 
-    get graph()
-    {
-        const data = JSON.parse(this.getAttribute("graph"));
-        if (data === null || data === undefined || data === "") {
-            return null;
-        }
-        
-        return data;
-    }
-
-    set nodeStatus(statusUpdates)
-    {
-        this.setAttribute("node-status", JSON.stringify(statusUpdates));
-
-        statusUpdates.forEach(update => {
-            const node = this.cy.$('#' + update.node_id);
-            
-            if (node.length > 0) {
-                // Remove classes de status anteriores
-                let classes = node.classes();
-                classes.forEach(cls => {
-                    if (cls.startsWith("node-status")) {
-                        node.removeClass(cls);
-                    }
-                });
-
-                // Adiciona nova classe de status
-                node.addClass(`node-status-${update.status}`);
-            }
+    this.statusUpdateTimer = setInterval(() => {
+      this.api
+        .fetchProjectStatus(value.id)
+        .then((statuses) => {
+          console.log("Atualizando status dos nós do projeto");
+          this.project.nodeStatus = statuses;
+        })
+        .catch((error) => {
+          console.error("Erro ao atualizar status dos nós:", error);
         });
+    }, 5000);
+
+    this.projectTitle.textContent = value.name;
+    this.importNodeButton.style.display = "inline-block";
+    this.addNodeButton.style.display = "inline-block";
+  }
+
+  get project() {
+    const data = JSON.parse(this.getAttribute("project"));
+    if (data === null || data === undefined || data === "") {
+      return null;
     }
-    
-    get nodeStatus()
-    {
-        const data = JSON.parse(this.getAttribute("node-status"));
-        if (data === null || data === undefined || data === "") {
-            return null;
-        }
-        return data;
+    return data;
+  }
+
+  set graph(value) {
+    this.setAttribute("graph", JSON.stringify(value));
+
+    // Destroy existing instance if it exists
+    if (this.cy) {
+      this.cy.destroy();
     }
 
-    render()
-    {
-        this.attachShadow({ mode: "open" });
-        this.shadowRoot.innerHTML = `
+    // Initialize Cytoscape
+
+    value.container = this.cyContainer;
+    this.cy = cytoscape(value);
+
+    // Setup Cytoscape event listeners after initialization
+    this.setupCytoscapeEvents();
+  }
+
+  get graph() {
+    const data = JSON.parse(this.getAttribute("graph"));
+    if (data === null || data === undefined || data === "") {
+      return null;
+    }
+
+    return data;
+  }
+
+  set nodeStatus(statusUpdates) {
+    this.setAttribute("node-status", JSON.stringify(statusUpdates));
+
+    statusUpdates.forEach((update) => {
+      const node = this.cy.$("#" + update.node_id);
+
+      if (node.length > 0) {
+        // Remove classes de status anteriores
+        let classes = node.classes();
+        classes.forEach((cls) => {
+          if (cls.startsWith("node-status")) {
+            node.removeClass(cls);
+          }
+        });
+
+        // Adiciona nova classe de status
+        node.addClass(`node-status-${update.status}`);
+      }
+    });
+  }
+
+  get nodeStatus() {
+    const data = JSON.parse(this.getAttribute("node-status"));
+    if (data === null || data === undefined || data === "") {
+      return null;
+    }
+    return data;
+  }
+
+  render() {
+    this.attachShadow({ mode: "open" });
+    this.shadowRoot.innerHTML = `
             <style>
                 #cy {
                     position: absolute;
@@ -492,106 +599,111 @@ export class Project extends HTMLElement
                 </div>
             </div>
         `;
+  }
+
+  /**
+   * Configura todos os event listeners do Cytoscape.
+   * Deve ser chamado após a inicialização do cy.
+   */
+  setupCytoscapeEvents() {
+    if (!this.cy) {
+      console.warn("Cytoscape not initialized");
+      return;
     }
 
-    /**
-     * Configura todos os event listeners do Cytoscape.
-     * Deve ser chamado após a inicialização do cy.
-     */
-    setupCytoscapeEvents() {
-        if (!this.cy) {
-            console.warn("Cytoscape not initialized");
-            return;
-        }
+    // Evento: Seleção de nó
+    this.cy.on("select", "node", (e) => {
+      const n = e.target;
+      this.selectedNodes.push(n.id());
 
-        // Evento: Seleção de nó
-        this.cy.on('select', 'node', (e) => {
-            const n = e.target;
-            this.selectedNodes.push(n.id());
+      console.log("Selected nodes:", this.selectedNodes);
 
-            console.log("Selected nodes:", this.selectedNodes);
+      if (this.selectedNodes.length === 1) {
+        this.removeNodeButton.style.display = "inline-block";
+      } else {
+        this.removeNodeButton.style.display = "none";
+      }
 
-            if (this.selectedNodes.length === 1) {
-                this.removeNodeButton.style.display = 'inline-block';
-            } else {
-                this.removeNodeButton.style.display = 'none';
-            }
+      if (this.selectedNodes.length === 2) {
+        // Dois nós selecionados, pronto para adicionar aresta
+        console.log(
+          "Ready to add edge between:",
+          this.selectedNodes[0],
+          "and",
+          this.selectedNodes[1],
+        );
+        this.addEdgeButton.style.display = "inline-block";
+      }
 
-            if (this.selectedNodes.length === 2) {
-                // Dois nós selecionados, pronto para adicionar aresta
-                console.log("Ready to add edge between:", this.selectedNodes[0], "and", this.selectedNodes[1]);
-                this.addEdgeButton.style.display = "inline-block";
-            }
-            
-            if (this.selectedNodes.length > 2) {
-                this.addEdgeButton.style.display = "none";
-                this.selectedNodes = [];
-                this.cy.elements().unselect();
-            }
-        });
+      if (this.selectedNodes.length > 2) {
+        this.addEdgeButton.style.display = "none";
+        this.selectedNodes = [];
+        this.cy.elements().unselect();
+      }
+    });
 
-        // Evento: Seleção de aresta
-        this.cy.on('select', 'edge', (e) => {
-            const edge = e.target;
-            this.selectedEdge = {
-                id: edge.id(),
-                source: edge.data('source'),
-                target: edge.data('target'),
-            }
-            this.removeEdgeButton.style.display = 'inline-block';
-            console.log("Selected edge:", this.selectedEdge);
-        });
+    // Evento: Seleção de aresta
+    this.cy.on("select", "edge", (e) => {
+      const edge = e.target;
+      this.selectedEdge = {
+        id: edge.id(),
+        source: edge.data("source"),
+        target: edge.data("target"),
+      };
+      this.removeEdgeButton.style.display = "inline-block";
+      console.log("Selected edge:", this.selectedEdge);
+    });
 
-        // Evento: Deseleção de nó
-        this.cy.on('unselect', 'node', () => {
-            this.selectedNodes = [];
-            this.removeNodeButton.style.display = 'none';
-        });
+    // Evento: Deseleção de nó
+    this.cy.on("unselect", "node", () => {
+      this.selectedNodes = [];
+      this.removeNodeButton.style.display = "none";
+    });
 
-        // Evento: Deseleção de aresta
-        this.cy.on('unselect', 'edge', () => {
-            this.selectedEdge = null;
-            this.addEdgeButton.style.display = "none";
-            this.removeEdgeButton.style.display = 'none';
-        });
+    // Evento: Deseleção de aresta
+    this.cy.on("unselect", "edge", () => {
+      this.selectedEdge = null;
+      this.addEdgeButton.style.display = "none";
+      this.removeEdgeButton.style.display = "none";
+    });
 
-        // Evento: Duplo clique em nó (para mostrar info)
-        this.cy.on('dbltap', 'node', (e) => {
-            const node = e.target;
-            this.infoPanel.node = node.data();
-            this.removeNodeButton.style.display = 'none';
-        });
+    // Evento: Duplo clique em nó (para mostrar info)
+    this.cy.on("dbltap", "node", (e) => {
+      const node = e.target;
+      this.infoPanel.node = node.data();
+      this.removeNodeButton.style.display = "none";
+    });
 
-        // Evento: Clique no background (deseleciona tudo)
-        this.cy.on('tap', (e) => {
-            if (e.target === this.cy) {
-                this.cy.elements().unselect();
-                this.infoPanel.node = null;
-                this.addEdgeButton.style.display = "none";
-                this.removeNodeButton.style.display = 'none';
-                this.removeEdgeButton.style.display = 'none';
-            }
-        });
+    // Evento: Clique no background (deseleciona tudo)
+    this.cy.on("tap", (e) => {
+      if (e.target === this.cy) {
+        this.cy.elements().unselect();
+        this.infoPanel.node = null;
+        this.addEdgeButton.style.display = "none";
+        this.removeNodeButton.style.display = "none";
+        this.removeEdgeButton.style.display = "none";
+      }
+    });
+  }
+
+  export() {
+    if (!this.cy) return;
+
+    let pngData = this.cy.png({
+      full: true,
+    });
+
+    let link = document.createElement("a");
+    link.href = pngData;
+    link.download = "graph.png";
+    link.click();
+  }
+
+  fit() {
+    if (this.cy) {
+      this.cy.fit();
     }
-
-    export() {
-        if (!this.cy) return;
-
-        let pngData = this.cy.png({
-            full: true,
-        });
-        
-        let link = document.createElement('a');
-        link.href = pngData;
-        link.download = 'graph.png';
-        link.click();
-    }
-
-    fit() {
-        if (this.cy) {
-            this.cy.fit();
-        }
-    }
+  }
 }
 
-customElements.define('app-project', Project);
+customElements.define("app-project", Project);
