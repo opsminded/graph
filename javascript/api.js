@@ -14,6 +14,7 @@ export class Api
         this.getCategoriesURL = baseUrl + '/getCategories';
         this.getCategoryTypesURL = baseUrl + '/getCategoryTypes';
         
+        this.insertNodeURL = baseUrl + '/insertNode';
         this.insertEdgeURL = baseUrl + '/insertEdge';
     }
 
@@ -206,6 +207,31 @@ export class Api
         })
         .catch(error => {
             console.error('[insertProjectNode] Fetch error:', error);
+            return null;
+        });
+    }
+
+    insertNode(nodeData)
+    {
+        return fetch(this.insertNodeURL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(nodeData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                console.error('Response not ok:', response);
+                throw new Error(`Erro ao inserir nó: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(({ data }) => {
+            return data;
+        })
+        .catch(error => {
+            console.error('[insertNode] Fetch error:', error);
             return null;
         });
     }

@@ -57,7 +57,6 @@ export class Menu extends HTMLElement {
       "click",
       (e) => {
         e.preventDefault();
-        alert("Novo Projeto button clicked");
         this.dispatchEvent(
           new CustomEvent("new-prj-btn-clicked", {
             bubbles: true,

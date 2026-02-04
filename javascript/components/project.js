@@ -1,5 +1,6 @@
 "use strict";
 
+import {Api} from "../api.js";
 import cytoscape from "/javascript/libs/cytoscape.esm.min.mjs";
 import {InfoPanel} from "./info-panel.js";
 
@@ -10,6 +11,7 @@ export class Project extends HTMLElement
     constructor()
     {
         super();
+        this.api = new Api();
         this.cy = null;
         this.selectedNodes = [];
         this.selectedEdge = null;
@@ -26,8 +28,11 @@ export class Project extends HTMLElement
         this.addEdgeButton    = this.shadowRoot.getElementById('add-edge-btn');
         this.infoPanel        = this.shadowRoot.querySelector('app-info-panel');
 
-        this.importNodeModal = this.shadowRoot.getElementById('import-node-modal');
-        this.importNodeForm  = this.shadowRoot.getElementById('import-node-form');
+        this.importNodeModal    = this.shadowRoot.getElementById('import-node-modal');
+        this.importNodeForm     = this.shadowRoot.getElementById('import-node-form');
+        this.importNodeCategory = this.shadowRoot.getElementById('import-node-category');
+        this.importNodeType     = this.shadowRoot.getElementById('import-node-type');
+        this.importNodeNode     = this.shadowRoot.getElementById('import-node-node');
         this.importNodeFormCancelButton = this.shadowRoot.getElementById('cancel-import-node');
         
         this.addNodeModal = this.shadowRoot.getElementById('add-node-modal');
@@ -47,6 +52,55 @@ export class Project extends HTMLElement
 
         this.importNodeButton.addEventListener('click', () => {
             this.importNodeModal.style.display = 'block';
+
+            this.api.fetchCategories().then(categories => {
+                console.log("categories", categories);
+                this.importNodeCategory.innerHTML = '<option value="" disabled selected>Selecione uma categoria</option>';
+                categories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category.id;
+                    option.textContent = category.name;
+                    this.importNodeCategory.appendChild(option);
+                });
+                this.importNodeType.innerHTML = '<option value="" disabled selected>Selecione um tipo</option>';
+                this.importNodeNode.innerHTML = '<option value="" disabled selected>Selecione um item</option>';
+            }).catch(error => {
+                console.error("Error fetching categories:", error);
+            });
+
+        }, this.abortController.signal);
+
+        this.importNodeCategory.addEventListener('change', () => {
+            const categoryId = this.importNodeCategory.value;
+            this.api.fetchCategoryTypes(categoryId).then(types => {
+                console.log("types", types);
+                this.importNodeType.innerHTML = '<option value="" disabled selected>Selecione um tipo</option>';
+                types.forEach(type => {
+                    const option = document.createElement('option');
+                    option.value = type.id;
+                    option.textContent = type.name;
+                    this.importNodeType.appendChild(option);
+                });
+                this.importNodeNode.innerHTML = '<option value="" disabled selected>Selecione um item</option>';
+            }).catch(error => {
+                console.error("Error fetching types:", error);
+            });
+        }, this.abortController.signal);
+
+        this.importNodeType.addEventListener('change', () => {
+            const typeId = this.importNodeType.value;
+            this.api.fetchTypeNodes(typeId).then(nodes => {
+                console.log("nodes", nodes);
+                this.importNodeNode.innerHTML = '<option value="" disabled selected>Selecione um item</option>';
+                nodes.forEach(node => {
+                    const option = document.createElement('option');
+                    option.value = node.id;
+                    option.textContent = node.label;
+                    this.importNodeNode.appendChild(option);
+                });
+            }).catch(error => {
+                console.error("Error fetching nodes:", error);
+            });
         }, this.abortController.signal);
 
         this.importNodeFormCancelButton.addEventListener('click', () => {
@@ -59,17 +113,20 @@ export class Project extends HTMLElement
         }, this.abortController.signal);
 
         this.addEdgeButton.addEventListener('click', () => {
-            const p = this.project;
+            
+            const edge = {
+                project: this.project.id,
+                label: 'connects_to',
+                source: this.selectedNodes[0],
+                target: this.selectedNodes[1],
+                data: {}
+            };
 
-            this.dispatchEvent(new CustomEvent('add-edge-btn-clicked', {
-                detail: {
-                    project: this.project.id,
-                    source: this.selectedNodes[0],
-                    target: this.selectedNodes[1],
-                },
-                bubbles: true,
-                composed: true,
-            }));
+            this.api.insertEdge(edge).then((newEdge) => {
+                alert(`Ligação "${newEdge.id}" criada com sucesso!`);
+            }).catch(error => {
+                alert(`Erro ao criar ligação: ${error.message}`);
+            });
 
             this.selectedNodes = [];
             this.addEdgeButton.style.display = "none";
@@ -81,11 +138,18 @@ export class Project extends HTMLElement
             
             const formData = new FormData(this.importNodeForm);
             
-            this.dispatchEvent(new CustomEvent('node-imported', {
-                detail: {id: formData.get('import-node-node')},
-                bubbles: true,
-                composed: true,
-            }));
+            const nodeData = {
+                project_id: this.project.id,
+                node_id: formData.get('import-node-node'),
+            };
+
+            console.log("Importing node with data:", JSON.stringify(nodeData));
+
+            this.api.insertProjectNode(nodeData).then((node) => {
+                alert(`Item importado com sucesso!`);
+            }).catch(error => {
+                alert(`Erro ao importar item: ${error.message}`);
+            });
             
             this.importNodeModal.style.display = 'none';
             this.importNodeForm.reset();
@@ -95,18 +159,20 @@ export class Project extends HTMLElement
             e.preventDefault();
             
             const formData = new FormData(this.addNodeForm);
+
             const nodeData = {
                 id: formData.get('node-id'),
                 label: formData.get('node-label'),
                 category: formData.get('node-category'),
                 type: formData.get('node-type'),
+                data: {}
             };
-            
-            this.dispatchEvent(new CustomEvent('node-added', {
-                detail: nodeData,
-                bubbles: true,
-                composed: true,
-            }));
+
+            this.api.insertNode(nodeData).then((newNode) => {
+                alert(`Item "${newNode.label}" criado com sucesso!`);
+            }).catch(error => {
+                alert(`Erro ao criar item: ${error.message}`);
+            });
             
             this.addNodeModal.style.display = 'none';
             this.addNodeForm.reset();
@@ -339,16 +405,13 @@ export class Project extends HTMLElement
                     <form id="import-node-form">
                         <label for="import-node-category">Categoria do Item:</label>
                         <select id="import-node-category" name="import-node-category">
-                            <option value="gene">Gene</option>
-                            <option value="protein">Proteína</option>
-                            <option value="compound">Composto</option>
+                            <!-- Options will be populated dynamically -->
                         </select>
                         <br>
 
                         <label for="import-node-type">Tipo do Item:</label>
                         <select id="import-node-type" name="import-node-type">
-                            <option value="enzyme">Enzima</option>
-                            <option value="receptor">Receptor</option>
+                            <!-- Options will be populated dynamically -->
                         </select>
 
                         <label for="import-node-node">Node ID:</label>
