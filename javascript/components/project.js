@@ -7,6 +7,68 @@ import { InfoPanel } from "./info-panel.js";
 export class Project extends HTMLElement {
   static observedAttributes = ["project", "graph", "node-status"];
 
+  get project() {
+    const data = JSON.parse(this.getAttribute("project"));
+    if (data === null || data === undefined || data === "") {
+      return null;
+    }
+    return data;
+  }
+
+  set graph(value) {
+    this.setAttribute("graph", JSON.stringify(value));
+
+    // Destroy existing instance if it exists
+    if (this.cy) {
+      this.cy.destroy();
+    }
+
+    // Initialize Cytoscape
+
+    value.container = this.cyContainer;
+    this.cy = cytoscape(value);
+
+    // Setup Cytoscape event listeners after initialization
+    this.setupCytoscapeEvents();
+  }
+
+  get graph() {
+    const data = JSON.parse(this.getAttribute("graph"));
+    if (data === null || data === undefined || data === "") {
+      return null;
+    }
+
+    return data;
+  }
+
+  set nodeStatus(statusUpdates) {
+    this.setAttribute("node-status", JSON.stringify(statusUpdates));
+
+    statusUpdates.forEach((update) => {
+      const node = this.cy.$("#" + update.node_id);
+      if (node.length > 0) {
+        // Remove classes de status anteriores
+        let classes = node.classes();
+        classes.forEach((cls) => {
+          if (cls.startsWith("node-status")) {
+            node.removeClass(cls);
+          }
+        });
+
+        // Adiciona nova classe de status
+        node.addClass(`node-status-${update.status}`);
+      }
+    });
+  }
+
+  get nodeStatus() {
+    const data = JSON.parse(this.getAttribute("node-status"));
+    if (data === null || data === undefined || data === "") {
+      return null;
+    }
+    return data;
+  }
+
   constructor() {
     super();
     this.api = new Api();
@@ -22,6 +84,7 @@ export class Project extends HTMLElement {
 
   connectedCallback() {
     this.projectTitle = this.shadowRoot.getElementById("project-title");
+    this.projectAuthor = this.shadowRoot.getElementById("project-author");
     this.importNodeButton = this.shadowRoot.getElementById("import-node-btn");
     this.addNodeButton = this.shadowRoot.getElementById("add-node-btn");
     this.addEdgeButton = this.shadowRoot.getElementById("add-edge-btn");
@@ -55,6 +118,14 @@ export class Project extends HTMLElement {
       this.shadowRoot.getElementById("remove-edge-source");
     this.removeEdgeTarget =
       this.shadowRoot.getElementById("remove-edge-target");
+
+    this.exportButton = this.shadowRoot.getElementById("export-btn");
+    this.exportButton.addEventListener("click", () => this.export(), this.abortController.signal);
+    this.exportButton.style.display = "inline-block";
+
+    this.adjustButton = this.shadowRoot.getElementById("adjust-btn");
+    this.adjustButton.addEventListener("click", () => this.fit(), this.abortController.signal);
+    this.adjustButton.style.display = "inline-block";
 
     this.cyContainer = this.shadowRoot.getElementById("cy");
 
@@ -335,10 +406,33 @@ export class Project extends HTMLElement {
           this.selectedNodes = [];
           this.selectedEdge = null;
           this.infoPanel.node = null;
+          this.addNodeModal.style.display = "none";
+          this.importNodeModal.style.display = "none";
+          this.removeNodeModal.style.display = "none";
+          this.removeEdgeModal.style.display = "none";
         }
       },
       this.abortController.signal,
     );
+  }
+
+  openProject(project, graph, status)
+  {
+    this.project = project;
+    this.graph = graph;
+    this.nodeStatus = status;
+  }
+
+  closeProject()
+  {
+    this.project = null;
+    this.graph = null;
+    this.nodeStatus = null;
+  }
+
+  updateStatus( statusUpdates )
+  {
+    this.nodeStatus = statusUpdates;
   }
 
   disconnectedCallback() {
@@ -362,9 +456,12 @@ export class Project extends HTMLElement {
       }
       this.infoPanel.node = null;
       this.projectTitle.textContent = "";
+      this.projectAuthor.textContent = "";
       this.importNodeButton.style.display = "none";
       this.addNodeButton.style.display = "none";
       this.addEdgeButton.style.display = "none";
+      this.exportButton.style.display = "none";
+      this.adjustButton.style.display = "none";
 
       return;
     }
@@ -381,71 +478,12 @@ export class Project extends HTMLElement {
     }, 5000);
 
     this.projectTitle.textContent = value.name;
+    this.projectAuthor.textContent = value.author;
     this.importNodeButton.style.display = "inline-block";
     this.addNodeButton.style.display = "inline-block";
   }
 
-  get project() {
-    const data = JSON.parse(this.getAttribute("project"));
-    if (data === null || data === undefined || data === "") {
-      return null;
-    }
-    return data;
-  }
-
-  set graph(value) {
-    this.setAttribute("graph", JSON.stringify(value));
-
-    // Destroy existing instance if it exists
-    if (this.cy) {
-      this.cy.destroy();
-    }
-
-    // Initialize Cytoscape
-
-    value.container = this.cyContainer;
-    this.cy = cytoscape(value);
-
-    // Setup Cytoscape event listeners after initialization
-    this.setupCytoscapeEvents();
-  }
-
-  get graph() {
-    const data = JSON.parse(this.getAttribute("graph"));
-    if (data === null || data === undefined || data === "") {
-      return null;
-    }
-
-    return data;
-  }
-
-  set nodeStatus(statusUpdates) {
-    this.setAttribute("node-status", JSON.stringify(statusUpdates));
-
-    statusUpdates.forEach((update) => {
-      const node = this.cy.$("#" + update.node_id);
-      if (node.length > 0) {
-        // Remove classes de status anteriores
-        let classes = node.classes();
-        classes.forEach((cls) => {
-          if (cls.startsWith("node-status")) {
-            node.removeClass(cls);
-          }
-        });
-
-        // Adiciona nova classe de status
-        node.addClass(`node-status-${update.status}`);
-      }
-    });
-  }
-
-  get nodeStatus() {
-    const data = JSON.parse(this.getAttribute("node-status"));
-    if (data === null || data === undefined || data === "") {
-      return null;
-    }
-    return data;
-  }
+  
 
   render() {
     this.attachShadow({ mode: "open" });
@@ -479,10 +517,11 @@ export class Project extends HTMLElement {
                     display: none;
                 }
 
-                #project-container h2 {
+                #project-header {
                     position: absolute;
-                    left: 320px;
-                    top: 10px;
+                    right: 10px;
+                    margin-right: 20px;
+                    top: 20px;
                     z-index: 101;
                 }
 
@@ -507,7 +546,10 @@ export class Project extends HTMLElement {
                 }
             </style>
             <div id="project-container">
-                <h2 id="project-title"></h2>
+                <div id="project-header">
+                  <h2 id="project-title"></h2>
+                  <p>Autor: <span id="project-author"></span></p>
+                </div>
 
                 <div id="buttons-container">
                     <button id="import-node-btn">Importar Item</button>
@@ -515,6 +557,8 @@ export class Project extends HTMLElement {
                     <button id="remove-node-btn">Remover Item</button>
                     <button id="add-edge-btn">Nova Ligação</button>
                     <button id="remove-edge-btn">Remover Ligação</button>
+                    <button id="export-btn">Exportar</button>
+                    <button id="adjust-btn">Ajustar</button>
                 </div>
 
                 <div id="cy"></div>

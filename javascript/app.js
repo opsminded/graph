@@ -91,9 +91,7 @@ export class App extends HTMLElement {
                 this.api.fetchProjectGraph(projectId),
                 this.api.fetchProjectStatus(projectId)
             ]).then(([project, graph, status]) => {
-                this.project.project = project;
-                this.project.graph = graph;
-                this.project.nodeStatus = status;
+                this.project.openProject(project, graph, status);
                 this.openProjectModal.hide();
                 history.pushState({ project: projectId }, '', `?project=${projectId}`);
             }).catch(error => {
