@@ -696,9 +696,9 @@ final class Database implements DatabaseInterface
         $this->logger->info("project Graph fetched", ['params' => $params, 'rows' => $rows]);
         $nodes = [];
         $edges = [];
-        
+
         foreach ($rows as $row) {
-            $nodes[] = new NodeDTO(
+            $n = new NodeDTO(
                 $row['node_id'], 
                 $row['node_label'], 
                 $row['node_category'],
@@ -706,18 +706,31 @@ final class Database implements DatabaseInterface
                 json_decode($row['node_data'], true)
             );
 
+            if(!array_key_exists($n->id, $nodes)) {
+                $nodes[$n->id] = $n;
+            }
+        }
+
+        foreach ($rows as $row) {
             if ($row['edge_id'] === null) {
                 continue;
             }
 
-            $edges[] = new EdgeDTO(
+            $e = new EdgeDTO(
                 $row['edge_id'],
                 $row['parent_node_id'],
                 $row['node_id'],
                 $row['edge_label'],
                 json_decode($row['edge_data'], true)
             );
+
+            if(!array_key_exists($e->id, $edges)) {
+                $edges[$e->id] = $e;
+            }
         }
+
+        $nodes = array_values($nodes);
+        $edges = array_values($edges);
 
         return new GraphDTO($nodes, $edges);
     }
@@ -731,21 +744,21 @@ final class Database implements DatabaseInterface
         $sql = '
         WITH RECURSIVE descendants AS (
             SELECT      np.project_id as project_id,
-                        n.id        as node_id,
-                        s.status    as node_status,
-                        0           as depth
+                        n.id          as node_id,
+                        s.status      as node_status,
+                        0             as depth
             FROM        nodes n
-            INNER JOIN  nodes_projects np ON n.id = np.node_id
+            LEFT JOIN   nodes_projects np
+            ON          n.id = np.node_id
             LEFT JOIN   status s
             ON          n.id = s.node_id
             WHERE       np.project_id = :project_id
-            
             UNION ALL
             
             SELECT      d.project_id as project_id,
-                        n.id         as node_id,
-                        s.status     as node_status,
-                        d.depth + 1  as depth
+                        n.id          as node_id,
+                        s.status      as node_status,
+                        d.depth + 1   as depth
             FROM        descendants d
             INNER JOIN  edges e
             ON          d.node_id = e.source
@@ -756,13 +769,11 @@ final class Database implements DatabaseInterface
         )
         SELECT DISTINCT project_id,
                         node_id,
-                        COALESCE(node_status, \'unknown\') as node_status,
-                        depth
+                        COALESCE(node_status, \'unknown\') as node_status
         FROM            descendants
         ORDER BY        project_id,
-                        depth,
-                        node_id;
-        ';
+                        node_id;';
+        
         $params = [':project_id' => $projectId];
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);

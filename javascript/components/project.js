@@ -373,8 +373,7 @@ export class Project extends HTMLElement {
       this.api
         .fetchProjectStatus(value.id)
         .then((statuses) => {
-          console.log("Atualizando status dos nós do projeto");
-          this.project.nodeStatus = statuses;
+          this.nodeStatus = statuses;
         })
         .catch((error) => {
           console.error("Erro ao atualizar status dos nós:", error);
@@ -425,7 +424,6 @@ export class Project extends HTMLElement {
 
     statusUpdates.forEach((update) => {
       const node = this.cy.$("#" + update.node_id);
-
       if (node.length > 0) {
         // Remove classes de status anteriores
         let classes = node.classes();
