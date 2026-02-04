@@ -21,228 +21,115 @@ export class Api
     }
 
     fetchCategories() {
-        return fetch(this.getCategoriesURL)
-            .then(response => {
-                if (!response.ok) {
-                    console.error('Response not ok:', response);
-                    throw new Error(`Erro ao carregar categorias: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(({ data }) => {
-                return data;
-            });
+        return this._fetchJSON(this.getCategoriesURL);
     }
 
     fetchTypes() {
-        return fetch(this.getTypesURL)
-            .then(response => {
-                if (!response.ok) {
-                    console.error('Response not ok:', response);
-                    throw new Error(`Erro ao carregar tipos: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(({ data }) => {
-                return data;
-            });
+        return this._fetchJSON(this.getTypesURL);
     }
 
     fetchCategoryTypes(categoryId) {
-        return fetch(`${this.getCategoryTypesURL}?category=${encodeURIComponent(categoryId)}`)
-            .then(response => {
-                if (!response.ok) {
-                    console.error('Response not ok:', response);
-                    throw new Error(`Erro ao carregar tipos da categoria: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(({ data }) => {
-                return data;
-            });
+        return this._fetchJSON(`${this.getCategoryTypesURL}?category=${encodeURIComponent(categoryId)}`);
     }
 
     fetchTypeNodes(typeId) {
-        return fetch(`/getTypeNodes?type=${encodeURIComponent(typeId)}`)
-            .then(response => {
-                if (!response.ok) {
-                    console.error('Response not ok:', response);
-                    throw new Error(`Erro ao carregar nós do tipo: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(({ data }) => {
-                return data;
-            });
+        return this._fetchJSON(`/getTypeNodes?type=${encodeURIComponent(typeId)}`);
     }
 
     fetchProjects() {
-        return fetch(this.getProjectsURL)
-            .then(response => {
-                if (!response.ok) {
-                    console.error('Response not ok:', response);
-                    throw new Error(`Erro ao carregar projetos: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(({ data }) => {
-                return data;
-            });
+        return this._fetchJSON(this.getProjectsURL);
     }
 
     fetchProject(projectId) {
-        return fetch(`${this.getProjectURL}?id=${encodeURIComponent(projectId)}`)
-            .then(response => {
-                if (!response.ok) {
-                    console.error('Response not ok:', response);
-                    throw new Error(`Erro ao carregar projeto: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(({ data }) => {
-                return data;
-            });
+        if (!projectId) {
+            throw new Error('projectId is required');
+        }
+        return this._fetchJSON(`${this.getProjectURL}?id=${encodeURIComponent(projectId)}`);
     }
 
     fetchProjectGraph(projectId) {
-        return fetch(`/getProjectGraph?id=${encodeURIComponent(projectId)}`)
-            .then(response => {
-                if (!response.ok) {
-                    console.error('Response not ok:', response);
-                    throw new Error(`Erro ao carregar gráficos do projeto: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(({ data }) => {
-                return data;
-            });
+        if (!projectId) {
+            throw new Error('projectId is required');
+        }
+        return this._fetchJSON(`/getProjectGraph?id=${encodeURIComponent(projectId)}`);
     }
-
+    
     fetchProjectStatus(projectId) {
-        return fetch(`/getProjectStatus?id=${encodeURIComponent(projectId)}`)
-            .then(response => {
-                if (!response.ok) {
-                    console.error('Response not ok:', response);
-                    throw new Error(`Erro ao carregar status do projeto: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(({ data }) => {
-                return data;
-            });
+        if (!projectId) {
+            throw new Error('projectId is required');
+        }
+        return this._fetchJSON(`/getProjectStatus?id=${encodeURIComponent(projectId)}`);
     }
 
     insertProject(projectData) {
-        return fetch(this.insertProjectURL, {
+        return this._fetchJSON(this.insertProjectURL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(projectData)
-        })
-        .then(response => {
-            if (!response.ok) {
-                console.error('Response not ok:', response);
-                throw new Error(`Erro ao inserir projeto: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(({ data }) => {
-            return data;
         });
     }
 
     insertProjectNode(nodeData) {
-        return fetch(this.insertProjectNodeURL, {
+        return this._fetchJSON(this.insertProjectNodeURL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(nodeData)
-        })
-        .then(response => {
-            if (!response.ok) {
-                console.error('Response not ok:', response);
-                throw new Error(`Erro ao inserir nó do projeto: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(({ data }) => {
-            return data;
         });
     }
 
     insertNode(nodeData)
     {
-        return fetch(this.insertNodeURL, {
+        return this._fetchJSON(this.insertNodeURL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(nodeData)
-        })
-        .then(response => {
-            if (!response.ok) {
-                console.error('Response not ok:', response);
-                throw new Error(`Erro ao inserir nó: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(({ data }) => {
-            return data;
         });
     }
 
     insertEdge(edgeData) {
-        return fetch(this.insertEdgeURL, {
+        return this._fetchJSON(this.insertEdgeURL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(edgeData)
-        })
-        .then(response => {
-            if (!response.ok) {
-                console.error('Response not ok:', response);
-                throw new Error(`Erro ao inserir aresta: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(({ data }) => {
-            return data;
         });
     }
 
     deleteProjectNode(node) {
-        return fetch(this.deleteProjectNodeURL, {
+        return this._fetchJSON(this.deleteProjectNodeURL, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(node)
-        })
-        .then(response => {
-            if (!response.ok) {
-                console.error('Response not ok:', response);
-                throw new Error(`Erro ao deletar nó do projeto: ${response.status}`);
-            }
         });
     }
 
     deleteEdge(edge)
     {
-        return fetch(this.deleteEdgeURL, {
+        return this._fetchJSON(this.deleteEdgeURL, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(edge)
-        })
-        .then(response => {
-            if (!response.ok) {
-                console.error('Response not ok:', response);
-                throw new Error(`Erro ao deletar aresta: ${response.status}`);
-            }
         });
+    }
+
+    async _fetchJSON(url, options = {}) {
+        const response = await fetch(url, options);
+        if (!response.ok) {
+            console.error('Response not ok:', response);
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        const { data } = await response.json();
+        return data;
     }
 }

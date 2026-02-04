@@ -1,5 +1,7 @@
 "use strict";
 
+import {EVENTS} from "../events.js";
+
 export class NewProjectModal extends HTMLElement {
 
     constructor()
@@ -21,7 +23,7 @@ export class NewProjectModal extends HTMLElement {
         this.form.addEventListener('submit', (e) => {
             e.preventDefault();
             const projectData = { name: this.newProjectFormNameInput.value };
-            this.dispatchEvent(new CustomEvent('new-project', {
+            this.dispatchEvent(new CustomEvent(EVENTS.NEW_PROJECT, {
                 detail: projectData,
                 bubbles: true,
                 composed: true

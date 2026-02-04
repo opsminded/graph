@@ -1,5 +1,7 @@
 "use strict";
 
+import { EVENTS } from '../events.js';
+
 export class OpenProjectModal extends HTMLElement {
     
     static observedAttributes = ["projects"];
@@ -24,7 +26,7 @@ export class OpenProjectModal extends HTMLElement {
             e.preventDefault();
             const select = this.shadowRoot.getElementById('open-prj-form-id');
             const id = select.value;
-            this.dispatchEvent(new CustomEvent('open-project', {
+            this.dispatchEvent(new CustomEvent(EVENTS.OPEN_PROJECT, {
                 detail: { id:id },
                 bubbles: true,
                 composed: true

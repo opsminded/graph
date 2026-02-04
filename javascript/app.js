@@ -1,6 +1,7 @@
 "use strict";
 
 import {Api} from './api.js';
+import {EVENTS} from './events.js';
 import './components/menu.js';
 import './components/notification.js';
 import './components/project.js';
@@ -47,56 +48,64 @@ export class App extends HTMLElement {
 
     setupEventListeners()
     {
-        this.addEventListener('new-prj-btn-clicked', () => {
+        this.addEventListener(EVENTS.NEW_PROJECT_BUTTON_CLICKED, () => {
             this.newProjectModal.show();
             this.openProjectModal.hide();
             this.project.project = null;
         }, this.abortController.signal);
 
-        this.addEventListener('open-prj-btn-clicked', () => {
-            this.api.fetchProjects().then(projects => {
+        this.addEventListener(EVENTS.OPEN_PROJECT_BUTTON_CLICKED, async () => {
+            try {
+                const projects = await this.api.fetchProjects();
                 this.openProjectModal.show(projects);
                 this.newProjectModal.hide();
-            }).catch(error => {
+            } catch (error) {
                 this.notification.error(`Erro ao carregar projetos: ${error.message}`);
-            });
+            }
             this.project.project = null;
         }, this.abortController.signal);
 
-        this.addEventListener('new-project', (event) => {
+        this.addEventListener(EVENTS.NEW_PROJECT, async (event) => {
             const projectData = event.detail;
-            this.api.insertProject(projectData).then((project) => {
+            try {
+                const project = await this.api.insertProject(projectData);
                 this.notification.success(`Projeto "${project.name}" criado com sucesso!`);
                 this.openProject(project.id);
-            }).catch(error => {
+            } catch (error) {
                 this.notification.error(`Erro ao criar projeto: ${error.message}`);
-            });
+            }
         }, this.abortController.signal);
 
-        this.addEventListener('open-project', (event) => {
+        this.addEventListener(EVENTS.OPEN_PROJECT, async (event) => {
             const projectId = event.detail.id;
             this.openProject(projectId);
-        });
+        }, this.abortController.signal);
 
-        this.addEventListener('reload-project-requested', () => {
+        this.addEventListener(EVENTS.RELOAD_PROJECT, () => {
             if (this.project.project) {
                 this.openProject(this.project.project.id);
             }
         }, this.abortController.signal);
+
+        this.addEventListener('show-notification', (event) => {
+            const { message, type } = event.detail;
+            this.notification[type](message);
+        }, this.abortController.signal);
     }
 
-    openProject(projectId) {
-        Promise.all([
+    async openProject(projectId) {
+        try {
+            const [project, graph, status] = await Promise.all([
                 this.api.fetchProject(projectId),
                 this.api.fetchProjectGraph(projectId),
                 this.api.fetchProjectStatus(projectId)
-            ]).then(([project, graph, status]) => {
-                this.project.openProject(project, graph, status);
-                this.openProjectModal.hide();
-                history.pushState({ project: projectId }, '', `?project=${projectId}`);
-            }).catch(error => {
-                alert(`Error fetching project data: ${error.message}`);
-            });
+            ]);
+            this.project.openProject(project, graph, status);
+            this.openProjectModal.hide();
+            history.pushState({ project: projectId }, '', `?project=${projectId}`);
+        } catch (error) {
+            this.notification.error(`Erro ao carregar dados do projeto: ${error.message}`);
+        }
     }
 
     render() {

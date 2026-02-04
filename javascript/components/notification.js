@@ -17,7 +17,6 @@
 export class Notification extends HTMLElement {
   constructor() {
     super();
-    this.attachShadow({ mode: "open" });
     
     // Configuration
     this.displayDuration = 2000; // ms
@@ -40,6 +39,8 @@ export class Notification extends HTMLElement {
   }
 
   render() {
+    this.attachShadow({ mode: "open" });
+    
     this.shadowRoot.innerHTML = `
       <style>
         #notification-container {

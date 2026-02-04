@@ -3,9 +3,25 @@
 import { Api } from "../api.js";
 import cytoscape from "/javascript/libs/cytoscape.esm.min.mjs";
 import { InfoPanel } from "./info-panel.js";
+import { EVENTS } from "../events.js";
+
+const STATUS_UPDATE_INTERVAL = 5000;
 
 export class Project extends HTMLElement {
   static observedAttributes = ["project", "graph", "node-status"];
+
+  /**
+   * Helper method to show notification
+   * @param {string} message - The message to display
+   * @param {string} type - The notification type (success, error, info)
+   */
+  showNotification(message, type = 'info') {
+    this.dispatchEvent(new CustomEvent('show-notification', {
+      detail: { message, type },
+      bubbles: true,
+      composed: true
+    }));
+  }
 
   get project() {
     const data = JSON.parse(this.getAttribute("project"));
@@ -42,6 +58,9 @@ export class Project extends HTMLElement {
   }
 
   set nodeStatus(statusUpdates) {
+    if (!statusUpdates || !Array.isArray(statusUpdates)) {
+      return;
+    }
     this.setAttribute("node-status", JSON.stringify(statusUpdates));
 
     statusUpdates.forEach((update) => {
@@ -137,7 +156,6 @@ export class Project extends HTMLElement {
         this.api
           .fetchCategories()
           .then((categories) => {
-            console.log("categories", categories);
             this.importNodeCategory.innerHTML =
               '<option value="" disabled selected>Selecione uma categoria</option>';
             categories.forEach((category) => {
@@ -165,7 +183,6 @@ export class Project extends HTMLElement {
         this.api
           .fetchCategoryTypes(categoryId)
           .then((types) => {
-            console.log("types", types);
             this.importNodeType.innerHTML =
               '<option value="" disabled selected>Selecione um tipo</option>';
             types.forEach((type) => {
@@ -191,7 +208,6 @@ export class Project extends HTMLElement {
         this.api
           .fetchTypeNodes(typeId)
           .then((nodes) => {
-            console.log("nodes", nodes);
             this.importNodeNode.innerHTML =
               '<option value="" disabled selected>Selecione um item</option>';
             nodes.forEach((node) => {
@@ -239,10 +255,11 @@ export class Project extends HTMLElement {
         this.api
           .insertEdge(edge)
           .then((newEdge) => {
-            this.dispatchEvent(new CustomEvent("reload-project-requested", {bubbles: true, composed: true}));
+            this.dispatchEvent(
+              new CustomEvent(EVENTS.RELOAD_PROJECT, {bubbles: true, composed: true}));
           })
           .catch((error) => {
-            alert(`Erro ao criar ligação: ${error.message}`);
+            this.showNotification(`Erro ao criar ligação: ${error.message}`, 'error');
           });
 
         this.selectedNodes = [];
@@ -264,15 +281,14 @@ export class Project extends HTMLElement {
           node_id: formData.get("import-node-node"),
         };
 
-        console.log("Importing node with data:", JSON.stringify(nodeData));
-
         this.api
           .insertProjectNode(nodeData)
           .then((node) => {
-            this.dispatchEvent(new CustomEvent("reload-project-requested", {bubbles: true, composed: true}));
+            this.dispatchEvent(
+              new CustomEvent(EVENTS.RELOAD_PROJECT, {bubbles: true, composed: true}));
           })
           .catch((error) => {
-            alert(`Erro ao importar item: ${error.message}`);
+            this.showNotification(`Erro ao importar item: ${error.message}`, 'error');
           });
 
         this.importNodeModal.style.display = "none";
@@ -299,10 +315,11 @@ export class Project extends HTMLElement {
         this.api
           .insertNode(nodeData)
           .then((newNode) => {
-            this.dispatchEvent(new CustomEvent("reload-project-requested", {bubbles: true, composed: true}));
+            this.dispatchEvent(
+              new CustomEvent(EVENTS.RELOAD_PROJECT, {bubbles: true, composed: true}));
           })
           .catch((error) => {
-            alert(`Erro ao criar item: ${error.message}`);
+            this.showNotification(`Erro ao criar item: ${error.message}`, 'error');
           });
 
         this.addNodeModal.style.display = "none";
@@ -350,7 +367,6 @@ export class Project extends HTMLElement {
         e.preventDefault();
         const formData = new FormData(this.removeNodeForm);
         const nodeId = formData.get("remove-node-id");
-        console.log("Removing node:", nodeId);
 
         const nodeData = {
           project_id: this.project.id,
@@ -360,10 +376,11 @@ export class Project extends HTMLElement {
         this.api
           .deleteProjectNode(nodeData)
           .then(() => {
-            this.dispatchEvent(new CustomEvent("reload-project-requested", {bubbles: true, composed: true}));
+            this.dispatchEvent(
+              new CustomEvent(EVENTS.RELOAD_PROJECT, {bubbles: true, composed: true}));
           })
           .catch((error) => {
-            alert(`Erro ao remover item: ${error.message}`);
+            this.showNotification(`Erro ao remover item: ${error.message}`, 'error');
           });
 
         this.removeNodeModal.style.display = "none";
@@ -386,10 +403,11 @@ export class Project extends HTMLElement {
         this.api
           .deleteEdge(edgeData)
           .then(() => {
-            this.dispatchEvent(new CustomEvent("reload-project-requested", {bubbles: true, composed: true}));
+            this.dispatchEvent(
+              new CustomEvent(EVENTS.RELOAD_PROJECT, {bubbles: true, composed: true}));
           })
           .catch((error) => {
-            alert(`Erro ao remover ligação: ${error.message}`);
+            this.showNotification(`Erro ao remover ligação: ${error.message}`, 'error');
           });
 
         this.removeEdgeModal.style.display = "none";
@@ -475,7 +493,7 @@ export class Project extends HTMLElement {
         .catch((error) => {
           console.error("Erro ao atualizar status dos nós:", error);
         });
-    }, 5000);
+    }, STATUS_UPDATE_INTERVAL);
 
     this.projectTitle.textContent = value.name;
     this.projectAuthor.textContent = value.author;
@@ -656,8 +674,6 @@ export class Project extends HTMLElement {
       const n = e.target;
       this.selectedNodes.push(n.id());
 
-      console.log("Selected nodes:", this.selectedNodes);
-
       if (this.selectedNodes.length === 1) {
         this.removeNodeButton.style.display = "inline-block";
       } else {
@@ -666,12 +682,6 @@ export class Project extends HTMLElement {
 
       if (this.selectedNodes.length === 2) {
         // Dois nós selecionados, pronto para adicionar aresta
-        console.log(
-          "Ready to add edge between:",
-          this.selectedNodes[0],
-          "and",
-          this.selectedNodes[1],
-        );
         this.addEdgeButton.style.display = "inline-block";
       }
 
@@ -691,7 +701,6 @@ export class Project extends HTMLElement {
         target: edge.data("target"),
       };
       this.removeEdgeButton.style.display = "inline-block";
-      console.log("Selected edge:", this.selectedEdge);
     });
 
     // Evento: Deseleção de nó

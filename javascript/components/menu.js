@@ -1,5 +1,7 @@
 "use strict";
 
+import {EVENTS} from '../events.js';
+
 export class Menu extends HTMLElement {
   static observedAttributes = [
     "keep-open",
@@ -58,7 +60,7 @@ export class Menu extends HTMLElement {
       (e) => {
         e.preventDefault();
         this.dispatchEvent(
-          new CustomEvent("new-prj-btn-clicked", {
+          new CustomEvent(EVENTS.NEW_PROJECT_BUTTON_CLICKED, {
             bubbles: true,
             composed: true,
           }),
@@ -72,9 +74,8 @@ export class Menu extends HTMLElement {
       "click",
       (e) => {
         e.preventDefault();
-        alert("Adicionar Item button clicked");
         this.dispatchEvent(
-          new CustomEvent("add-node-btn-clicked", {
+          new CustomEvent(EVENTS.ADD_NODE_BUTTON_CLICKED, {
             bubbles: true,
             composed: true,
           }),
@@ -88,9 +89,8 @@ export class Menu extends HTMLElement {
       "click",
       (e) => {
         e.preventDefault();
-        alert("Adicionar Conexão button clicked");
         this.dispatchEvent(
-          new CustomEvent("add-edge-btn-clicked", {
+          new CustomEvent(EVENTS.ADD_EDGE_BUTTON_CLICKED, {
             bubbles: true,
             composed: true,
           }),
@@ -105,7 +105,7 @@ export class Menu extends HTMLElement {
       (e) => {
         e.preventDefault();
         this.dispatchEvent(
-          new CustomEvent("open-prj-btn-clicked", {
+          new CustomEvent(EVENTS.OPEN_PROJECT_BUTTON_CLICKED, {
             bubbles: true,
             composed: true,
           }),
@@ -120,9 +120,8 @@ export class Menu extends HTMLElement {
       "click",
       (e) => {
         e.preventDefault();
-        alert("Export button clicked");
         this.dispatchEvent(
-          new CustomEvent("export-btn-clicked", {
+          new CustomEvent(EVENTS.EXPORT_BUTTON_CLICKED, {
             bubbles: true,
             composed: true,
           }),
@@ -136,9 +135,8 @@ export class Menu extends HTMLElement {
       "click",
       (e) => {
         e.preventDefault();
-        alert("Fit button clicked");
         this.dispatchEvent(
-          new CustomEvent("fit-btn-clicked", {
+          new CustomEvent(EVENTS.FIT_BUTTON_CLICKED, {
             bubbles: true,
             composed: true,
           }),
