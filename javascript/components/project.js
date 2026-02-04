@@ -168,7 +168,7 @@ export class Project extends HTMLElement {
         this.api
           .insertEdge(edge)
           .then((newEdge) => {
-            alert(`Ligação "${newEdge.id}" criada com sucesso!`);
+            this.dispatchEvent(new CustomEvent("reload-project-requested", {bubbles: true, composed: true}));
           })
           .catch((error) => {
             alert(`Erro ao criar ligação: ${error.message}`);
@@ -198,7 +198,7 @@ export class Project extends HTMLElement {
         this.api
           .insertProjectNode(nodeData)
           .then((node) => {
-            alert(`Item importado com sucesso!`);
+            this.dispatchEvent(new CustomEvent("reload-project-requested", {bubbles: true, composed: true}));
           })
           .catch((error) => {
             alert(`Erro ao importar item: ${error.message}`);
@@ -228,7 +228,7 @@ export class Project extends HTMLElement {
         this.api
           .insertNode(nodeData)
           .then((newNode) => {
-            alert(`Item "${newNode.label}" criado com sucesso!`);
+            this.dispatchEvent(new CustomEvent("reload-project-requested", {bubbles: true, composed: true}));
           })
           .catch((error) => {
             alert(`Erro ao criar item: ${error.message}`);
@@ -289,7 +289,7 @@ export class Project extends HTMLElement {
         this.api
           .deleteProjectNode(nodeData)
           .then(() => {
-            alert(`Item "${nodeId}" removido com sucesso!`);
+            this.dispatchEvent(new CustomEvent("reload-project-requested", {bubbles: true, composed: true}));
           })
           .catch((error) => {
             alert(`Erro ao remover item: ${error.message}`);
@@ -315,9 +315,7 @@ export class Project extends HTMLElement {
         this.api
           .deleteEdge(edgeData)
           .then(() => {
-            alert(
-              `Ligação "${edgeData.source} -> ${edgeData.target}" removida com sucesso!`,
-            );
+            this.dispatchEvent(new CustomEvent("reload-project-requested", {bubbles: true, composed: true}));
           })
           .catch((error) => {
             alert(`Erro ao remover ligação: ${error.message}`);

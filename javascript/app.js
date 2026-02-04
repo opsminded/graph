@@ -26,6 +26,18 @@ export class App extends HTMLElement {
         this.newProjectModal  = this.shadowRoot.querySelector('app-new-project-modal');
         this.openProjectModal = this.shadowRoot.querySelector('app-open-project-modal');
         this.setupEventListeners();
+
+        const params = new URLSearchParams(window.location.search);
+        const projectId = params.get("project");
+        if (projectId) {
+            this.openProject(projectId);
+        }
+
+        window.addEventListener("popstate", () => {
+            const params = new URLSearchParams(window.location.search);
+            const projectId = params.get("project"); // update component accordingly
+            this.openProject(projectId);
+        }, this.abortController.signal);
     }
 
     disconnectedCallback()
@@ -55,6 +67,7 @@ export class App extends HTMLElement {
             const projectData = event.detail;
             this.api.insertProject(projectData).then((project) => {
                 this.notification.success(`Projeto "${project.name}" criado com sucesso!`);
+                this.openProject(project.id);
             }).catch(error => {
                 this.notification.error(`Erro ao criar projeto: ${error.message}`);
             });
@@ -62,8 +75,18 @@ export class App extends HTMLElement {
 
         this.addEventListener('open-project', (event) => {
             const projectId = event.detail.id;
-            
-            Promise.all([
+            this.openProject(projectId);
+        });
+
+        this.addEventListener('reload-project-requested', () => {
+            if (this.project.project) {
+                this.openProject(this.project.project.id);
+            }
+        }, this.abortController.signal);
+    }
+
+    openProject(projectId) {
+        Promise.all([
                 this.api.fetchProject(projectId),
                 this.api.fetchProjectGraph(projectId),
                 this.api.fetchProjectStatus(projectId)
@@ -72,14 +95,10 @@ export class App extends HTMLElement {
                 this.project.graph = graph;
                 this.project.nodeStatus = status;
                 this.openProjectModal.hide();
+                history.pushState({ project: projectId }, '', `?project=${projectId}`);
             }).catch(error => {
                 alert(`Error fetching project data: ${error.message}`);
             });
-
-            history.pushState({ project: projectId }, '', `?project=${projectId}`);
-        });
-
-
     }
 
     render() {
