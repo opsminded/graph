@@ -35,6 +35,15 @@ export class Project extends HTMLElement
         this.addNodeForm  = this.shadowRoot.getElementById('add-node-form');
         this.addNodeFormCancelButton = this.shadowRoot.getElementById('cancel-add-node');
 
+        this.removeNodeModal = this.shadowRoot.getElementById('remove-node-modal');
+        this.removeEdgeModal = this.shadowRoot.getElementById('remove-edge-modal');
+
+        this.removeNodeForm = this.shadowRoot.getElementById('remove-node-form');
+        this.removeEdgeForm = this.shadowRoot.getElementById('remove-edge-form');
+
+        this.removeNodeButton = this.shadowRoot.getElementById('remove-node-btn');
+        this.removeEdgeButton = this.shadowRoot.getElementById('remove-edge-btn');
+
         this.cyContainer   = this.shadowRoot.getElementById('cy');
 
         this.importNodeButton.addEventListener('click', () => {
@@ -63,6 +72,10 @@ export class Project extends HTMLElement
                 bubbles: true,
                 composed: true,
             }));
+
+            this.selectedNodes = [];
+            this.addEdgeButton.style.display = "none";
+            this.cy.elements().unselect();
         }, this.abortController.signal);
 
         this.importNodeForm.addEventListener('submit', (e) => {
@@ -106,6 +119,50 @@ export class Project extends HTMLElement
             this.addNodeModal.style.display = 'none';
         }, this.abortController.signal);
 
+        this.removeNodeButton.addEventListener('click', () => {
+            this.removeNodeModal.style.display = 'block';
+            if (this.selectedNodes.length === 1) {
+                this.removeNodeForm.querySelector('#remove-node-id').value = this.selectedNodes[0];
+                alert(this.selectedNodes[0]);
+            }
+        }, this.abortController.signal);
+
+        this.removeEdgeButton.addEventListener('click', () => {
+            this.removeEdgeModal.style.display = 'block';
+            if (this.selectedEdge) {
+                this.removeEdgeForm.querySelector('#remove-edge-id').value = this.selectedEdge;
+                alert(this.selectedEdge);
+            }
+        }, this.abortController.signal);
+
+        this.removeNodeForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const formData = new FormData(this.removeNodeForm);
+            const nodeId = formData.get('remove-node-id');
+            console.log("Removing node:", nodeId);
+            this.removeNodeModal.style.display = 'none';
+            this.removeNodeForm.reset();
+            this.dispatchEvent(new CustomEvent('node-removed', {
+                detail: {id: nodeId},
+                bubbles: true,
+                composed: true,
+            }));
+        }, this.abortController.signal);
+
+        this.removeEdgeForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const formData = new FormData(this.removeEdgeForm);
+            const edgeId = formData.get('remove-edge-id');
+            console.log("Removing edge:", edgeId);
+            this.removeEdgeModal.style.display = 'none';
+            this.removeEdgeForm.reset();
+            this.dispatchEvent(new CustomEvent('edge-removed', {
+                detail: {id: edgeId},
+                bubbles: true,
+                composed: true,
+            }));
+        }, this.abortController.signal);
+
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && this.cy) {
                 this.cy.elements().unselect();
@@ -140,7 +197,6 @@ export class Project extends HTMLElement
         this.projectTitle.textContent = value.name;
         this.importNodeButton.style.display = "inline-block";
         this.addNodeButton.style.display = "inline-block";
-        this.addEdgeButton.style.display = "inline-block";
     }
 
     get project()
@@ -254,24 +310,10 @@ export class Project extends HTMLElement
                     z-index: 101;
                 }
 
-                #import-node-modal {
-                    position: absolute;
-
-                    border: 2px solid #CCC;
-                    background-color: #fff;
-
-                    left: 25%;
-                    top: 8%;
-                    width: 50%;
-                    height: 70%;
-
-                    padding: 10px;
-
-                    display: none;
-                    z-index: 200;
-                }
-
-                #add-node-modal {
+                #import-node-modal,
+                #add-node-modal,
+                #remove-node-modal,
+                #remove-edge-modal {
                     position: absolute;
 
                     border: 2px solid #CCC;
@@ -294,7 +336,9 @@ export class Project extends HTMLElement
                 <div id="buttons-container">
                     <button id="import-node-btn">Importar Item</button>
                     <button id="add-node-btn">Novo Item</button>
+                    <button id="remove-node-btn">Remover Item</button>
                     <button id="add-edge-btn">Nova Ligação</button>
+                    <button id="remove-edge-btn">Remover Ligação</button>
                 </div>
 
                 <div id="cy"></div>
@@ -350,6 +394,28 @@ export class Project extends HTMLElement
                         <button type="button" id="cancel-add-node">Cancel</button>
                     </form>
                 </div>
+
+                <div id="remove-node-modal">
+                    <form id="remove-node-form">
+                        <label for="remove-node-id">Node ID:</label>
+                        <input type="text" id="remove-node-id" name="remove-node-id" required>
+                        <br>
+                        
+                        <button type="submit">Remove Node</button>
+                        <button type="button" id="cancel-remove-node">Cancel</button>
+                    </form>
+                </div>
+
+                <div id="remove-edge-modal">
+                    <form id="remove-edge-form">
+                        <label for="remove-edge-id">Edge ID:</label>
+                        <input type="text" id="remove-edge-id" name="remove-edge-id" required>
+                        <br>
+
+                        <button type="submit">Remove Node</button>
+                        <button type="button" id="cancel-remove-node">Cancel</button>
+                    </form>
+                </div>
             </div>
         `;
     }
@@ -370,8 +436,21 @@ export class Project extends HTMLElement
             this.selectedNodes.push(n.id());
 
             console.log("Selected nodes:", this.selectedNodes);
+
+            if (this.selectedNodes.length === 1) {
+                this.removeNodeButton.style.display = 'inline-block';
+            } else {
+                this.removeNodeButton.style.display = 'none';
+            }
+
+            if (this.selectedNodes.length === 2) {
+                // Dois nós selecionados, pronto para adicionar aresta
+                console.log("Ready to add edge between:", this.selectedNodes[0], "and", this.selectedNodes[1]);
+                this.addEdgeButton.style.display = "inline-block";
+            }
             
             if (this.selectedNodes.length > 2) {
+                this.addEdgeButton.style.display = "none";
                 this.selectedNodes = [];
                 this.cy.elements().unselect();
             }
@@ -381,23 +460,28 @@ export class Project extends HTMLElement
         this.cy.on('select', 'edge', (e) => {
             const edge = e.target;
             this.selectedEdge = edge.id();
+            this.removeEdgeButton.style.display = 'inline-block';
             console.log("Selected edge:", this.selectedEdge);
         });
 
         // Evento: Deseleção de nó
         this.cy.on('unselect', 'node', () => {
             this.selectedNodes = [];
+            this.removeNodeButton.style.display = 'none';
         });
 
         // Evento: Deseleção de aresta
         this.cy.on('unselect', 'edge', () => {
             this.selectedEdge = null;
+            this.addEdgeButton.style.display = "none";
+            this.removeEdgeButton.style.display = 'none';
         });
 
         // Evento: Duplo clique em nó (para mostrar info)
         this.cy.on('dbltap', 'node', (e) => {
             const node = e.target;
             this.infoPanel.node = node.data();
+            this.removeNodeButton.style.display = 'none';
         });
 
         // Evento: Clique no background (deseleciona tudo)
@@ -405,6 +489,9 @@ export class Project extends HTMLElement
             if (e.target === this.cy) {
                 this.cy.elements().unselect();
                 this.infoPanel.node = null;
+                this.addEdgeButton.style.display = "none";
+                this.removeNodeButton.style.display = 'none';
+                this.removeEdgeButton.style.display = 'none';
             }
         });
     }
